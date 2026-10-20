@@ -7,6 +7,8 @@ const mlWaterways = new Set(['river', 'stream', 'canal', 'drain', 'ditch', 'rive
 const mlPowerKinds = new Set(['utility_pole', 'power_pole', 'power_tower', 'power_line', 'power_cable', 'transformer', 'substation']);
 const mlPowerFeature = feature => mlPresent(feature.tags?.power) || feature.tags?.man_made === 'utility_pole' || mlPowerKinds.has(feature.kind);
 const mlBarrierKinds = new Set(['barrier', 'fence', 'wall', 'city_wall', 'retaining_wall', 'hedge', 'ditch', 'guard_rail', 'handrail', 'kerb', 'gate', 'lift_gate', 'swing_gate', 'kissing_gate', 'cattle_grid', 'bollard', 'block', 'debris', 'stile', 'turnstile', 'sally_port', 'chain', 'rope', 'log', 'jersey_barrier', 'motorcycle_barrier', 'cycle_barrier', 'bus_trap', 'sump_buster', 'border_control', 'entrance']);
+const mlRailTracks = new Set(['rail', 'light_rail', 'tram', 'narrow_gauge', 'monorail', 'subway', 'funicular', 'abandoned', 'disused', 'preserved', 'construction']);
+const mlRoadSignKinds = new Set(['stop', 'give_way', 'traffic_signals', 'traffic_sign', 'speed_camera', 'milestone', 'turning_circle', 'noexit']);
 const mlPointFeature = (feature, group) => feature.geometry === 'point' || group === 'poi'
   || !feature.points?.length && Number.isFinite(feature.x) && Number.isFinite(feature.y) && group !== 'lake';
 const mlServiceZones = new Map([
@@ -45,7 +47,8 @@ export function mapZoneBiome(feature = {}) {
   if (mlCamping.has(tags.tourism)) return 'camping';
   if (mlHeritageSites.has(tags.tourism)) return 'heritage';
   if (tags.tourism === 'information' && ['office', 'visitor_centre', 'visitor_center'].includes(tags.information)) return 'civic';
-  if (['aerodrome', 'apron', 'helipad'].includes(tags.aeroway)) return 'transport';
+  if (['apron', 'parking_position'].includes(tags.aeroway) || feature.kind === 'aircraft_parking') return 'aircraft_parking';
+  if (['aerodrome', 'helipad'].includes(tags.aeroway)) return 'transport';
   if (['plant', 'substation'].includes(tags.power) || ['works', 'water_works', 'wastewater_plant'].includes(tags.man_made)) return 'utilities';
   if (tags.amenity === 'recycling' && tags.recycling_type === 'centre') return 'utilities';
   // A mapped archaeological/ruin territory is a zone; an individual statue,
@@ -66,7 +69,8 @@ export function mapFeatureLayer(feature = {}, group = '') {
   if (group === 'building' || !siteMarker && (mlPresent(tags.building) || mlPresent(tags['building:part']))) return 'buildings';
   // A former rail alignment can also be a current highway. Every facet of that
   // same road belongs to the road layer, so its second style cannot leak through.
-  if (group === 'road' || !point && (mlPresent(tags.highway) || mlPresent(tags['area:highway']))) return 'roads';
+  if (group === 'road' || !point && (mlPresent(tags.highway) || mlPresent(tags['area:highway'])
+    || mlRailTracks.has(tags.railway) || !tags.railway && feature.kind === 'railway')) return 'roads';
   if (group === 'river' || group === 'lake' || feature.type === 'water' || mlWaterKinds.has(feature.kind)
     || tags.natural === 'water' || tags.natural === 'coastline' || tags.natural === 'spring' || mlPresent(tags.water)
     || mlWaterways.has(tags.waterway) || ['reservoir', 'basin'].includes(tags.landuse)
@@ -83,17 +87,22 @@ export function mapFeatureLayer(feature = {}, group = '') {
 }
 
 /**
- * The game omits small crossing/barrier fixtures and electrical point markers.
+ * The game omits administrative outlines, traffic signs, aircraft parking marks,
+ * small crossing/barrier fixtures and electrical point markers.
  * This presentation policy leaves imported geometry, tags and layer ownership
  * intact. Real road/building geometry keeps its role even with fixture tags.
  */
 export function shouldRenderFeature(feature = {}, group = '') {
   const tags = feature.tags || {};
   const point = mlPointFeature(feature, group);
+  if (['census', 'administrative'].includes(tags.boundary)) return false;
   if (group === 'building' || !point && (mlPresent(tags.building) || mlPresent(tags['building:part']))) return true;
-  const highway = mlPresent(tags.highway) && tags.highway !== 'crossing';
+  const highway = mlPresent(tags.highway) && tags.highway !== 'crossing' && !mlRoadSignKinds.has(tags.highway);
   if (!point && (highway || mlPresent(tags['area:highway'])
-    || group === 'road' && tags.highway !== 'crossing' && feature.kind !== 'crossing')) return true;
+    || group === 'road' && tags.highway !== 'crossing' && feature.kind !== 'crossing' && !mlRoadSignKinds.has(tags.highway) && !mlRoadSignKinds.has(feature.kind))) return true;
+  if (tags.aeroway === 'parking_position' || feature.kind === 'parking_position') return false;
+  if (mlRoadSignKinds.has(tags.highway) || mlRoadSignKinds.has(feature.kind)
+    || mlPresent(tags.traffic_sign) || point && (mlPresent(tags.noexit) || mlPresent(tags.maxspeed))) return false;
   if (tags.highway === 'crossing' || feature.kind === 'crossing' || tags.footway === 'crossing'
     || Object.entries(tags).some(([key, value]) => (key === 'crossing' || key.startsWith('crossing:')) && mlPresent(value))) return false;
   if (mlPresent(tags.barrier) || tags.barrier === undefined && mlBarrierKinds.has(feature.kind)) return false;
@@ -103,6 +112,7 @@ export function shouldRenderFeature(feature = {}, group = '') {
 
 /** Rendering categories never change or replace original OSM tags and geometry. */
 export function mapBiome(feature = {}) {
+  if (feature.derived === true && feature.biome) return feature.biome;
   const tags = feature.tags || {};
   // Jurisdiction extents may include undeveloped land. They coexist with land
   // use but must not turn their entire area into residential/resource terrain.

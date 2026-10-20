@@ -306,3 +306,22 @@ test('bounded Overpass geometry retains known fragments without joining across m
   assert(!map.coverage.omittedByReason.incompleteGeometry.includes('way-361'));
   assert.equal(map.roads.length, 1, 'Unknown segments cannot become a connected navigable road');
 });
+
+
+test('a closed mapped substation becomes its exact filled footprint while cables remain line geometry', () => {
+  const ring = [nodes[0], nodes[1], nodes[2], nodes[0]];
+  const source = fixture([
+    { type: 'way', id: 900, geometry: ring, tags: { power: 'substation', name: 'Mapped substation' } },
+    { type: 'way', id: 901, geometry: ring, tags: { power: 'line' } },
+  ]);
+  const before = structuredClone(source), map = convertOSM(source, options);
+  const station = map.details.find(item => item.sourceId === 'way-900');
+  assert.equal(station.geometry, 'polygon');
+  assert.equal(station.tags.power, 'substation');
+  assert.equal(station.name, 'Mapped substation');
+  assert.deepEqual(station.rings, [station.points]);
+  assert.deepEqual(station.points, ring.map(point => { const projected = projectPoint(point.lon, point.lat, createProjection(bbox)); return Object.fromEntries(Object.entries(projected).map(([key, value]) => [key, Math.round(value * 1000) / 1000])); }));
+  const cable = map.details.find(item => item.sourceId === 'way-901');
+  assert.equal(cable.geometry, 'line', 'A closed electrical line is not an invented station area');
+  assert.deepEqual(source, before);
+});

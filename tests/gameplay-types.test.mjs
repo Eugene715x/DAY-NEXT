@@ -98,3 +98,14 @@ test('classification preserves real source geometry/tags and returns independent
   assert.notEqual(RESOURCE_KINDS[candidate.id].name, candidate.name);
   assert(Object.isFrozen(BUILDING_TYPES)); assert(Object.isFrozen(RESOURCE_PROFILES['profile.medical'].candidateResourceIds));
 });
+
+
+test('derived ground and settlement density have stable independent gameplay types', () => {
+  for (const key of ['wasteland', 'suburb', 'urban', 'dense', 'aircraft_parking']) {
+    const type = classifyBiome(key);
+    assert.equal(type.typeId, `biome.${key}`);
+    assert(type.resourceProfileIds.length);
+  }
+  assert(classifyBiome('aircraft_parking').resourceProfileIds.includes('profile.vehicles'));
+  assert.equal(classifyBuilding({ tags: { building: 'yes' }, biome: 'dense' }).typeId, 'building.unknown', 'Density does not infer a building function');
+});

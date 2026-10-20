@@ -7,7 +7,7 @@
   "sourceUrl": "https://api.openstreetmap.org/api/0.6/map?bbox=-116.86,36.86,-116.73,36.94",
   "acquisition": "osm-map-api",
   "downloadedAt": "2026-10-20T18:26:21.022Z",
-  "importedAt": "2026-10-20T19:52:00.376Z",
+  "importedAt": "2026-10-20T20:13:00.535Z",
   "responseDate": "Tue, 20 Oct 2026 18:26:20 GMT",
   "sha256": "44f3641860c1e3966edf259c5487b89f1997699aec77cff783360f8c66414d99",
   "bytes": 5110481,

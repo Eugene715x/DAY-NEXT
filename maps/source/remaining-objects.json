@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "mapId": "beatty-rhyolite",
   "mapName": "Битти / Райолит",
   "source": {
@@ -21,35 +21,67 @@
     ]
   },
   "layerCounts": {
-    "landscape": 432,
-    "water": 112,
-    "roads": 595,
-    "power": 14,
+    "landscape": 406,
+    "water": 53,
+    "roads": 83,
+    "power": 6,
     "buildings": 893,
-    "details": 148
+    "details": 87
   },
   "presentation": {
     "inputFeatures": 2607,
-    "filteredFeatures": 354,
+    "filteredFeatures": 406,
     "coalescedFeatures": 13,
     "sourceRoads": 658,
-    "displayRoads": 595,
-    "sourcePowerLines": 14,
-    "displayPowerLines": 14,
+    "displayRoads": 83,
+    "sourcePowerLines": 13,
+    "displayPowerLines": 5,
+    "sourceRailwayLines": 11,
+    "sourceWaterLines": 88,
+    "displayWaterLines": 29,
+    "sourceWaterAreas": 11,
+    "displayWaterAreas": 11,
+    "biomeGeneration": {
+      "enabled": true,
+      "cellSizeMeters": 60,
+      "grid": {
+        "cols": 193,
+        "rows": 150
+      },
+      "sourceBuildings": 893,
+      "urbanCells": 693,
+      "generatedZones": 72,
+      "byBiome": {
+        "wasteland": 1,
+        "suburb": 39,
+        "urban": 25,
+        "dense": 7,
+        "aircraft_parking": 0
+      }
+    },
+    "zoneMerging": {
+      "inputFeatures": 459,
+      "displayFeatures": 363,
+      "mergedGroups": 28,
+      "joinedFeatures": 96,
+      "addedCorridors": 62,
+      "maxDistanceMeters": 35
+    },
     "roadClasses": {
-      "street": 208,
-      "trail": 44,
-      "track": 327,
+      "street": 23,
+      "trail": 12,
+      "track": 33,
       "road": 1,
-      "highway": 15
+      "highway": 5,
+      "railway": 9
     }
   },
   "landscape": {
-    "count": 432,
+    "count": 406,
     "geometryCounts": {
       "point": 34,
-      "line": 11,
-      "polygon": 387
+      "line": 9,
+      "polygon": 363
     },
     "biomes": [
       {
@@ -62,30 +94,39 @@
         }
       },
       {
-        "id": "residential",
-        "count": 54,
+        "id": "suburb",
+        "count": 25,
         "geometryCounts": {
           "point": 0,
           "line": 0,
-          "polygon": 54
+          "polygon": 25
         }
       },
       {
-        "id": "parking",
-        "count": 26,
+        "id": "urban",
+        "count": 15,
         "geometryCounts": {
           "point": 0,
           "line": 0,
-          "polygon": 26
+          "polygon": 15
         }
       },
       {
         "id": "commercial",
-        "count": 16,
+        "count": 14,
         "geometryCounts": {
           "point": 0,
           "line": 0,
-          "polygon": 16
+          "polygon": 14
+        }
+      },
+      {
+        "id": "parking",
+        "count": 13,
+        "geometryCounts": {
+          "point": 0,
+          "line": 0,
+          "polygon": 13
         }
       },
       {
@@ -104,24 +145,6 @@
           "point": 2,
           "line": 0,
           "polygon": 8
-        }
-      },
-      {
-        "id": "retail",
-        "count": 10,
-        "geometryCounts": {
-          "point": 1,
-          "line": 0,
-          "polygon": 9
-        }
-      },
-      {
-        "id": "food_service",
-        "count": 9,
-        "geometryCounts": {
-          "point": 2,
-          "line": 0,
-          "polygon": 7
         }
       },
       {
@@ -161,6 +184,33 @@
         }
       },
       {
+        "id": "dense",
+        "count": 6,
+        "geometryCounts": {
+          "point": 0,
+          "line": 0,
+          "polygon": 6
+        }
+      },
+      {
+        "id": "food_service",
+        "count": 6,
+        "geometryCounts": {
+          "point": 2,
+          "line": 0,
+          "polygon": 4
+        }
+      },
+      {
+        "id": "residential",
+        "count": 6,
+        "geometryCounts": {
+          "point": 0,
+          "line": 0,
+          "polygon": 6
+        }
+      },
+      {
         "id": "scrub",
         "count": 6,
         "geometryCounts": {
@@ -176,6 +226,15 @@
           "point": 3,
           "line": 0,
           "polygon": 2
+        }
+      },
+      {
+        "id": "retail",
+        "count": 5,
+        "geometryCounts": {
+          "point": 1,
+          "line": 0,
+          "polygon": 4
         }
       },
       {
@@ -215,15 +274,6 @@
         }
       },
       {
-        "id": "transport",
-        "count": 3,
-        "geometryCounts": {
-          "point": 0,
-          "line": 0,
-          "polygon": 3
-        }
-      },
-      {
         "id": "cemetery",
         "count": 2,
         "geometryCounts": {
@@ -251,15 +301,6 @@
         }
       },
       {
-        "id": "landscape",
-        "count": 2,
-        "geometryCounts": {
-          "point": 0,
-          "line": 2,
-          "polygon": 0
-        }
-      },
-      {
         "id": "park",
         "count": 2,
         "geometryCounts": {
@@ -275,6 +316,24 @@
           "point": 0,
           "line": 0,
           "polygon": 2
+        }
+      },
+      {
+        "id": "transport",
+        "count": 2,
+        "geometryCounts": {
+          "point": 0,
+          "line": 0,
+          "polygon": 2
+        }
+      },
+      {
+        "id": "aircraft_parking",
+        "count": 1,
+        "geometryCounts": {
+          "point": 0,
+          "line": 0,
+          "polygon": 1
         }
       },
       {
@@ -330,182 +389,27 @@
           "line": 1,
           "polygon": 0
         }
+      },
+      {
+        "id": "wasteland",
+        "count": 1,
+        "geometryCounts": {
+          "point": 0,
+          "line": 0,
+          "polygon": 1
+        }
       }
     ]
   },
   "remaining": {
-    "count": 148,
-    "uniqueSourceElements": 148,
+    "count": 87,
+    "uniqueSourceElements": 87,
     "geometryCounts": {
-      "point": 120,
-      "line": 25,
+      "point": 70,
+      "line": 14,
       "polygon": 3
     },
     "categories": [
-      {
-        "id": "road_equipment",
-        "name": "Дорожные знаки, оборудование и следы старых дорог",
-        "count": 41,
-        "geometryCounts": {
-          "point": 38,
-          "line": 3,
-          "polygon": 0
-        },
-        "subtypes": [
-          {
-            "id": "highway=stop",
-            "label": "Знаки STOP",
-            "count": 18,
-            "geometryCounts": {
-              "point": 18,
-              "line": 0,
-              "polygon": 0
-            }
-          },
-          {
-            "id": "noexit=yes",
-            "label": "Отметки тупиков",
-            "count": 9,
-            "geometryCounts": {
-              "point": 9,
-              "line": 0,
-              "polygon": 0
-            }
-          },
-          {
-            "id": "highway=street_lamp",
-            "label": "Уличные фонари",
-            "count": 7,
-            "geometryCounts": {
-              "point": 7,
-              "line": 0,
-              "polygon": 0
-            }
-          },
-          {
-            "id": "disused:highway=residential",
-            "label": "Неиспользуемые улицы",
-            "count": 2,
-            "geometryCounts": {
-              "point": 0,
-              "line": 2,
-              "polygon": 0
-            }
-          },
-          {
-            "id": "highway=give_way",
-            "label": "Знаки «Уступи дорогу»",
-            "count": 2,
-            "geometryCounts": {
-              "point": 2,
-              "line": 0,
-              "polygon": 0
-            }
-          },
-          {
-            "id": "highway=turning_circle",
-            "label": "Точки разворота",
-            "count": 2,
-            "geometryCounts": {
-              "point": 2,
-              "line": 0,
-              "polygon": 0
-            }
-          },
-          {
-            "id": "demolished:highway=track",
-            "label": "Следы уничтоженной грунтовой дороги",
-            "count": 1,
-            "geometryCounts": {
-              "point": 0,
-              "line": 1,
-              "polygon": 0
-            }
-          }
-        ]
-      },
-      {
-        "id": "aviation",
-        "name": "Оборудование и разметка аэродрома",
-        "count": 27,
-        "geometryCounts": {
-          "point": 21,
-          "line": 5,
-          "polygon": 1
-        },
-        "subtypes": [
-          {
-            "id": "aeroway=parking_position",
-            "label": "Места стоянки самолётов",
-            "count": 19,
-            "geometryCounts": {
-              "point": 19,
-              "line": 0,
-              "polygon": 0
-            }
-          },
-          {
-            "id": "aeroway=taxilane",
-            "label": "Линии движения на стоянке самолётов",
-            "count": 3,
-            "geometryCounts": {
-              "point": 0,
-              "line": 3,
-              "polygon": 0
-            }
-          },
-          {
-            "id": "aeroway=hangar",
-            "label": "Ангар",
-            "count": 1,
-            "geometryCounts": {
-              "point": 0,
-              "line": 0,
-              "polygon": 1
-            }
-          },
-          {
-            "id": "aeroway=holding_position",
-            "label": "Позиция ожидания на аэродроме",
-            "count": 1,
-            "geometryCounts": {
-              "point": 1,
-              "line": 0,
-              "polygon": 0
-            }
-          },
-          {
-            "id": "aeroway=runway",
-            "label": "Взлётная полоса",
-            "count": 1,
-            "geometryCounts": {
-              "point": 0,
-              "line": 1,
-              "polygon": 0
-            }
-          },
-          {
-            "id": "aeroway=taxiway",
-            "label": "Рулёжная дорожка",
-            "count": 1,
-            "geometryCounts": {
-              "point": 0,
-              "line": 1,
-              "polygon": 0
-            }
-          },
-          {
-            "id": "aeroway=windsock",
-            "label": "Ветроуказатель",
-            "count": 1,
-            "geometryCounts": {
-              "point": 1,
-              "line": 0,
-              "polygon": 0
-            }
-          }
-        ]
-      },
       {
         "id": "mining",
         "name": "Шахты, штольни и старые рудники",
@@ -542,58 +446,6 @@
             "count": 7,
             "geometryCounts": {
               "point": 7,
-              "line": 0,
-              "polygon": 0
-            }
-          }
-        ]
-      },
-      {
-        "id": "heritage",
-        "name": "Исторические объекты, искусство и следы построек",
-        "count": 21,
-        "geometryCounts": {
-          "point": 7,
-          "line": 14,
-          "polygon": 0
-        },
-        "subtypes": [
-          {
-            "id": "railway=abandoned",
-            "label": "Заброшенные железнодорожные пути",
-            "count": 11,
-            "geometryCounts": {
-              "point": 0,
-              "line": 11,
-              "polygon": 0
-            }
-          },
-          {
-            "id": "tourism=artwork",
-            "label": "Произведения искусства",
-            "count": 6,
-            "geometryCounts": {
-              "point": 6,
-              "line": 0,
-              "polygon": 0
-            }
-          },
-          {
-            "id": "demolished:building=yes",
-            "label": "Контуры снесённых зданий",
-            "count": 3,
-            "geometryCounts": {
-              "point": 0,
-              "line": 3,
-              "polygon": 0
-            }
-          },
-          {
-            "id": "historic=yes;place=town",
-            "label": "Историческая метка Битти",
-            "count": 1,
-            "geometryCounts": {
-              "point": 1,
               "line": 0,
               "polygon": 0
             }
@@ -688,6 +540,162 @@
               "point": 0,
               "line": 0,
               "polygon": 1
+            }
+          }
+        ]
+      },
+      {
+        "id": "heritage",
+        "name": "Исторические объекты, искусство и следы построек",
+        "count": 10,
+        "geometryCounts": {
+          "point": 7,
+          "line": 3,
+          "polygon": 0
+        },
+        "subtypes": [
+          {
+            "id": "tourism=artwork",
+            "label": "Произведения искусства",
+            "count": 6,
+            "geometryCounts": {
+              "point": 6,
+              "line": 0,
+              "polygon": 0
+            }
+          },
+          {
+            "id": "demolished:building=yes",
+            "label": "Контуры снесённых зданий",
+            "count": 3,
+            "geometryCounts": {
+              "point": 0,
+              "line": 3,
+              "polygon": 0
+            }
+          },
+          {
+            "id": "historic=yes;place=town",
+            "label": "Историческая метка Битти",
+            "count": 1,
+            "geometryCounts": {
+              "point": 1,
+              "line": 0,
+              "polygon": 0
+            }
+          }
+        ]
+      },
+      {
+        "id": "road_equipment",
+        "name": "Уличное оборудование и следы старых дорог",
+        "count": 10,
+        "geometryCounts": {
+          "point": 7,
+          "line": 3,
+          "polygon": 0
+        },
+        "subtypes": [
+          {
+            "id": "highway=street_lamp",
+            "label": "Уличные фонари",
+            "count": 7,
+            "geometryCounts": {
+              "point": 7,
+              "line": 0,
+              "polygon": 0
+            }
+          },
+          {
+            "id": "disused:highway=residential",
+            "label": "Неиспользуемые улицы",
+            "count": 2,
+            "geometryCounts": {
+              "point": 0,
+              "line": 2,
+              "polygon": 0
+            }
+          },
+          {
+            "id": "demolished:highway=track",
+            "label": "Следы уничтоженной грунтовой дороги",
+            "count": 1,
+            "geometryCounts": {
+              "point": 0,
+              "line": 1,
+              "polygon": 0
+            }
+          }
+        ]
+      },
+      {
+        "id": "aviation",
+        "name": "Оборудование и разметка аэродрома",
+        "count": 8,
+        "geometryCounts": {
+          "point": 2,
+          "line": 5,
+          "polygon": 1
+        },
+        "subtypes": [
+          {
+            "id": "aeroway=taxilane",
+            "label": "Линии движения на стоянке самолётов",
+            "count": 3,
+            "geometryCounts": {
+              "point": 0,
+              "line": 3,
+              "polygon": 0
+            }
+          },
+          {
+            "id": "aeroway=hangar",
+            "label": "Ангар",
+            "count": 1,
+            "geometryCounts": {
+              "point": 0,
+              "line": 0,
+              "polygon": 1
+            }
+          },
+          {
+            "id": "aeroway=holding_position",
+            "label": "Позиция ожидания на аэродроме",
+            "count": 1,
+            "geometryCounts": {
+              "point": 1,
+              "line": 0,
+              "polygon": 0
+            }
+          },
+          {
+            "id": "aeroway=runway",
+            "label": "Взлётная полоса",
+            "count": 1,
+            "geometryCounts": {
+              "point": 0,
+              "line": 1,
+              "polygon": 0
+            }
+          },
+          {
+            "id": "aeroway=taxiway",
+            "label": "Рулёжная дорожка",
+            "count": 1,
+            "geometryCounts": {
+              "point": 0,
+              "line": 1,
+              "polygon": 0
+            }
+          },
+          {
+            "id": "aeroway=windsock",
+            "label": "Ветроуказатель",
+            "count": 1,
+            "geometryCounts": {
+              "point": 1,
+              "line": 0,
+              "polygon": 0
             }
           }
         ]
@@ -1059,272 +1067,6 @@
         }
       },
       {
-        "id": "node-12675694200",
-        "key": "details:detail:node-12675694200",
-        "sourceId": "node-12675694200",
-        "name": "",
-        "kind": "parking_position",
-        "geometry": "point",
-        "category": "aviation",
-        "subtype": "aeroway=parking_position",
-        "label": "Места стоянки самолётов",
-        "tags": {
-          "aeroway": "parking_position"
-        }
-      },
-      {
-        "id": "node-12675713701",
-        "key": "details:detail:node-12675713701",
-        "sourceId": "node-12675713701",
-        "name": "",
-        "kind": "parking_position",
-        "geometry": "point",
-        "category": "aviation",
-        "subtype": "aeroway=parking_position",
-        "label": "Места стоянки самолётов",
-        "tags": {
-          "aeroway": "parking_position"
-        }
-      },
-      {
-        "id": "node-12675713702",
-        "key": "details:detail:node-12675713702",
-        "sourceId": "node-12675713702",
-        "name": "",
-        "kind": "parking_position",
-        "geometry": "point",
-        "category": "aviation",
-        "subtype": "aeroway=parking_position",
-        "label": "Места стоянки самолётов",
-        "tags": {
-          "aeroway": "parking_position"
-        }
-      },
-      {
-        "id": "node-12675713703",
-        "key": "details:detail:node-12675713703",
-        "sourceId": "node-12675713703",
-        "name": "",
-        "kind": "parking_position",
-        "geometry": "point",
-        "category": "aviation",
-        "subtype": "aeroway=parking_position",
-        "label": "Места стоянки самолётов",
-        "tags": {
-          "aeroway": "parking_position"
-        }
-      },
-      {
-        "id": "node-12675713704",
-        "key": "details:detail:node-12675713704",
-        "sourceId": "node-12675713704",
-        "name": "",
-        "kind": "parking_position",
-        "geometry": "point",
-        "category": "aviation",
-        "subtype": "aeroway=parking_position",
-        "label": "Места стоянки самолётов",
-        "tags": {
-          "aeroway": "parking_position"
-        }
-      },
-      {
-        "id": "node-12675713705",
-        "key": "details:detail:node-12675713705",
-        "sourceId": "node-12675713705",
-        "name": "",
-        "kind": "parking_position",
-        "geometry": "point",
-        "category": "aviation",
-        "subtype": "aeroway=parking_position",
-        "label": "Места стоянки самолётов",
-        "tags": {
-          "aeroway": "parking_position"
-        }
-      },
-      {
-        "id": "node-12675713706",
-        "key": "details:detail:node-12675713706",
-        "sourceId": "node-12675713706",
-        "name": "",
-        "kind": "parking_position",
-        "geometry": "point",
-        "category": "aviation",
-        "subtype": "aeroway=parking_position",
-        "label": "Места стоянки самолётов",
-        "tags": {
-          "aeroway": "parking_position"
-        }
-      },
-      {
-        "id": "node-12675713707",
-        "key": "details:detail:node-12675713707",
-        "sourceId": "node-12675713707",
-        "name": "",
-        "kind": "parking_position",
-        "geometry": "point",
-        "category": "aviation",
-        "subtype": "aeroway=parking_position",
-        "label": "Места стоянки самолётов",
-        "tags": {
-          "aeroway": "parking_position"
-        }
-      },
-      {
-        "id": "node-12675713708",
-        "key": "details:detail:node-12675713708",
-        "sourceId": "node-12675713708",
-        "name": "",
-        "kind": "parking_position",
-        "geometry": "point",
-        "category": "aviation",
-        "subtype": "aeroway=parking_position",
-        "label": "Места стоянки самолётов",
-        "tags": {
-          "aeroway": "parking_position"
-        }
-      },
-      {
-        "id": "node-12675713709",
-        "key": "details:detail:node-12675713709",
-        "sourceId": "node-12675713709",
-        "name": "",
-        "kind": "parking_position",
-        "geometry": "point",
-        "category": "aviation",
-        "subtype": "aeroway=parking_position",
-        "label": "Места стоянки самолётов",
-        "tags": {
-          "aeroway": "parking_position"
-        }
-      },
-      {
-        "id": "node-12675713710",
-        "key": "details:detail:node-12675713710",
-        "sourceId": "node-12675713710",
-        "name": "",
-        "kind": "parking_position",
-        "geometry": "point",
-        "category": "aviation",
-        "subtype": "aeroway=parking_position",
-        "label": "Места стоянки самолётов",
-        "tags": {
-          "aeroway": "parking_position"
-        }
-      },
-      {
-        "id": "node-12675713711",
-        "key": "details:detail:node-12675713711",
-        "sourceId": "node-12675713711",
-        "name": "",
-        "kind": "parking_position",
-        "geometry": "point",
-        "category": "aviation",
-        "subtype": "aeroway=parking_position",
-        "label": "Места стоянки самолётов",
-        "tags": {
-          "aeroway": "parking_position"
-        }
-      },
-      {
-        "id": "node-12675713712",
-        "key": "details:detail:node-12675713712",
-        "sourceId": "node-12675713712",
-        "name": "",
-        "kind": "parking_position",
-        "geometry": "point",
-        "category": "aviation",
-        "subtype": "aeroway=parking_position",
-        "label": "Места стоянки самолётов",
-        "tags": {
-          "aeroway": "parking_position"
-        }
-      },
-      {
-        "id": "node-12675713713",
-        "key": "details:detail:node-12675713713",
-        "sourceId": "node-12675713713",
-        "name": "",
-        "kind": "parking_position",
-        "geometry": "point",
-        "category": "aviation",
-        "subtype": "aeroway=parking_position",
-        "label": "Места стоянки самолётов",
-        "tags": {
-          "aeroway": "parking_position"
-        }
-      },
-      {
-        "id": "node-12675713714",
-        "key": "details:detail:node-12675713714",
-        "sourceId": "node-12675713714",
-        "name": "",
-        "kind": "parking_position",
-        "geometry": "point",
-        "category": "aviation",
-        "subtype": "aeroway=parking_position",
-        "label": "Места стоянки самолётов",
-        "tags": {
-          "aeroway": "parking_position"
-        }
-      },
-      {
-        "id": "node-12675713715",
-        "key": "details:detail:node-12675713715",
-        "sourceId": "node-12675713715",
-        "name": "",
-        "kind": "parking_position",
-        "geometry": "point",
-        "category": "aviation",
-        "subtype": "aeroway=parking_position",
-        "label": "Места стоянки самолётов",
-        "tags": {
-          "aeroway": "parking_position"
-        }
-      },
-      {
-        "id": "node-12675713716",
-        "key": "details:detail:node-12675713716",
-        "sourceId": "node-12675713716",
-        "name": "",
-        "kind": "parking_position",
-        "geometry": "point",
-        "category": "aviation",
-        "subtype": "aeroway=parking_position",
-        "label": "Места стоянки самолётов",
-        "tags": {
-          "aeroway": "parking_position"
-        }
-      },
-      {
-        "id": "node-12675713717",
-        "key": "details:detail:node-12675713717",
-        "sourceId": "node-12675713717",
-        "name": "",
-        "kind": "parking_position",
-        "geometry": "point",
-        "category": "aviation",
-        "subtype": "aeroway=parking_position",
-        "label": "Места стоянки самолётов",
-        "tags": {
-          "aeroway": "parking_position"
-        }
-      },
-      {
-        "id": "node-12675713718",
-        "key": "details:detail:node-12675713718",
-        "sourceId": "node-12675713718",
-        "name": "",
-        "kind": "parking_position",
-        "geometry": "point",
-        "category": "aviation",
-        "subtype": "aeroway=parking_position",
-        "label": "Места стоянки самолётов",
-        "tags": {
-          "aeroway": "parking_position"
-        }
-      },
-      {
         "id": "way-474547268-0",
         "key": "details:detail:way-474547268-0",
         "sourceId": "way-474547268",
@@ -1483,190 +1225,6 @@
           "website": "https://www.beattynv.info/",
           "wikidata": "Q813330",
           "wikipedia": "en:Beatty, Nevada"
-        }
-      },
-      {
-        "id": "way-1317705129-0",
-        "key": "details:detail:way-1317705129-0",
-        "sourceId": "way-1317705129",
-        "name": "",
-        "kind": "railway",
-        "geometry": "line",
-        "category": "heritage",
-        "subtype": "railway=abandoned",
-        "label": "Заброшенные железнодорожные пути",
-        "tags": {
-          "abandoned:railway": "rail",
-          "old_ref": "NV 90",
-          "railway": "abandoned",
-          "smoothness": "impassable",
-          "surface": "dirt",
-          "tracktype": "grade3"
-        }
-      },
-      {
-        "id": "way-1317705132-0",
-        "key": "details:detail:way-1317705132-0",
-        "sourceId": "way-1317705132",
-        "name": "",
-        "kind": "railway",
-        "geometry": "line",
-        "category": "heritage",
-        "subtype": "railway=abandoned",
-        "label": "Заброшенные железнодорожные пути",
-        "tags": {
-          "abandoned:railway": "rail",
-          "old_ref": "NV 90",
-          "railway": "abandoned",
-          "smoothness": "impassable",
-          "surface": "dirt",
-          "tracktype": "grade3"
-        }
-      },
-      {
-        "id": "way-1364846860-0",
-        "key": "details:detail:way-1364846860-0",
-        "sourceId": "way-1364846860",
-        "name": "",
-        "kind": "railway",
-        "geometry": "line",
-        "category": "heritage",
-        "subtype": "railway=abandoned",
-        "label": "Заброшенные железнодорожные пути",
-        "tags": {
-          "abandoned:railway": "rail",
-          "railway": "abandoned",
-          "surface": "dirt"
-        }
-      },
-      {
-        "id": "way-1457860074-0",
-        "key": "details:detail:way-1457860074-0",
-        "sourceId": "way-1457860074",
-        "name": "",
-        "kind": "railway",
-        "geometry": "line",
-        "category": "heritage",
-        "subtype": "railway=abandoned",
-        "label": "Заброшенные железнодорожные пути",
-        "tags": {
-          "abandoned:railway": "rail",
-          "railway": "abandoned"
-        }
-      },
-      {
-        "id": "way-1457860076-0",
-        "key": "details:detail:way-1457860076-0",
-        "sourceId": "way-1457860076",
-        "name": "",
-        "kind": "railway",
-        "geometry": "line",
-        "category": "heritage",
-        "subtype": "railway=abandoned",
-        "label": "Заброшенные железнодорожные пути",
-        "tags": {
-          "abandoned:railway": "rail",
-          "railway": "abandoned"
-        }
-      },
-      {
-        "id": "way-1457860078-0",
-        "key": "details:detail:way-1457860078-0",
-        "sourceId": "way-1457860078",
-        "name": "",
-        "kind": "railway",
-        "geometry": "line",
-        "category": "heritage",
-        "subtype": "railway=abandoned",
-        "label": "Заброшенные железнодорожные пути",
-        "tags": {
-          "abandoned:railway": "rail",
-          "railway": "abandoned"
-        }
-      },
-      {
-        "id": "way-1457860080-0",
-        "key": "details:detail:way-1457860080-0",
-        "sourceId": "way-1457860080",
-        "name": "",
-        "kind": "railway",
-        "geometry": "line",
-        "category": "heritage",
-        "subtype": "railway=abandoned",
-        "label": "Заброшенные железнодорожные пути",
-        "tags": {
-          "abandoned:railway": "rail",
-          "railway": "abandoned"
-        }
-      },
-      {
-        "id": "way-1457860083-0",
-        "key": "details:detail:way-1457860083-0",
-        "sourceId": "way-1457860083",
-        "name": "",
-        "kind": "railway",
-        "geometry": "line",
-        "category": "heritage",
-        "subtype": "railway=abandoned",
-        "label": "Заброшенные железнодорожные пути",
-        "tags": {
-          "abandoned:railway": "rail",
-          "railway": "abandoned"
-        }
-      },
-      {
-        "id": "way-61352295-0",
-        "key": "details:detail:way-61352295-0",
-        "sourceId": "way-61352295",
-        "name": "Tonopah and Tidewater Railroad",
-        "kind": "railway",
-        "geometry": "line",
-        "category": "heritage",
-        "subtype": "railway=abandoned",
-        "label": "Заброшенные железнодорожные пути",
-        "tags": {
-          "abandoned:railway": "rail",
-          "historic": "yes",
-          "name": "Tonopah and Tidewater Railroad",
-          "railway": "abandoned",
-          "service": "spur",
-          "source": "USGS EROS Orthoimagery"
-        }
-      },
-      {
-        "id": "way-61352298-0",
-        "key": "details:detail:way-61352298-0",
-        "sourceId": "way-61352298",
-        "name": "Tonopah and Tidewater Railroad",
-        "kind": "railway",
-        "geometry": "line",
-        "category": "heritage",
-        "subtype": "railway=abandoned",
-        "label": "Заброшенные железнодорожные пути",
-        "tags": {
-          "abandoned:railway": "rail",
-          "historic": "yes",
-          "name": "Tonopah and Tidewater Railroad",
-          "railway": "abandoned",
-          "source": "USGS EROS Orthoimagery"
-        }
-      },
-      {
-        "id": "way-61352300-0",
-        "key": "details:detail:way-61352300-0",
-        "sourceId": "way-61352300",
-        "name": "Tonopah and Tidewater Railroad",
-        "kind": "railway",
-        "geometry": "line",
-        "category": "heritage",
-        "subtype": "railway=abandoned",
-        "label": "Заброшенные железнодорожные пути",
-        "tags": {
-          "abandoned:railway": "rail",
-          "historic": "yes",
-          "name": "Tonopah and Tidewater Railroad",
-          "railway": "abandoned",
-          "source": "USGS EROS Orthoimagery, Wikipedia"
         }
       },
       {
@@ -2543,307 +2101,6 @@
         }
       },
       {
-        "id": "node-12989901420",
-        "key": "details:detail:node-12989901420",
-        "sourceId": "node-12989901420",
-        "name": "",
-        "kind": "give_way",
-        "geometry": "point",
-        "category": "road_equipment",
-        "subtype": "highway=give_way",
-        "label": "Знаки «Уступи дорогу»",
-        "tags": {
-          "direction": "backward",
-          "highway": "give_way"
-        }
-      },
-      {
-        "id": "node-139973515",
-        "key": "details:detail:node-139973515",
-        "sourceId": "node-139973515",
-        "name": "",
-        "kind": "give_way",
-        "geometry": "point",
-        "category": "road_equipment",
-        "subtype": "highway=give_way",
-        "label": "Знаки «Уступи дорогу»",
-        "tags": {
-          "direction": "forward",
-          "highway": "give_way"
-        }
-      },
-      {
-        "id": "node-12545658047",
-        "key": "details:detail:node-12545658047",
-        "sourceId": "node-12545658047",
-        "name": "",
-        "kind": "stop",
-        "geometry": "point",
-        "category": "road_equipment",
-        "subtype": "highway=stop",
-        "label": "Знаки STOP",
-        "tags": {
-          "direction": "forward",
-          "highway": "stop"
-        }
-      },
-      {
-        "id": "node-12551974364",
-        "key": "details:detail:node-12551974364",
-        "sourceId": "node-12551974364",
-        "name": "",
-        "kind": "stop",
-        "geometry": "point",
-        "category": "road_equipment",
-        "subtype": "highway=stop",
-        "label": "Знаки STOP",
-        "tags": {
-          "direction": "backward",
-          "highway": "stop"
-        }
-      },
-      {
-        "id": "node-140863103",
-        "key": "details:detail:node-140863103",
-        "sourceId": "node-140863103",
-        "name": "",
-        "kind": "stop",
-        "geometry": "point",
-        "category": "road_equipment",
-        "subtype": "highway=stop",
-        "label": "Знаки STOP",
-        "tags": {
-          "direction": "both",
-          "highway": "stop"
-        }
-      },
-      {
-        "id": "node-140884904",
-        "key": "details:detail:node-140884904",
-        "sourceId": "node-140884904",
-        "name": "",
-        "kind": "stop",
-        "geometry": "point",
-        "category": "road_equipment",
-        "subtype": "highway=stop",
-        "label": "Знаки STOP",
-        "tags": {
-          "direction": "backward",
-          "highway": "stop"
-        }
-      },
-      {
-        "id": "node-141007769",
-        "key": "details:detail:node-141007769",
-        "sourceId": "node-141007769",
-        "name": "",
-        "kind": "stop",
-        "geometry": "point",
-        "category": "road_equipment",
-        "subtype": "highway=stop",
-        "label": "Знаки STOP",
-        "tags": {
-          "direction": "both",
-          "highway": "stop",
-          "stop": "all"
-        }
-      },
-      {
-        "id": "node-141025459",
-        "key": "details:detail:node-141025459",
-        "sourceId": "node-141025459",
-        "name": "",
-        "kind": "stop",
-        "geometry": "point",
-        "category": "road_equipment",
-        "subtype": "highway=stop",
-        "label": "Знаки STOP",
-        "tags": {
-          "direction": "backward",
-          "highway": "stop"
-        }
-      },
-      {
-        "id": "node-141027248",
-        "key": "details:detail:node-141027248",
-        "sourceId": "node-141027248",
-        "name": "",
-        "kind": "stop",
-        "geometry": "point",
-        "category": "road_equipment",
-        "subtype": "highway=stop",
-        "label": "Знаки STOP",
-        "tags": {
-          "direction": "backward",
-          "highway": "stop"
-        }
-      },
-      {
-        "id": "node-9537745882",
-        "key": "details:detail:node-9537745882",
-        "sourceId": "node-9537745882",
-        "name": "",
-        "kind": "stop",
-        "geometry": "point",
-        "category": "road_equipment",
-        "subtype": "highway=stop",
-        "label": "Знаки STOP",
-        "tags": {
-          "direction": "backward",
-          "highway": "stop"
-        }
-      },
-      {
-        "id": "node-9537745883",
-        "key": "details:detail:node-9537745883",
-        "sourceId": "node-9537745883",
-        "name": "",
-        "kind": "stop",
-        "geometry": "point",
-        "category": "road_equipment",
-        "subtype": "highway=stop",
-        "label": "Знаки STOP",
-        "tags": {
-          "direction": "forward",
-          "highway": "stop"
-        }
-      },
-      {
-        "id": "node-9537774148",
-        "key": "details:detail:node-9537774148",
-        "sourceId": "node-9537774148",
-        "name": "",
-        "kind": "stop",
-        "geometry": "point",
-        "category": "road_equipment",
-        "subtype": "highway=stop",
-        "label": "Знаки STOP",
-        "tags": {
-          "direction": "forward",
-          "highway": "stop"
-        }
-      },
-      {
-        "id": "node-9537774149",
-        "key": "details:detail:node-9537774149",
-        "sourceId": "node-9537774149",
-        "name": "",
-        "kind": "stop",
-        "geometry": "point",
-        "category": "road_equipment",
-        "subtype": "highway=stop",
-        "label": "Знаки STOP",
-        "tags": {
-          "direction": "backward",
-          "highway": "stop"
-        }
-      },
-      {
-        "id": "node-9537774178",
-        "key": "details:detail:node-9537774178",
-        "sourceId": "node-9537774178",
-        "name": "",
-        "kind": "stop",
-        "geometry": "point",
-        "category": "road_equipment",
-        "subtype": "highway=stop",
-        "label": "Знаки STOP",
-        "tags": {
-          "direction": "forward",
-          "highway": "stop"
-        }
-      },
-      {
-        "id": "node-9537774179",
-        "key": "details:detail:node-9537774179",
-        "sourceId": "node-9537774179",
-        "name": "",
-        "kind": "stop",
-        "geometry": "point",
-        "category": "road_equipment",
-        "subtype": "highway=stop",
-        "label": "Знаки STOP",
-        "tags": {
-          "direction": "backward",
-          "highway": "stop"
-        }
-      },
-      {
-        "id": "node-9537774187",
-        "key": "details:detail:node-9537774187",
-        "sourceId": "node-9537774187",
-        "name": "",
-        "kind": "stop",
-        "geometry": "point",
-        "category": "road_equipment",
-        "subtype": "highway=stop",
-        "label": "Знаки STOP",
-        "tags": {
-          "direction": "backward",
-          "highway": "stop"
-        }
-      },
-      {
-        "id": "node-9537774189",
-        "key": "details:detail:node-9537774189",
-        "sourceId": "node-9537774189",
-        "name": "",
-        "kind": "stop",
-        "geometry": "point",
-        "category": "road_equipment",
-        "subtype": "highway=stop",
-        "label": "Знаки STOP",
-        "tags": {
-          "direction": "backward",
-          "highway": "stop"
-        }
-      },
-      {
-        "id": "node-9537838768",
-        "key": "details:detail:node-9537838768",
-        "sourceId": "node-9537838768",
-        "name": "",
-        "kind": "stop",
-        "geometry": "point",
-        "category": "road_equipment",
-        "subtype": "highway=stop",
-        "label": "Знаки STOP",
-        "tags": {
-          "direction": "backward",
-          "highway": "stop"
-        }
-      },
-      {
-        "id": "node-9538546882",
-        "key": "details:detail:node-9538546882",
-        "sourceId": "node-9538546882",
-        "name": "",
-        "kind": "stop",
-        "geometry": "point",
-        "category": "road_equipment",
-        "subtype": "highway=stop",
-        "label": "Знаки STOP",
-        "tags": {
-          "direction": "backward",
-          "highway": "stop"
-        }
-      },
-      {
-        "id": "node-9538690565",
-        "key": "details:detail:node-9538690565",
-        "sourceId": "node-9538690565",
-        "name": "",
-        "kind": "stop",
-        "geometry": "point",
-        "category": "road_equipment",
-        "subtype": "highway=stop",
-        "label": "Знаки STOP",
-        "tags": {
-          "direction": "forward",
-          "highway": "stop"
-        }
-      },
-      {
         "id": "node-9537838788",
         "key": "details:detail:node-9537838788",
         "sourceId": "node-9537838788",
@@ -2940,169 +2197,14 @@
         "tags": {
           "highway": "street_lamp"
         }
-      },
-      {
-        "id": "node-140902392",
-        "key": "details:detail:node-140902392",
-        "sourceId": "node-140902392",
-        "name": "",
-        "kind": "turning_circle",
-        "geometry": "point",
-        "category": "road_equipment",
-        "subtype": "highway=turning_circle",
-        "label": "Точки разворота",
-        "tags": {
-          "highway": "turning_circle",
-          "turning_circle": "oval"
-        }
-      },
-      {
-        "id": "node-8272239167",
-        "key": "details:detail:node-8272239167",
-        "sourceId": "node-8272239167",
-        "name": "",
-        "kind": "turning_circle",
-        "geometry": "point",
-        "category": "road_equipment",
-        "subtype": "highway=turning_circle",
-        "label": "Точки разворота",
-        "tags": {
-          "highway": "turning_circle",
-          "turning_circle": "oval"
-        }
-      },
-      {
-        "id": "node-13639728606",
-        "key": "details:detail:node-13639728606",
-        "sourceId": "node-13639728606",
-        "name": "",
-        "kind": "mapped_feature",
-        "geometry": "point",
-        "category": "road_equipment",
-        "subtype": "noexit=yes",
-        "label": "Отметки тупиков",
-        "tags": {
-          "noexit": "yes"
-        }
-      },
-      {
-        "id": "node-13639728607",
-        "key": "details:detail:node-13639728607",
-        "sourceId": "node-13639728607",
-        "name": "",
-        "kind": "mapped_feature",
-        "geometry": "point",
-        "category": "road_equipment",
-        "subtype": "noexit=yes",
-        "label": "Отметки тупиков",
-        "tags": {
-          "noexit": "yes"
-        }
-      },
-      {
-        "id": "node-140862592",
-        "key": "details:detail:node-140862592",
-        "sourceId": "node-140862592",
-        "name": "",
-        "kind": "mapped_feature",
-        "geometry": "point",
-        "category": "road_equipment",
-        "subtype": "noexit=yes",
-        "label": "Отметки тупиков",
-        "tags": {
-          "noexit": "yes"
-        }
-      },
-      {
-        "id": "node-140898357",
-        "key": "details:detail:node-140898357",
-        "sourceId": "node-140898357",
-        "name": "",
-        "kind": "mapped_feature",
-        "geometry": "point",
-        "category": "road_equipment",
-        "subtype": "noexit=yes",
-        "label": "Отметки тупиков",
-        "tags": {
-          "noexit": "yes"
-        }
-      },
-      {
-        "id": "node-140915952",
-        "key": "details:detail:node-140915952",
-        "sourceId": "node-140915952",
-        "name": "",
-        "kind": "mapped_feature",
-        "geometry": "point",
-        "category": "road_equipment",
-        "subtype": "noexit=yes",
-        "label": "Отметки тупиков",
-        "tags": {
-          "noexit": "yes"
-        }
-      },
-      {
-        "id": "node-1676474805",
-        "key": "details:detail:node-1676474805",
-        "sourceId": "node-1676474805",
-        "name": "",
-        "kind": "mapped_feature",
-        "geometry": "point",
-        "category": "road_equipment",
-        "subtype": "noexit=yes",
-        "label": "Отметки тупиков",
-        "tags": {
-          "noexit": "yes"
-        }
-      },
-      {
-        "id": "node-1676474815",
-        "key": "details:detail:node-1676474815",
-        "sourceId": "node-1676474815",
-        "name": "",
-        "kind": "mapped_feature",
-        "geometry": "point",
-        "category": "road_equipment",
-        "subtype": "noexit=yes",
-        "label": "Отметки тупиков",
-        "tags": {
-          "noexit": "yes"
-        }
-      },
-      {
-        "id": "node-1974021391",
-        "key": "details:detail:node-1974021391",
-        "sourceId": "node-1974021391",
-        "name": "",
-        "kind": "mapped_feature",
-        "geometry": "point",
-        "category": "road_equipment",
-        "subtype": "noexit=yes",
-        "label": "Отметки тупиков",
-        "tags": {
-          "noexit": "yes"
-        }
-      },
-      {
-        "id": "node-5207453457",
-        "key": "details:detail:node-5207453457",
-        "sourceId": "node-5207453457",
-        "name": "",
-        "kind": "mapped_feature",
-        "geometry": "point",
-        "category": "road_equipment",
-        "subtype": "noexit=yes",
-        "label": "Отметки тупиков",
-        "tags": {
-          "noexit": "yes"
-        }
       }
     ]
   },
   "notes": [
-    "Counts are rendered geometry records. Clipped ways can have several fragments; compatible road segments are joined into display chains, retaining all source IDs. Navigation keeps the original roads.",
+    "Counts are rendered geometry records. Clipped ways can have several fragments; connected same-type road, water and power segments form whole selectable networks with branches, retaining all source IDs. Navigation keeps the original roads.",
     "Institution/building zone facets share the original footprint; point-only mapped institutions do not acquire invented site boundaries.",
-    "Crossing fixtures, barriers and point electrical equipment are retained in raw data but omitted from the game presentation. Administrative boundaries have outlines only and do not grant biome membership.",
+    "Crossings, traffic signs, barriers, aircraft parking marks and point electrical equipment are retained in raw data but omitted from the game presentation. Administrative boundaries are hidden. Railway lines belong to roads; aircraft apron grounds belong to zones.",
+    "Unzoned land uses a wasteland fallback biome. Suburb, urban and dense gameplay zones are derived from actual building positions; near functional plots can share a gameplay zone with measured source parts and explicitly derived connecting strips.",
     "Categories partition the details layer exactly. Source tags and IDs are retained for every record."
   ]
 }

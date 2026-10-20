@@ -105,13 +105,16 @@ test('road junctions paint all casings before any core and class hiding also rem
   ] }));
   const context = recordingContext();
   renderer.draw(context, fullView);
-  assert.deepEqual(context.strokes.map(stroke => stroke.color), ['#82816a', '#82816a', '#82816a', '#d2c6a1', '#d2c6a1', '#d2c6a1']);
+  assert.deepEqual(context.strokes.map(stroke => stroke.color), ['#82816a', '#d2c6a1']);
   assert(context.strokes.every(stroke => stroke.dash.length === 0));
   const selected = renderer.pick(100, 150, 0);
+  assert.equal(renderer.pick(300, 150, 0).key, selected.key);
+  assert.equal(renderer.pick(200, 240, 0).key, selected.key);
+  assert.equal(selected.paths.length, 3);
   renderer.setRoadClasses({ street: false });
   assert.equal(renderer.pick(100, 150, 0), null);
   assert.equal(renderer.drawHighlight(context, fullView, selected), null);
-  assert.equal(context.strokes.length, 6);
+  assert.equal(context.strokes.length, 2);
   const hidden = recordingContext(); renderer.draw(hidden, fullView);
   assert.equal(hidden.strokes.length, 0);
   assert.equal(renderer.getStats().visibleRoads, 0);
@@ -135,14 +138,43 @@ test('power chains use continuous solid strips and highlights can resolve an ori
   assert.equal(context.strokes.length, 4);
 });
 
-test('town boundaries never fill their interior during scene or selection rendering', () => {
+test('removed town boundaries emit no scene or highlight ink', () => {
   const renderer = createDetailRenderer(world({ width: 400, height: 300, details: [
     { id: 'town', geometry: 'polygon', points: ring(20, 20, 380, 280), tags: { boundary: 'administrative', name: 'Town' } },
   ] }));
   const context = recordingContext(); renderer.draw(context, fullView);
   assert.equal(context.fills.length, 0);
-  assert.equal(context.strokes.length, 1);
-  assert.equal(renderer.drawHighlight(context, fullView, 'town'), 'landscape:detail:town');
-  assert.equal(context.fills.length, 0, 'Selection cannot introduce a town-wide highlight fill');
-  assert.equal(context.strokes.length, 3);
+  assert.equal(context.strokes.length, 0);
+  assert.equal(renderer.drawHighlight(context, fullView, 'town'), null);
+  assert.equal(context.fills.length, 0);
+  assert.equal(context.strokes.length, 0);
+});
+
+test('closed substations paint a solid footprint and use the same interior for selection', () => {
+  const renderer = createDetailRenderer(world({ width: 400, height: 300, details: [
+    { id: 'substation', geometry: 'polygon', points: ring(100, 100, 250, 250), tags: { power: 'substation' } },
+  ] }));
+  const context = recordingContext(); renderer.draw(context, fullView);
+  assert.equal(context.fills.length, 1, 'The full measured footprint is painted');
+  assert.equal(context.fillStyle, '#8f9770');
+  assert.equal(renderer.pick(180, 180, 0).layer, 'power');
+  renderer.setLayers({ power: false });
+  assert.equal(renderer.pick(180, 180, 0), null);
+});
+
+test('overlapping polygon components use union filling for both scene and selection', () => {
+  const renderer = createDetailRenderer(world({ width: 400, height: 300, details: [
+    { id: 'lake-west', geometry: 'polygon', points: ring(20, 20, 180, 250), tags: { natural: 'water', water: 'lake' } },
+    { id: 'lake-east', geometry: 'polygon', points: ring(120, 20, 350, 250), tags: { natural: 'water', water: 'lake' } },
+  ] }));
+  const rules = [], context = recordingContext();
+  context.fill = (_path, rule) => rules.push(rule);
+  renderer.draw(context, fullView);
+  assert.deepEqual(rules, ['nonzero']);
+  const selected = renderer.pick(150, 120, 0);
+  assert.equal(selected.parts.length, 2);
+  renderer.drawHighlight(context, fullView, selected);
+  assert.deepEqual(rules, ['nonzero', 'nonzero']);
+  assert.equal(renderer.pick(50, 120, 0).key, selected.key);
+  assert.equal(renderer.pick(250, 120, 0).key, selected.key);
 });

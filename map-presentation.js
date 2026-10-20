@@ -5,6 +5,7 @@ export const ROAD_CLASSES = Object.freeze(Object.fromEntries([
   ['street', 'Улица и проезд', 'Улицы и проезды'],
   ['track', 'Грунтовка', 'Грунтовки'],
   ['trail', 'Тропа', 'Тропы'],
+  ['railway', 'Железная дорога', 'Железные дороги'],
 ].map(([id, name, pluralName]) => [id, Object.freeze({ id, name, label: name, pluralName })])));
 
 const ROAD_TYPES = Object.freeze({
@@ -17,7 +18,10 @@ const ROAD_TYPES = Object.freeze({
 
 export function roadClass(feature) {
   if (typeof feature !== 'string' && Object.hasOwn(ROAD_CLASSES, feature?.roadClass)) return feature.roadClass;
-  const type = typeof feature === 'string' ? feature : feature?.tags?.highway || feature?.tags?.['area:highway'] || feature?.sourceType || feature?.type;
+  const highway = typeof feature === 'string' ? feature : feature?.tags?.highway || feature?.tags?.['area:highway'];
+  if (!highway && (feature?.tags?.railway || feature?.kind === 'railway')) return 'railway';
+  const type = highway || feature?.sourceType || feature?.type;
+  if (['rail', 'light_rail', 'narrow_gauge', 'tram', 'subway', 'monorail', 'funicular', 'abandoned', 'disused', 'dismantled', 'razed'].includes(type)) return 'railway';
   return Object.hasOwn(ROAD_TYPES, type) ? ROAD_TYPES[type] : 'street';
 }
 
@@ -29,8 +33,9 @@ const clone = value => {
 const compare = (a, b) => a < b ? -1 : a > b ? 1 : 0;
 const pointKey = point => `${point.x},${point.y}`;
 const sourceType = (feature, kind) => kind === 'road'
-  ? feature.tags?.highway || feature.tags?.['area:highway'] || feature.sourceType || feature.type || 'unclassified'
-  : feature.tags?.power || feature.sourceType || feature.kind || 'line';
+  ? feature.tags?.highway || feature.tags?.['area:highway'] || feature.tags?.railway || feature.sourceType || feature.type || (feature.kind === 'railway' ? 'railway' : 'unclassified')
+  : kind === 'water' ? feature.tags?.waterway || feature.tags?.water || feature.sourceType || feature.type || feature.kind || 'water'
+    : feature.tags?.power || feature.sourceType || feature.kind || 'line';
 const flag = value => value === undefined || value === false || value === 'no' || value === 'false' || value === '0'
   ? 'no' : value === true || value === 'true' || value === 'yes' || value === '1' ? 'yes' : String(value);
 
@@ -164,6 +169,153 @@ export function mergeNetworkLines(lines, { kind = 'road' } = {}) {
       joinedConnections: lines.length - features.length,
       mergedFeatures: features.filter(feature => feature.merged).length,
       sourceLength: edges.reduce((sum, edge) => sum + geometryLength(edge.feature.points), 0),
+      displayLength: features.reduce((sum, feature) => sum + feature.length, 0),
+      ...(byClass && { byClass }),
+    },
+  };
+}
+
+function componentKey(feature, kind) {
+  const tags = feature.tags || {};
+  // `feature.layer` may be the presentation layer ("roads", "water", ...).
+  // Only a numeric level describes a grade separation in the source geometry.
+  const level = tags.layer ?? (Number.isFinite(Number(feature.layer)) ? feature.layer : 0);
+  const structure = [String(level), flag(tags.bridge ?? feature.bridge), flag(tags.tunnel ?? feature.tunnel)];
+  if (kind === 'road') return JSON.stringify([roadClass(feature), ...structure]);
+  if (kind === 'water') return JSON.stringify([
+    tags.waterway ? 'waterway' : tags.natural === 'water' || tags.water ? 'water' : 'waterway',
+    sourceType(feature, kind), flag(tags.intermittent ?? feature.intermittent), flag(tags.seasonal ?? feature.seasonal), ...structure,
+  ]);
+  return JSON.stringify([
+    sourceType(feature, kind), ...structure,
+    ...['voltage', 'cables', 'circuits', 'wires', 'frequency', 'location'].map(key => String(tags[key] ?? feature[key] ?? '')),
+  ]);
+}
+
+const NETWORK_EPSILON = 1e-7;
+function pointTouchesSegment(point, a, b) {
+  if (point.x < Math.min(a.x, b.x) - NETWORK_EPSILON || point.x > Math.max(a.x, b.x) + NETWORK_EPSILON
+    || point.y < Math.min(a.y, b.y) - NETWORK_EPSILON || point.y > Math.max(a.y, b.y) + NETWORK_EPSILON) return false;
+  const dx = b.x - a.x, dy = b.y - a.y, lengthSquared = dx * dx + dy * dy;
+  if (!lengthSquared) return Math.hypot(point.x - a.x, point.y - a.y) <= NETWORK_EPSILON;
+  const parameter = Math.max(0, Math.min(1, ((point.x - a.x) * dx + (point.y - a.y) * dy) / lengthSquared));
+  return Math.hypot(point.x - a.x - parameter * dx, point.y - a.y - parameter * dy) <= NETWORK_EPSILON;
+}
+
+function componentFeature(edges, kind) {
+  const members = edges.map(edge => clone(edge.feature));
+  const first = members[0];
+  const memberIds = [...new Set(edges.flatMap(edge => edge.feature.memberIds || [edge.id]))].sort(compare);
+  const sourceIds = [...new Set(edges.flatMap(edge => edge.feature.sourceIds || [
+    edge.feature.sourceId || edge.id.match(/^(?:node|way|relation)-\d+/)?.[0] || edge.id,
+  ]))].sort(compare);
+  const paths = edges.flatMap(edge => edge.paths.map(path => path.map(clone)));
+  const names = [...new Set(members.flatMap(member => member.names || [member.name || member.tags?.name]).filter(Boolean))];
+  const sourceTypes = [...new Set(members.flatMap(member => member.sourceTypes || [sourceType(member, kind)]))].sort(compare);
+  const feature = {
+    ...clone(first),
+    id: edges.length === 1 ? edges[0].id : `component-${kind}-${hash(memberIds.join('\n'))}`,
+    geometry: 'line', points: paths[0], paths, members, memberIds, sourceIds, names, sourceTypes,
+    sourceType: sourceType(first, kind), name: names.join(' / '),
+    merged: memberIds.length > 1, length: paths.reduce((sum, path) => sum + geometryLength(path), 0),
+  };
+  const widths = members.map(member => member.width).filter(Number.isFinite);
+  if (widths.length) feature.width = Math.max(...widths);
+  if (kind === 'road') {
+    feature.roadClass = roadClass(first);
+    feature.roadClassName = ROAD_CLASSES[feature.roadClass].name;
+  }
+  return feature;
+}
+
+/**
+ * One selectable object per connected same-type network, including branches.
+ * Every source path stays separate: no traversal through a branch creates a
+ * diagonal, retraces an edge or closes a missing segment. Connections require a
+ * shared measured vertex, or a source endpoint lying exactly on another segment
+ * (the 1e-7 tolerance only absorbs floating-point arithmetic, never map gaps).
+ */
+export function mergeConnectedNetworks(lines, { kind = 'road' } = {}) {
+  if (!['road', 'power', 'water'].includes(kind)) throw new TypeError(`Unknown network kind: ${kind}`);
+  if (!Array.isArray(lines)) throw new TypeError('Network features must be an array');
+  const groups = new Map();
+  const edges = lines.map(feature => {
+    const paths = feature?.paths || [feature?.points];
+    if (!Array.isArray(paths) || !paths.length || paths.some(path => !Array.isArray(path) || path.length < 2
+      || path.some(point => !Number.isFinite(point?.x) || !Number.isFinite(point?.y)))) {
+      throw new TypeError(`Network feature ${feature?.id || '(without id)'} needs finite source paths`);
+    }
+    const edge = { feature, paths, id: String(feature.id ?? `anonymous-${hash(JSON.stringify(feature))}`) };
+    const key = componentKey(feature, kind);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(edge);
+    return edge;
+  });
+  const features = [];
+  for (const key of [...groups.keys()].sort(compare)) {
+    const group = groups.get(key).sort((a, b) => compare(a.id, b.id) || compare(JSON.stringify(a.paths), JSON.stringify(b.paths)));
+    const parents = group.map((_, index) => index);
+    const root = index => {
+      while (parents[index] !== index) { parents[index] = parents[parents[index]]; index = parents[index]; }
+      return index;
+    };
+    const join = (a, b) => {
+      a = root(a); b = root(b);
+      if (a !== b) parents[Math.max(a, b)] = Math.min(a, b);
+    };
+    const vertices = new Map();
+    const segments = [], endpoints = [];
+    group.forEach((edge, index) => {
+      for (const path of edge.paths) {
+        endpoints.push({ point: path[0], index }, { point: path.at(-1), index });
+        path.forEach((point, vertex) => {
+          const key = pointKey(point);
+          if (vertices.has(key)) join(index, vertices.get(key));
+          else vertices.set(key, index);
+          if (vertex) segments.push({ a: path[vertex - 1], b: point, index });
+        });
+      }
+    });
+    // A small spatial hash makes exact endpoint-on-segment checks local. Long
+    // diagonal segments that would span many buckets are checked separately.
+    const bucketSize = 32, buckets = new Map(), broadSegments = [];
+    for (const segment of segments) {
+      const minX = Math.floor((Math.min(segment.a.x, segment.b.x) - NETWORK_EPSILON) / bucketSize);
+      const maxX = Math.floor((Math.max(segment.a.x, segment.b.x) + NETWORK_EPSILON) / bucketSize);
+      const minY = Math.floor((Math.min(segment.a.y, segment.b.y) - NETWORK_EPSILON) / bucketSize);
+      const maxY = Math.floor((Math.max(segment.a.y, segment.b.y) + NETWORK_EPSILON) / bucketSize);
+      if ((maxX - minX + 1) * (maxY - minY + 1) > 256) { broadSegments.push(segment); continue; }
+      for (let x = minX; x <= maxX; x++) for (let y = minY; y <= maxY; y++) {
+        const key = `${x},${y}`;
+        if (!buckets.has(key)) buckets.set(key, []);
+        buckets.get(key).push(segment);
+      }
+    }
+    for (const { point, index } of endpoints) {
+      const local = buckets.get(`${Math.floor(point.x / bucketSize)},${Math.floor(point.y / bucketSize)}`) || [];
+      for (const segment of [...local, ...broadSegments]) if (root(index) !== root(segment.index)
+        && pointTouchesSegment(point, segment.a, segment.b)) join(index, segment.index);
+    }
+    const components = new Map();
+    group.forEach((edge, index) => {
+      const key = root(index);
+      if (!components.has(key)) components.set(key, []);
+      components.get(key).push(edge);
+    });
+    for (const component of components.values()) features.push(componentFeature(component, kind));
+  }
+  features.sort((a, b) => compare(a.id, b.id));
+  const byClass = kind === 'road' ? Object.fromEntries(Object.keys(ROAD_CLASSES).map(id => [id, {
+    sourceFeatures: edges.filter(edge => roadClass(edge.feature) === id).length,
+    displayFeatures: features.filter(feature => feature.roadClass === id).length,
+  }])) : undefined;
+  return {
+    features,
+    report: {
+      kind, sourceFeatures: lines.length, displayFeatures: features.length,
+      joinedConnections: lines.length - features.length,
+      mergedFeatures: features.filter(feature => feature.merged).length,
+      sourceLength: edges.reduce((sum, edge) => sum + edge.paths.reduce((total, path) => total + geometryLength(path), 0), 0),
       displayLength: features.reduce((sum, feature) => sum + feature.length, 0),
       ...(byClass && { byClass }),
     },

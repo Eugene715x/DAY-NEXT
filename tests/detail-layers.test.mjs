@@ -136,49 +136,37 @@ test('multiple polygon parts from one source do not duplicate zone memberships',
     { id: 'relation-1000-0', sourceId: 'relation-1000', geometry: 'polygon', points: ring(50, 50, 200, 200), tags: { amenity: 'parking' } },
     { id: 'relation-1000-1', sourceId: 'relation-1000', geometry: 'polygon', points: ring(100, 100, 250, 250), tags: { amenity: 'parking' } },
   ] }));
-  assert.equal(renderer.getFeatures().length, 2, 'Both original polygon parts remain rendered');
+  assert.equal(renderer.getFeatures().length, 1, 'Connected parts form one selectable zone');
+  assert.equal(renderer.getFeatures()[0].parts.length, 2, 'Both source footprints remain in the union');
   assert.equal(renderer.zonesAt(150, 150).length, 1);
-  assert.equal(renderer.zonesAt(150, 150)[0].sourceId, 'relation-1000');
+  assert.deepEqual(renderer.zonesAt(150, 150)[0].sourceIds, ['relation-1000']);
 });
 
-test('settlement boundaries have selectable outlines without granting city-wide biome membership', () => {
+test('administrative boundaries disappear from draw registry, selection and biome membership', () => {
   const outer = ring(20, 20, 380, 280), inner = ring(120, 100, 180, 180);
   const boundary = { id: 'relation-42', geometry: 'polygon', name: 'Beatty', points: outer, rings: [outer, inner], tags: { boundary: 'census', name: 'Beatty' } };
-  const renderer = createDetailRenderer(world({ details: [boundary,
+  const input = world({ details: [boundary,
     { id: 'residential', geometry: 'polygon', points: ring(200, 200, 300, 250), tags: { landuse: 'residential' } },
-  ] }));
-  const selected = renderer.pick(20, 150, 0);
-  assert.equal(selected.kind, 'settlement_boundary');
-  assert.equal(selected.name, 'Beatty');
-  assert.equal(selected.outlineOnly, true);
-  assert.equal(selected.biome, null);
-  assert.equal(selected.typeId, null);
-  assert.deepEqual(selected.resourceProfileIds, []);
-  assert.equal(renderer.pick(70, 60, 0), null, 'Separate boundary rings cannot create a fictitious connecting edge');
-  assert.equal(renderer.pick(250, 150, 0), null, 'The town interior is not a filled pick target');
+  ] });
+  const before = structuredClone(input), renderer = createDetailRenderer(input);
+  assert.deepEqual(renderer.getFeatures().map(feature => feature.id), ['residential']);
+  for (const point of [[20, 150], [70, 60], [250, 150]]) assert.equal(renderer.pick(...point, 0), null);
   assert.deepEqual(renderer.zonesAt(250, 150), []);
   assert.equal(renderer.pick(250, 220, 0).biome, 'residential');
   assert.deepEqual(renderer.zonesAt(250, 220).map(zone => zone.biome), ['residential']);
-  renderer.setLayers({ landscape: false });
-  assert.equal(renderer.pick(20, 150, 0), null);
+  assert.deepEqual(input, before, 'Administrative source data is retained for future imports');
 });
 
-test('clipped settlement polygons expose only real source boundary paths and never the map frame', () => {
+test('removed administrative polygons cannot reappear through source boundary paths or map-frame closure', () => {
   const input = world({ details: [
     { id: 'town', geometry: 'polygon', points: ring(0, 0, 400, 300), boundaryPaths: [
       [{ x: 30, y: 50 }, { x: 150, y: 50 }], [{ x: 250, y: 200 }, { x: 350, y: 200 }],
     ], tags: { boundary: 'census' } },
     { id: 'enclosing-town', geometry: 'polygon', points: ring(0, 0, 400, 300), boundaryPaths: [], tags: { boundary: 'administrative' } },
   ] });
-  const before = structuredClone(input), renderer = createDetailRenderer(input), [feature] = renderer.getFeatures();
-  assert.equal(renderer.getFeatures().length, 1, 'A town whose true boundary is entirely outside the viewport contributes no frame outline');
-  assert.equal(feature.geometry, 'line');
-  assert.deepEqual(feature.bounds, { minX: 30, minY: 50, maxX: 350, maxY: 200 });
-  assert.equal(feature.paths.length, 2);
-  assert.equal(renderer.pick(100, 50, 0).kind, 'settlement_boundary');
-  assert.equal(renderer.pick(300, 200, 0).kind, 'settlement_boundary');
-  assert.equal(renderer.pick(200, 0, 0), null, 'The clipped polygon top edge is not a town boundary');
-  assert.equal(renderer.pick(200, 125, 0), null, 'Disjoint clipped paths cannot create a connecting edge');
+  const before = structuredClone(input), renderer = createDetailRenderer(input);
+  assert.equal(renderer.getFeatures().length, 0);
+  for (const point of [[100, 50], [300, 200], [200, 0], [200, 125]]) assert.equal(renderer.pick(...point, 0), null);
   assert.deepEqual(renderer.zonesAt(100, 50), []);
   assert.deepEqual(input, before);
 });
@@ -231,4 +219,66 @@ test('joined roads coalesce former-rail facets first and expose every source thr
   renderer.setLayers({ roads: true });
   assert.equal(renderer.pick(60, 50, 0).key, first.key);
   assert.deepEqual(input, before, 'Display joining cannot modify roads used by navigation');
+});
+
+
+test('water branches and matching touching lake parts form whole selectable objects while dry channels stay separate', () => {
+  const renderer = createDetailRenderer(world({ rivers: [
+    { id: 'river-main', points: [{ x: 20, y: 50 }, { x: 200, y: 50 }, { x: 380, y: 50 }], tags: { waterway: 'stream' }, width: 3 },
+    { id: 'river-branch', points: [{ x: 200, y: 50 }, { x: 200, y: 120 }], tags: { waterway: 'stream' }, width: 3 },
+    { id: 'dry-branch', points: [{ x: 200, y: 50 }, { x: 300, y: 120 }], tags: { waterway: 'stream', intermittent: 'yes' }, width: 3 },
+  ], details: [
+    { id: 'lake-west', geometry: 'polygon', rings: [ring(20, 160, 140, 280), ring(40, 180, 60, 200)], tags: { natural: 'water', water: 'lake' } },
+    { id: 'lake-east', geometry: 'polygon', points: ring(100, 160, 230, 280), tags: { natural: 'water', water: 'lake' } },
+    { id: 'separate-pond', geometry: 'polygon', points: ring(230, 160, 350, 280), tags: { natural: 'water', water: 'pond' } },
+  ] }));
+  const main = renderer.pick(100, 50, 0), branch = renderer.pick(200, 90, 0);
+  assert.equal(main.key, branch.key);
+  assert.equal(main.paths.length, 2);
+  assert.deepEqual(main.memberIds.sort(), ['river-branch', 'river-main']);
+  assert.notEqual(renderer.pick(250, 85, 0).key, main.key, 'Dryness is a semantic boundary');
+  const west = renderer.pick(80, 240, 0), overlap = renderer.pick(120, 240, 0), east = renderer.pick(180, 240, 0);
+  assert.equal(west.key, overlap.key);
+  assert.equal(west.key, east.key);
+  assert.equal(west.parts.length, 2);
+  assert.equal(renderer.pick(50, 190, 0), null, 'A source island remains a hole');
+  assert.notEqual(renderer.pick(280, 240, 0).key, west.key, 'A different kind of water remains a separate object');
+  renderer.setLayers({ water: false });
+  assert.equal(renderer.pick(100, 50, 0), null);
+  assert.equal(renderer.pick(180, 240, 0), null);
+});
+
+test('nearby functional zones share a small game corridor without erasing overlapping service biomes', () => {
+  const renderer = createDetailRenderer(world({ details: [
+    { id: 'west-housing', geometry: 'polygon', points: ring(20, 20, 120, 120), tags: { landuse: 'residential' } },
+    { id: 'east-housing', geometry: 'polygon', points: ring(140, 20, 240, 120), tags: { landuse: 'residential' } },
+    { id: 'clinic-site', geometry: 'polygon', points: ring(40, 40, 100, 100), tags: { amenity: 'clinic' } },
+    { id: 'far-housing', geometry: 'polygon', points: ring(300, 20, 380, 120), tags: { landuse: 'residential' } },
+  ] }));
+  const west = renderer.pick(30, 30, 0), east = renderer.pick(230, 30, 0);
+  assert.equal(west.key, east.key);
+  assert.equal(west.derived, true);
+  assert.equal(west.provenance.method, 'nearby-zone-fusion');
+  assert(renderer.zonesAt(130, 20).some(zone => zone.biome === 'residential'), 'The short gap has an explicit derived connecting corridor');
+  assert.deepEqual(renderer.zonesAt(60, 60).map(zone => zone.biome).sort(), ['healthcare', 'residential']);
+  assert.notEqual(renderer.pick(350, 30, 0).key, west.key);
+});
+
+test('geographic empty land receives a named fallback biome while mapped zones and permanent water override it', () => {
+  const input = world({ geographic: true, details: [
+    { id: 'grass', geometry: 'polygon', points: ring(20, 20, 80, 80), tags: { natural: 'grassland' } },
+    { id: 'lake', geometry: 'polygon', points: ring(150, 150, 250, 250), tags: { natural: 'water', water: 'lake' } },
+  ] });
+  const before = structuredClone(input), renderer = createDetailRenderer(input);
+  const empty = renderer.zonesAt(350, 250);
+  assert.deepEqual(empty.map(zone => zone.biome), ['wasteland']);
+  assert.equal(empty[0].derived, true);
+  assert.equal(empty[0].typeId, 'biome.wasteland');
+  assert.deepEqual(empty[0].sourceIds, []);
+  assert.deepEqual(renderer.zonesAt(50, 50).map(zone => zone.biome), ['grassland']);
+  assert.deepEqual(renderer.zonesAt(200, 200), [], 'Permanent water is not unzoned ground');
+  renderer.setLayers({ landscape: false });
+  assert.deepEqual(renderer.zonesAt(350, 250).map(zone => zone.biome), ['wasteland']);
+  assert.equal(renderer.pick(350, 250), null);
+  assert.deepEqual(input, before);
 });

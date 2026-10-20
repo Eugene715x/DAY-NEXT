@@ -9,7 +9,7 @@ const repositoryRoot = new URL('../', import.meta.url);
 const categoryNames = {
   energy: 'Электросети и опоры',
   barriers: 'Ограды, ворота и препятствия',
-  road_equipment: 'Дорожные знаки, оборудование и следы старых дорог',
+  road_equipment: 'Уличное оборудование и следы старых дорог',
   aviation: 'Оборудование и разметка аэродрома',
   mining: 'Шахты, штольни и старые рудники',
   heritage: 'Исторические объекты, искусство и следы построек',
@@ -148,16 +148,17 @@ export function createMapObjectsReport(map) {
   if (categories.reduce((total, group) => total + group.count, 0) !== remaining.length) throw new Error('Remaining categories do not cover the complete renderer registry.');
   const landscape = features.filter(feature => feature.layer === 'landscape');
   return {
-    version: 2, mapId: map.id, mapName: map.name,
+    version: 3, mapId: map.id, mapName: map.name,
     source: { file: map.source?.sourceFile || 'maps/source/beatty.osm', sha256: map.source?.sha256 || null, downloadedAt: map.source?.downloadedAt || null, snapshotAt: map.source?.snapshotAt || null, supplementalSources: structuredClone(map.source?.supplementalSources || []) },
     layerCounts: Object.fromEntries(['landscape', 'water', 'roads', 'power', 'buildings', 'details'].map(layer => [layer, features.filter(feature => feature.layer === layer).length])),
-    presentation: { inputFeatures: stats.inputFeatures, filteredFeatures: stats.filteredFeatures, coalescedFeatures: stats.coalescedFeatures, sourceRoads: stats.sourceRoads, displayRoads: stats.displayRoads, sourcePowerLines: stats.sourcePowerLines, displayPowerLines: stats.displayPowerLines, roadClasses: Object.fromEntries([...new Set(features.filter(feature => feature.layer === 'roads').map(feature => feature.roadClass))].map(id => [id, features.filter(feature => feature.layer === 'roads' && feature.roadClass === id).length])) },
+    presentation: { inputFeatures: stats.inputFeatures, filteredFeatures: stats.filteredFeatures, coalescedFeatures: stats.coalescedFeatures, sourceRoads: stats.sourceRoads, displayRoads: stats.displayRoads, sourcePowerLines: stats.sourcePowerLines, displayPowerLines: stats.displayPowerLines, sourceRailwayLines: stats.sourceRailwayLines, sourceWaterLines: stats.sourceWaterLines, displayWaterLines: stats.displayWaterLines, sourceWaterAreas: stats.sourceWaterAreas, displayWaterAreas: stats.displayWaterAreas, biomeGeneration: stats.biomeGeneration, zoneMerging: stats.zoneMerging, roadClasses: Object.fromEntries([...new Set(features.filter(feature => feature.layer === 'roads').map(feature => feature.roadClass))].map(id => [id, features.filter(feature => feature.layer === 'roads' && feature.roadClass === id).length])) },
     landscape: { count: landscape.length, geometryCounts: geometryCounts(landscape), biomes: groupRecords(landscape, feature => feature.biome || 'landscape').map(([id, records]) => ({ id, count: records.length, geometryCounts: geometryCounts(records) })).sort(byCount) },
     remaining: { count: remaining.length, uniqueSourceElements: new Set(remaining.map(record => record.sourceId)).size, geometryCounts: geometryCounts(remaining), categories, objects: remaining },
     notes: [
-      'Counts are rendered geometry records. Clipped ways can have several fragments; compatible road segments are joined into display chains, retaining all source IDs. Navigation keeps the original roads.',
+      'Counts are rendered geometry records. Clipped ways can have several fragments; connected same-type road, water and power segments form whole selectable networks with branches, retaining all source IDs. Navigation keeps the original roads.',
       'Institution/building zone facets share the original footprint; point-only mapped institutions do not acquire invented site boundaries.',
-      'Crossing fixtures, barriers and point electrical equipment are retained in raw data but omitted from the game presentation. Administrative boundaries have outlines only and do not grant biome membership.',
+      'Crossings, traffic signs, barriers, aircraft parking marks and point electrical equipment are retained in raw data but omitted from the game presentation. Administrative boundaries are hidden. Railway lines belong to roads; aircraft apron grounds belong to zones.',
+      'Unzoned land uses a wasteland fallback biome. Suburb, urban and dense gameplay zones are derived from actual building positions; near functional plots can share a gameplay zone with measured source parts and explicitly derived connecting strips.',
       'Categories partition the details layer exactly. Source tags and IDs are retained for every record.',
     ],
   };
@@ -173,7 +174,7 @@ export function formatMapObjectsReport(report) {
     `Карта: **${report.mapName}**. Всего **${remaining.count} геометрических записей** из **${remaining.uniqueSourceElements} исходных элементов OSM**. ${geometryLabel(remaining.geometryCounts)}.`, '',
     `Последняя правка OSM в исходнике: **${report.source.snapshotAt || 'дата не указана'}**. Выгрузка: **${report.source.downloadedAt || 'дата не указана'}**.`, '',
     'Парковки и территории учреждений относятся к слою «Ландшафт и зоны». Пересекающиеся зоны сохраняются отдельно; здания внутри них остаются в слое зданий. Для точечного учреждения без нанесённых границ сохраняется точка, новая площадь не придумывается.', '',
-    'Обозначения переходов, ограды и отдельные столбы/опоры электросети скрыты. Административные границы показаны только контуром и не входят в список биомов. Исходные элементы сохранены в геоданных.', '',
+    'Обозначения переходов, дорожные знаки, ограды, административные границы и отдельные столбы/опоры электросети скрыты. Железнодорожные пути относятся к дорогам, перроны — к зонам стоянки самолётов. Исходные элементы сохранены в геоданных.', '',
     '## Полный список', '',
     '| Категория | Количество |', '| --- | ---: |',
     ...remaining.categories.map(group => `| ${cell(group.name)} | ${group.count} |`),
@@ -185,7 +186,7 @@ export function formatMapObjectsReport(report) {
     lines.push('');
   }
   lines.push('## Как читать количество', '',
-    'Количество относится к геометрии, которую реально регистрирует отрисовщик. Обрезанная геометрия может давать несколько фрагментов; совместимые участки дорог соединяются в общие трассы. Метки мест не считаются повторно. Полный перечень записей с исходными ID и тегами находится в [remaining-objects.json](remaining-objects.json).', '',
+    'Количество относится к геометрии, которую реально регистрирует отрисовщик. Обрезанная геометрия может давать несколько фрагментов; соединённые однотипные дороги, вода и ЛЭП объединяются в сети со всеми ответвлениями. Метки мест не считаются повторно. Полный перечень записей с исходными ID и тегами находится в [remaining-objects.json](remaining-objects.json).', '',
     'Отчёт создаётся автоматически командой `npm run map:report` и при сборке игры. Геоданные: © OpenStreetMap contributors, ODbL 1.0.', '');
   return lines.join('\n');
 }

@@ -6,6 +6,7 @@ import { createDetailRenderer } from './detail-renderer.js';
 import { createTerrainBackdrop, createLandscapeBackdrop } from './terrain-renderer.js';
 import { mapFeatureLayer, shouldRenderFeature } from './map-layers.js';
 import { ROAD_CLASSES } from './map-presentation.js';
+import { createOverviewMarkers, OVERVIEW_MAX_ZOOM } from './map-overview.js';
 import { BUILDING_TYPES, BIOME_TYPES, RESOURCE_PROFILES, RESOURCE_KINDS, collectResourceProfiles, collectResourceCandidates } from './gameplay-types.js';
 
 const $ = id => document.getElementById(id);
@@ -17,6 +18,7 @@ const objectCache = document.createElement('canvas');
 const objectCacheCtx = objectCache.getContext('2d');
 let world = createRealWorld(usaMap);
 let currentMap = usaMap;
+let overviewMarkers = createOverviewMarkers(world);
 const layers = { terrain: true, landscape: true, water: true, roads: true, power: true, buildings: true, details: true };
 const roadClasses = Object.fromEntries(Object.keys(ROAD_CLASSES).map(key => [key, true]));
 let detailRenderer = createDetailRenderer(world);
@@ -27,7 +29,7 @@ const desertPalette = { plain: '#b2aa89', forest: '#788367', water: '#435b54', s
 let palette = desertPalette;
 const metersPerUnit = () => world.metersPerUnit || 5;
 const terrainNames = { plain: 'Пустошь', forest: 'Хвойный лес', water: 'Вода', swamp: 'Заболоченная низина', hill: 'Каменистые холмы', road: 'Старая дорога', bridge: 'Мост' };
-const kindNames = { village: 'Поселение', town: 'Заброшенный город', city: 'Заброшенный город', settlement: 'Поселение', camp: 'Укрытие', shelter: 'Укрытие', station: 'Станция', factory: 'Промзона', ruins: 'Руины', ruin: 'Руины', danger: 'Опасная зона', bunker: 'Бункер', tower: 'Радиовышка', bridge: 'Переправа', gas: 'Заправка', hospital: 'Медпункт' };
+const kindNames = { village: 'Поселение', town: 'Заброшенный город', city: 'Заброшенный город', settlement: 'Поселение', camp: 'Укрытие', shelter: 'Укрытие', station: 'Станция', factory: 'Промзона', ruins: 'Руины', ruin: 'Руины', danger: 'Опасная зона', bunker: 'Бункер', tower: 'Радиовышка', airport: 'Аэропорт', locality: 'Местность', bridge: 'Переправа', gas: 'Заправка', hospital: 'Медпункт' };
 let vw = innerWidth, vh = innerHeight, dpr = Math.min(devicePixelRatio || 1, 2);
 let player = { ...world.start };
 let camera = { x: player.x, y: player.y, zoom: innerWidth < 640 ? .68 : .85 };
@@ -82,8 +84,13 @@ function toast(message) {
   hintTimer = setTimeout(() => { $('toast').hidden = true; }, 3500);
 }
 
+function displayedPois() {
+  if (world.geographic && camera.zoom <= OVERVIEW_MAX_ZOOM) return overviewMarkers;
+  return world.pois.filter(p => !world.geographic || !overviewMarkers.some(marker => marker.sourceId === (p.sourceId || p.id)));
+}
+function poiEnabled(poi) { return shouldRenderFeature(poi, 'poi') && (poi.overview ? layers.landscape : layers[mapFeatureLayer(poi, 'poi')]); }
 function pickPoi(position, radius = 35) {
-  return world.pois.filter(p => shouldRenderFeature(p, 'poi') && layers[mapFeatureLayer(p, 'poi')] && p.reachable !== false).sort((a, b) => dist(a, position) - dist(b, position)).find(p => dist(p, position) < radius / Math.max(.65, camera.zoom)) || null;
+  return displayedPois().filter(p => poiEnabled(p) && p.reachable !== false).sort((a, b) => dist(a, position) - dist(b, position)).find(p => dist(p, position) < radius / Math.max(.65, camera.zoom)) || null;
 }
 
 function setDestination(position) {
@@ -204,6 +211,7 @@ $('layers-close').addEventListener('click', closeLayers);
 function switchMap(map) {
   const next = map ? createRealWorld(map) : createWorld();
   world = next; currentMap = map;
+  overviewMarkers = createOverviewMarkers(world);
   detailRenderer = createDetailRenderer(world);
   objectCacheState = null; objectRevision++;
   palette = map ? desertPalette : greenPalette;
@@ -236,12 +244,13 @@ function inspectObject(point, screenX, screenY, touch = false) {
   const source = feature.source || {};
   const address = typeof source.address === 'string' ? source.address : source.address ? Object.values(source.address).join(', ') : '';
   const extra = [feature.description, address, source.levels ? `${source.levels} эт.` : '', source.surface ? `Покрытие: ${source.surface}` : ''].filter(Boolean).flatMap(text => String(text).split(' · '));
-  $('object-meta').textContent = [...new Set(extra)].filter(text => text !== feature.name).join(' · ') || (world.geographic ? 'Нанесён на карту OpenStreetMap' : 'Объект игровой карты');
+  $('object-meta').textContent = [...new Set(extra)].filter(text => text !== feature.name).join(' · ') || (feature.derived ? 'Игровая зона' : world.geographic ? 'Нанесён на карту OpenStreetMap' : 'Объект игровой карты');
   const zones = detailRenderer.zonesAt(point.x, point.y);
   if (zones.length) $('object-meta').textContent += `\nБиомы: ${[...new Set(zones.map(zone => zone.biomeName || zone.name))].join(' + ')}`;
   if (feature.typeName) $('object-meta').textContent += `\nИгровой тип: ${feature.typeName}`;
   const profiles = collectResourceProfiles(feature, zones);
   if (profiles.length) $('object-meta').textContent += `\nПрофили ресурсов: ${profiles.map(id => RESOURCE_PROFILES[id]?.name || id).join(', ')}`;
+  if (feature.derived && feature.provenance?.method === 'building-density-grid') $('object-meta').textContent += '\nИгровая зона по плотности застройки.';
   if (feature.footprintOnly) $('object-meta').textContent += '\nЗона в пределах нанесённого контура здания.';
   if (touch && camera.zoom >= 2 && ['building', 'ruins'].includes(feature.kind)) $('object-meta').textContent += '\nКоснись земли рядом, чтобы подойти.';
   $('object-card').hidden = false;
@@ -351,7 +360,9 @@ canvas.addEventListener('pointerdown', e => {
 });
 canvas.addEventListener('pointermove', e => {
   hover = screenToWorld(e.clientX, e.clientY); hoveredPoi = pickPoi(hover);
-  if (!pointer && !pinch) inspectObject(hover, e.clientX, e.clientY);
+  if (!pointer && !pinch) {
+    if (hoveredPoi) hideObjectCard(); else inspectObject(hover, e.clientX, e.clientY);
+  }
   canvas.style.cursor = pointer?.moved ? 'grabbing' : hoveredPoi || hoveredObject ? 'pointer' : 'crosshair';
   if (touches.has(e.pointerId)) touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
   if (pinch && touches.size === 2) {
@@ -442,11 +453,20 @@ function drawPoi(poi, time) {
   const size = isHovered ? 12 : 10;
   ctx.save(); ctx.translate(p.x, p.y);
   if (isHovered) { ctx.beginPath(); ctx.arc(0, 0, 21 + Math.sin(time * 2) * 1, 0, Math.PI * 2); ctx.strokeStyle = 'rgba(238,230,192,.4)'; ctx.lineWidth = 1; ctx.stroke(); }
+  if (poi.overview) {
+    ctx.beginPath(); ctx.arc(0, 0, isHovered ? 8 : 6, 0, Math.PI * 2);
+    ctx.fillStyle = '#293e30'; ctx.strokeStyle = '#e2deaf'; ctx.lineWidth = 2; ctx.fill(); ctx.stroke();
+    if (poi.kind === 'airport') {
+      ctx.strokeStyle = '#e2deaf'; ctx.lineWidth = 1.5; ctx.beginPath();
+      ctx.moveTo(0, -4); ctx.lineTo(0, 4); ctx.moveTo(-4, 0); ctx.lineTo(4, 0); ctx.stroke();
+    } else { ctx.beginPath(); ctx.arc(0, 0, 1.5, 0, Math.PI * 2); ctx.fillStyle = '#e2deaf'; ctx.fill(); }
+  } else {
   ctx.rotate(Math.PI / 4); ctx.fillStyle = active ? '#263b2d' : '#49523d'; ctx.strokeStyle = active ? '#d6ddad' : '#b7b99a'; ctx.lineWidth = 1.2;
   ctx.fillRect(-size / 2, -size / 2, size, size); ctx.strokeRect(-size / 2, -size / 2, size, size); ctx.rotate(-Math.PI / 4);
   ctx.fillStyle = active ? '#dbe7b7' : '#c8c6a7'; ctx.fillRect(-1.5, -1.5, 3, 3);
+  }
   const anonymous = /· OSM\s+\S+$/.test(poi.name);
-  const important = poi.kind === 'town' && !anonymous;
+  const important = (poi.overview || poi.kind === 'town') && !anonymous;
   const fontSize = camera.zoom < .5 ? 10 : important ? 13 : 11;
   const title = isHovered ? poiTitle(poi) : poi.name;
   ctx.font = `${isHovered || active || important ? 600 : 500} ${fontSize}px "Segoe UI", sans-serif`;
@@ -456,7 +476,10 @@ function drawPoi(poi, time) {
   const boxAt = dy => ({ x: p.x - width / 2 - 5, y: p.y + dy - 3, width: width + 10, height: fontSize + 8 });
   const overlaps = box => mapLabelBoxes.some(b => box.x < b.x + b.width && box.x + box.width > b.x && box.y < b.y + b.height && box.y + box.height > b.y);
   let box = boxAt(offsetY);
-  if (important && overlaps(box)) { offsetY = 28; box = boxAt(offsetY); }
+  if (important && overlaps(box)) {
+    const candidate = (poi.overview ? [-31, 28, -52, 54] : [-31, 28]).find(dy => !overlaps(boxAt(dy)));
+    if (candidate !== undefined) { offsetY = candidate; box = boxAt(offsetY); }
+  }
   if (isHovered || !anonymous && !overlaps(box)) {
     ctx.lineWidth = 3.5; ctx.strokeStyle = world.geographic ? 'rgba(181,172,140,.9)' : 'rgba(153,163,131,.85)'; ctx.strokeText(title, 0, offsetY);
     ctx.fillStyle = '#253927'; ctx.fillText(title, 0, offsetY); mapLabelBoxes.push(box);
@@ -525,8 +548,9 @@ function draw(time) {
 
   const playerOnScreen = worldToScreen(player);
   mapLabelBoxes = [{ x: playerOnScreen.x - 30, y: playerOnScreen.y - 22, width: 60, height: 56 }];
-  const pois = world.geographic ? [...world.pois].sort((a, b) => Number(b.id === hoveredPoi?.id) - Number(a.id === hoveredPoi?.id) || Number(b.kind === 'town') - Number(a.kind === 'town') || Number(discovered.has(b.id)) - Number(discovered.has(a.id))) : world.pois;
-  for (const poi of pois) if (shouldRenderFeature(poi, 'poi') && layers[mapFeatureLayer(poi, 'poi')] && (camera.zoom < 4 || hoveredPoi?.id === poi.id || poi.kind === 'town')) drawPoi(poi, time);
+  const availablePois = displayedPois();
+  const pois = world.geographic ? [...availablePois].sort((a, b) => Number(b.id === hoveredPoi?.id) - Number(a.id === hoveredPoi?.id) || Number(b.kind === 'settlement' || b.kind === 'airport') - Number(a.kind === 'settlement' || a.kind === 'airport') || Number(discovered.has(b.id)) - Number(discovered.has(a.id))) : availablePois;
+  for (const poi of pois) if (poiEnabled(poi) && (camera.zoom < 4 || hoveredPoi?.id === poi.id || poi.kind === 'town')) drawPoi(poi, time);
   if (arrivalMarker && route) {
     const p = worldToScreen(arrivalMarker);
     ctx.beginPath(); ctx.arc(p.x, p.y, 12 + Math.sin(time * 3) * 2, 0, Math.PI * 2); ctx.strokeStyle = '#f3edb3'; ctx.lineWidth = 1.5; ctx.stroke();
@@ -621,6 +645,7 @@ window.__DAY_NEXT__ = {
   zonesAt: (x, y) => detailRenderer.zonesAt(x, y),
   getLayers: () => ({ ...layers }),
   getRoadClasses: () => ({ ...roadClasses }),
+  getOverviewMarkers: () => overviewMarkers.map(marker => ({ ...structuredClone(marker), visible: world.geographic && camera.zoom <= OVERVIEW_MAX_ZOOM && poiEnabled(marker) })),
   getFeatures: () => detailRenderer.getFeatures(),
   getRenderStats: () => ({ ...renderStats, meanFrameMs: renderStats.totalFrameMs / Math.max(1, renderStats.frames), cachePixels: objectCache.width * objectCache.height, cacheBytes: objectCache.width * objectCache.height * 4, renderer: detailRenderer.getStats() }),
   getTypeCatalogs: () => structuredClone({ buildingTypes: BUILDING_TYPES, biomeTypes: BIOME_TYPES, resourceProfiles: RESOURCE_PROFILES, resourceKinds: RESOURCE_KINDS }),

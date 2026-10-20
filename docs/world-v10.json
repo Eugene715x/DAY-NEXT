@@ -1,0 +1,170 @@
+{
+  "version": "0.10.0",
+  "environment": "Chromium headless /usr/bin/chromium, 1440×960, deviceScaleFactor=1",
+  "tests": {
+    "passed": 133,
+    "failed": 0
+  },
+  "javascriptErrors": [],
+  "networkRequests": 0,
+  "rawGeometry": {
+    "roads": 658,
+    "buildings": 893
+  },
+  "layerCounts": {
+    "landscape": 406,
+    "water": 53,
+    "roads": 83,
+    "power": 6,
+    "buildings": 893,
+    "details": 87
+  },
+  "presentation": {
+    "inputFeatures": 2607,
+    "filteredFeatures": 406,
+    "coalescedFeatures": 13,
+    "sourceRoads": 658,
+    "displayRoads": 83,
+    "sourcePowerLines": 13,
+    "displayPowerLines": 5,
+    "sourceRailwayLines": 11,
+    "sourceWaterLines": 88,
+    "displayWaterLines": 29,
+    "sourceWaterAreas": 11,
+    "displayWaterAreas": 11,
+    "biomeGeneration": {
+      "enabled": true,
+      "cellSizeMeters": 60,
+      "grid": {
+        "cols": 193,
+        "rows": 150
+      },
+      "sourceBuildings": 893,
+      "urbanCells": 693,
+      "generatedZones": 72,
+      "byBiome": {
+        "wasteland": 1,
+        "suburb": 39,
+        "urban": 25,
+        "dense": 7,
+        "aircraft_parking": 0
+      }
+    },
+    "zoneMerging": {
+      "inputFeatures": 459,
+      "displayFeatures": 363,
+      "mergedGroups": 28,
+      "joinedFeatures": 96,
+      "addedCorridors": 62,
+      "maxDistanceMeters": 35
+    },
+    "roadClasses": {
+      "street": 23,
+      "trail": 12,
+      "track": 33,
+      "road": 1,
+      "highway": 5,
+      "railway": 9
+    }
+  },
+  "overview": [
+    {
+      "name": "Beatty Airport",
+      "kind": "airport",
+      "sourceId": "way-642329463"
+    },
+    {
+      "name": "Gold Center",
+      "kind": "locality",
+      "sourceId": "node-150974730"
+    },
+    {
+      "name": "Bullfrog",
+      "kind": "locality",
+      "sourceId": "node-6806526987"
+    },
+    {
+      "name": "Beatty",
+      "kind": "settlement",
+      "sourceId": "node-150947246"
+    },
+    {
+      "name": "Rhyolite",
+      "kind": "settlement",
+      "sourceId": "node-150968333"
+    }
+  ],
+  "classFilters": {
+    "highway": true,
+    "road": true,
+    "street": true,
+    "track": true,
+    "trail": true,
+    "railway": true
+  },
+  "idlePerformance": {
+    "samples": 120,
+    "fps": 60.00600060006002,
+    "meanMs": 16.664999999999996,
+    "p95Ms": 16.799999999999272
+  },
+  "networkHoverChecks": {
+    "results": [
+      {
+        "roadClass": "street",
+        "key": "roads:road:component-road-qp869p18frhg5",
+        "memberCount": 151,
+        "target": {
+          "point": {
+            "x": 2296.844,
+            "y": 968.6565
+          },
+          "screen": {
+            "x": 678.7164905660247,
+            "y": 523.1937113207532
+          }
+        },
+        "samples": 120,
+        "meanMs": 16.66583333333334,
+        "fps": 60.00300015000748,
+        "before": {
+          "staticRebuilds": 2,
+          "highlightDrawCount": 3
+        },
+        "after": {
+          "staticRebuilds": 2,
+          "highlightDrawCount": 124
+        }
+      },
+      {
+        "roadClass": "track",
+        "key": "roads:road:component-road-owda5j1faamg1",
+        "memberCount": 246,
+        "target": {
+          "point": {
+            "x": 1832.0814999999998,
+            "y": 1014.1995
+          },
+          "screen": {
+            "x": 658.5389515035235,
+            "y": 455.30100026118225
+          }
+        },
+        "samples": 120,
+        "meanMs": 16.66583333333334,
+        "fps": 60.00300015000748,
+        "before": {
+          "staticRebuilds": 8,
+          "highlightDrawCount": 144
+        },
+        "after": {
+          "staticRebuilds": 8,
+          "highlightDrawCount": 265
+        }
+      }
+    ],
+    "errors": [],
+    "networkRequests": 0
+  },
+  "sourceSha256": "44f3641860c1e3966edf259c5487b89f1997699aec77cff783360f8c66414d99"
+}

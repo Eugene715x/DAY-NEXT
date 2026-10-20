@@ -292,6 +292,7 @@ function polygonSemantics(tags) {
   if (tags.waterway) return tags.waterway === 'riverbank';
   if (tags.aeroway) return !['runway', 'taxiway', 'navigationaid'].includes(tags.aeroway);
   if (tags.railway) return ['station', 'platform', 'turntable', 'roundhouse'].includes(tags.railway);
+  if (['plant', 'substation'].includes(tags.power)) return true;
   if (['cliff', 'coastline', 'ridge', 'arete', 'tree_row'].includes(tags.natural)) return false;
   if (['pier', 'breakwater', 'pipeline', 'embankment', 'cutline'].includes(tags.man_made)) return false;
   return Boolean(tags.building && tags.building !== 'no' || tags.landuse || tags.natural || tags.amenity || tags.leisure || tags.shop || tags.tourism || tags.man_made || tags.historic);

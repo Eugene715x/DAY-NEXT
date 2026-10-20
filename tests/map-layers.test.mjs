@@ -74,7 +74,7 @@ test('parking and institutional grounds become functional zones rather than misc
     [{ amenity: 'police' }, 'emergency'], [{ amenity: 'fire_station' }, 'emergency'],
     [{ amenity: 'fuel' }, 'service'], [{ amenity: 'car_wash' }, 'service'],
     [{ amenity: 'restaurant' }, 'food_service'], [{ shop: 'confectionery' }, 'retail'],
-    [{ aeroway: 'aerodrome' }, 'transport'], [{ aeroway: 'apron' }, 'transport'],
+    [{ aeroway: 'aerodrome' }, 'transport'], [{ aeroway: 'apron' }, 'aircraft_parking'],
     [{ aeroway: 'helipad' }, 'transport'], [{ tourism: 'motel' }, 'accommodation'],
     [{ tourism: 'camp_site' }, 'camping'], [{ tourism: 'caravan_site' }, 'camping'],
     [{ tourism: 'museum' }, 'heritage'], [{ historic: 'ruins' }, 'heritage'],
@@ -111,7 +111,7 @@ test('zone classification never fabricates an extent for source points or consum
   for (const tags of [
     { amenity: 'bench' }, { amenity: 'atm' }, { amenity: 'toilets' }, { amenity: 'charging_station' },
     { amenity: 'waste_disposal' }, { barrier: 'gate' },
-    { aeroway: 'windsock' }, { aeroway: 'parking_position' }, { tourism: 'artwork' },
+    { aeroway: 'windsock' }, { tourism: 'artwork' },
   ]) {
     const fixture = feature(tags, 'point');
     assert.equal(mapZoneBiome(fixture), null, JSON.stringify(tags));
@@ -265,21 +265,28 @@ test('electrical strips and facilities remain while point network equipment is o
   assert.equal(shouldRenderFeature(feature({ building: 'service', power: 'substation' }), 'building'), true);
 });
 
-test('unrequested street furniture, institution labels and natural points remain available', () => {
+test('traffic signs and standalone road marks are omitted while useful furniture and institution labels remain', () => {
+  for (const geometry of ['point', 'line', 'polygon']) {
+    for (const highway of ['stop', 'give_way', 'traffic_signals', 'traffic_sign', 'milestone', 'speed_camera', 'turning_circle']) {
+      assert.equal(shouldRenderFeature(feature({ highway }, geometry), 'detail'), false, `${geometry} ${highway}`);
+    }
+  }
+  for (const tags of [{ traffic_sign: 'US:R1-1' }, { maxspeed: '25' }, { noexit: 'yes' }]) assert.equal(shouldRenderFeature(feature(tags, 'point'), 'detail'), false);
+  assert.equal(shouldRenderFeature(feature({ highway: 'residential', maxspeed: '25', traffic_sign: 'US:R1-1' }, 'line'), 'road'), true, 'Sign metadata must not remove a real road');
   for (const tags of [
-    { highway: 'stop' }, { highway: 'give_way' }, { highway: 'street_lamp' }, { highway: 'traffic_signals' },
+    { highway: 'street_lamp' },
     { amenity: 'bench' }, { amenity: 'clinic' }, { natural: 'tree' }, { man_made: 'tower' },
   ]) assert.equal(shouldRenderFeature(feature(tags, 'point'), 'detail'), true, JSON.stringify(tags));
 });
 
-test('Nevada cleanup removes 93 crossing/barrier details and 258 electrical points without editing the map', () => {
+test('Nevada cleanup omits road fixtures and electrical points, while rail and aircraft uses leave the details layer', () => {
   const before = JSON.stringify(nevadaMap);
   const details = nevadaMap.details.filter(item => mapFeatureLayer(item, 'detail') === 'details');
   const power = nevadaMap.details.filter(item => mapFeatureLayer(item, 'detail') === 'power');
   const visibleDetails = details.filter(item => shouldRenderFeature(item, 'detail'));
   const visiblePower = power.filter(item => shouldRenderFeature(item, 'detail'));
-  assert.equal(details.length, 241);
-  assert.equal(visibleDetails.length, 148);
+  assert.equal(details.length, 211);
+  assert.equal(visibleDetails.length, 87);
   assert.equal(details.filter(item => item.tags.barrier).length, 65);
   assert.equal(details.filter(item => item.tags.highway === 'crossing').length, 28);
   assert.equal(power.length, 272);
@@ -288,4 +295,34 @@ test('Nevada cleanup removes 93 crossing/barrier details and 258 electrical poin
   assert(nevadaMap.buildings.every(item => shouldRenderFeature(item, 'building')));
   assert(nevadaMap.roads.every(item => shouldRenderFeature(item, 'road')));
   assert.equal(JSON.stringify(nevadaMap), before, 'Game cleanup cannot delete or rewrite original OSM records');
+});
+
+
+test('administrative geography and aircraft parking marks are retained in source but omitted from the game', () => {
+  for (const boundary of ['administrative', 'census']) for (const geometry of ['point', 'line', 'polygon']) {
+    const item = feature({ boundary }, geometry), before = structuredClone(item);
+    assert.equal(shouldRenderFeature(item, 'detail'), false);
+    assert.deepEqual(item, before);
+  }
+  for (const geometry of ['point', 'line', 'polygon']) {
+    const parking = feature({ aeroway: 'parking_position' }, geometry);
+    assert.equal(mapZoneBiome(parking), 'aircraft_parking');
+    assert.equal(shouldRenderFeature(parking, 'detail'), false, 'Marks feed a separate derived aircraft zone rather than becoming individual game objects');
+  }
+  const apron = feature({ aeroway: 'apron' });
+  assert.equal(mapFeatureLayer(apron, 'detail'), 'landscape');
+  assert.equal(mapBiome(apron), 'aircraft_parking');
+  assert.equal(shouldRenderFeature(apron, 'detail'), true);
+});
+
+test('physical railway alignments belong to roads and explicit derived biomes keep their gameplay category', () => {
+  for (const railway of ['rail', 'light_rail', 'abandoned', 'disused', 'tram', 'narrow_gauge']) {
+    const rail = feature({ railway }, 'line', { kind: 'railway' });
+    assert.equal(mapFeatureLayer(rail, 'detail'), 'roads', railway);
+    assert.equal(shouldRenderFeature(rail, 'detail'), true);
+  }
+  assert.equal(mapFeatureLayer(feature({ railway: 'station' }), 'detail'), 'details', 'A station building/territory is not a track alignment');
+  assert.equal(mapFeatureLayer(feature({ railway: 'station' }, 'point'), 'detail'), 'details');
+  assert.equal(mapBiome({ derived: true, biome: 'suburb', tags: { landuse: 'residential' } }), 'suburb');
+  assert.equal(mapBiome({ biome: 'suburb', tags: { landuse: 'residential' } }), 'residential', 'Raw OSM facts retain precedence over unsupported additive metadata');
 });
