@@ -3,7 +3,8 @@ import { createRealWorld } from './real-world.js';
 import { convertOSM, validateBbox } from './scripts/lib/osm-converter.mjs';
 import usaMap from './maps/usa.js';
 import { createDetailRenderer } from './detail-renderer.js';
-import { createTerrainBackdrop } from './terrain-renderer.js';
+import { createTerrainBackdrop, createLandscapeBackdrop } from './terrain-renderer.js';
+import { mapFeatureLayer } from './map-layers.js';
 
 const $ = id => document.getElementById(id);
 const canvas = $('map');
@@ -12,7 +13,7 @@ const terrainCanvas = $('terrain-map');
 const terrainCtx = terrainCanvas.getContext('2d', { alpha: false });
 let world = createRealWorld(usaMap);
 let currentMap = usaMap;
-const layers = { terrain: true, landscape: true, roads: true, buildings: true, details: true };
+const layers = { terrain: true, landscape: true, water: true, roads: true, buildings: true, details: true };
 let detailRenderer = createDetailRenderer(world);
 let hoveredObject = null;
 const maximumZoom = () => 24;
@@ -44,6 +45,7 @@ function line(context, points) {
 }
 
 let terrainBackdrop = createTerrainBackdrop(world, palette);
+let landscapeBackdrop = createLandscapeBackdrop(world, palette);
 let terrainFrameKey = '';
 let terrainRevision = 0;
 
@@ -73,8 +75,7 @@ function toast(message) {
 }
 
 function pickPoi(position, radius = 35) {
-  if (!layers.details) return null;
-  return world.pois.filter(p => p.reachable !== false).sort((a, b) => dist(a, position) - dist(b, position)).find(p => dist(p, position) < radius / Math.max(.65, camera.zoom)) || null;
+  return world.pois.filter(p => layers[mapFeatureLayer(p, 'poi')] && p.reachable !== false).sort((a, b) => dist(a, position) - dist(b, position)).find(p => dist(p, position) < radius / Math.max(.65, camera.zoom)) || null;
 }
 
 function setDestination(position) {
@@ -164,7 +165,8 @@ function formatCoverage(coverage) {
 function syncLayerUI() {
   const features = detailRenderer.getFeatures();
   for (const key of Object.keys(layers)) $('layer-' + key).checked = layers[key];
-  for (const key of ['landscape', 'roads', 'buildings', 'details']) $('count-' + key).textContent = features.filter(feature => feature.layer === key).length;
+  for (const key of ['landscape', 'water', 'roads', 'buildings', 'details']) $('count-' + key).textContent = features.filter(feature => feature.layer === key).length;
+  if (!world.geographic && landscapeBackdrop) $('count-landscape').textContent = 'биомы';
   terrainCanvas.hidden = !layers.terrain;
 }
 
@@ -186,6 +188,7 @@ function switchMap(map) {
   detailRenderer = createDetailRenderer(world);
   palette = map ? desertPalette : greenPalette;
   terrainBackdrop = createTerrainBackdrop(world, palette); terrainRevision++; terrainFrameKey = '';
+  landscapeBackdrop = createLandscapeBackdrop(world, palette);
   detailRenderer.setLayers(layers);
   camera.zoom = innerWidth < 640 ? .68 : .85;
   hover = null; hoveredPoi = null;
@@ -205,7 +208,9 @@ function inspectObject(point, screenX, screenY, touch = false) {
   hoveredObject = feature;
   hoveredPoi = null;
   const names = { building: 'ЗДАНИЕ', road: 'ДОРОГА', fence: 'ОГРАДА', wall: 'СТЕНА', gate: 'ВОРОТА', railway: 'ЖЕЛЕЗНАЯ ДОРОГА', parking: 'ПАРКОВКА', pitch: 'СПОРТПЛОЩАДКА', garden: 'САД', pool: 'БАССЕЙН', tree: 'ДЕРЕВО', bench: 'СКАМЕЙКА', picnic_table: 'МЕСТО ДЛЯ ПРИВАЛА', fountain: 'ФОНТАН', well: 'КОЛОДЕЦ', ruins: 'РУИНЫ', shelter: 'УКРЫТИЕ', cemetery: 'КЛАДБИЩЕ', park: 'ПАРК', spring: 'РОДНИК', quarry: 'КАРЬЕР', playground: 'ДЕТСКАЯ ПЛОЩАДКА', cattle_grid: 'РЕШЁТКА НА ДОРОГЕ', runway: 'ВЗЛЁТНАЯ ПОЛОСА', taxiway: 'РУЛЁЖНАЯ ДОРОЖКА', apron: 'ПЕРРОН АЭРОДРОМА', aerodrome: 'АЭРОДРОМ', river: 'ВОДОТОК', lake: 'ОЗЕРО', water: 'ВОДОЁМ', forest: 'ЛЕС', swamp: 'БОЛОТО', plain: 'УЧАСТОК МЕСТНОСТИ', boundary: 'ГРАНИЦА' };
-  $('object-kind').textContent = names[feature.kind] || 'ОБЪЕКТ';
+  const zoneNames = { residential: 'ЖИЛАЯ ЗОНА', industrial: 'ПРОМЫШЛЕННАЯ ЗОНА', commercial: 'КОММЕРЧЕСКАЯ ЗОНА', retail: 'ТОРГОВАЯ ЗОНА', farmland: 'ПОЛЯ', sand: 'ПЕСКИ', rock: 'СКАЛЫ', scrub: 'КУСТАРНИК', wetland: 'БОЛОТО' };
+  const layerNames = { landscape: 'ЛАНДШАФТ', water: 'ВОДА', roads: 'ДОРОГА', buildings: 'ЗДАНИЕ' };
+  $('object-kind').textContent = names[feature.kind] || zoneNames[feature.biome || feature.kind] || layerNames[feature.layer] || 'ОБЪЕКТ';
   $('object-name').textContent = feature.name || (feature.kind === 'building' ? 'Безымянное здание' : 'Объект на карте');
   const source = feature.source || {};
   const address = typeof source.address === 'string' ? source.address : source.address ? Object.values(source.address).join(', ') : '';
@@ -449,6 +454,7 @@ function draw(time) {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, vw, vh);
   ctx.save(); ctx.translate(vw / 2, vh / 2); ctx.scale(camera.zoom, camera.zoom); ctx.translate(-camera.x, -camera.y);
+  if (layers.landscape && landscapeBackdrop) ctx.drawImage(landscapeBackdrop, 0, 0);
   detailRenderer.draw(ctx, { zoom: camera.zoom, cameraX: camera.x, cameraY: camera.y, width: vw, height: vh, time, hoveredId: hoveredObject?.id });
   if (trail.length > 1) {
     line(ctx, trail); ctx.strokeStyle = 'rgba(54,61,35,.45)'; ctx.lineWidth = 1.5 / camera.zoom; ctx.setLineDash([2 / camera.zoom, 5 / camera.zoom]); ctx.stroke(); ctx.setLineDash([]);
@@ -464,7 +470,7 @@ function draw(time) {
   const playerOnScreen = worldToScreen(player);
   mapLabelBoxes = [{ x: playerOnScreen.x - 30, y: playerOnScreen.y - 22, width: 60, height: 56 }];
   const pois = world.geographic ? [...world.pois].sort((a, b) => Number(b.id === hoveredPoi?.id) - Number(a.id === hoveredPoi?.id) || Number(b.kind === 'town') - Number(a.kind === 'town') || Number(discovered.has(b.id)) - Number(discovered.has(a.id))) : world.pois;
-  if (layers.details) for (const poi of pois) if (camera.zoom < 4 || hoveredPoi?.id === poi.id || poi.kind === 'town') drawPoi(poi, time);
+  for (const poi of pois) if (layers[mapFeatureLayer(poi, 'poi')] && (camera.zoom < 4 || hoveredPoi?.id === poi.id || poi.kind === 'town')) drawPoi(poi, time);
   if (arrivalMarker && route) {
     const p = worldToScreen(arrivalMarker);
     ctx.beginPath(); ctx.arc(p.x, p.y, 12 + Math.sin(time * 3) * 2, 0, Math.PI * 2); ctx.strokeStyle = '#f3edb3'; ctx.lineWidth = 1.5; ctx.stroke();

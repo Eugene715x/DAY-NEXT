@@ -35,7 +35,7 @@
       <div class="hud">
         <header class="top-bar">
           <div class="brand-block">
-            <div class="brand" aria-label="DAY NEXT"><span>DAY</span><span class="brand-divider">/</span><span class="brand-next">NEXT</span><span class="prototype">ПРОТОТИП <b>05</b></span></div>
+            <div class="brand" aria-label="DAY NEXT"><span>DAY</span><span class="brand-divider">/</span><span class="brand-next">NEXT</span><span class="prototype">ПРОТОТИП <b>06</b></span></div>
             <div class="brand-caption"><span class="live-dot"></span> ОДИНОЧНАЯ ЭКСПЕДИЦИЯ</div>
           </div>
           <div class="world-status glass">
@@ -144,17 +144,18 @@
           </div>
         </section>
 
-        <section id="layers-panel" class="layers-panel help-panel glass" role="dialog" aria-label="Слои карты" aria-modal="false" hidden>
+        <section id="layers-panel" class="layers-panel help-panel glass" role="dialog" aria-label="Слои карты" aria-describedby="layers-note" aria-modal="false" hidden>
           <div class="layers-heading help-heading"><div><p class="eyebrow">ВИД КАРТЫ</p><h2>Слои карты</h2></div><button id="layers-close" class="icon-button" type="button" aria-label="Закрыть слои карты">×</button></div>
           <div class="layers-content">
             <div class="layer-options">
-              <label class="layer-option" for="layer-terrain"><input id="layer-terrain" type="checkbox" checked /><span>Подложка местности</span></label>
-              <label class="layer-option" for="layer-landscape"><input id="layer-landscape" type="checkbox" checked /><span>Вода и природные объекты</span><span id="count-landscape" class="layer-count">—</span></label>
+              <label class="layer-option" for="layer-terrain"><input id="layer-terrain" type="checkbox" checked /><span>Подложка</span></label>
+              <label class="layer-option" for="layer-landscape"><input id="layer-landscape" type="checkbox" checked /><span>Ландшафт и зоны</span><span id="count-landscape" class="layer-count">—</span></label>
+              <label class="layer-option" for="layer-water"><input id="layer-water" type="checkbox" checked /><span>Водоёмы и русла</span><span id="count-water" class="layer-count">—</span></label>
               <label class="layer-option" for="layer-roads"><input id="layer-roads" type="checkbox" checked /><span>Дороги и тропы</span><span id="count-roads" class="layer-count">—</span></label>
               <label class="layer-option" for="layer-buildings"><input id="layer-buildings" type="checkbox" checked /><span>Здания</span><span id="count-buildings" class="layer-count">—</span></label>
               <label class="layer-option" for="layer-details"><input id="layer-details" type="checkbox" checked /><span>Остальные объекты</span><span id="count-details" class="layer-count">—</span></label>
             </div>
-            <p class="layers-note">Выключенный слой не рисуется и не выбирается.</p>
+            <p class="layers-note" id="layers-note">Ландшафт объединяет леса, парки, жилые и промышленные зоны. Каждый слой включается отдельно; выключенные объекты не видны и не выбираются.</p>
           </div>
         </section>
       </div>

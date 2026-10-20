@@ -1,4 +1,4 @@
-/** Cached land and paper only. Every mapped object is drawn in the object layer. */
+/** Neutral paper and independently cached procedural landscape. */
 
 function trRandom(seed) {
   let value = Number(seed) >>> 0 || 715;
@@ -15,12 +15,12 @@ function trDryGround(world, cells) {
   let head = 0, tail = 0;
   for (let i = 0; i < count; i++) {
     const type = cells[i]?.type;
-    if (type === 'plain' || type === 'forest' || type === 'hill') {
+    if (['plain', 'forest', 'hill', 'swamp'].includes(type)) {
       types[i] = type;
       queue[tail++] = i;
     }
   }
-  // Flood from dry land, rather than leaving water/road-shaped blanks in the backdrop.
+  // Flood beneath water and roads so hiding those layers leaves continuous ground.
   if (!tail) return types.fill('plain');
   while (head < tail) {
     const index = queue[head++], x = index % world.cols, y = Math.floor(index / world.cols);
@@ -58,33 +58,22 @@ function trContours(context, world, cells) {
   }
 }
 
-/** The cache is independent of roads, buildings, rivers, lakes, POIs and their visibility. */
-export function createTerrainBackdrop(world, palette) {
+function trCanvas(world, alpha) {
   if (!world || !Number.isInteger(world.width) || !Number.isInteger(world.height)
     || world.width < 1 || world.height < 1 || world.width > 10000 || world.height > 10000 || world.width * world.height > 20000000) {
     throw new Error('Invalid terrain backdrop dimensions');
   }
   const canvas = document.createElement('canvas');
   canvas.width = world.width; canvas.height = world.height;
-  const context = canvas.getContext('2d', { alpha: false });
+  return { canvas, context: canvas.getContext('2d', { alpha }) };
+}
+
+/** Paper is independent of every biome, mapped object and layer's visibility. */
+export function createTerrainBackdrop(world, palette) {
+  const { canvas, context } = trCanvas(world, false);
   const plain = palette?.plain || '#a7ac8d';
   const random = trRandom(world.seed);
   context.fillStyle = plain; context.fillRect(0, 0, canvas.width, canvas.height);
-
-  const cells = world.terrainCells || world.cells || [];
-  let types = null;
-  if (!world.geographic && cells.length && world.cols > 0 && world.rows > 0) {
-    types = trDryGround(world, cells);
-    const ground = document.createElement('canvas');
-    ground.width = world.width; ground.height = world.height;
-    const fill = ground.getContext('2d');
-    types.forEach((type, index) => {
-      fill.fillStyle = palette?.[type] || plain;
-      fill.fillRect((index % world.cols) * world.cellSize, Math.floor(index / world.cols) * world.cellSize, world.cellSize + 1, world.cellSize + 1);
-    });
-    context.filter = 'blur(12px)'; context.drawImage(ground, 0, 0); context.filter = 'none';
-    trContours(context, world, cells);
-  }
 
   // Print stains are purely decorative: geographic backdrops contain no inferred relief.
   for (let i = 0; i < 18; i++) {
@@ -100,7 +89,38 @@ export function createTerrainBackdrop(world, palette) {
     const x = random() * world.width, y = random() * world.height;
     context.fillStyle = random() > .4 ? 'rgba(27,40,25,.07)' : 'rgba(246,237,197,.09)';
     context.fillRect(x, y, random() * 2 + .3, random() * 2 + .3);
-    if (!types) continue;
+  }
+
+  context.strokeStyle = 'rgba(45,61,40,.1)'; context.lineWidth = .7; context.beginPath();
+  for (let x = 0; x <= world.width; x += 250) { context.moveTo(x, 0); context.lineTo(x, world.height); }
+  for (let y = 0; y <= world.height; y += 250) { context.moveTo(0, y); context.lineTo(world.width, y); }
+  context.stroke();
+  return canvas;
+}
+
+/** Fictional biomes only; real areas and natural features use their source vectors. */
+export function createLandscapeBackdrop(world, palette) {
+  if (world?.geographic) return null;
+  const { canvas, context } = trCanvas(world, true);
+  const cells = world.terrainCells || world.cells || [];
+  if (!cells.length || !(world.cols > 0) || !(world.rows > 0)) return canvas;
+  const types = trDryGround(world, cells);
+  const { canvas: ground, context: fill } = trCanvas(world, true);
+  const colors = { forest: '#6e8163', hill: '#a8a38a', swamp: '#7f927c' };
+  types.forEach((type, index) => {
+    if (!Object.hasOwn(colors, type)) return;
+    fill.fillStyle = palette?.[type] || colors[type];
+    fill.fillRect((index % world.cols) * world.cellSize, Math.floor(index / world.cols) * world.cellSize, world.cellSize + 1, world.cellSize + 1);
+  });
+  // Translucent tint preserves the neutral paper's grain beneath biome zones.
+  context.globalAlpha = .82; context.filter = 'blur(12px)';
+  context.drawImage(ground, 0, 0); context.filter = 'none'; context.globalAlpha = 1;
+  trContours(context, world, cells);
+
+  const random = trRandom(world.seed);
+  const marks = Math.min(45000, Math.max(2000, Math.round(world.width * world.height / 190)));
+  for (let i = 0; i < marks; i++) {
+    const x = random() * world.width, y = random() * world.height;
     const index = Math.floor(y / world.cellSize) * world.cols + Math.floor(x / world.cellSize), type = types[index];
     if (type === 'forest' && i % 3 === 0) {
       const size = 2.8 + random() * 4;
@@ -110,12 +130,10 @@ export function createTerrainBackdrop(world, palette) {
     } else if (type === 'hill' && i % 9 === 0) {
       context.strokeStyle = 'rgba(66,60,39,.21)'; context.lineWidth = .8;
       context.beginPath(); context.moveTo(x - 3, y + 1); context.lineTo(x, y - 3); context.lineTo(x + 3, y + 1); context.stroke();
+    } else if (type === 'swamp' && i % 5 === 0) {
+      context.strokeStyle = 'rgba(50,77,55,.2)'; context.lineWidth = .7;
+      context.beginPath(); context.moveTo(x - 2, y + 1); context.lineTo(x + 2, y + 1); context.moveTo(x, y + 1); context.lineTo(x - 1, y - 2); context.stroke();
     }
   }
-
-  context.strokeStyle = 'rgba(45,61,40,.1)'; context.lineWidth = .7; context.beginPath();
-  for (let x = 0; x <= world.width; x += 250) { context.moveTo(x, 0); context.lineTo(x, world.height); }
-  for (let y = 0; y <= world.height; y += 250) { context.moveTo(0, y); context.lineTo(world.width, y); }
-  context.stroke();
   return canvas;
 }
