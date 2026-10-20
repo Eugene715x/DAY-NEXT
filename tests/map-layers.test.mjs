@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mapFeatureLayer, mapBiome, mapZoneBiome } from '../map-layers.js';
+import { mapFeatureLayer, mapBiome, mapZoneBiome, shouldRenderFeature } from '../map-layers.js';
 import nevadaMap from '../maps/usa.js';
 
 const feature = (tags, geometry = 'polygon', extra = {}) => ({ tags, geometry, ...extra });
@@ -206,4 +206,86 @@ test('fresh Nevada geometry is fully categorized and former railway road facets 
   assert(zoneFacets.length > 0, 'The real extract must exercise non-natural zones');
   for (const item of zoneFacets) assert.equal(mapFeatureLayer(item, 'detail'), 'landscape', item.id);
   assert.equal(JSON.stringify(nevadaMap), before, 'Layer selection must not mutate source data or navigation metadata');
+});
+
+test('crossing and barrier fixtures are omitted without deleting source features or changing their layer', () => {
+  for (const geometry of ['point', 'line', 'polygon']) {
+    for (const tags of [{ highway: 'crossing' }, { crossing: 'marked' }, { 'crossing:markings': 'zebra' }, { footway: 'crossing' }]) {
+      const item = feature(tags, geometry);
+      assert.equal(shouldRenderFeature(item, 'detail'), false, `${geometry} ${JSON.stringify(tags)}`);
+    }
+    for (const barrier of ['fence', 'wall', 'gate', 'cattle_grid', 'hedge', 'bollard', 'unrecognized_barrier']) {
+      const item = feature({ barrier }, geometry), before = structuredClone(item);
+      assert.equal(shouldRenderFeature(item, 'detail'), false, `${geometry} ${barrier}`);
+      assert.equal(mapFeatureLayer(item, 'detail'), 'details', 'Visibility is separate from source categorization');
+      assert.deepEqual(item, before, 'Omitted fixtures remain unchanged in imported data');
+    }
+  }
+  for (const kind of ['crossing', 'fence', 'wall', 'gate', 'cattle_grid', 'cycle_barrier']) {
+    assert.equal(shouldRenderFeature({ kind, geometry: 'point' }, 'detail'), false, kind);
+    assert.equal(shouldRenderFeature({ kind, x: 10, y: 20 }, 'poi'), false, `${kind} marker`);
+  }
+  for (const barrier of ['no', 'false', '0']) assert.equal(shouldRenderFeature(feature({ barrier }, 'point'), 'detail'), true, barrier);
+});
+
+test('fixture metadata cannot erase real roads, crossing footways or building footprints', () => {
+  const points = [{ x: 10, y: 10 }, { x: 20, y: 20 }];
+  const fixtures = [
+    [feature({ highway: 'footway', footway: 'crossing', crossing: 'uncontrolled' }, 'line', { points, kind: 'crossing', sourceId: 'way/footway' }), 'road'],
+    [feature({ highway: 'footway', crossing: 'marked' }, 'line', { points }), 'detail'],
+    [feature({ highway: 'service', barrier: 'gate' }, 'line', { points }), 'road'],
+    [feature({ highway: 'track', barrier: 'fence' }, 'line', { points }), 'detail'],
+    [feature({ 'area:highway': 'pedestrian', crossing: 'marked' }), 'detail'],
+    [feature({ building: 'church', barrier: 'fence' }), 'building'],
+    [feature({ building: 'church', barrier: 'fence' }), 'detail'],
+    [{ points, kind: 'road', tags: { barrier: 'gate' } }, 'road'],
+    [{ points, tags: { barrier: 'fence' } }, 'building'],
+  ];
+  for (const [item, group] of fixtures) {
+    const before = structuredClone(item);
+    assert.equal(shouldRenderFeature(item, group), true, `${group} ${JSON.stringify(item.tags)}`);
+    assert.deepEqual(item, before, 'A visibility decision cannot replace the source footprint or identity');
+  }
+  assert.equal(shouldRenderFeature(feature({ highway: 'crossing' }, 'point'), 'road'), false, 'A crossing node is a fixture even if passed through a road group');
+  assert.equal(shouldRenderFeature(feature({ barrier: 'gate' }, 'point'), 'road'), false, 'A gate node is not the road that passes through it');
+});
+
+test('electrical strips and facilities remain while point network equipment is omitted', () => {
+  for (const power of ['pole', 'tower', 'transformer', 'switch', 'generator', 'substation']) {
+    const item = feature({ power }, 'point');
+    assert.equal(shouldRenderFeature(item, 'detail'), false, power);
+    assert.equal(mapFeatureLayer(item, 'detail'), 'power', 'Hidden electrical points still belong to their original layer');
+  }
+  assert.equal(shouldRenderFeature(feature({ man_made: 'utility_pole' }, 'point'), 'detail'), false);
+  assert.equal(shouldRenderFeature({ kind: 'power_pole', x: 10, y: 20 }, 'poi'), false);
+  assert.equal(shouldRenderFeature(feature({ building: 'yes', power: 'transformer' }, 'point'), 'detail'), false, 'Equipment nodes do not fabricate building footprints');
+  for (const [power, geometry] of [['line', 'line'], ['minor_line', 'line'], ['cable', 'line'], ['substation', 'line'], ['substation', 'polygon'], ['plant', 'polygon']]) {
+    assert.equal(shouldRenderFeature(feature({ power }, geometry), 'detail'), true, `${power} ${geometry}`);
+  }
+  assert.equal(shouldRenderFeature(feature({ building: 'service', power: 'substation' }), 'building'), true);
+});
+
+test('unrequested street furniture, institution labels and natural points remain available', () => {
+  for (const tags of [
+    { highway: 'stop' }, { highway: 'give_way' }, { highway: 'street_lamp' }, { highway: 'traffic_signals' },
+    { amenity: 'bench' }, { amenity: 'clinic' }, { natural: 'tree' }, { man_made: 'tower' },
+  ]) assert.equal(shouldRenderFeature(feature(tags, 'point'), 'detail'), true, JSON.stringify(tags));
+});
+
+test('Nevada cleanup removes 93 crossing/barrier details and 258 electrical points without editing the map', () => {
+  const before = JSON.stringify(nevadaMap);
+  const details = nevadaMap.details.filter(item => mapFeatureLayer(item, 'detail') === 'details');
+  const power = nevadaMap.details.filter(item => mapFeatureLayer(item, 'detail') === 'power');
+  const visibleDetails = details.filter(item => shouldRenderFeature(item, 'detail'));
+  const visiblePower = power.filter(item => shouldRenderFeature(item, 'detail'));
+  assert.equal(details.length, 241);
+  assert.equal(visibleDetails.length, 148);
+  assert.equal(details.filter(item => item.tags.barrier).length, 65);
+  assert.equal(details.filter(item => item.tags.highway === 'crossing').length, 28);
+  assert.equal(power.length, 272);
+  assert.equal(visiblePower.length, 14);
+  assert(visiblePower.every(item => item.geometry !== 'point'), 'Every retained electrical object has actual line/area geometry');
+  assert(nevadaMap.buildings.every(item => shouldRenderFeature(item, 'building')));
+  assert(nevadaMap.roads.every(item => shouldRenderFeature(item, 'road')));
+  assert.equal(JSON.stringify(nevadaMap), before, 'Game cleanup cannot delete or rewrite original OSM records');
 });

@@ -66,6 +66,7 @@ export function parseOSM(input) {
     const type = match[1], a = attributes(match[2]), body = match[3] || '';
     if (!a.id) continue;
     const element = { type, id: a.id, tags: Object.create(null) };
+    if (a.version) element.version = Number(a.version);
     if (a.timestamp) element.timestamp = a.timestamp;
     if (a.lat !== undefined && a.lon !== undefined) { element.lat = Number(a.lat); element.lon = Number(a.lon); }
     for (const tag of body.matchAll(/<tag\b([^>]*?)\/?\s*>/g)) {
@@ -81,6 +82,20 @@ export function parseOSM(input) {
   }
   if (!elements.length) throw new Error('OSM input has no supported elements');
   return { version: 0.6, generator: 'OSM XML', elements };
+}
+
+/** Combine exact extracts without duplicate source identities or invented geometry. */
+export function mergeOSMSources(...inputs) {
+  if (!inputs.length) throw new Error('At least one OSM source is required');
+  const sources = inputs.map(parseOSM), elements = new Map();
+  for (const source of sources) for (const element of source.elements) {
+    const key = `${element.type}-${element.id}`, previous = elements.get(key);
+    const version = Number(element.version) || 0, previousVersion = Number(previous?.version) || 0;
+    // Keep the newer OSM version. Timestamp also supports Overpass JSON sources
+    // without versions; equal revisions keep the primary extract's exact data.
+    if (!previous || version > previousVersion || (version === previousVersion && String(element.timestamp || '') > String(previous.timestamp || ''))) elements.set(key, element);
+  }
+  return { ...sources[0], elements: [...elements.values()] };
 }
 
 function inBounds(p, width, height) { return p.x >= 0 && p.y >= 0 && p.x <= width && p.y <= height; }
@@ -182,22 +197,6 @@ export function joinBoundaryFragments(fragments) {
   return { rings, chains, joins };
 }
 
-function joinRings(fragments) {
-  const remaining = fragments.filter(points => points.length >= 2).map(points => [...points]);
-  const rings = [];
-  while (remaining.length) {
-    const ring = remaining.shift();
-    for (;;) {
-      if (same(ring[0], ring.at(-1))) { if (ring.length >= 4) rings.push(ring); break; }
-      const index = remaining.findIndex(points => same(ring.at(-1), points[0]) || same(ring.at(-1), points.at(-1)) || same(ring[0], points[0]) || same(ring[0], points.at(-1)));
-      if (index === -1) break;
-      let next = remaining.splice(index, 1)[0];
-      if (same(ring.at(-1), next.at(-1)) || same(ring[0], next[0])) next.reverse();
-      if (same(ring.at(-1), next[0])) ring.push(...next.slice(1)); else ring.unshift(...next.slice(0, -1));
-    }
-  }
-  return rings;
-}
 function areaType(tags) {
   if (tags.natural === 'water' || ['reservoir', 'basin'].includes(tags.landuse) || tags.waterway === 'riverbank' || tags.water) return 'water';
   if (tags.natural === 'wetland' || tags.wetland) return 'swamp';
@@ -354,25 +353,33 @@ export function convertOSM(input, options = {}) {
         (member.role === 'inner' ? inners : outers).push(points);
       }
     }
-    const assembly = boundary ? joinBoundaryFragments(outers) : null;
-    const innerAssembly = boundary ? joinBoundaryFragments(inners) : null;
-    const incompleteBoundary = boundary && ((relation.members || []).some(member => member.type === 'way' && geometry(member).length < 2 && (!ways.has(String(member.ref)) || geometry(ways.get(String(member.ref))).length < 2)) || assembly.chains.length > 0 || innerAssembly.chains.length > 0);
-    // With missing boundary geometry, an absent member could be an island hole.
-    // Retain the measured outlines, but never turn an uncertain shell into a zone.
-    if (incompleteBoundary) { assembly.chains.push(...assembly.rings, ...innerAssembly.rings, ...innerAssembly.chains); assembly.rings = []; }
-    const outerRings = assembly ? assembly.rings : joinRings(outers), innerRings = boundary ? innerAssembly.rings : joinRings(inners);
+    const assembly = joinBoundaryFragments(outers), innerAssembly = joinBoundaryFragments(inners);
+    const incomplete = (relation.members || []).some(member => member.type === 'way' && geometry(member).length < 2 && (!ways.has(String(member.ref)) || geometry(ways.get(String(member.ref))).length < 2)) || assembly.chains.length > 0 || innerAssembly.chains.length > 0;
+    // A missing member can be an island hole even when the known outer is closed.
+    // Assemble the full source rings before clipping; unknown gaps never become
+    // filled biomes. The generic relation pass below retains their known lines.
+    if (incomplete && !boundary) continue;
+    if (incomplete) { assembly.chains.push(...assembly.rings, ...innerAssembly.rings, ...innerAssembly.chains); assembly.rings = []; }
+    const outerRings = assembly.rings, innerRings = innerAssembly.rings;
     if (!outerRings.length && !assembly?.chains.length) continue;
     let index = 0;
     for (const outer of outerRings) {
       const ring = clipRing(outer, boundWidth, boundHeight);
       if (!ring) continue;
-      const rings = [ring, ...innerRings.filter(hole => insideRing(hole[0], outer)).map(hole => clipRing(hole, boundWidth, boundHeight)).filter(Boolean)];
+      const holes = innerRings.filter(hole => insideRing(hole[0], outer));
+      const rings = [ring, ...holes.map(hole => clipRing(hole, boundWidth, boundHeight)).filter(Boolean)];
       const id = `relation-${relation.id}-${index++}`, name = clean(relation.tags.name || '');
       const geometryIncomplete = (relation.members || []).some(member => member.type === 'way' && geometry(member).length < 2 && (!ways.has(String(member.ref)) || geometry(ways.get(String(member.ref))).length < 2));
       if (!boundary) for (const member of relation.members || []) if (member.type === 'way') relationMembers.add(String(member.ref));
       if (type) areas.push({ id, type, rings, name, tags: safeTags(relation.tags), intermittent: isIntermittent(relation.tags), seasonal: isSeasonal(relation.tags) });
       if (isBuilding) buildings.push({ id, points: ring, rings, name, ...buildingMetadata(relation.tags) });
-      if (detail && !isBuilding) details.push({ id, kind: detail, geometry: 'polygon', points: ring, rings, name, tags: safeTags(relation.tags), ...(boundary ? { boundaryClosed: true, joinedFragments: assembly.joins, memberSourceIds: (relation.members || []).filter(member => member.type === 'way').map(member => `way-${member.ref}`) } : {}), ...(geometryIncomplete ? { geometryIncomplete: true } : {}) });
+      if (detail && !isBuilding) details.push({ id, kind: detail, geometry: 'polygon', points: ring, rings, name, tags: safeTags(relation.tags), ...(boundary ? {
+        boundaryClosed: true, joinedFragments: assembly.joins,
+        // Polygon clipping closes its fill along the map frame. A settlement
+        // outline must show only the measured source border, never those edges.
+        boundaryPaths: [outer, ...holes].flatMap(sourceRing => clipLine(sourceRing, boundWidth, boundHeight)),
+        memberSourceIds: (relation.members || []).filter(member => member.type === 'way').map(member => `way-${member.ref}`),
+      } : {}), ...(geometryIncomplete ? { geometryIncomplete: true } : {}) });
       addPoi(relation, centroid(ring));
     }
     if (boundary) for (let chain = 0; chain < assembly.chains.length; chain++) {

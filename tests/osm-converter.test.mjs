@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
-import { convertOSM, createProjection, parseOSM, projectPoint, validateBbox } from '../scripts/lib/osm-converter.mjs';
+import { convertOSM, createProjection, mergeOSMSources, parseOSM, projectPoint, validateBbox } from '../scripts/lib/osm-converter.mjs';
+import { loadLocalSandSupplement } from '../scripts/refresh-map.mjs';
 import nevadaMap from '../maps/usa.js';
 
 const bbox = [-122, 47, -121.98, 47.015];
@@ -269,7 +270,9 @@ test('incomplete relations expose actual fragments and omissions without inventi
 });
 
 test('checked-in Nevada map and coverage reproduce the exact source file after any refresh', async () => {
-  const raw = parseOSM(await readFile(new URL('../maps/source/beatty.osm', import.meta.url), 'utf8'));
+  const base = await readFile(new URL('../maps/source/beatty.osm', import.meta.url), 'utf8');
+  const supplement = await loadLocalSandSupplement();
+  const raw = mergeOSMSources(base, ...(supplement ? [supplement.bytes.toString('utf8')] : []));
   const map = convertOSM(raw, { ...options, bbox: nevadaMap.bbox });
   const report = JSON.parse(await readFile(new URL('../maps/source/coverage.json', import.meta.url), 'utf8'));
   const accounted = map.coverage.representedSourceElements + map.coverage.representedByRelation + Object.values(map.coverage.omittedCounts).reduce((sum, count) => sum + count, 0);

@@ -6,6 +6,9 @@ const mlWaterKinds = new Set(['water', 'lake', 'river', 'reservoir', 'basin', 'p
 const mlWaterways = new Set(['river', 'stream', 'canal', 'drain', 'ditch', 'riverbank', 'dock', 'tidal_channel']);
 const mlPowerKinds = new Set(['utility_pole', 'power_pole', 'power_tower', 'power_line', 'power_cable', 'transformer', 'substation']);
 const mlPowerFeature = feature => mlPresent(feature.tags?.power) || feature.tags?.man_made === 'utility_pole' || mlPowerKinds.has(feature.kind);
+const mlBarrierKinds = new Set(['barrier', 'fence', 'wall', 'city_wall', 'retaining_wall', 'hedge', 'ditch', 'guard_rail', 'handrail', 'kerb', 'gate', 'lift_gate', 'swing_gate', 'kissing_gate', 'cattle_grid', 'bollard', 'block', 'debris', 'stile', 'turnstile', 'sally_port', 'chain', 'rope', 'log', 'jersey_barrier', 'motorcycle_barrier', 'cycle_barrier', 'bus_trap', 'sump_buster', 'border_control', 'entrance']);
+const mlPointFeature = (feature, group) => feature.geometry === 'point' || group === 'poi'
+  || !feature.points?.length && Number.isFinite(feature.x) && Number.isFinite(feature.y) && group !== 'lake';
 const mlServiceZones = new Map([
   ['parking', 'parking'], ['parking_space', 'parking'], ['motorcycle_parking', 'parking'], ['bicycle_parking', 'parking'], ['parking_entrance', 'parking'],
   ['place_of_worship', 'religious'], ['monastery', 'religious'],
@@ -58,7 +61,7 @@ export function mapZoneBiome(feature = {}) {
 
 export function mapFeatureLayer(feature = {}, group = '') {
   const tags = feature.tags || {};
-  const point = feature.geometry === 'point' || group === 'poi' || !feature.points?.length && Number.isFinite(feature.x) && Number.isFinite(feature.y) && group !== 'lake';
+  const point = mlPointFeature(feature, group);
   const siteMarker = point && group !== 'building' && (mapZoneBiome(feature) || mlPowerFeature(feature));
   if (group === 'building' || !siteMarker && (mlPresent(tags.building) || mlPresent(tags['building:part']))) return 'buildings';
   // A former rail alignment can also be a current highway. Every facet of that
@@ -77,6 +80,25 @@ export function mapFeatureLayer(feature = {}, group = '') {
     || mlLeisureZones.has(tags.leisure) || mlLeisureZones.has(feature.kind) || tags.amenity === 'grave_yard'
     || feature.kind === 'cemetery' || feature.kind === 'quarry' || mapZoneBiome(feature)) return 'landscape';
   return 'details';
+}
+
+/**
+ * The game omits small crossing/barrier fixtures and electrical point markers.
+ * This presentation policy leaves imported geometry, tags and layer ownership
+ * intact. Real road/building geometry keeps its role even with fixture tags.
+ */
+export function shouldRenderFeature(feature = {}, group = '') {
+  const tags = feature.tags || {};
+  const point = mlPointFeature(feature, group);
+  if (group === 'building' || !point && (mlPresent(tags.building) || mlPresent(tags['building:part']))) return true;
+  const highway = mlPresent(tags.highway) && tags.highway !== 'crossing';
+  if (!point && (highway || mlPresent(tags['area:highway'])
+    || group === 'road' && tags.highway !== 'crossing' && feature.kind !== 'crossing')) return true;
+  if (tags.highway === 'crossing' || feature.kind === 'crossing' || tags.footway === 'crossing'
+    || Object.entries(tags).some(([key, value]) => (key === 'crossing' || key.startsWith('crossing:')) && mlPresent(value))) return false;
+  if (mlPresent(tags.barrier) || tags.barrier === undefined && mlBarrierKinds.has(feature.kind)) return false;
+  if (point && mapFeatureLayer(feature, group) === 'power') return false;
+  return true;
 }
 
 /** Rendering categories never change or replace original OSM tags and geometry. */

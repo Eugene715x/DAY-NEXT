@@ -21,16 +21,17 @@ test('spatial candidates include wide road strokes and giant zone holes outside 
   assert.deepEqual(renderer.zonesAt(9000, 9000).map(zone => zone.biome), ['residential']);
 });
 
-test('power geometry shares independent visibility for point and line selection', () => {
+test('power line visibility is independent while utility support markers are omitted', () => {
   const renderer = createDetailRenderer(world({ details: [
     { id: 'pole', geometry: 'point', points: [{ x: 128, y: 128 }], kind: 'utility_pole', tags: { man_made: 'utility_pole' } },
     { id: 'line', geometry: 'line', points: [{ x: 20, y: 200 }, { x: 1000, y: 200 }], tags: { power: 'line' } },
   ] }));
-  assert.equal(renderer.pick(128, 128).layer, 'power');
+  assert.equal(renderer.pick(128, 128), null, 'Utility poles are retained in the source but do not clutter the map');
   assert.equal(renderer.pick(700, 200).layer, 'power');
-  assert.equal(renderer.getStats().power, 2);
+  assert.equal(renderer.getStats().power, 1);
+  assert.equal(renderer.getStats().filteredFeatures, 1);
   renderer.setLayers({ details: false });
-  assert.equal(renderer.pick(128, 128).id, 'pole', 'Hiding small objects cannot hide the electrical network');
+  assert.equal(renderer.pick(700, 200).id, 'line', 'Hiding small objects cannot hide the electrical network');
   renderer.setLayers({ power: false });
   assert.equal(renderer.pick(128, 128), null);
   assert.equal(renderer.pick(700, 200), null);
@@ -81,4 +82,67 @@ test('dry watercourses cannot inherit a water resource profile from their visual
   assert(!renderer.pick(100, 50).resourceProfileIds.includes('profile.water'));
   assert.equal(renderer.pick(100, 100).typeId, 'biome.water');
   assert(renderer.pick(100, 100).resourceProfileIds.includes('profile.water'));
+});
+
+function recordingContext() {
+  const strokes = [], fills = [], dashes = [];
+  return {
+    strokes, fills, dashes,
+    save() {}, restore() {}, beginPath() {}, rect() {}, clip() {},
+    setLineDash(value) { this.dash = [...value]; dashes.push([...value]); },
+    stroke(path) { strokes.push({ path, color: this.strokeStyle, width: this.lineWidth, dash: [...(this.dash || [])] }); },
+    fill(path) { fills.push(path); },
+  };
+}
+
+const fullView = { zoom: 1, cameraX: 200, cameraY: 150, width: 400, height: 300 };
+
+test('road junctions paint all casings before any core and class hiding also removes highlight ink', () => {
+  const renderer = createDetailRenderer(world({ width: 400, height: 300, roads: [
+    { id: 'west', type: 'residential', width: 6, points: [{ x: 20, y: 150 }, { x: 200, y: 150 }] },
+    { id: 'east', type: 'residential', width: 6, points: [{ x: 200, y: 150 }, { x: 380, y: 150 }] },
+    { id: 'south', type: 'residential', width: 6, points: [{ x: 200, y: 150 }, { x: 200, y: 280 }] },
+  ] }));
+  const context = recordingContext();
+  renderer.draw(context, fullView);
+  assert.deepEqual(context.strokes.map(stroke => stroke.color), ['#82816a', '#82816a', '#82816a', '#d2c6a1', '#d2c6a1', '#d2c6a1']);
+  assert(context.strokes.every(stroke => stroke.dash.length === 0));
+  const selected = renderer.pick(100, 150, 0);
+  renderer.setRoadClasses({ street: false });
+  assert.equal(renderer.pick(100, 150, 0), null);
+  assert.equal(renderer.drawHighlight(context, fullView, selected), null);
+  assert.equal(context.strokes.length, 6);
+  const hidden = recordingContext(); renderer.draw(hidden, fullView);
+  assert.equal(hidden.strokes.length, 0);
+  assert.equal(renderer.getStats().visibleRoads, 0);
+});
+
+test('power chains use continuous solid strips and highlights can resolve an original member id', () => {
+  const tags = { power: 'line', voltage: '110000' };
+  const renderer = createDetailRenderer(world({ width: 400, height: 300, details: [
+    { id: 'way-100', geometry: 'line', points: [{ x: 20, y: 150 }, { x: 200, y: 150 }], tags },
+    { id: 'way-200', geometry: 'line', points: [{ x: 200, y: 150 }, { x: 380, y: 150 }], tags },
+  ] }));
+  const context = recordingContext(); renderer.draw(context, fullView);
+  assert.equal(renderer.getStats().sourcePowerLines, 2);
+  assert.equal(renderer.getStats().displayPowerLines, 1);
+  assert.equal(context.strokes.length, 2, 'The merged electrical path gets one casing and one continuous interior');
+  assert(context.strokes.every(stroke => stroke.dash.length === 0));
+  const first = renderer.pick(50, 150, 0), last = renderer.pick(350, 150, 0);
+  assert.equal(first.key, last.key);
+  assert.deepEqual(first.sourceIds.sort(), ['way-100', 'way-200']);
+  assert.equal(renderer.drawHighlight(context, fullView, 'way-200'), first.key);
+  assert.equal(context.strokes.length, 4);
+});
+
+test('town boundaries never fill their interior during scene or selection rendering', () => {
+  const renderer = createDetailRenderer(world({ width: 400, height: 300, details: [
+    { id: 'town', geometry: 'polygon', points: ring(20, 20, 380, 280), tags: { boundary: 'administrative', name: 'Town' } },
+  ] }));
+  const context = recordingContext(); renderer.draw(context, fullView);
+  assert.equal(context.fills.length, 0);
+  assert.equal(context.strokes.length, 1);
+  assert.equal(renderer.drawHighlight(context, fullView, 'town'), 'landscape:detail:town');
+  assert.equal(context.fills.length, 0, 'Selection cannot introduce a town-wide highlight fill');
+  assert.equal(context.strokes.length, 3);
 });

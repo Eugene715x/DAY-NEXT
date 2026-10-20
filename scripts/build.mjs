@@ -4,7 +4,7 @@ import { writeMapObjectsReport } from './report-map-objects.mjs';
 import { BUILDING_TYPES, BIOME_TYPES, RESOURCE_PROFILES, RESOURCE_KINDS } from '../gameplay-types.js';
 const root = new URL('../', import.meta.url);
 const read = path => readFile(new URL(path, root), 'utf8');
-const [html, css, world, realWorld, terrain, mapLayers, types, details, converter, map, game] = await Promise.all(['index.html', 'styles.css', 'world.js', 'real-world.js', 'terrain-renderer.js', 'map-layers.js', 'gameplay-types.js', 'detail-renderer.js', 'scripts/lib/osm-converter.mjs', 'maps/usa.js', 'game.js'].map(read));
+const [html, css, world, realWorld, terrain, mapLayers, presentation, types, details, converter, map, game] = await Promise.all(['index.html', 'styles.css', 'world.js', 'real-world.js', 'terrain-renderer.js', 'map-layers.js', 'map-presentation.js', 'gameplay-types.js', 'detail-renderer.js', 'scripts/lib/osm-converter.mjs', 'maps/usa.js', 'game.js'].map(read));
 const { version } = JSON.parse(await read('package.json'));
 const mapData = JSON.parse(map.replace(/^export default\s+/, '').trim().replace(/;$/, ''));
 const objectsReport = await writeMapObjectsReport(mapData, root);
@@ -12,7 +12,8 @@ const wrap = (body, names) => `const {${names}} = (() => {\n${body.replace(/^exp
 const source = wrap(world, 'createWorld,findPath,terrainAt,nearestWalkable')
   + wrap(realWorld, 'createRealWorld')
   + wrap(terrain, 'createTerrainBackdrop,createLandscapeBackdrop')
-  + wrap(mapLayers, 'mapFeatureLayer,mapBiome,mapZoneBiome')
+  + wrap(mapLayers, 'mapFeatureLayer,mapBiome,mapZoneBiome,shouldRenderFeature')
+  + wrap(presentation, 'ROAD_CLASSES,roadClass,mergeNetworkLines')
   + wrap(types.replace(/^import\s+[^;]+;\s*/gm, ''), 'BUILDING_TYPES,BIOME_TYPES,RESOURCE_PROFILES,RESOURCE_KINDS,classifyBuilding,classifyBiome,collectResourceProfiles,collectResourceCandidates')
   + wrap(details.replace(/^import\s+[^;]+;\s*/gm, ''), 'createDetailRenderer')
   + wrap(converter, 'convertOSM,validateBbox')
@@ -29,10 +30,11 @@ await writeFile(new URL('downloads/day-next.html', root), standalone);
 const instructions = `DAY / NEXT ${version} — одиночная экспедиция
 
 Откройте day-next.html в браузере. Установка и интернет не нужны.
-Клик/касание — идти, перетаскивание — карта, колесо/щипок — масштаб до 24x.
-B / кнопка дома — посмотреть застройку; наведение/касание — сведения об отдельном доме или дороге. F / прицел — вернуться к путнику.
+Клик — идти, перетаскивание — карта, колесо — масштаб до 24x.
+B / кнопка дома — посмотреть застройку; наведение — сведения об отдельном доме или дороге. F / прицел — вернуться к путнику.
 Кнопка «Слои» — отдельное включение подложки, ландшафта с природой и зонами, водоёмов и русел, дорог, электросети, домов и прочих объектов. Выключенные объекты не рисуются и не выбираются.
-Ландшафт объединяет леса, пески, скалы, парки, жилые и промышленные территории как биомы. Дороги и вода управляются независимо.
+Ландшафт объединяет леса, пески, скалы, парки, жилые и промышленные территории как биомы. Граница поселения показана контуром без заливки и не добавляет биом.
+Дороги соединены в трассы пяти типов: магистрали, дороги, улицы и проезды, грунтовки, тропы. Каждый тип можно скрыть отдельно. Электросеть — сплошные линии без отдельных столбов. Ограды и обозначения переходов скрыты.
 Парковки и территории учреждений также относятся к зонам. Пересекающиеся зоны учитываются одновременно; список биомов виден в карточке путника и при осмотре объектов.
 remaining-objects.md содержит полный список того, что осталось в слое остальных объектов.
 gameplay-types.json содержит типы зданий, биомов и общие профили ресурсов. Это настройки возможного поиска; механика добычи ещё не добавлена.
@@ -41,7 +43,7 @@ gameplay-types.json содержит типы зданий, биомов и об
 Реальная местность: ${mapData.name} / ${mapData.region}.
 Снимок OSM: ${mapData.source?.snapshotAt || 'дата не указана'}.
 Загружено: ${mapData.source?.downloadedAt || 'дата не указана'}.
-${mapData.roads.length} дорог, ${mapData.buildings.length} зданий.
+${mapData.roads.length} исходных участков дорог, ${mapData.buildings.length} зданий.
 Полнота относится к исходному файлу, а не ко всем существующим в реальности объектам.
 Геоданные: © OpenStreetMap contributors, ODbL 1.0
 https://www.openstreetmap.org/copyright

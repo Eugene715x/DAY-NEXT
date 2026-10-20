@@ -1,5 +1,6 @@
-import { mapFeatureLayer, mapBiome, mapZoneBiome } from './map-layers.js';
+import { mapFeatureLayer, mapBiome, mapZoneBiome, shouldRenderFeature } from './map-layers.js';
 import { classifyBuilding, classifyBiome } from './gameplay-types.js';
+import { ROAD_CLASSES, roadClass, mergeNetworkLines } from './map-presentation.js';
 
 /** Sharp, scale-aware cartography over the original mapped footprints and paths. */
 const drClamp = (n, min, max) => Math.max(min, Math.min(max, n));
@@ -75,6 +76,16 @@ function drNearestOnLine(x, y, points) {
   return result;
 }
 
+function drNearestOnRings(x, y, rings, closed = false) {
+  let nearest = { distance: Infinity, x, y };
+  for (const ring of rings) {
+    const points = closed && ring.length > 1 && (ring[0].x !== ring.at(-1).x || ring[0].y !== ring.at(-1).y) ? [...ring, ring[0]] : ring;
+    const point = drNearestOnLine(x, y, points);
+    if (point.distance < nearest.distance) nearest = point;
+  }
+  return nearest;
+}
+
 const drNames = {
   building: 'Здание', house: 'Жилой дом', residential: 'Жилой дом', detached: 'Отдельный дом', apartments: 'Жилой корпус',
   commercial: 'Торговое здание', retail: 'Магазин', industrial: 'Промышленное здание', warehouse: 'Склад', garage: 'Гараж', garages: 'Гаражи',
@@ -113,19 +124,16 @@ const drTypeMetadata = record => {
 
 function drFeatureLabel(feature, group) {
   if (feature.name) return feature.name;
+  if (['census', 'administrative'].includes(feature.tags?.boundary)) return 'Граница поселения';
   if (mapFeatureLayer(feature, group) === 'power') {
     const names = { pole: 'Столб электросети', tower: 'Опора ЛЭП', line: 'Линия электропередачи', minor_line: 'Линия местной электросети', cable: 'Электрический кабель', transformer: 'Трансформатор', substation: 'Подстанция', plant: 'Электростанция', switch: 'Выключатель электросети' };
     return feature.tags?.man_made === 'utility_pole' ? 'Коммунальный столб' : names[feature.tags?.power] || 'Объект электросети';
   }
   if (group === 'building') return drNames[feature.ruins ? 'ruins' : feature.type] || drNames.building;
-  if (group === 'road') return drNames[feature.type === 'residential' ? 'residential_road' : feature.type] || 'Дорога';
+  if (group === 'road') return feature.roadClassName || ROAD_CLASSES[roadClass(feature)]?.name || 'Дорога';
   if (group === 'river') return drDry(feature) ? 'Сезонное русло' : drNames.river;
   if (group === 'lake') return drNames.lake;
   const tags = feature.tags || {};
-  if (mapFeatureLayer(feature, group) === 'power') {
-    const names = { tower: 'Опора ЛЭП', pole: 'Столб электросети', line: 'Линия электропередачи', minor_line: 'Линия местной электросети', transformer: 'Трансформатор', substation: 'Электроподстанция', plant: 'Электростанция', generator: 'Генератор' };
-    return names[tags.power] || drNames[tags.man_made] || 'Объект электросети';
-  }
   if (group === 'zone' || mapFeatureLayer(feature, group) === 'landscape' && (group === 'area' || feature.geometry === 'polygon' || tags.landuse || mapZoneBiome(feature))) {
     const biome = mapBiome(feature);
     return drBiomeNames[biome] || `Зона: ${String(tags.landuse || tags.natural || biome).replaceAll('_', ' ')}`;
@@ -138,10 +146,14 @@ function drFeatureLabel(feature, group) {
 
 function drCache(original, group, layer, metersPerUnit, index) {
   const feature = original.id ? original : { ...original, id: `${group}-${index}` };
-  const geometry = group === 'building' || group === 'area' || group === 'lake' || group === 'zone' ? 'polygon' : feature.geometry || 'line';
+  const outlineOnly = layer === 'landscape' && mapBiome(feature) === 'administrative';
+  // Filled source polygons may have artificial clipping edges along the map
+  // frame. Their separate source-edge paths are the only settlement outlines.
+  const boundaryPaths = outlineOnly && Array.isArray(feature.boundaryPaths) ? feature.boundaryPaths.filter(path => path.length > 1) : null;
+  const geometry = boundaryPaths ? 'line' : group === 'building' || group === 'area' || group === 'lake' || group === 'zone' ? 'polygon' : feature.geometry || 'line';
   const ellipse = group === 'lake' && [feature.x, feature.y, feature.rx, feature.ry].every(Number.isFinite);
   const ellipseRing = ellipse ? Array.from({ length: 65 }, (_, i) => ({ x: feature.x + Math.cos(i / 64 * Math.PI * 2) * feature.rx, y: feature.y + Math.sin(i / 64 * Math.PI * 2) * feature.ry })) : null;
-  const rings = ellipseRing ? [ellipseRing] : feature.rings?.length ? feature.rings : feature.points?.length ? [feature.points] : [];
+  const rings = boundaryPaths || (ellipseRing ? [ellipseRing] : feature.rings?.length ? feature.rings : feature.points?.length ? [feature.points] : []);
   const points = rings.flat();
   if (!points.length) return null;
   const path = new Path2D();
@@ -158,29 +170,40 @@ function drCache(original, group, layer, metersPerUnit, index) {
     if (!longest || length > longest.length) longest = { a, b, length, angle: Math.atan2(b.y - a.y, b.x - a.x) };
   }
   const actualWidth = Number(feature.widthMeters ?? feature.tags?.width) / metersPerUnit;
-  const biome = layer === 'landscape' ? mapBiome(feature) : null;
-  const gameplayType = group === 'building' ? classifyBuilding(feature) : layer === 'landscape' ? classifyBiome(biome) : layer === 'water' ? classifyBiome(drDry(feature) ? 'dry_riverbed' : 'water') : null;
-  return { feature, group, layer, sourceOrder: index, biome, gameplayType, geometry, ellipse, key: `${layer}:${group}:${feature.id}`, rings, points, path, bounds, center, longest, hash: drHash(feature.id), width: Number.isFinite(actualWidth) && actualWidth > 0 ? actualWidth : Number(feature.width) || 1 };
+  const biome = layer === 'landscape' && !outlineOnly ? mapBiome(feature) : null;
+  const gameplayType = group === 'building' ? classifyBuilding(feature) : layer === 'landscape' && !outlineOnly ? classifyBiome(biome) : layer === 'water' ? classifyBiome(drDry(feature) ? 'dry_riverbed' : 'water') : null;
+  return { feature, group, layer, sourceOrder: index, biome, gameplayType, outlineOnly, roadClass: layer === 'roads' ? roadClass(feature) : null, geometry, ellipse, key: `${layer}:${group}:${feature.id}`, rings, points, path, bounds, center, longest, hash: drHash(feature.id), width: Number.isFinite(actualWidth) && actualWidth > 0 ? actualWidth : Number(feature.width) || 1 };
 }
 
 /** Call draw inside a world transform; view dimensions are CSS screen pixels. */
 export function createDetailRenderer(world) {
   const metersPerUnit = world.metersPerUnit || 5;
-  const cache = (features, group) => (features || []).map((feature, index) => drCache(feature, group, mapFeatureLayer(feature, group), metersPerUnit, index)).filter(Boolean);
-  const roads = cache(world.roads, 'road');
+  const groups = [['roads', 'road'], ['buildings', 'building'], ['areas', 'area'], ['rivers', 'river'], ['lakes', 'lake'], ['details', 'detail']];
+  const inputFeatures = groups.reduce((sum, [key]) => sum + (world[key]?.length || 0), 0);
+  const filteredFeatures = groups.reduce((sum, [key, group]) => sum + (world[key] || []).filter(feature => !shouldRenderFeature(feature, group)).length, 0);
+  const cache = (features, group) => (features || []).filter(feature => shouldRenderFeature(feature, group)).map((feature, index) => drCache(feature, group, mapFeatureLayer(feature, group), metersPerUnit, index)).filter(Boolean);
+  const nativeRoads = new Map((world.roads || []).filter(feature => shouldRenderFeature(feature, 'road')).map((feature, index) => {
+    const road = feature.id ? feature : { ...feature, id: `road-${index}` };
+    return [road.id, road];
+  }));
+  const roadNetwork = mergeNetworkLines([...nativeRoads.values()], { kind: 'road' });
+  const roads = cache(roadNetwork.features, 'road');
   const buildings = cache(world.buildings, 'building');
-  const nativeRoads = new Map(roads.map(record => [record.feature.id, record]));
-  const details = cache(world.details, 'detail').filter(record => {
+  const detailSources = cache(world.details, 'detail');
+  const coalescedDetails = detailSources.filter(record => {
     const road = record.layer === 'roads' && nativeRoads.get(record.feature.id);
     // The same OSM alignment can be both a present road and a former railway.
     // Its native road already retains all tags; keep one physical selectable ink path.
     return !(road && record.geometry === 'line' && road.points.length === record.points.length
       && road.points.every((point, index) => point.x === record.points[index].x && point.y === record.points[index].y));
   });
+  const powerSources = coalescedDetails.filter(record => record.layer === 'power' && record.geometry === 'line');
+  const powerNetwork = mergeNetworkLines(powerSources.map(record => record.feature), { kind: 'power' });
+  const details = [...coalescedDetails.filter(record => record.layer !== 'power' || record.geometry !== 'line'), ...cache(powerNetwork.features, 'detail')];
   const areas = cache(world.areas, 'area');
   const rivers = cache(world.rivers, 'river');
   const lakes = cache(world.lakes, 'lake');
-  const mappedZones = [...areas, ...details].filter(record => record.layer === 'landscape' && record.geometry === 'polygon');
+  const mappedZones = [...areas, ...details].filter(record => record.layer === 'landscape' && record.geometry === 'polygon' && !record.outlineOnly);
   const footprintZones = buildings.flatMap((building, index) => {
     const biome = mapZoneBiome(building.feature);
     if (!biome) return [];
@@ -192,26 +215,36 @@ export function createDetailRenderer(world) {
     record.footprintOnly = true;
     return [record];
   });
+  const roadPriority = { trail: 0, track: 1, street: 2, road: 3, highway: 4 };
+  const roadTier = record => (Number(record.feature.layer ?? record.feature.tags?.layer) || 0) * 4
+    + (drFlag(record.feature.bridge ?? record.feature.tags?.bridge) ? 1 : 0) - (drFlag(record.feature.tunnel ?? record.feature.tags?.tunnel) ? 1 : 0);
   const rank = record => record.group === 'building' ? 9
     : record.geometry === 'polygon' ? record.layer === 'landscape' ? 0 : record.layer === 'water' ? 1 : record.layer === 'roads' ? 5 : 2
     : record.geometry === 'point' ? 8 : record.layer === 'water' ? 3 : record.layer === 'landscape' ? 4 : record.group === 'road' ? 6 : 7;
   const surfaceSize = record => (record.bounds.maxX - record.bounds.minX) * (record.bounds.maxY - record.bounds.minY);
   const registry = [...areas, ...rivers, ...lakes, ...details, ...footprintZones, ...roads, ...buildings]
-    .sort((a, b) => rank(a) - rank(b) || (a.geometry === 'polygon' && b.geometry === 'polygon' ? surfaceSize(b) - surfaceSize(a) : 0));
+    .sort((a, b) => rank(a) - rank(b) || (a.group === 'road' && b.group === 'road' ? roadTier(a) - roadTier(b) || roadPriority[a.roadClass] - roadPriority[b.roadClass]
+      : a.geometry === 'polygon' && b.geometry === 'polygon' ? surfaceSize(b) - surfaceSize(a) : 0));
   registry.forEach((record, index) => { record.order = index; });
   const queryRecords = drSpatialIndex(registry);
   const recordsByKey = new Map(registry.map(record => [record.key, record]));
   const recordsById = new Map();
-  for (const record of registry) recordsById.set(record.feature.id, record);
-  const zonePolygons = registry.filter(record => record.layer === 'landscape' && record.geometry === 'polygon');
+  for (const record of registry) {
+    recordsById.set(record.feature.id, record);
+    for (const memberId of record.feature.memberIds || []) recordsById.set(memberId, record);
+  }
+  const zonePolygons = registry.filter(record => record.layer === 'landscape' && record.geometry === 'polygon' && !record.outlineOnly);
   const queryZones = drSpatialIndex(zonePolygons);
   const layers = { landscape: true, water: true, roads: true, power: true, buildings: true, details: true };
-  const stats = { features: registry.length, drawCount: 0, highlightDrawCount: 0, viewCandidates: 0, pickCandidates: 0, zoneCandidates: 0 };
+  const roadClasses = Object.fromEntries(Object.keys(ROAD_CLASSES).map(key => [key, true]));
+  const isEnabled = record => layers[record.layer] && (record.layer !== 'roads' || roadClasses[record.roadClass] !== false);
+  const stats = { features: registry.length, inputFeatures, filteredFeatures, coalescedFeatures: detailSources.length - coalescedDetails.length,
+    sourceRoads: nativeRoads.size, displayRoads: roads.length, sourcePowerLines: powerSources.length, displayPowerLines: powerNetwork.features.length,
+    drawCount: 0, highlightDrawCount: 0, viewCandidates: 0, pickCandidates: 0, zoneCandidates: 0 };
   for (const layer of Object.keys(layers)) {
     stats[layer] = registry.filter(record => record.layer === layer).length;
     stats['visible' + layer[0].toUpperCase() + layer.slice(1)] = 0;
   }
-  const fineRoads = new Set(['footway', 'path', 'track', 'cycleway', 'bridleway', 'steps']);
   const greenAreas = new Set(['park', 'garden', 'grass', 'playground', 'pitch', 'cemetery']);
   let lastZoom = 1, lastHoveredId = null;
   let focusPoint = null;
@@ -222,49 +255,81 @@ export function createDetailRenderer(world) {
       && b.maxY >= view.cameraY - halfHeight - margin && b.minY <= view.cameraY + halfHeight + margin;
   }
 
+  const roadStyles = {
+    highway: { edge: '#706e54', core: '#c8bb8e', centre: '#eee0ae' },
+    road: { edge: '#77775d', core: '#c5b891', centre: '#e4d7ad' },
+    street: { edge: '#82816a', core: '#d2c6a1' },
+    track: { edge: '#898064', core: '#b4a582' },
+    trail: { edge: '#77775b', core: '#d3c6a0' },
+  };
+
   function roadWidth(record, zoom) {
-    const fine = fineRoads.has(record.feature.type);
+    const fine = record.roadClass === 'track' || record.roadClass === 'trail';
     const core = Math.max(record.width, (fine ? .75 : 1.2) / zoom);
-    let stroke = core + (fine ? .7 / zoom : Math.max(.25, 1.1 / zoom));
-    if (record.feature.bridge && zoom >= 2) stroke = Math.max(stroke, core + .5);
-    if (record.feature.type === 'steps' && zoom >= 4) stroke = Math.max(stroke, 1);
-    return { core, stroke };
+    const bridge = drFlag(record.feature.bridge ?? record.feature.tags?.bridge);
+    return { core, stroke: core + (fine ? .7 / zoom : Math.max(.25, 1.1 / zoom)) + (bridge && zoom >= 2 ? .25 : 0) };
   }
 
-  function paintRoad(ctx, record, zoom, hoveredId) {
-    const { feature: road, path } = record;
-    const fine = fineRoads.has(road.type), minor = road.type === 'service' || road.type === 'residential' || road.type === 'unclassified';
-    const { core: width, stroke } = roadWidth(record, zoom);
-    const hovered = hoveredId === road.id;
-    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-    if (hovered) {
-      ctx.strokeStyle = 'rgba(238,238,169,.65)'; ctx.lineWidth = stroke + 4 / zoom; ctx.stroke(path);
-    }
-    ctx.globalAlpha = road.tunnel ? .58 : 1;
-    if (fine) {
-      ctx.strokeStyle = road.type === 'track' ? '#8a8062' : '#706f54';
-      ctx.lineWidth = width + .7 / zoom; ctx.stroke(path);
-      ctx.strokeStyle = '#d8ccaa'; ctx.lineWidth = Math.max(.55 / zoom, width * .52);
-      ctx.setLineDash([Math.max(.65, 2 / zoom), Math.max(.55, 2 / zoom)]); ctx.stroke(path); ctx.setLineDash([]);
-    } else {
-      ctx.strokeStyle = road.bridge ? '#4b5847' : '#77775d'; ctx.lineWidth = width + Math.max(.25, 1.1 / zoom); ctx.stroke(path);
-      ctx.strokeStyle = minor ? '#d2c6a1' : '#bcb18e'; ctx.lineWidth = width; ctx.stroke(path);
-      if (!minor && zoom >= 4 && width * zoom >= 6) {
-        ctx.strokeStyle = '#e4d7ad'; ctx.lineWidth = .65 / zoom;
-        ctx.setLineDash([1.8, 1.7]); ctx.stroke(path); ctx.setLineDash([]);
+  function paintRoadBatch(ctx, records, zoom, hoveredId) {
+    // Finish every casing before painting any interior in the same level. Shared
+    // endpoints and junctions then form a continuous surface without end caps.
+    const ordered = records;
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.setLineDash([]);
+    for (let start = 0; start < ordered.length;) {
+      let end = start + 1;
+      while (end < ordered.length && roadTier(ordered[end]) === roadTier(ordered[start])) end++;
+      for (let i = start; i < end; i++) {
+        const record = ordered[i];
+        if (record.feature.id !== hoveredId) continue;
+        ctx.globalAlpha = 1; ctx.strokeStyle = 'rgba(238,238,169,.65)';
+        ctx.lineWidth = roadWidth(record, zoom).stroke + 4 / zoom; ctx.stroke(record.path);
       }
-    }
-    if (road.bridge && zoom >= 2) {
-      ctx.strokeStyle = 'rgba(42,57,42,.5)'; ctx.lineWidth = width + .5; ctx.setLineDash([.25, 1.8]); ctx.stroke(path); ctx.setLineDash([]);
-      ctx.strokeStyle = '#d9cda7'; ctx.lineWidth = Math.max(.2, width * .7); ctx.stroke(path);
-    }
-    if (road.type === 'steps' && zoom >= 4) {
-      ctx.strokeStyle = '#4e5944'; ctx.lineWidth = Math.max(width, 1); ctx.setLineDash([.15, .7]); ctx.stroke(path); ctx.setLineDash([]);
-    }
-    if (hovered) {
-      ctx.globalAlpha = 1; ctx.strokeStyle = '#f2efb5'; ctx.lineWidth = Math.max(1.25 / zoom, width * .28); ctx.stroke(path);
+      for (const pass of ['edge', 'core']) for (let i = start; i < end; i++) {
+        const record = ordered[i], style = roadStyles[record.roadClass] || roadStyles.road;
+        const tunnel = drFlag(record.feature.tunnel ?? record.feature.tags?.tunnel);
+        ctx.globalAlpha = tunnel ? .58 : 1;
+        ctx.strokeStyle = pass === 'edge' && drFlag(record.feature.bridge ?? record.feature.tags?.bridge) ? '#4b5847' : style[pass];
+        ctx.lineWidth = roadWidth(record, zoom)[pass === 'edge' ? 'stroke' : 'core']; ctx.stroke(record.path);
+      }
+      // Only a highway/road centre marking is dashed; the mapped surface stays solid.
+      for (let i = start; i < end; i++) {
+        const record = ordered[i], width = roadWidth(record, zoom).core, style = roadStyles[record.roadClass] || roadStyles.road;
+        ctx.globalAlpha = drFlag(record.feature.tunnel ?? record.feature.tags?.tunnel) ? .58 : 1;
+        if (style.centre && zoom >= 4 && width * zoom >= 6) {
+          ctx.strokeStyle = style.centre; ctx.lineWidth = .65 / zoom;
+          ctx.setLineDash([1.8, 1.7]); ctx.stroke(record.path); ctx.setLineDash([]);
+        }
+        if (record.feature.id === hoveredId) {
+          ctx.globalAlpha = 1; ctx.strokeStyle = '#f2efb5'; ctx.lineWidth = Math.max(1.25 / zoom, width * .28); ctx.stroke(record.path);
+        }
+      }
+      start = end;
     }
     ctx.globalAlpha = 1;
+  }
+
+  function powerWidth(record, zoom) {
+    return Math.max(.55, 1.8 / zoom);
+  }
+
+  function paintPowerBatch(ctx, records, zoom, hoveredId) {
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.setLineDash([]);
+    for (const record of records) if (record.feature.id === hoveredId) {
+      ctx.strokeStyle = 'rgba(238,238,169,.65)'; ctx.lineWidth = powerWidth(record, zoom) + 4 / zoom; ctx.stroke(record.path);
+    }
+    for (const pass of ['edge', 'core']) for (const record of records) {
+      ctx.strokeStyle = pass === 'edge' ? '#566049' : record.feature.id === hoveredId ? '#f2efb5' : '#baa86e';
+      ctx.lineWidth = pass === 'edge' ? powerWidth(record, zoom) : Math.max(.22, .85 / zoom); ctx.stroke(record.path);
+    }
+  }
+
+  function boundaryWidth(zoom) { return 1.2 / zoom; }
+
+  function paintBoundary(ctx, record, zoom, hoveredId) {
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    ctx.strokeStyle = hoveredId === record.feature.id ? '#eff0be' : 'rgba(91,113,78,.78)';
+    ctx.lineWidth = boundaryWidth(zoom);
+    ctx.setLineDash([10 / zoom, 5 / zoom]); ctx.stroke(record.path); ctx.setLineDash([]);
   }
 
   function paintBuilding(ctx, record, zoom, hoveredId) {
@@ -405,6 +470,7 @@ export function createDetailRenderer(world) {
   }
 
   function paintBiome(ctx, record, zoom, hoveredId) {
+    if (record.outlineOnly) { paintBoundary(ctx, record, zoom, hoveredId); return; }
     if (record.geometry !== 'polygon') { paintDetail(ctx, record, zoom, hoveredId); return; }
     const { feature, path, biome, bounds: b } = record;
     const hovered = hoveredId === feature.id;
@@ -420,7 +486,6 @@ export function createDetailRenderer(world) {
       education: 'rgba(144,158,116,.49)', civic: 'rgba(143,151,132,.48)', emergency: 'rgba(165,140,119,.47)',
       accommodation: 'rgba(166,155,126,.47)', camping: 'rgba(127,149,100,.53)', food_service: 'rgba(173,151,112,.48)',
       service: 'rgba(150,145,121,.47)', utilities: 'rgba(132,142,128,.50)', heritage: 'rgba(162,145,113,.49)',
-      administrative: 'rgba(126,143,111,.045)',
     };
     ctx.fillStyle = colors[biome] || 'rgba(145,153,113,.28)'; ctx.fill(path, 'evenodd');
     // Sparse print hatching expresses a land-use category, not extra mapped geometry.
@@ -436,7 +501,6 @@ export function createDetailRenderer(world) {
       ctx.stroke(); ctx.restore();
     }
     ctx.strokeStyle = hovered ? '#e8eab8' : 'rgba(73,94,58,.28)'; ctx.lineWidth = (hovered ? 1.6 : .6) / zoom;
-    if (biome === 'administrative') ctx.setLineDash([5 / zoom, 4 / zoom]);
     ctx.stroke(path); ctx.setLineDash([]);
     if (hovered) { ctx.fillStyle = 'rgba(224,228,161,.12)'; ctx.fill(path, 'evenodd'); }
   }
@@ -472,19 +536,29 @@ export function createDetailRenderer(world) {
     lastZoom = view.zoom;
     lastHoveredId = view.hoveredId || null;
     if (view.layers) setLayers(view.layers);
+    if (view.roadClasses) setRoadClasses(view.roadClasses);
     const halfWidth = view.width / (2 * view.zoom), halfHeight = view.height / (2 * view.zoom);
     const candidates = queryRecords({ minX: view.cameraX - halfWidth - 12, minY: view.cameraY - halfHeight - 12, maxX: view.cameraX + halfWidth + 12, maxY: view.cameraY + halfHeight + 12 });
-    const visible = candidates.filter(record => layers[record.layer] && inView(record, view));
+    const visible = candidates.filter(record => isEnabled(record) && inView(record, view));
     stats.viewCandidates = candidates.length; stats.drawCount++;
     const visibleRoads = visible.filter(record => record.group === 'road');
+    const visiblePower = visible.filter(record => record.layer === 'power' && record.geometry === 'line');
     for (const layer of Object.keys(layers)) stats['visible' + layer[0].toUpperCase() + layer.slice(1)] = visible.filter(record => record.layer === layer).length;
     ctx.save(); ctx.globalAlpha = 1;
     if (Number.isFinite(world.width) && Number.isFinite(world.height)) { ctx.beginPath(); ctx.rect(0, 0, world.width, world.height); ctx.clip(); }
+    let roadsPainted = false, powerPainted = false;
     for (const record of visible) {
       if (record.layer === 'landscape') paintBiome(ctx, record, view.zoom, view.hoveredId);
       else if (record.layer === 'water') paintWater(ctx, record, view.zoom, view.hoveredId);
       else if (record.layer === 'roads' && record.geometry === 'polygon') paintRoadSurface(ctx, record, view.zoom, view.hoveredId);
-      else if (record.group === 'road') paintRoad(ctx, record, view.zoom, view.hoveredId);
+      else if (record.group === 'road') {
+        if (!roadsPainted) paintRoadBatch(ctx, visibleRoads, view.zoom, view.hoveredId);
+        roadsPainted = true;
+      }
+      else if (record.layer === 'power' && record.geometry === 'line') {
+        if (!powerPainted) paintPowerBatch(ctx, visiblePower, view.zoom, view.hoveredId);
+        powerPainted = true;
+      }
       else if (record.group === 'building') paintBuilding(ctx, record, view.zoom, view.hoveredId);
       else paintDetail(ctx, record, view.zoom, view.hoveredId);
     }
@@ -496,19 +570,20 @@ export function createDetailRenderer(world) {
   function drawHighlight(ctx, view, target = view.hoveredKey || view.hoveredId) {
     lastZoom = view.zoom;
     if (view.layers) setLayers(view.layers);
+    if (view.roadClasses) setRoadClasses(view.roadClasses);
     const identity = typeof target === 'object' && target ? target.key || target.id : target;
     const record = recordsByKey.get(identity) || recordsById.get(identity);
-    lastHoveredId = record && layers[record.layer] ? record.feature.id : null;
+    lastHoveredId = record && isEnabled(record) ? record.feature.id : null;
     if (!lastHoveredId || !inView(record, view, Math.max(12, record.width / 2 + 4 / view.zoom))) return null;
     stats.highlightDrawCount++;
     ctx.save(); ctx.globalAlpha = 1;
     if (Number.isFinite(world.width) && Number.isFinite(world.height)) { ctx.beginPath(); ctx.rect(0, 0, world.width, world.height); ctx.clip(); }
     if (record.geometry === 'point') paintDetail(ctx, record, view.zoom, record.feature.id);
-    else if (record.geometry === 'polygon') {
+    else if (record.geometry === 'polygon' && !record.outlineOnly) {
       ctx.fillStyle = 'rgba(224,228,161,.16)'; ctx.fill(record.path, 'evenodd');
       ctx.strokeStyle = '#eff0be'; ctx.lineWidth = Math.max(record.group === 'building' ? .26 : 0, 1.6 / view.zoom); ctx.stroke(record.path);
     } else {
-      const width = record.group === 'road' ? roadWidth(record, view.zoom).stroke : record.layer === 'water' ? waterWidth(record, view.zoom) : detailLineWidth(record, view.zoom);
+      const width = record.outlineOnly ? boundaryWidth(view.zoom) : record.group === 'road' ? roadWidth(record, view.zoom).stroke : record.layer === 'water' ? waterWidth(record, view.zoom) : record.layer === 'power' ? powerWidth(record, view.zoom) : detailLineWidth(record, view.zoom);
       ctx.lineJoin = 'round'; ctx.lineCap = 'round';
       ctx.strokeStyle = 'rgba(238,238,169,.65)'; ctx.lineWidth = width + 4 / view.zoom; ctx.stroke(record.path);
       ctx.strokeStyle = '#f2efb5'; ctx.lineWidth = Math.max(1.25 / view.zoom, width * .28); ctx.stroke(record.path);
@@ -519,14 +594,16 @@ export function createDetailRenderer(world) {
 
   function describe(record, point = record.center) {
     const feature = record.feature;
-    const zone = record.layer === 'landscape' && record.geometry === 'polygon' && (mapZoneBiome(feature) || ['residential', 'industrial', 'commercial', 'retail'].includes(record.biome));
-    const kind = zone ? `${record.biome}_area` : record.group === 'building' ? feature.ruins ? 'ruins' : 'building' : record.group === 'road' ? 'road' : record.group === 'area' ? feature.type : record.group === 'river' ? 'river' : record.group === 'lake' ? 'lake' : feature.kind;
-    const roadDescription = (drNames[feature.type === 'residential' ? 'residential_road' : feature.type] || 'Дорога') + (feature.tags?.railway === 'abandoned' ? ' · По бывшей железной дороге' : '');
+    const zone = !record.outlineOnly && record.layer === 'landscape' && record.geometry === 'polygon' && (mapZoneBiome(feature) || ['residential', 'industrial', 'commercial', 'retail'].includes(record.biome));
+    const kind = record.outlineOnly ? 'settlement_boundary' : zone ? `${record.biome}_area` : record.group === 'building' ? feature.ruins ? 'ruins' : 'building' : record.group === 'road' ? 'road' : record.group === 'area' ? feature.type : record.group === 'river' ? 'river' : record.group === 'lake' ? 'lake' : feature.kind;
+    const roadDescription = (ROAD_CLASSES[record.roadClass]?.name || 'Дорога') + ((feature.members || [feature]).some(member => member.tags?.railway === 'abandoned') ? ' · По бывшей железной дороге' : '');
     return { id: feature.id, key: record.key, sourceId: drSourceId(feature), layer: record.layer, kind, biome: record.biome, ...drTypeMetadata(record),
       biomeName: record.biome ? drBiomeNames[record.biome] || drFeatureLabel(feature, record.group) : null,
-      geometry: record.geometry, footprintOnly: record.footprintOnly === true,
+      geometry: record.geometry, footprintOnly: record.footprintOnly === true, outlineOnly: record.outlineOnly,
+      roadClass: record.roadClass, roadClassName: ROAD_CLASSES[record.roadClass]?.name || null,
+      sourceIds: [...(feature.sourceIds || [drSourceId(feature)])], memberIds: [...(feature.memberIds || [feature.id])],
       name: drFeatureLabel(feature, record.group), x: point.x, y: point.y, source: feature,
-      description: record.group === 'building' ? [feature.address, drNames[feature.type], feature.levels ? `${feature.levels} эт.` : ''].filter(Boolean).join(' · ') : record.group === 'road' ? roadDescription : record.footprintOnly ? `${drBiomeNames[record.biome]} · По контуру здания` : feature.tags?.railway === 'abandoned' ? 'Заброшенная железная дорога' : record.layer === 'water' && drDry(feature) ? 'Сезонное русло' : drNames[kind] || drFeatureLabel(feature, record.group) };
+      description: record.outlineOnly ? 'Граница населённого пункта' : record.group === 'building' ? [feature.address, drNames[feature.type], feature.levels ? `${feature.levels} эт.` : ''].filter(Boolean).join(' · ') : record.group === 'road' ? roadDescription : record.footprintOnly ? `${drBiomeNames[record.biome]} · По контуру здания` : feature.tags?.railway === 'abandoned' ? 'Заброшенная железная дорога' : record.layer === 'water' && drDry(feature) ? 'Сезонное русло' : drNames[kind] || drFeatureLabel(feature, record.group) };
   }
 
   /** All physical zone memberships coexist, including zones hidden from view. */
@@ -582,12 +659,12 @@ export function createDetailRenderer(world) {
     const candidateBuildings = candidates.filter(record => record.group === 'building').sort((a, b) => a.sourceOrder - b.sourceOrder);
     for (let i = candidateBuildings.length - 1; i >= 0; i--) {
       const record = candidateBuildings[i], b = record.bounds;
-      if (layers[record.layer] && x >= b.minX && x <= b.maxX && y >= b.minY && y <= b.maxY && drInPolygon(x, y, record.rings)) return describe(record);
+      if (isEnabled(record) && x >= b.minX && x <= b.maxX && y >= b.minY && y <= b.maxY && drInPolygon(x, y, record.rings)) return describe(record);
     }
     let pointHit = null, pointScore = Infinity;
     for (let i = candidates.length - 1; i >= 0; i--) {
       const record = candidates[i];
-      if (!layers[record.layer] || record.geometry !== 'point') continue;
+      if (!isEnabled(record) || record.geometry !== 'point') continue;
       const edgeDistance = pointPaintDistance(record, x, y, lastZoom);
       if (edgeDistance <= 0) return describe(record, record.points[0]);
       if (edgeDistance <= tolerance && edgeDistance < pointScore) { pointHit = describe(record, record.points[0]); pointScore = edgeDistance; }
@@ -598,12 +675,12 @@ export function createDetailRenderer(world) {
     let closest = null, minimum = Infinity;
     for (let i = candidates.length - 1; i >= 0; i--) {
       const record = candidates[i];
-      if (!layers[record.layer] || record.geometry !== 'line') continue;
-      let stroke = record.group === 'road' ? roadWidth(record, lastZoom).stroke : record.layer === 'water' ? waterWidth(record, lastZoom) : detailLineWidth(record, lastZoom);
+      if (!isEnabled(record) || record.geometry !== 'line' && !record.outlineOnly) continue;
+      let stroke = record.outlineOnly ? boundaryWidth(lastZoom) : record.group === 'road' ? roadWidth(record, lastZoom).stroke : record.layer === 'water' ? waterWidth(record, lastZoom) : record.layer === 'power' ? powerWidth(record, lastZoom) : detailLineWidth(record, lastZoom);
       if (record.feature.id === lastHoveredId) stroke += (record.group === 'road' ? 4 : record.layer === 'water' ? 3 : 1.5) / lastZoom;
       const b = record.bounds;
       if (x < b.minX - tolerance - stroke / 2 || x > b.maxX + tolerance + stroke / 2 || y < b.minY - tolerance - stroke / 2 || y > b.maxY + tolerance + stroke / 2) continue;
-      const point = drNearestOnLine(x, y, record.points), edgeDistance = point.distance - stroke / 2;
+      const point = drNearestOnRings(x, y, record.rings, record.outlineOnly && record.geometry === 'polygon'), edgeDistance = point.distance - stroke / 2;
       if (edgeDistance <= 0) return describe(record, point);
       if (edgeDistance <= tolerance && edgeDistance < minimum) { closest = describe(record, point); minimum = edgeDistance; }
     }
@@ -612,7 +689,7 @@ export function createDetailRenderer(world) {
     // Reverse paint order keeps streets and small territories above broad biomes.
     for (let i = candidates.length - 1; i >= 0; i--) {
       const record = candidates[i], feature = record.feature;
-      if (!layers[record.layer] || record.geometry !== 'polygon') continue;
+      if (!isEnabled(record) || record.geometry !== 'polygon' || record.outlineOnly) continue;
       if (record.ellipse ? ((x - feature.x) / feature.rx) ** 2 + ((y - feature.y) / feature.ry) ** 2 <= 1 : drInPolygon(x, y, record.rings)) return describe(record);
     }
     return null;
@@ -624,14 +701,24 @@ export function createDetailRenderer(world) {
     return { ...layers };
   }
 
+  function setRoadClasses(changes = {}) {
+    for (const key of Object.keys(roadClasses)) if (Object.hasOwn(changes, key)) roadClasses[key] = changes[key] !== false;
+    if (Object.values(roadClasses).every(value => !value)) stats.visibleRoads = 0;
+    return { ...roadClasses };
+  }
+
   function getFeatures() {
     return registry.map(record => ({
       id: record.feature.id, key: record.key, sourceId: drSourceId(record.feature), layer: record.layer, group: record.group,
+      sourceIds: [...(record.feature.sourceIds || [drSourceId(record.feature)])], memberIds: [...(record.feature.memberIds || [record.feature.id])],
+      sourceTypes: [...(record.feature.sourceTypes || [record.feature.type || record.feature.kind].filter(Boolean))], names: [...(record.feature.names || [record.feature.name].filter(Boolean))], merged: record.feature.merged === true,
+      roadClass: record.roadClass, roadClassName: ROAD_CLASSES[record.roadClass]?.name || null,
       ...drTypeMetadata(record),
       kind: describe(record).kind, name: drFeatureLabel(record.feature, record.group), geometry: record.geometry,
       points: record.points.map(point => ({ ...point })), rings: record.geometry === 'polygon' ? record.rings.map(ring => ring.map(point => ({ ...point }))) : undefined,
+      paths: record.geometry === 'line' ? record.rings.map(path => path.map(point => ({ ...point }))) : undefined,
       bounds: { ...record.bounds }, biome: record.biome, biomeName: record.biome ? drBiomeNames[record.biome] || drFeatureLabel(record.feature, record.group) : null,
-      footprintOnly: record.footprintOnly === true, width: record.width, enabled: layers[record.layer],
+      footprintOnly: record.footprintOnly === true, outlineOnly: record.outlineOnly, width: record.width, enabled: isEnabled(record),
     }));
   }
 
@@ -649,5 +736,5 @@ export function createDetailRenderer(world) {
     return { ...focusPoint };
   }
 
-  return { draw, drawHighlight, pick, focus, zonesAt, setLayers, getLayers: () => ({ ...layers }), getFeatures, getStats: () => ({ ...stats, layers: { ...layers } }) };
+  return { draw, drawHighlight, pick, focus, zonesAt, setLayers, getLayers: () => ({ ...layers }), setRoadClasses, getRoadClasses: () => ({ ...roadClasses }), getFeatures, getStats: () => ({ ...stats, layers: { ...layers }, roadClasses: { ...roadClasses } }) };
 }

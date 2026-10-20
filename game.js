@@ -4,7 +4,8 @@ import { convertOSM, validateBbox } from './scripts/lib/osm-converter.mjs';
 import usaMap from './maps/usa.js';
 import { createDetailRenderer } from './detail-renderer.js';
 import { createTerrainBackdrop, createLandscapeBackdrop } from './terrain-renderer.js';
-import { mapFeatureLayer } from './map-layers.js';
+import { mapFeatureLayer, shouldRenderFeature } from './map-layers.js';
+import { ROAD_CLASSES } from './map-presentation.js';
 import { BUILDING_TYPES, BIOME_TYPES, RESOURCE_PROFILES, RESOURCE_KINDS, collectResourceProfiles, collectResourceCandidates } from './gameplay-types.js';
 
 const $ = id => document.getElementById(id);
@@ -17,6 +18,7 @@ const objectCacheCtx = objectCache.getContext('2d');
 let world = createRealWorld(usaMap);
 let currentMap = usaMap;
 const layers = { terrain: true, landscape: true, water: true, roads: true, power: true, buildings: true, details: true };
+const roadClasses = Object.fromEntries(Object.keys(ROAD_CLASSES).map(key => [key, true]));
 let detailRenderer = createDetailRenderer(world);
 let hoveredObject = null;
 const maximumZoom = () => 24;
@@ -81,7 +83,7 @@ function toast(message) {
 }
 
 function pickPoi(position, radius = 35) {
-  return world.pois.filter(p => layers[mapFeatureLayer(p, 'poi')] && p.reachable !== false).sort((a, b) => dist(a, position) - dist(b, position)).find(p => dist(p, position) < radius / Math.max(.65, camera.zoom)) || null;
+  return world.pois.filter(p => shouldRenderFeature(p, 'poi') && layers[mapFeatureLayer(p, 'poi')] && p.reachable !== false).sort((a, b) => dist(a, position) - dist(b, position)).find(p => dist(p, position) < radius / Math.max(.65, camera.zoom)) || null;
 }
 
 function setDestination(position) {
@@ -128,7 +130,7 @@ function updateMapDetails() {
   $('map-usa').setAttribute('aria-pressed', String(currentMap === usaMap));
   $('map-generated').setAttribute('aria-pressed', String(!currentMap));
   $('sector-label').textContent = currentMap ? `${currentMap.region || currentMap.country || 'OPENSTREETMAP'} / РЕАЛЬНАЯ МЕСТНОСТЬ` : 'СЕВЕРНЫЙ СЕКТОР / 04';
-  $('map-summary').textContent = currentMap ? `${currentMap.name} · ${(world.width * metersPerUnit() / 1000).toFixed(1)} × ${(world.height * metersPerUnit() / 1000).toFixed(1)} км. ${world.roads.length} дорог, ${world.buildings.length} зданий, ${world.pois.length} мест. ${currentMap.source?.snapshotAt ? `Снимок OSM: ${currentMap.source.snapshotAt.slice(0, 10)}` : 'Данные OpenStreetMap'}.` : 'Вымышленная территория · 12 локаций, леса и переправы.';
+  $('map-summary').textContent = currentMap ? `${currentMap.name} · ${(world.width * metersPerUnit() / 1000).toFixed(1)} × ${(world.height * metersPerUnit() / 1000).toFixed(1)} км. ${world.roads.length} исходных участков дорог, ${world.buildings.length} зданий, ${world.pois.length} мест. ${currentMap.source?.snapshotAt ? `Снимок OSM: ${currentMap.source.snapshotAt.slice(0, 10)}` : 'Данные OpenStreetMap'}.` : 'Вымышленная территория · 12 локаций, леса и переправы.';
   $('map-attribution').hidden = !currentMap;
   // Keep source attribution permanent and link only to the known source copyright page.
   $('map-source-link').href = 'https://www.openstreetmap.org/copyright';
@@ -172,6 +174,12 @@ function syncLayerUI() {
   const features = detailRenderer.getFeatures();
   for (const key of Object.keys(layers)) $('layer-' + key).checked = layers[key];
   for (const key of ['landscape', 'water', 'roads', 'power', 'buildings', 'details']) $('count-' + key).textContent = features.filter(feature => feature.layer === key).length;
+  for (const key of Object.keys(roadClasses)) {
+    const input = $('road-class-' + key);
+    input.checked = roadClasses[key]; input.disabled = !layers.roads;
+    $('count-road-class-' + key).textContent = features.filter(feature => feature.layer === 'roads' && feature.roadClass === key).length;
+  }
+  $('road-classes').classList.toggle('is-disabled', !layers.roads);
   if (!world.geographic && landscapeBackdrop) $('count-landscape').textContent = 'биомы';
   terrainCanvas.hidden = !layers.terrain;
 }
@@ -181,6 +189,10 @@ for (const key of Object.keys(layers)) $('layer-' + key).addEventListener('chang
   layers[key] = e.target.checked; detailRenderer.setLayers(layers);
   objectRevision++;
   hideObjectCard(); hoveredPoi = null; syncLayerUI();
+});
+for (const key of Object.keys(roadClasses)) $('road-class-' + key).addEventListener('change', e => {
+  roadClasses[key] = e.target.checked; detailRenderer.setRoadClasses(roadClasses);
+  objectRevision++; hideObjectCard(); hoveredPoi = null; syncLayerUI();
 });
 $('layers-button').addEventListener('click', () => {
   const open = $('layers-panel').hidden;
@@ -198,6 +210,7 @@ function switchMap(map) {
   terrainBackdrop = createTerrainBackdrop(world, palette); terrainRevision++; terrainFrameKey = '';
   landscapeBackdrop = createLandscapeBackdrop(world, palette);
   detailRenderer.setLayers(layers);
+  detailRenderer.setRoadClasses(roadClasses);
   camera.zoom = innerWidth < 640 ? .68 : .85;
   hover = null; hoveredPoi = null;
   reset(); updateMapDetails();
@@ -215,10 +228,10 @@ function inspectObject(point, screenX, screenY, touch = false) {
   if (!feature) { hideObjectCard(); return; }
   hoveredObject = feature;
   hoveredPoi = null;
-  const names = { building: 'ЗДАНИЕ', road: 'ДОРОГА', fence: 'ОГРАДА', wall: 'СТЕНА', gate: 'ВОРОТА', railway: 'ЖЕЛЕЗНАЯ ДОРОГА', parking: 'ПАРКОВКА', pitch: 'СПОРТПЛОЩАДКА', garden: 'САД', pool: 'БАССЕЙН', tree: 'ДЕРЕВО', bench: 'СКАМЕЙКА', picnic_table: 'МЕСТО ДЛЯ ПРИВАЛА', fountain: 'ФОНТАН', well: 'КОЛОДЕЦ', ruins: 'РУИНЫ', shelter: 'УКРЫТИЕ', cemetery: 'КЛАДБИЩЕ', park: 'ПАРК', spring: 'РОДНИК', quarry: 'КАРЬЕР', playground: 'ДЕТСКАЯ ПЛОЩАДКА', cattle_grid: 'РЕШЁТКА НА ДОРОГЕ', runway: 'ВЗЛЁТНАЯ ПОЛОСА', taxiway: 'РУЛЁЖНАЯ ДОРОЖКА', apron: 'ПЕРРОН АЭРОДРОМА', aerodrome: 'АЭРОДРОМ', river: 'ВОДОТОК', lake: 'ОЗЕРО', water: 'ВОДОЁМ', forest: 'ЛЕС', swamp: 'БОЛОТО', plain: 'УЧАСТОК МЕСТНОСТИ', boundary: 'ГРАНИЦА' };
+  const names = { settlement_boundary: 'ГРАНИЦА ПОСЕЛЕНИЯ', building: 'ЗДАНИЕ', road: 'ДОРОГА', fence: 'ОГРАДА', wall: 'СТЕНА', gate: 'ВОРОТА', railway: 'ЖЕЛЕЗНАЯ ДОРОГА', parking: 'ПАРКОВКА', pitch: 'СПОРТПЛОЩАДКА', garden: 'САД', pool: 'БАССЕЙН', tree: 'ДЕРЕВО', bench: 'СКАМЕЙКА', picnic_table: 'МЕСТО ДЛЯ ПРИВАЛА', fountain: 'ФОНТАН', well: 'КОЛОДЕЦ', ruins: 'РУИНЫ', shelter: 'УКРЫТИЕ', cemetery: 'КЛАДБИЩЕ', park: 'ПАРК', spring: 'РОДНИК', quarry: 'КАРЬЕР', playground: 'ДЕТСКАЯ ПЛОЩАДКА', cattle_grid: 'РЕШЁТКА НА ДОРОГЕ', runway: 'ВЗЛЁТНАЯ ПОЛОСА', taxiway: 'РУЛЁЖНАЯ ДОРОЖКА', apron: 'ПЕРРОН АЭРОДРОМА', aerodrome: 'АЭРОДРОМ', river: 'ВОДОТОК', lake: 'ОЗЕРО', water: 'ВОДОЁМ', forest: 'ЛЕС', swamp: 'БОЛОТО', plain: 'УЧАСТОК МЕСТНОСТИ', boundary: 'ГРАНИЦА' };
   const zoneNames = { residential: 'ЖИЛАЯ ЗОНА', industrial: 'ПРОМЫШЛЕННАЯ ЗОНА', commercial: 'КОММЕРЧЕСКАЯ ЗОНА', retail: 'ТОРГОВАЯ ЗОНА', farmland: 'ПОЛЯ', sand: 'ПЕСКИ', rock: 'СКАЛЫ', scrub: 'КУСТАРНИК', wetland: 'БОЛОТО' };
   const layerNames = { landscape: 'ЛАНДШАФТ', water: 'ВОДА', roads: 'ДОРОГА', power: 'ЭЛЕКТРОСЕТЬ', buildings: 'ЗДАНИЕ' };
-  $('object-kind').textContent = names[feature.kind] || (feature.layer === 'landscape' && feature.biomeName ? feature.biomeName.toUpperCase() : zoneNames[feature.biome || feature.kind]) || layerNames[feature.layer] || 'ОБЪЕКТ';
+  $('object-kind').textContent = (feature.roadClassName && feature.roadClassName.toUpperCase()) || names[feature.kind] || (feature.layer === 'landscape' && feature.biomeName ? feature.biomeName.toUpperCase() : zoneNames[feature.biome || feature.kind]) || layerNames[feature.layer] || 'ОБЪЕКТ';
   $('object-name').textContent = feature.name || (feature.kind === 'building' ? 'Безымянное здание' : 'Объект на карте');
   const source = feature.source || {};
   const address = typeof source.address === 'string' ? source.address : source.address ? Object.values(source.address).join(', ') : '';
@@ -513,7 +526,7 @@ function draw(time) {
   const playerOnScreen = worldToScreen(player);
   mapLabelBoxes = [{ x: playerOnScreen.x - 30, y: playerOnScreen.y - 22, width: 60, height: 56 }];
   const pois = world.geographic ? [...world.pois].sort((a, b) => Number(b.id === hoveredPoi?.id) - Number(a.id === hoveredPoi?.id) || Number(b.kind === 'town') - Number(a.kind === 'town') || Number(discovered.has(b.id)) - Number(discovered.has(a.id))) : world.pois;
-  for (const poi of pois) if (layers[mapFeatureLayer(poi, 'poi')] && (camera.zoom < 4 || hoveredPoi?.id === poi.id || poi.kind === 'town')) drawPoi(poi, time);
+  for (const poi of pois) if (shouldRenderFeature(poi, 'poi') && layers[mapFeatureLayer(poi, 'poi')] && (camera.zoom < 4 || hoveredPoi?.id === poi.id || poi.kind === 'town')) drawPoi(poi, time);
   if (arrivalMarker && route) {
     const p = worldToScreen(arrivalMarker);
     ctx.beginPath(); ctx.arc(p.x, p.y, 12 + Math.sin(time * 3) * 2, 0, Math.PI * 2); ctx.strokeStyle = '#f3edb3'; ctx.lineWidth = 1.5; ctx.stroke();
@@ -607,6 +620,7 @@ window.__DAY_NEXT__ = {
   inspectAt: (x, y) => detailRenderer.pick(x, y, 1),
   zonesAt: (x, y) => detailRenderer.zonesAt(x, y),
   getLayers: () => ({ ...layers }),
+  getRoadClasses: () => ({ ...roadClasses }),
   getFeatures: () => detailRenderer.getFeatures(),
   getRenderStats: () => ({ ...renderStats, meanFrameMs: renderStats.totalFrameMs / Math.max(1, renderStats.frames), cachePixels: objectCache.width * objectCache.height, cacheBytes: objectCache.width * objectCache.height * 4, renderer: detailRenderer.getStats() }),
   getTypeCatalogs: () => structuredClone({ buildingTypes: BUILDING_TYPES, biomeTypes: BIOME_TYPES, resourceProfiles: RESOURCE_PROFILES, resourceKinds: RESOURCE_KINDS }),

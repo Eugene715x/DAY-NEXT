@@ -28,3 +28,6 @@
 @media(max-height:500px) and (min-width:621px){.map-controls{top:74px}.zoom-controls{flex-direction:row}.zoom-rule{width:1px;height:20px;margin:auto 0}.map-tool-cluster{margin-top:10px}}
 
 .location .biome-label{display:block;max-width:190px;white-space:normal;line-height:1.5;margin-top:5px;color:#b8c58f}.location .biome-label[hidden]{display:none}
+
+/* Desktop road legend and independent class visibility. */
+.layers-panel{max-height:calc(100dvh - 145px)}.road-classes{margin:0;padding:6px 0 9px 25px;border:0;border-bottom:1px solid var(--line);min-width:0}.road-classes legend{padding:7px 0 3px;font-size:9px;color:#8fa27d}.road-class-option{display:flex;align-items:center;gap:8px;min-height:30px;color:#b8c8a8;font-size:10px;cursor:pointer}.road-class-option input{width:13px;height:13px;accent-color:var(--accent);cursor:pointer}.road-class-option input:focus-visible{outline:2px solid var(--accent);outline-offset:3px}.road-swatch{width:23px;flex-shrink:0;border-radius:2px;border-top:3px solid #c0ae7e}.road-swatch-highway{border-top:5px solid #e2c490}.road-swatch-road{border-top:4px solid #cfbb8b}.road-swatch-street{border-top:3px solid #b5ab8d}.road-swatch-track{border-top:2px dashed #9e9674}.road-swatch-trail{border-top:1px dotted #b3b18b}.road-classes.is-disabled{opacity:.4}.road-classes.is-disabled label{cursor:default}

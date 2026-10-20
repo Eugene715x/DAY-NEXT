@@ -140,3 +140,95 @@ test('multiple polygon parts from one source do not duplicate zone memberships',
   assert.equal(renderer.zonesAt(150, 150).length, 1);
   assert.equal(renderer.zonesAt(150, 150)[0].sourceId, 'relation-1000');
 });
+
+test('settlement boundaries have selectable outlines without granting city-wide biome membership', () => {
+  const outer = ring(20, 20, 380, 280), inner = ring(120, 100, 180, 180);
+  const boundary = { id: 'relation-42', geometry: 'polygon', name: 'Beatty', points: outer, rings: [outer, inner], tags: { boundary: 'census', name: 'Beatty' } };
+  const renderer = createDetailRenderer(world({ details: [boundary,
+    { id: 'residential', geometry: 'polygon', points: ring(200, 200, 300, 250), tags: { landuse: 'residential' } },
+  ] }));
+  const selected = renderer.pick(20, 150, 0);
+  assert.equal(selected.kind, 'settlement_boundary');
+  assert.equal(selected.name, 'Beatty');
+  assert.equal(selected.outlineOnly, true);
+  assert.equal(selected.biome, null);
+  assert.equal(selected.typeId, null);
+  assert.deepEqual(selected.resourceProfileIds, []);
+  assert.equal(renderer.pick(70, 60, 0), null, 'Separate boundary rings cannot create a fictitious connecting edge');
+  assert.equal(renderer.pick(250, 150, 0), null, 'The town interior is not a filled pick target');
+  assert.deepEqual(renderer.zonesAt(250, 150), []);
+  assert.equal(renderer.pick(250, 220, 0).biome, 'residential');
+  assert.deepEqual(renderer.zonesAt(250, 220).map(zone => zone.biome), ['residential']);
+  renderer.setLayers({ landscape: false });
+  assert.equal(renderer.pick(20, 150, 0), null);
+});
+
+test('clipped settlement polygons expose only real source boundary paths and never the map frame', () => {
+  const input = world({ details: [
+    { id: 'town', geometry: 'polygon', points: ring(0, 0, 400, 300), boundaryPaths: [
+      [{ x: 30, y: 50 }, { x: 150, y: 50 }], [{ x: 250, y: 200 }, { x: 350, y: 200 }],
+    ], tags: { boundary: 'census' } },
+    { id: 'enclosing-town', geometry: 'polygon', points: ring(0, 0, 400, 300), boundaryPaths: [], tags: { boundary: 'administrative' } },
+  ] });
+  const before = structuredClone(input), renderer = createDetailRenderer(input), [feature] = renderer.getFeatures();
+  assert.equal(renderer.getFeatures().length, 1, 'A town whose true boundary is entirely outside the viewport contributes no frame outline');
+  assert.equal(feature.geometry, 'line');
+  assert.deepEqual(feature.bounds, { minX: 30, minY: 50, maxX: 350, maxY: 200 });
+  assert.equal(feature.paths.length, 2);
+  assert.equal(renderer.pick(100, 50, 0).kind, 'settlement_boundary');
+  assert.equal(renderer.pick(300, 200, 0).kind, 'settlement_boundary');
+  assert.equal(renderer.pick(200, 0, 0), null, 'The clipped polygon top edge is not a town boundary');
+  assert.equal(renderer.pick(200, 125, 0), null, 'Disjoint clipped paths cannot create a connecting edge');
+  assert.deepEqual(renderer.zonesAt(100, 50), []);
+  assert.deepEqual(input, before);
+});
+
+test('presentation hides crossing marks, every barrier geometry and power supports without editing their source', () => {
+  const details = [
+    { id: 'crossing', geometry: 'point', points: [{ x: 20, y: 50 }], tags: { highway: 'crossing' } },
+    { id: 'crossing-line', geometry: 'line', points: [{ x: 20, y: 70 }, { x: 80, y: 70 }], tags: { footway: 'crossing' } },
+    { id: 'fence', geometry: 'line', points: [{ x: 20, y: 90 }, { x: 80, y: 90 }], tags: { barrier: 'fence' } },
+    { id: 'wall', geometry: 'polygon', points: ring(20, 110, 80, 130), tags: { barrier: 'wall' } },
+    { id: 'gate', geometry: 'point', points: [{ x: 20, y: 150 }], kind: 'gate', tags: { barrier: 'gate' } },
+    { id: 'cattle-grid', geometry: 'point', points: [{ x: 20, y: 170 }], kind: 'cattle_grid', tags: { barrier: 'cattle_grid' } },
+    { id: 'pole', geometry: 'point', points: [{ x: 20, y: 190 }], tags: { power: 'pole' } },
+    { id: 'tower', geometry: 'point', points: [{ x: 20, y: 210 }], tags: { power: 'tower' } },
+    { id: 'bench', geometry: 'point', points: [{ x: 250, y: 150 }], kind: 'bench', tags: { amenity: 'bench' } },
+  ];
+  const input = world({ details }), before = structuredClone(input), renderer = createDetailRenderer(input);
+  assert.deepEqual(renderer.getFeatures().map(feature => feature.id), ['bench']);
+  for (const [x, y] of [[20, 50], [50, 70], [50, 90], [50, 120], [20, 150], [20, 170], [20, 190], [20, 210]]) assert.equal(renderer.pick(x, y, 0), null);
+  assert.equal(renderer.getStats().filteredFeatures, 8);
+  assert.equal(renderer.getStats().inputFeatures, 9);
+  assert.deepEqual(input, before);
+});
+
+test('joined roads coalesce former-rail facets first and expose every source through one selection', () => {
+  const tags = { highway: 'track', railway: 'abandoned', surface: 'dirt' };
+  const input = world({ roads: [
+    { id: 'way-10-0', points: [{ x: 20, y: 50 }, { x: 150, y: 50 }], type: 'track', tags },
+    { id: 'way-20-0', points: [{ x: 150, y: 50 }, { x: 350, y: 50 }], type: 'track', tags },
+  ] });
+  input.details = input.roads.map(road => ({ ...road, kind: 'railway', geometry: 'line' }));
+  const before = structuredClone(input), renderer = createDetailRenderer(input), features = renderer.getFeatures();
+  assert.equal(features.length, 1);
+  assert.equal(features[0].roadClass, 'track');
+  assert.equal(features[0].merged, true);
+  assert.deepEqual(features[0].sourceIds.sort(), ['way-10', 'way-20']);
+  const first = renderer.pick(60, 50, 0), last = renderer.pick(300, 50, 0);
+  assert.equal(first.key, last.key);
+  assert.deepEqual(first.memberIds.sort(), ['way-10-0', 'way-20-0']);
+  assert(first.source.members.every(member => member.tags.railway === 'abandoned'));
+  assert.equal(renderer.getStats().coalescedFeatures, 2);
+  assert.equal(renderer.getStats().sourceRoads, 2);
+  assert.equal(renderer.getStats().displayRoads, 1);
+  renderer.setRoadClasses({ track: false });
+  assert.equal(renderer.getFeatures()[0].enabled, false);
+  assert.equal(renderer.pick(60, 50, 0), null);
+  renderer.setLayers({ roads: false });
+  renderer.setRoadClasses({ track: true });
+  assert.equal(renderer.pick(60, 50, 0), null, 'The master road switch still applies');
+  renderer.setLayers({ roads: true });
+  assert.equal(renderer.pick(60, 50, 0).key, first.key);
+  assert.deepEqual(input, before, 'Display joining cannot modify roads used by navigation');
+});

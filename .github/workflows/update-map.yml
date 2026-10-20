@@ -7,6 +7,7 @@ on:
     paths:
       - .github/workflows/update-map.yml
       - scripts/refresh-map.mjs
+      - scripts/enrich-sand.mjs
       - scripts/lib/osm-download.mjs
 
 permissions:
@@ -25,7 +26,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-      - name: Download original OSM data and convert every source object
+      - name: Download the full southern sand relation with all holes
+        run: npm run map:sand
+      - name: Rebuild the map from preserved source and full sand geometry
+        if: github.event_name != 'workflow_dispatch'
+        run: npm run map:refresh -- --rebuild
+      - name: Refresh the base extract when explicitly dispatched
+        if: github.event_name == 'workflow_dispatch'
         run: npm run map:refresh
       - name: Check geometry, coverage and navigation
         run: npm test
@@ -33,7 +40,7 @@ jobs:
         run: npm run build
       - name: Publish source, provenance and playable downloads
         run: |
-          git add maps/usa.js maps/source/beatty.osm maps/source/beatty.provenance.json maps/source/coverage.json maps/source/remaining-objects.json maps/source/remaining-objects.md downloads/day-next.html downloads/day-next.zip
+          git add maps/usa.js maps/source/beatty-sand.osm maps/source/beatty-sand.provenance.json maps/source/beatty.osm maps/source/beatty.provenance.json maps/source/coverage.json maps/source/remaining-objects.json maps/source/remaining-objects.md downloads/day-next.html downloads/day-next.zip
           if git diff --cached --quiet; then
             echo 'Map and build are already current.'
             exit 0
@@ -49,6 +56,8 @@ jobs:
           path: |
             maps/source/beatty.osm
             maps/source/beatty.provenance.json
+            maps/source/beatty-sand.osm
+            maps/source/beatty-sand.provenance.json
             maps/source/coverage.json
             maps/source/remaining-objects.json
             maps/source/remaining-objects.md

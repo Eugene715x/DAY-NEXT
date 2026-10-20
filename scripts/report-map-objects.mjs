@@ -119,13 +119,13 @@ function rendererFeatures(map) {
   if (needsAdapter) globalThis.Path2D = class ReportPath {
     moveTo() {} lineTo() {} closePath() {} ellipse() {}
   };
-  try { return createDetailRenderer(map).getFeatures(); }
+  try { const renderer = createDetailRenderer(map); return { features: renderer.getFeatures(), stats: renderer.getStats() }; }
   finally { if (needsAdapter) delete globalThis.Path2D; }
 }
 
 /** Complete partition: every remaining rendered record appears exactly once. */
 export function createMapObjectsReport(map) {
-  const features = rendererFeatures(map);
+  const { features, stats } = rendererFeatures(map);
   const originals = new Map(['roads', 'rivers', 'areas', 'buildings', 'details', 'lakes'].flatMap(collection => (map[collection] || []).map(feature => [`${collection}:${feature.id}`, feature])));
   const collectionForGroup = { road: 'roads', river: 'rivers', area: 'areas', building: 'buildings', detail: 'details', lake: 'lakes' };
   const remaining = features.filter(feature => feature.layer === 'details').map(feature => {
@@ -148,14 +148,16 @@ export function createMapObjectsReport(map) {
   if (categories.reduce((total, group) => total + group.count, 0) !== remaining.length) throw new Error('Remaining categories do not cover the complete renderer registry.');
   const landscape = features.filter(feature => feature.layer === 'landscape');
   return {
-    version: 1, mapId: map.id, mapName: map.name,
-    source: { file: map.source?.sourceFile || 'maps/source/beatty.osm', sha256: map.source?.sha256 || null, downloadedAt: map.source?.downloadedAt || null, snapshotAt: map.source?.snapshotAt || null },
+    version: 2, mapId: map.id, mapName: map.name,
+    source: { file: map.source?.sourceFile || 'maps/source/beatty.osm', sha256: map.source?.sha256 || null, downloadedAt: map.source?.downloadedAt || null, snapshotAt: map.source?.snapshotAt || null, supplementalSources: structuredClone(map.source?.supplementalSources || []) },
     layerCounts: Object.fromEntries(['landscape', 'water', 'roads', 'power', 'buildings', 'details'].map(layer => [layer, features.filter(feature => feature.layer === layer).length])),
+    presentation: { inputFeatures: stats.inputFeatures, filteredFeatures: stats.filteredFeatures, coalescedFeatures: stats.coalescedFeatures, sourceRoads: stats.sourceRoads, displayRoads: stats.displayRoads, sourcePowerLines: stats.sourcePowerLines, displayPowerLines: stats.displayPowerLines, roadClasses: Object.fromEntries([...new Set(features.filter(feature => feature.layer === 'roads').map(feature => feature.roadClass))].map(id => [id, features.filter(feature => feature.layer === 'roads' && feature.roadClass === id).length])) },
     landscape: { count: landscape.length, geometryCounts: geometryCounts(landscape), biomes: groupRecords(landscape, feature => feature.biome || 'landscape').map(([id, records]) => ({ id, count: records.length, geometryCounts: geometryCounts(records) })).sort(byCount) },
     remaining: { count: remaining.length, uniqueSourceElements: new Set(remaining.map(record => record.sourceId)).size, geometryCounts: geometryCounts(remaining), categories, objects: remaining },
     notes: [
-      'Counts are rendered geometry records. A clipped way or relation can have several fragments with the same sourceId.',
+      'Counts are rendered geometry records. Clipped ways can have several fragments; compatible road segments are joined into display chains, retaining all source IDs. Navigation keeps the original roads.',
       'Institution/building zone facets share the original footprint; point-only mapped institutions do not acquire invented site boundaries.',
+      'Crossing fixtures, barriers and point electrical equipment are retained in raw data but omitted from the game presentation. Administrative boundaries have outlines only and do not grant biome membership.',
       'Categories partition the details layer exactly. Source tags and IDs are retained for every record.',
     ],
   };
@@ -171,6 +173,7 @@ export function formatMapObjectsReport(report) {
     `Карта: **${report.mapName}**. Всего **${remaining.count} геометрических записей** из **${remaining.uniqueSourceElements} исходных элементов OSM**. ${geometryLabel(remaining.geometryCounts)}.`, '',
     `Последняя правка OSM в исходнике: **${report.source.snapshotAt || 'дата не указана'}**. Выгрузка: **${report.source.downloadedAt || 'дата не указана'}**.`, '',
     'Парковки и территории учреждений относятся к слою «Ландшафт и зоны». Пересекающиеся зоны сохраняются отдельно; здания внутри них остаются в слое зданий. Для точечного учреждения без нанесённых границ сохраняется точка, новая площадь не придумывается.', '',
+    'Обозначения переходов, ограды и отдельные столбы/опоры электросети скрыты. Административные границы показаны только контуром и не входят в список биомов. Исходные элементы сохранены в геоданных.', '',
     '## Полный список', '',
     '| Категория | Количество |', '| --- | ---: |',
     ...remaining.categories.map(group => `| ${cell(group.name)} | ${group.count} |`),
@@ -182,7 +185,7 @@ export function formatMapObjectsReport(report) {
     lines.push('');
   }
   lines.push('## Как читать количество', '',
-    'Количество относится к геометрии, которую реально регистрирует отрисовщик. Одна обрезанная дорога или составная граница может давать несколько фрагментов. Метки мест не считаются повторно. Полный перечень записей с исходными ID и тегами находится в [remaining-objects.json](remaining-objects.json).', '',
+    'Количество относится к геометрии, которую реально регистрирует отрисовщик. Обрезанная геометрия может давать несколько фрагментов; совместимые участки дорог соединяются в общие трассы. Метки мест не считаются повторно. Полный перечень записей с исходными ID и тегами находится в [remaining-objects.json](remaining-objects.json).', '',
     'Отчёт создаётся автоматически командой `npm run map:report` и при сборке игры. Геоданные: © OpenStreetMap contributors, ODbL 1.0.', '');
   return lines.join('\n');
 }

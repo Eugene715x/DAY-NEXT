@@ -5,7 +5,7 @@ import { readFile, writeFile, mkdir, rename, rm } from 'node:fs/promises';
 import { dirname, resolve, basename } from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import * as http from 'node:http';
-import { parseOSM, convertOSM, validateBbox } from './lib/osm-converter.mjs';
+import { parseOSM, mergeOSMSources, convertOSM, validateBbox } from './lib/osm-converter.mjs';
 
 export const BEATTY_BBOX = [-116.86, 36.86, -116.73, 36.94];
 export const MAX_EXTRACT_BYTES = 80 * 1024 * 1024;
@@ -110,18 +110,35 @@ export function validateSourceXML(input) {
 }
 
 /** Pure preparation: all validation/conversion finishes before any file is touched. */
-export function prepareMapUpdate(input, { sourceUrl = 'https://www.openstreetmap.org', downloadedAt = null, importedAt = new Date().toISOString(), acquisition = 'local-file', responseDate = null, query, sourceFile } = {}) {
+export function prepareMapUpdate(input, { sourceUrl = 'https://www.openstreetmap.org', downloadedAt = null, importedAt = new Date().toISOString(), acquisition = 'local-file', responseDate = null, query, sourceFile, supplements = [] } = {}) {
   const bytes = Buffer.from(input), parsed = validateSourceXML(bytes);
   const url = new URL(sourceUrl);
   if (url.protocol !== 'https:' || url.username || url.password) throw new Error('Source provenance must be an HTTPS URL without credentials.');
+  const supplementalSources = [], supplementalData = [];
+  for (const supplement of supplements) {
+    const supplementalBytes = Buffer.from(supplement.bytes), provenance = supplement.provenance || {};
+    const sha256 = createHash('sha256').update(supplementalBytes).digest('hex');
+    if (provenance.sha256 !== sha256 || provenance.bytes !== supplementalBytes.length) throw new Error('Supplemental source SHA-256/byte count does not match its saved provenance.');
+    const supplementalUrl = new URL(provenance.sourceUrl);
+    if (supplementalUrl.protocol !== 'https:' || supplementalUrl.username || supplementalUrl.password) throw new Error('Supplemental provenance must be an HTTPS URL without credentials.');
+    supplementalData.push(validateSourceXML(supplementalBytes));
+    supplementalSources.push({
+      sourceFile: supplement.sourceFile || 'maps/source/beatty-sand.osm',
+      provenanceFile: supplement.provenanceFile || 'maps/source/beatty-sand.provenance.json',
+      sha256, bytes: supplementalBytes.length, dataUrl: provenance.sourceUrl,
+      downloadedAt: provenance.downloadedAt || null, acquisition: provenance.acquisition || 'local-file',
+      ...(provenance.relationId ? { relationId: provenance.relationId } : {}),
+    });
+  }
+  const combined = mergeOSMSources(parsed, ...supplementalData);
   const timestamps = parsed.elements.map(element => element.timestamp).filter(Boolean).sort();
-  const map = convertOSM(bytes.toString('utf8'), {
+  const map = convertOSM(combined, {
     bbox: validateBbox(BEATTY_BBOX), id: 'beatty-rhyolite', name: 'Битти / Райолит', region: 'Невада, США', country: 'US',
     dataUrl: sourceUrl, downloadedAt: downloadedAt || importedAt,
   });
   if (map.coverage.partialWays.length || map.coverage.omittedCounts.invalidCoordinate || map.coverage.representedSourceElements !== map.coverage.eligibleInBounds) throw new Error('Source geometry failed the conversion coverage audit.');
   const sha256 = createHash('sha256').update(bytes).digest('hex');
-  Object.assign(map.source, { downloadedAt, importedAt, sha256, sourceFile: 'maps/source/beatty.osm', acquisition });
+  Object.assign(map.source, { downloadedAt, importedAt, sha256, sourceFile: 'maps/source/beatty.osm', acquisition, ...(supplementalSources.length ? { supplementalSources } : {}) });
   const provenance = {
     provider: map.source.provider, copyright: map.source.copyright, license: map.source.license,
     licenseUrl: 'https://opendatacommons.org/licenses/odbl/1-0/', attributionUrl: map.source.url,
@@ -130,14 +147,25 @@ export function prepareMapUpdate(input, { sourceUrl = 'https://www.openstreetmap
     osmElementTimestampMin: timestamps[0] || null, osmElementTimestampMax: timestamps.at(-1) || null,
     selectedBbox: [...BEATTY_BBOX], selectedRegion: 'Beatty / Rhyolite, Nye County, Nevada, USA',
     counts: Object.fromEntries(['node', 'way', 'relation'].map(type => [type, parsed.elements.filter(element => element.type === type).length])),
+    ...(supplementalSources.length ? { supplementalSources, combinedCounts: Object.fromEntries(['node', 'way', 'relation'].map(type => [type, combined.elements.filter(element => element.type === type).length])) } : {}),
     convertedCounts: map.statistics,
     notes: ['Exact source bytes are preserved alongside the generated map and SHA-256.', 'The timestamp range describes element edits; downloadedAt records the actual acquisition date.', 'Coverage is relative to this extract. OSM can lack real-world objects; missing relation members are never invented.'],
   };
   const coverage = {
     source: 'beatty.osm', snapshotAt: map.source.snapshotAt, downloadedAt, sha256, bbox: [...BEATTY_BBOX], ...map.coverage,
+    ...(supplementalSources.length ? { sources: [{ sourceFile: 'maps/source/beatty.osm', sha256, bytes: bytes.length, dataUrl: sourceUrl, downloadedAt }, ...supplementalSources] } : {}),
     notes: ['Coverage is relative to the exact source file and selected bounds, not a promise that every real-world structure has been surveyed.', 'Untagged vertices are coordinate geometry; partial relations retain known members and missing references.'],
   };
   return { bytes, map, provenance, coverage };
+}
+
+/** The supplemental XML and its provenance are a pair; a broken pair is an error. */
+export async function loadLocalSandSupplement(outputRoot = REPOSITORY_ROOT) {
+  const paths = ['maps/source/beatty-sand.osm', 'maps/source/beatty-sand.provenance.json'];
+  const results = await Promise.allSettled(paths.map(path => readFile(resolve(outputRoot, path))));
+  if (results.every(result => result.status === 'rejected' && result.reason.code === 'ENOENT')) return null;
+  for (const result of results) if (result.status === 'rejected') throw new Error(`Cannot load the complete sand source/provenance pair: ${result.reason.message}`);
+  return { bytes: results[0].value, provenance: JSON.parse(results[1].value.toString('utf8')), sourceFile: paths[0], provenanceFile: paths[1] };
 }
 
 /** Stage all four outputs first, then replace; a failed acquisition leaves them intact. */
@@ -163,10 +191,12 @@ export async function writeMapUpdate(bundle, outputRoot = REPOSITORY_ROOT) {
 const usage = `Refresh the bundled Beatty / Rhyolite source and map (OSM, ODbL).
 
 node scripts/refresh-map.mjs
+node scripts/refresh-map.mjs --rebuild
 node scripts/refresh-map.mjs --input source.osm --source-url https://example.org/source.osm --downloaded-at 2026-10-20T00:00:00Z
 
 Options:
   --input PATH          Import an existing complete OSM XML file without network
+  --rebuild             Reconvert the exact saved base source and optional sand supplement
   --source-url HTTPS    Actual provenance URL for a local file
   --downloaded-at ISO   Actual acquisition time for a local file (otherwise unknown)
   --output-root PATH    Alternate repository/output root; default is this repository
@@ -181,17 +211,27 @@ export async function main(args = process.argv.slice(2)) {
   const options = {}, allowed = new Set(['input', 'source-url', 'downloaded-at', 'output-root']);
   for (let index = 0; index < args.length; index++) {
     if (['--help', '-h'].includes(args[index])) { console.log(usage); return; }
+    if (args[index] === '--rebuild') { options.rebuild = true; continue; }
     const match = /^--([^=]+)(?:=(.*))?$/.exec(args[index]);
     if (!match || !allowed.has(match[1])) throw new Error(`Unknown argument: ${args[index]}`);
     const value = match[2] ?? args[++index];
     if (!value || value.startsWith('--')) throw new Error(`Missing value for --${match[1]}`);
     options[match[1]] = value;
   }
+  if (options.rebuild && options.input) throw new Error('--rebuild and --input cannot be combined.');
   if (!options.input && (options['source-url'] || options['downloaded-at'])) throw new Error('--source-url and --downloaded-at are for a local --input file only.');
   if (options['downloaded-at'] && !Number.isFinite(Date.parse(options['downloaded-at']))) throw new Error('--downloaded-at must be an ISO date/time.');
   const outputRoot = resolve(options['output-root'] || REPOSITORY_ROOT);
   let source;
-  if (options.input) {
+  if (options.rebuild) {
+    const [bytes, metadata] = await Promise.all([
+      readFile(resolve(outputRoot, 'maps/source/beatty.osm')),
+      readFile(resolve(outputRoot, 'maps/source/beatty.provenance.json'), 'utf8'),
+    ]);
+    const provenance = JSON.parse(metadata);
+    if (createHash('sha256').update(bytes).digest('hex') !== provenance.sha256 || bytes.length !== provenance.bytes) throw new Error('Saved base OSM source does not match its SHA-256/byte count; refusing rebuild.');
+    source = { ...provenance, bytes, importedAt: new Date().toISOString(), ...(provenance.importedFile ? { sourceFile: provenance.importedFile } : {}) };
+  } else if (options.input) {
     source = { bytes: await readFile(resolve(options.input)), sourceUrl: options['source-url'] || 'https://www.openstreetmap.org', downloadedAt: options['downloaded-at'] || null, acquisition: 'local-file', sourceFile: options.input };
   } else {
     if (process.env.HTTPS_PROXY || process.env.https_proxy || process.env.HTTP_PROXY || process.env.http_proxy) {
@@ -201,7 +241,8 @@ export async function main(args = process.argv.slice(2)) {
     console.log('Downloading the official OSM source for Beatty / Rhyolite…');
     source = await downloadFreshExtract({ onFallback: reason => console.log(`${reason} Trying the Overpass mirror once…`) });
   }
-  const bundle = prepareMapUpdate(source.bytes, source);
+  const supplement = await loadLocalSandSupplement(outputRoot);
+  const bundle = prepareMapUpdate(source.bytes, { ...source, supplements: supplement ? [supplement] : [] });
   let previous = null;
   try {
     const text = await readFile(resolve(outputRoot, 'maps/usa.js'), 'utf8');
