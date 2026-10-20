@@ -1,0 +1,37 @@
+{
+  "provider": "OpenStreetMap",
+  "copyright": "© OpenStreetMap contributors",
+  "license": "ODbL-1.0",
+  "licenseUrl": "https://opendatacommons.org/licenses/odbl/1-0/",
+  "attributionUrl": "https://www.openstreetmap.org/copyright",
+  "sourceUrl": "https://api.openstreetmap.org/api/0.6/relation/15569711/full",
+  "acquisition": "osm-relation-full-api",
+  "relationId": "relation-15569711",
+  "downloadedAt": "2026-10-20T19:51:04.827Z",
+  "importedAt": "2026-10-20T19:51:04.828Z",
+  "responseDate": "Tue, 20 Oct 2026 19:51:04 GMT",
+  "sha256": "a11681c538c5d897758cfafdadfaf325fab4cd1bc529acbaeb5766b098fed297",
+  "bytes": 576178,
+  "osmElementTimestampMin": "2009-08-27T22:30:00Z",
+  "osmElementTimestampMax": "2026-07-23T19:03:22Z",
+  "counts": {
+    "node": 2676,
+    "way": 142,
+    "relation": 1
+  },
+  "members": {
+    "outer": 8,
+    "inner": 134
+  },
+  "selectedBbox": [
+    -116.86,
+    36.86,
+    -116.73,
+    36.94
+  ],
+  "notes": [
+    "Complete official relation with all outer and inner member ways and their nodes.",
+    "Original bytes and SHA-256 are preserved separately from the unchanged base extract.",
+    "Only complete source rings become biomes; clipping to the game bounds happens after assembly."
+  ]
+}

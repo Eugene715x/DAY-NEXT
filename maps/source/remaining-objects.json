@@ -7,18 +7,29 @@
     "sha256": "44f3641860c1e3966edf259c5487b89f1997699aec77cff783360f8c66414d99",
     "downloadedAt": "2026-10-20T18:26:21.022Z",
     "snapshotAt": "2026-09-30T18:38:25Z",
-    "supplementalSources": []
+    "supplementalSources": [
+      {
+        "sourceFile": "maps/source/beatty-sand.osm",
+        "provenanceFile": "maps/source/beatty-sand.provenance.json",
+        "sha256": "a11681c538c5d897758cfafdadfaf325fab4cd1bc529acbaeb5766b098fed297",
+        "bytes": 576178,
+        "dataUrl": "https://api.openstreetmap.org/api/0.6/relation/15569711/full",
+        "downloadedAt": "2026-10-20T19:51:04.827Z",
+        "acquisition": "osm-relation-full-api",
+        "relationId": "relation-15569711"
+      }
+    ]
   },
   "layerCounts": {
-    "landscape": 447,
-    "water": 112,
+    "landscape": 429,
+    "water": 111,
     "roads": 595,
     "power": 14,
-    "buildings": 893,
+    "buildings": 885,
     "details": 148
   },
   "presentation": {
-    "inputFeatures": 2622,
+    "inputFeatures": 2595,
     "filteredFeatures": 354,
     "coalescedFeatures": 13,
     "sourceRoads": 658,
@@ -34,11 +45,11 @@
     }
   },
   "landscape": {
-    "count": 447,
+    "count": 429,
     "geometryCounts": {
       "point": 34,
-      "line": 28,
-      "polygon": 385
+      "line": 11,
+      "polygon": 384
     },
     "biomes": [
       {
@@ -78,15 +89,6 @@
         }
       },
       {
-        "id": "sand",
-        "count": 16,
-        "geometryCounts": {
-          "point": 0,
-          "line": 16,
-          "polygon": 0
-        }
-      },
-      {
         "id": "forest",
         "count": 10,
         "geometryCounts": {
@@ -123,15 +125,6 @@
         }
       },
       {
-        "id": "recreation",
-        "count": 8,
-        "geometryCounts": {
-          "point": 0,
-          "line": 0,
-          "polygon": 8
-        }
-      },
-      {
         "id": "accommodation",
         "count": 7,
         "geometryCounts": {
@@ -142,6 +135,15 @@
       },
       {
         "id": "industrial",
+        "count": 7,
+        "geometryCounts": {
+          "point": 0,
+          "line": 0,
+          "polygon": 7
+        }
+      },
+      {
+        "id": "recreation",
         "count": 7,
         "geometryCounts": {
           "point": 0,
@@ -213,24 +215,6 @@
         }
       },
       {
-        "id": "transport",
-        "count": 3,
-        "geometryCounts": {
-          "point": 0,
-          "line": 0,
-          "polygon": 3
-        }
-      },
-      {
-        "id": "cemetery",
-        "count": 2,
-        "geometryCounts": {
-          "point": 0,
-          "line": 0,
-          "polygon": 2
-        }
-      },
-      {
         "id": "education",
         "count": 2,
         "geometryCounts": {
@@ -276,12 +260,30 @@
         }
       },
       {
+        "id": "transport",
+        "count": 2,
+        "geometryCounts": {
+          "point": 0,
+          "line": 0,
+          "polygon": 2
+        }
+      },
+      {
+        "id": "cemetery",
+        "count": 1,
+        "geometryCounts": {
+          "point": 0,
+          "line": 0,
+          "polygon": 1
+        }
+      },
+      {
         "id": "desert",
         "count": 1,
         "geometryCounts": {
           "point": 0,
-          "line": 1,
-          "polygon": 0
+          "line": 0,
+          "polygon": 1
         }
       },
       {
@@ -295,6 +297,15 @@
       },
       {
         "id": "landfill",
+        "count": 1,
+        "geometryCounts": {
+          "point": 0,
+          "line": 0,
+          "polygon": 1
+        }
+      },
+      {
+        "id": "sand",
         "count": 1,
         "geometryCounts": {
           "point": 0,

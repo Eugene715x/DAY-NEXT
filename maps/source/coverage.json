@@ -9,12 +9,12 @@
     -116.73,
     36.94
   ],
-  "inputElements": 24232,
-  "sourceTaggedElements": 2846,
-  "eligibleInBounds": 2573,
-  "representedSourceElements": 2573,
-  "representedByRelation": 0,
-  "metadataOnlyElements": 21386,
+  "inputElements": 26802,
+  "sourceTaggedElements": 2957,
+  "eligibleInBounds": 2561,
+  "representedSourceElements": 2561,
+  "representedByRelation": 121,
+  "metadataOnlyElements": 23845,
   "partialRelations": [
     {
       "id": "relation-170095",
@@ -29,21 +29,9 @@
       "incomplete": 0
     },
     {
-      "id": "relation-6746882",
-      "available": 1,
-      "missing": 3,
-      "incomplete": 0
-    },
-    {
       "id": "relation-6746903",
       "available": 24,
       "missing": 49,
-      "incomplete": 0
-    },
-    {
-      "id": "relation-15569711",
-      "available": 16,
-      "missing": 126,
       "incomplete": 0
     },
     {
@@ -351,7 +339,9 @@
       "node-9538690550",
       "node-12199192622",
       "node-12199192632",
-      "node-12554601225"
+      "node-12554601225",
+      "node-141114254",
+      "node-11014892748"
     ],
     "incompleteGeometry": [
       "relation-16748274"
@@ -359,10 +349,29 @@
     "invalidCoordinate": []
   },
   "omittedCounts": {
-    "outsideBounds": 272,
+    "outsideBounds": 274,
     "incompleteGeometry": 1,
     "invalidCoordinate": 0
   },
+  "sources": [
+    {
+      "sourceFile": "maps/source/beatty.osm",
+      "sha256": "44f3641860c1e3966edf259c5487b89f1997699aec77cff783360f8c66414d99",
+      "bytes": 5110481,
+      "dataUrl": "https://api.openstreetmap.org/api/0.6/map?bbox=-116.86,36.86,-116.73,36.94",
+      "downloadedAt": "2026-10-20T18:26:21.022Z"
+    },
+    {
+      "sourceFile": "maps/source/beatty-sand.osm",
+      "provenanceFile": "maps/source/beatty-sand.provenance.json",
+      "sha256": "a11681c538c5d897758cfafdadfaf325fab4cd1bc529acbaeb5766b098fed297",
+      "bytes": 576178,
+      "dataUrl": "https://api.openstreetmap.org/api/0.6/relation/15569711/full",
+      "downloadedAt": "2026-10-20T19:51:04.827Z",
+      "acquisition": "osm-relation-full-api",
+      "relationId": "relation-15569711"
+    }
+  ],
   "notes": [
     "Coverage is relative to the exact source file and selected bounds, not a promise that every real-world structure has been surveyed.",
     "Untagged vertices are coordinate geometry; partial relations retain known members and missing references."
