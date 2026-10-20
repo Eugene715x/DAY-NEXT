@@ -111,12 +111,50 @@ test('water POIs may snap at most 100 real meters and inaccessible markers are r
   assert.equal(world.metadata.unreachablePoiCount, 1);
 });
 
+test('mapped building holes, roofs, road metadata and small objects survive without changing strategic navigation', () => {
+  const base = sourceMap({ areas: [] });
+  const input = sourceMap({
+    areas: [],
+    roads: [{ ...base.roads[0], type: 'footway', surface: 'gravel', widthMeters: 2 }],
+    buildings: [{
+      id: 'building-courtyard', name: 'Courtyard house', type: 'house',
+      points: ring(20, 20, 80, 80), rings: [ring(20, 20, 80, 80), ring(40, 40, 60, 60)],
+      ruins: false, roofShape: 'gabled', levels: 2, heightMeters: 7.5, material: 'brick',
+      address: { street: 'Main Street', housenumber: '12' },
+    }],
+    details: [
+      { id: 'tree', kind: 'tree', geometry: 'point', points: [{ x: 35, y: 45 }], tags: { natural: 'tree' } },
+      { id: 'fence', kind: 'fence', geometry: 'line', points: [{ x: 20, y: 100 }, { x: 280, y: 100 }], tags: { barrier: 'fence' } },
+      { id: 'parking', kind: 'parking', geometry: 'polygon', points: ring(180, 20, 270, 80), rings: [ring(180, 20, 270, 80), ring(210, 40, 240, 60)] },
+    ],
+  });
+  const before = structuredClone(input), world = createRealWorld(input);
+  assert.deepEqual(world.buildings, input.buildings);
+  assert.deepEqual(world.details, input.details);
+  assert.deepEqual(world.roads, input.roads);
+  assert.deepEqual(world.cells, createRealWorld(base).cells, 'Detail footprints must not become 25-unit navigation walls');
+  assert.ok(findPath(world, { x: 80, y: 95 }, { x: 230, y: 95 }));
+
+  world.buildings[0].rings[1][0].x = 0;
+  world.buildings[0].address.street = 'Changed in runtime';
+  world.details[0].tags.natural = 'Changed in runtime';
+  world.details[1].points[0].y = 0;
+  world.details[2].rings[1][0].x = 0;
+  assert.deepEqual(input, before, 'Runtime detail geometry and metadata must not retain writable source references');
+});
+
 test('invalid geographic bounds, unsafe grid sizes and malformed geometry are rejected', () => {
   assert.throws(() => createRealWorld(sourceMap({ bbox: [-121, 47, -122, 48] })), /bbox/);
   assert.throws(() => createRealWorld(sourceMap({ bbox: [-122, 47, -121, 91] })), /bbox/);
   assert.throws(() => createRealWorld(sourceMap({ width: 301 })), /dimensions/);
   assert.throws(() => createRealWorld(sourceMap({ width: 1e8 })), /dimensions/);
+  assert.throws(() => createRealWorld(sourceMap({ width: 20000, height: 100, cellSize: 100 })), /dimensions/);
+  assert.throws(() => createRealWorld(sourceMap({ width: 5000, height: 5000, cellSize: 100 })), /dimensions/);
   assert.throws(() => createRealWorld(sourceMap({ metersPerUnit: 0 })), /dimensions/);
   assert.throws(() => createRealWorld(sourceMap({ roads: [{ points: [{ x: NaN, y: 10 }, { x: 20, y: 20 }] }] })), /coordinate/);
   assert.throws(() => createRealWorld(sourceMap({ roads: [{ points: [{ x: 10, y: 10 }, { x: 20, y: 20 }], width: Infinity }] })), /width/);
+  assert.throws(() => createRealWorld(sourceMap({ buildings: [{ points: ring(10, 10, 20, 20), rings: [[{ x: Infinity, y: 10 }]] }] })), /coordinate/);
+  assert.throws(() => createRealWorld(sourceMap({ details: [{ geometry: 'line', points: [{ x: 20, y: 20 }] }] })), /coordinate count/);
+  assert.throws(() => createRealWorld(sourceMap({ details: [{ geometry: 'point', points: [{ x: 1e308, y: 20 }] }] })), /coordinate/);
+  assert.throws(() => createRealWorld(sourceMap({ details: {} })), /details/);
 });

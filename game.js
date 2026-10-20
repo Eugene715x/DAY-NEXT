@@ -2,12 +2,16 @@ import { createWorld, findPath, terrainAt, nearestWalkable } from './world.js';
 import { createRealWorld } from './real-world.js';
 import { convertOSM } from './scripts/lib/osm-converter.mjs';
 import usaMap from './maps/usa.js';
+import { createDetailRenderer } from './detail-renderer.js';
 
 const $ = id => document.getElementById(id);
 const canvas = $('map');
 const ctx = canvas.getContext('2d', { alpha: false });
 let world = createRealWorld(usaMap);
 let currentMap = usaMap;
+let detailRenderer = createDetailRenderer(world);
+let hoveredObject = null;
+const maximumZoom = () => world.geographic ? 24 : 5;
 const greenPalette = { plain: '#a7ac8d', forest: '#6e8163', water: '#354d49', swamp: '#7f927c', hill: '#a8a38a', road: '#aaa88e', bridge: '#b7b39b' };
 const desertPalette = { plain: '#b2aa89', forest: '#788367', water: '#435b54', swamp: '#929b7c', hill: '#a99b7a', road: '#b6ab87', bridge: '#c7bc95' };
 let palette = desertPalette;
@@ -46,7 +50,7 @@ function makeAtlas() {
   const t = terrain.getContext('2d');
   t.fillStyle = palette.plain; t.fillRect(0, 0, terrain.width, terrain.height);
   world.cells.forEach((cell, i) => {
-    t.fillStyle = palette[cell.type] || palette.plain;
+    t.fillStyle = world.geographic && ['road', 'bridge'].includes(cell.type) ? palette.plain : palette[cell.type] || palette.plain;
     t.fillRect((i % world.cols) * world.cellSize, Math.floor(i / world.cols) * world.cellSize, world.cellSize + 1, world.cellSize + 1);
   });
   g.fillStyle = palette.plain; g.fillRect(0, 0, atlas.width, atlas.height);
@@ -133,14 +137,14 @@ function makeAtlas() {
     }
   }
 
-  for (const road of world.roads) {
+  for (const road of world.geographic ? [] : world.roads) {
     line(g, road.points); g.lineJoin = 'round'; g.lineCap = 'round';
     const width = world.geographic ? clamp(road.width, 1.2, 9) : 4;
     g.strokeStyle = 'rgba(59,55,39,.3)'; g.lineWidth = width + 3; g.stroke();
     g.strokeStyle = '#d0c6a3'; g.lineWidth = width; g.stroke();
     g.setLineDash([9, 9]); g.strokeStyle = '#74725a'; g.lineWidth = .7; g.stroke(); g.setLineDash([]);
   }
-  for (const road of world.roads) {
+  for (const road of world.geographic ? [] : world.roads) {
     let span = [];
     const paintBridge = () => {
       if (span.length < 2) { span = []; return; }
@@ -160,7 +164,7 @@ function makeAtlas() {
     paintBridge();
   }
 
-  for (const building of world.buildings || []) {
+  for (const building of world.geographic ? [] : world.buildings || []) {
     line(g, building.points); g.closePath();
     g.fillStyle = '#a3997a'; g.fill(); g.strokeStyle = '#59604a'; g.lineWidth = .7; g.stroke();
   }
@@ -186,10 +190,7 @@ function makeAtlas() {
     g.save(); g.translate(x, y); g.rotate(angle); g.fillStyle = 'rgba(33,51,35,.26)';
     g.font = `500 ${size}px Georgia, serif`; g.textAlign = 'center'; g.letterSpacing = '5px'; g.fillText(text, 0, 0); g.restore();
   };
-  if (world.geographic) {
-    mapText((world.name || 'НЕВАДА').toUpperCase(), world.width * .45, world.height * .16, 28, -.035);
-    mapText((world.region || world.country || 'OPENSTREETMAP').toUpperCase(), world.width * .5, world.height * .82, 19, 0);
-  } else {
+  if (!world.geographic) {
     mapText('С Е В Е Р Н Ы Е   П У С Т О Ш И', 1130, 370, 27, -.06);
     mapText('Х В О Й Н Ы Й   Л Е С', 620, 1550, 17, -.32);
     mapText('З А Р Е Ч Ь Е', 2300, 1450, 25, -.08);
@@ -258,6 +259,7 @@ function reset() {
   route = null; paused = false; following = true; speed = 1;
   stamina = water = 100; minutes = 7 * 60 + 42; totalDistance = 0; trail = []; arrivalMarker = null;
   discovered = new Set(world.pois.filter(p => p.discovered).map(p => p.id));
+  hideObjectCard();
   $('travel-panel').hidden = true; $('speed-button').textContent = '1×'; $('activity-log').replaceChildren();
   log('Новый день. Впереди — неизвестность.', true); toast('Вернулись к началу экспедиции.'); updateUI();
 }
@@ -273,11 +275,13 @@ function updateMapDetails() {
   $('map-source-link').href = 'https://www.openstreetmap.org/copyright';
   $('map-source-link').textContent = '© OpenStreetMap contributors · ODbL';
   $('map-export').disabled = !currentMap;
+  $('detail-button').disabled = !world.buildings?.length;
 }
 
 function switchMap(map) {
   const next = map ? createRealWorld(map) : createWorld();
   world = next; currentMap = map;
+  detailRenderer = createDetailRenderer(world);
   palette = map ? desertPalette : greenPalette;
   randomSeed = world.seed || 715; atlas = makeAtlas();
   camera.zoom = innerWidth < 640 ? .68 : .85;
@@ -287,6 +291,40 @@ function switchMap(map) {
   toast(map ? `Территория: ${map.name}. Выбери точку на карте.` : 'Северные пустоши. Выбери свой путь.');
 }
 
+function hideObjectCard() {
+  hoveredObject = null;
+  $('object-card').hidden = true;
+}
+
+function inspectObject(point, screenX, screenY, touch = false) {
+  if (!world.geographic || camera.zoom < 2) { hideObjectCard(); return; }
+  const feature = detailRenderer.pick(point.x, point.y, 5 / camera.zoom);
+  if (!feature) { hideObjectCard(); return; }
+  hoveredObject = feature;
+  const names = { building: 'ЗДАНИЕ', road: 'ДОРОГА', fence: 'ОГРАДА', wall: 'СТЕНА', gate: 'ВОРОТА', railway: 'ЖЕЛЕЗНАЯ ДОРОГА', parking: 'ПАРКОВКА', pitch: 'СПОРТПЛОЩАДКА', garden: 'САД', pool: 'БАССЕЙН', tree: 'ДЕРЕВО', bench: 'СКАМЕЙКА', picnic_table: 'МЕСТО ДЛЯ ПРИВАЛА', fountain: 'ФОНТАН', well: 'КОЛОДЕЦ', ruins: 'РУИНЫ', shelter: 'УКРЫТИЕ', cemetery: 'КЛАДБИЩЕ', park: 'ПАРК', spring: 'РОДНИК', quarry: 'КАРЬЕР', playground: 'ДЕТСКАЯ ПЛОЩАДКА', cattle_grid: 'РЕШЁТКА НА ДОРОГЕ' };
+  $('object-kind').textContent = names[feature.kind] || 'ОБЪЕКТ';
+  $('object-name').textContent = feature.name || (feature.kind === 'building' ? 'Безымянное здание' : 'Объект на карте');
+  const source = feature.source || {};
+  const address = typeof source.address === 'string' ? source.address : source.address ? Object.values(source.address).join(', ') : '';
+  const extra = [feature.description, address, source.levels ? `${source.levels} эт.` : '', source.surface ? `Покрытие: ${source.surface}` : ''].filter(Boolean).flatMap(text => String(text).split(' · '));
+  $('object-meta').textContent = [...new Set(extra)].filter(text => text !== feature.name).join(' · ') || 'Нанесён на карту OpenStreetMap';
+  if (touch && ['building', 'ruins'].includes(feature.kind)) $('object-meta').textContent += '\nКоснись земли рядом, чтобы подойти.';
+  $('object-card').hidden = false;
+  const bounds = $('object-card').getBoundingClientRect();
+  $('object-card').style.left = `${clamp(screenX + 18, 12, vw - bounds.width - 12)}px`;
+  $('object-card').style.top = `${clamp(screenY + 20 + bounds.height > vh - 60 ? screenY - bounds.height - 18 : screenY + 20, 90, vh - bounds.height - 45)}px`;
+}
+
+function focusBuildings() {
+  const focus = detailRenderer.focus();
+  if (!focus) { toast('На этом участке нет нанесённых контуров домов.'); return; }
+  following = false; camera.x = focus.x; camera.y = focus.y;
+  camera.zoom = innerWidth < 640 ? Math.max(focus.zoom, 7) : focus.zoom;
+  hideObjectCard(); updateUI();
+  toast(`${currentMap === usaMap ? 'Застройка Битти' : 'Застройка на карте'}. Приближай карту и наводи на отдельные дома.`);
+}
+$('detail-button').addEventListener('click', focusBuildings);
+
 function downloadJSON(map) {
   const blob = new Blob([JSON.stringify(map, null, 2)], { type: 'application/json;charset=utf-8' });
   const url = URL.createObjectURL(blob), a = document.createElement('a');
@@ -294,6 +332,7 @@ function downloadJSON(map) {
   a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 $('maps-button').addEventListener('click', () => {
+  hideObjectCard();
   $('maps-panel').hidden = !$('maps-panel').hidden;
   $('maps-button').setAttribute('aria-expanded', String(!$('maps-panel').hidden));
   $('help-panel').hidden = true; $('help-button').setAttribute('aria-expanded', 'false');
@@ -341,16 +380,17 @@ $('map-import').addEventListener('click', async () => {
 
 $('pause-button').addEventListener('click', togglePause);
 $('cancel-button').addEventListener('click', cancelRoute);
-$('center-button').addEventListener('click', () => { following = true; camera.x = player.x; camera.y = player.y; updateUI(); });
+$('center-button').addEventListener('click', () => { hideObjectCard(); following = true; camera.x = player.x; camera.y = player.y; updateUI(); });
 $('reset-button').addEventListener('click', reset);
 $('speed-button').addEventListener('click', () => { speed = speed === 1 ? 3 : 1; $('speed-button').textContent = `${speed}×`; toast(`Скорость путешествия: ${speed}×`); });
-$('help-button').addEventListener('click', () => { $('help-panel').hidden = !$('help-panel').hidden; $('help-button').setAttribute('aria-expanded', String(!$('help-panel').hidden)); $('maps-close').click(); });
+$('help-button').addEventListener('click', () => { hideObjectCard(); $('help-panel').hidden = !$('help-panel').hidden; $('help-button').setAttribute('aria-expanded', String(!$('help-panel').hidden)); $('maps-close').click(); });
 $('help-close').addEventListener('click', () => { $('help-panel').hidden = true; $('help-button').setAttribute('aria-expanded', 'false'); });
 function zoomBy(factor, point = { x: vw / 2, y: vh / 2 }) {
   const before = screenToWorld(point.x, point.y);
-  camera.zoom = clamp(camera.zoom * factor, .32, 2.3);
+  camera.zoom = clamp(camera.zoom * factor, .32, maximumZoom());
   const after = screenToWorld(point.x, point.y);
   camera.x += before.x - after.x; camera.y += before.y - after.y;
+  hideObjectCard();
   updateUI();
 }
 $('zoom-in').addEventListener('click', () => zoomBy(1.23));
@@ -360,6 +400,7 @@ canvas.addEventListener('wheel', e => { e.preventDefault(); following = false; z
 const touches = new Map(); let pinch = null, wasPinch = false;
 canvas.addEventListener('pointerdown', e => {
   if (e.button !== 0 && e.pointerType !== 'touch') return;
+  hideObjectCard();
   canvas.setPointerCapture(e.pointerId);
   touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
   if (touches.size === 2) {
@@ -372,11 +413,12 @@ canvas.addEventListener('pointerdown', e => {
 });
 canvas.addEventListener('pointermove', e => {
   hover = screenToWorld(e.clientX, e.clientY); hoveredPoi = pickPoi(hover);
-  canvas.style.cursor = pointer?.moved ? 'grabbing' : hoveredPoi ? 'pointer' : 'crosshair';
+  if (!pointer && !pinch) inspectObject(hover, e.clientX, e.clientY);
+  canvas.style.cursor = pointer?.moved ? 'grabbing' : hoveredPoi || hoveredObject ? 'pointer' : 'crosshair';
   if (touches.has(e.pointerId)) touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
   if (pinch && touches.size === 2) {
     const [a, b] = [...touches.values()];
-    camera.zoom = clamp(pinch.zoom * dist(a, b) / pinch.distance, .32, 2.3);
+    camera.zoom = clamp(pinch.zoom * dist(a, b) / pinch.distance, .32, maximumZoom());
     camera.x = pinch.midpoint.x - ((a.x + b.x) / 2 - vw / 2) / camera.zoom;
     camera.y = pinch.midpoint.y - ((a.y + b.y) / 2 - vh / 2) / camera.zoom;
     return;
@@ -384,25 +426,32 @@ canvas.addEventListener('pointermove', e => {
   if (!pointer || pointer.id !== e.pointerId) return;
   const dx = e.clientX - pointer.x, dy = e.clientY - pointer.y;
   if (Math.hypot(dx, dy) > 5) pointer.moved = true;
-  if (pointer.moved) { following = false; camera.x = pointer.cx - dx / camera.zoom; camera.y = pointer.cy - dy / camera.zoom; }
+  if (pointer.moved) { hideObjectCard(); following = false; camera.x = pointer.cx - dx / camera.zoom; camera.y = pointer.cy - dy / camera.zoom; }
 });
 function pointerUp(e) {
   touches.delete(e.pointerId);
   if (wasPinch) { if (!touches.size) { wasPinch = false; pinch = null; } pointer = null; canvas.classList.remove('is-grabbing'); return; }
-  if (pointer && pointer.id === e.pointerId && !pointer.moved && e.type !== 'pointercancel') setDestination(screenToWorld(e.clientX, e.clientY));
+  if (pointer && pointer.id === e.pointerId && !pointer.moved && e.type !== 'pointercancel') {
+    const point = screenToWorld(e.clientX, e.clientY);
+    if (e.pointerType === 'touch') {
+      inspectObject(point, e.clientX, e.clientY, true);
+      if (!hoveredObject || !['building', 'ruins'].includes(hoveredObject.kind)) setDestination(point);
+    } else setDestination(point);
+  }
   pointer = null; canvas.classList.remove('is-grabbing');
 }
 canvas.addEventListener('pointerup', pointerUp); canvas.addEventListener('pointercancel', pointerUp);
-canvas.addEventListener('pointerleave', () => { hover = null; hoveredPoi = null; });
+canvas.addEventListener('pointerleave', e => { hover = null; hoveredPoi = null; if (e.pointerType !== 'touch') hideObjectCard(); });
 addEventListener('keydown', e => {
   if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement) return;
   if (e.target instanceof HTMLButtonElement && [' ', 'Enter'].includes(e.key)) return;
   if ([' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) e.preventDefault();
-  if (e.repeat && [' ', 'f', 'F', 'r', 'R'].includes(e.key)) return;
+  if (e.repeat && [' ', 'f', 'F', 'r', 'R', 'b', 'B'].includes(e.key)) return;
   if (e.key === ' ') togglePause();
   if (e.key === 'Escape') { if (!$('help-panel').hidden) $('help-close').click(); else if (!$('maps-panel').hidden) $('maps-close').click(); else cancelRoute(); }
   if (e.key.toLowerCase() === 'f') $('center-button').click();
   if (e.key.toLowerCase() === 'r') reset();
+  if (e.key.toLowerCase() === 'b') focusBuildings();
   if (e.key === '+' || e.key === '=') zoomBy(1.2);
   if (e.key === '-') zoomBy(1 / 1.2);
   keys.add(e.key.toLowerCase());
@@ -413,11 +462,11 @@ addEventListener('blur', () => { keys.clear(); pointer = null; touches.clear(); 
 function update(dt) {
   const panX = Number(keys.has('d') || keys.has('arrowright')) - Number(keys.has('a') || keys.has('arrowleft'));
   const panY = Number(keys.has('s') || keys.has('arrowdown')) - Number(keys.has('w') || keys.has('arrowup'));
-  if (panX || panY) { following = false; camera.x += panX * dt * 450 / camera.zoom; camera.y += panY * dt * 450 / camera.zoom; }
+  if (panX || panY) { hideObjectCard(); following = false; camera.x += panX * dt * 450 / camera.zoom; camera.y += panY * dt * 450 / camera.zoom; }
   if (route && !paused) {
     const cell = terrainAt(world, player.x, player.y);
     const factor = cell?.type === 'road' || cell?.type === 'bridge' ? 1.35 : cell?.type === 'forest' ? .73 : cell?.type === 'swamp' ? .48 : cell?.type === 'hill' ? .8 : 1;
-    let budget = dt * 33 * speed * factor;
+    let budget = dt * Math.min(33, 110 / camera.zoom) * speed * factor;
     let walked = 0;
     while (route && budget > 0 && route.index < route.points.length) {
       const target = route.points[route.index], length = dist(player, target);
@@ -487,6 +536,7 @@ function draw(time) {
   ctx.fillStyle = '#1b2721'; ctx.fillRect(0, 0, vw, vh);
   ctx.save(); ctx.translate(vw / 2, vh / 2); ctx.scale(camera.zoom, camera.zoom); ctx.translate(-camera.x, -camera.y);
   ctx.drawImage(atlas, 0, 0);
+  if (world.geographic) detailRenderer.draw(ctx, { zoom: camera.zoom, cameraX: camera.x, cameraY: camera.y, width: vw, height: vh, time, hoveredId: hoveredObject?.id });
   if (trail.length > 1) {
     line(ctx, trail); ctx.strokeStyle = 'rgba(54,61,35,.45)'; ctx.lineWidth = 1.5 / camera.zoom; ctx.setLineDash([2 / camera.zoom, 5 / camera.zoom]); ctx.stroke(); ctx.setLineDash([]);
   }
@@ -501,7 +551,7 @@ function draw(time) {
   const playerOnScreen = worldToScreen(player);
   mapLabelBoxes = [{ x: playerOnScreen.x - 30, y: playerOnScreen.y - 22, width: 60, height: 56 }];
   const pois = world.geographic ? [...world.pois].sort((a, b) => Number(b.id === hoveredPoi?.id) - Number(a.id === hoveredPoi?.id) || Number(b.kind === 'town') - Number(a.kind === 'town') || Number(discovered.has(b.id)) - Number(discovered.has(a.id))) : world.pois;
-  for (const poi of pois) drawPoi(poi, time);
+  for (const poi of pois) if (camera.zoom < 4 || hoveredPoi?.id === poi.id || poi.kind === 'town') drawPoi(poi, time);
   if (arrivalMarker && route) {
     const p = worldToScreen(arrivalMarker);
     ctx.beginPath(); ctx.arc(p.x, p.y, 12 + Math.sin(time * 3) * 2, 0, Math.PI * 2); ctx.strokeStyle = '#f3edb3'; ctx.lineWidth = 1.5; ctx.stroke();
@@ -540,9 +590,11 @@ function draw(time) {
 
   // Map scale is a true distance based on current zoom, rather than a decoration.
   if (vw > 650) {
-    const length = 1000 / metersPerUnit() * camera.zoom, x = vw - 36 - length, y = vh - 44;
+    const targetMeters = 135 * metersPerUnit() / camera.zoom;
+    const scaleMeters = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000].filter(n => n <= targetMeters).at(-1) || 1;
+    const length = scaleMeters / metersPerUnit() * camera.zoom, x = vw - 36 - length, y = vh - 44;
     ctx.strokeStyle = 'rgba(222,227,199,.7)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x, y - 4); ctx.lineTo(x, y); ctx.lineTo(x + length, y); ctx.lineTo(x + length, y - 4); ctx.stroke();
-    ctx.fillStyle = '#d4dbc0'; ctx.font = '9px monospace'; ctx.textAlign = 'right'; ctx.fillText('1 КМ', x + length, y - 9);
+    ctx.fillStyle = '#d4dbc0'; ctx.font = '9px monospace'; ctx.textAlign = 'right'; ctx.fillText(scaleMeters >= 1000 ? `${scaleMeters / 1000} КМ` : `${scaleMeters} М`, x + length, y - 9);
   }
 }
 
@@ -566,6 +618,10 @@ function updateUI() {
     $('coords').textContent = `${Math.abs(lat).toFixed(4)}° ${lat >= 0 ? 'С' : 'Ю'} · ${Math.abs(lon).toFixed(4)}° ${lon >= 0 ? 'В' : 'З'}`;
   } else $('coords').textContent = `${(58 + player.y / 10000).toFixed(3)}° С · ${(38 + player.x / 10000).toFixed(3)}° В`;
   $('zoom-label').textContent = `${Math.round(camera.zoom * 100)}%`;
+  $('map-detail-label').textContent = camera.zoom >= 6 ? 'ДЕТАЛИ' : camera.zoom >= 2 ? 'УЛИЦЫ' : 'ОБЗОР';
+  $('zoom-in').disabled = camera.zoom >= maximumZoom() - .001;
+  $('zoom-out').disabled = camera.zoom <= .321;
+  $('detail-button').classList.toggle('active', camera.zoom >= 4 && !following);
   $('center-button').classList.toggle('active', following);
   $('center-button').setAttribute('aria-pressed', String(following));
   if (route) {
@@ -580,6 +636,8 @@ window.__DAY_NEXT__ = {
   getState: () => ({ player: { ...player }, camera: { ...camera }, moving: !!route && !paused, paused, speed, stamina, water, minutes, totalDistance, destination: route ? { ...route.destination } : null, remaining: route?.remaining || 0, discovered: [...discovered] }),
   getWorld: () => world,
   worldToScreen: position => worldToScreen(position),
+  getDetails: () => detailRenderer.getStats(),
+  inspectAt: (x, y) => detailRenderer.pick(x, y, 1),
 };
 log('Невада. На карте — следы прежней жизни.', true); updateMapDetails(); updateUI();
 function frame(now) {

@@ -186,6 +186,52 @@ function poiKind(tags) {
 }
 const fallbackNames = { town: 'Поселение / магазин', station: 'Общественное здание', camp: 'Укрытие', hospital: 'Медпункт', gas: 'Заправка', tower: 'Башня', ruin: 'Достопримечательность' };
 
+function lengthMeters(value) {
+  if (value === undefined) return undefined;
+  const text = String(value).trim();
+  const feetAndInches = text.match(/^(\d+(?:\.\d+)?)\s*'\s*(\d+(?:\.\d+)?)?\s*(?:"|in)?$/);
+  if (feetAndInches) return Number(feetAndInches[1]) * .3048 + Number(feetAndInches[2] || 0) * .0254;
+  const match = text.match(/^(\d+(?:\.\d+)?)\s*(m|metres?|meters?|ft|feet)?$/i);
+  if (!match) return undefined;
+  return Number(match[1]) * (/^(ft|feet)$/i.test(match[2] || '') ? .3048 : 1);
+}
+
+function buildingMetadata(tags) {
+  const metadata = { type: clean(tags.building), tags: safeTags(tags) };
+  if (tags.building === 'ruins' || tags.historic === 'ruins' || tags.ruins && !['no', 'false', '0'].includes(tags.ruins)) metadata.ruins = true;
+  if (tags['roof:shape']) metadata.roofShape = clean(tags['roof:shape']);
+  if (tags['building:material'] || tags.material) metadata.material = clean(tags['building:material'] || tags.material);
+  if (tags['roof:material']) metadata.roofMaterial = clean(tags['roof:material']);
+  const levels = Number(tags['building:levels']);
+  if (tags['building:levels'] !== undefined && Number.isFinite(levels) && levels >= 0) metadata.levels = levels;
+  const height = lengthMeters(tags.height ?? tags['building:height']);
+  if (height !== undefined) metadata.heightMeters = height;
+  const address = [
+    [tags['addr:housenumber'], tags['addr:street']].filter(Boolean).join(' '),
+    tags['addr:city'], tags['addr:postcode'],
+  ].filter(Boolean).join(', ');
+  if (address) metadata.address = clean(address);
+  return metadata;
+}
+
+/** Mapped objects retain their source geometry; point ruins never acquire invented footprints. */
+function detailKind(tags) {
+  if (tags.barrier && !['no', 'false', '0'].includes(tags.barrier)) return clean(tags.barrier);
+  if (tags.railway && !['proposed', 'construction', 'no'].includes(tags.railway)) return 'railway';
+  if (tags.amenity === 'parking' || tags.amenity === 'parking_space') return tags.amenity;
+  if (tags.leisure === 'swimming_pool' || tags.amenity === 'swimming_pool') return 'pool';
+  if (['pitch', 'garden', 'park', 'playground', 'recreation_ground', 'picnic_table'].includes(tags.leisure)) return tags.leisure;
+  if (tags.natural === 'tree' || tags.natural === 'tree_row' || tags.natural === 'spring') return tags.natural;
+  if (['bench', 'fountain', 'drinking_water', 'shelter', 'toilets'].includes(tags.amenity)) return tags.amenity;
+  if (tags.man_made === 'water_well') return 'well';
+  if (tags.tourism === 'picnic_site' || tags.tourism === 'information') return tags.tourism;
+  if (tags.historic === 'ruins' || tags.ruins && !['no', 'false', '0'].includes(tags.ruins)) return 'ruins';
+  if (tags.landuse === 'cemetery' || tags.amenity === 'grave_yard') return 'cemetery';
+  if (tags.landuse === 'quarry') return 'quarry';
+  if (tags.highway === 'street_lamp') return 'lamp';
+  return null;
+}
+
 export function convertOSM(input, options = {}) {
   const parsed = parseOSM(input);
   const projection = createProjection(options.bbox, options);
@@ -200,7 +246,7 @@ export function convertOSM(input, options = {}) {
     if (points.some(p => !p || !Number.isFinite(Number(p.lon)) || !Number.isFinite(Number(p.lat)))) return [];
     return points.map(project);
   };
-  const roads = [], rivers = [], areas = [], buildings = [], pois = [], labels = [];
+  const roads = [], rivers = [], areas = [], buildings = [], details = [], pois = [], labels = [];
   const relationMembers = new Set();
   const addPoi = (element, point) => {
     const tags = element.tags || {}, kind = poiKind(tags);
@@ -212,8 +258,8 @@ export function convertOSM(input, options = {}) {
     pois.push({ id, name, x: point.x, y: point.y, kind, description: `Реальный объект OpenStreetMap: ${clean(tags.amenity || tags.place || tags.railway || tags.tourism || tags.shop || tags.man_made || tags.historic || tags.building || kind)}.`, discovered: false, named: !!tags.name });
   };
   for (const relation of elements.filter(e => e.type === 'relation' && ['multipolygon', 'boundary'].includes(e.tags?.type))) {
-    const type = areaType(relation.tags), isBuilding = relation.tags.building && relation.tags.building !== 'no';
-    if (!type && !isBuilding) continue;
+    const type = areaType(relation.tags), isBuilding = relation.tags.building && relation.tags.building !== 'no', detail = detailKind(relation.tags);
+    if (!type && !isBuilding && !detail) continue;
     const outers = [], inners = [];
     for (const member of relation.members || []) {
       if (member.type !== 'way') continue;
@@ -232,7 +278,8 @@ export function convertOSM(input, options = {}) {
       const rings = [ring, ...innerRings.filter(hole => insideRing(hole[0], outer)).map(hole => clipRing(hole, boundWidth, boundHeight)).filter(Boolean)];
       const id = `relation-${relation.id}-${index++}`, name = clean(relation.tags.name || '');
       if (type) areas.push({ id, type, rings, name, intermittent: isIntermittent(relation.tags), seasonal: isSeasonal(relation.tags) });
-      if (isBuilding) buildings.push({ id, points: ring, name });
+      if (isBuilding) buildings.push({ id, points: ring, rings, name, ...buildingMetadata(relation.tags) });
+      if (detail && !isBuilding) details.push({ id, kind: detail, geometry: 'polygon', points: ring, rings, name, tags: safeTags(relation.tags) });
       addPoi(relation, centroid(ring));
     }
   }
@@ -242,10 +289,13 @@ export function convertOSM(input, options = {}) {
     const id = `way-${way.id}`, closed = points.length >= 4 && same(points[0], points.at(-1));
     const name = clean(tags.name || '');
     if (tags.highway && !['proposed', 'construction', 'platform'].includes(tags.highway) && tags.area !== 'yes') {
-      const widthMeters = Math.max(1, Math.min(60, Number.parseFloat(tags.width) || (['motorway', 'trunk', 'primary'].includes(tags.highway) ? 12 : ['footway', 'path', 'cycleway', 'steps'].includes(tags.highway) ? 2 : 6)));
+      const taggedWidth = lengthMeters(tags.width);
+      const widthMeters = Math.max(1, Math.min(60, taggedWidth || (['motorway', 'trunk', 'primary'].includes(tags.highway) ? 12 : ['footway', 'path', 'cycleway', 'steps'].includes(tags.highway) ? 2 : 6)));
       const bridge = !!tags.bridge && !['no', 'false', '0'].includes(tags.bridge);
       const tunnel = !!tags.tunnel && !['no', 'false', '0'].includes(tags.tunnel);
-      clipLine(points, boundWidth, boundHeight).forEach((part, i) => roads.push({ id: `${id}-${i}`, points: part, width: Math.max(2, widthMeters / metersPerUnit), type: tags.highway, bridge, tunnel, name }));
+      const metadata = { widthMeters, widthSource: taggedWidth ? 'tag' : 'highway-default' };
+      for (const key of ['surface', 'access', 'tracktype', 'foot', 'service']) if (tags[key]) metadata[key] = clean(tags[key]);
+      clipLine(points, boundWidth, boundHeight).forEach((part, i) => roads.push({ id: `${id}-${i}`, points: part, width: Math.max(2, widthMeters / metersPerUnit), type: tags.highway, bridge, tunnel, name, ...metadata }));
     }
     if (['river', 'stream', 'canal', 'drain', 'ditch'].includes(tags.waterway) && !closed) {
       const widthMeters = Math.max(1, Math.min(300, Number.parseFloat(tags.width) || (tags.waterway === 'river' ? 25 : tags.waterway === 'canal' ? 12 : 3)));
@@ -256,13 +306,22 @@ export function convertOSM(input, options = {}) {
       if (ring) {
         const type = areaType(tags);
         if (type) areas.push({ id, type, rings: [ring], name, intermittent: isIntermittent(tags), seasonal: isSeasonal(tags) });
-        if (tags.building && tags.building !== 'no') buildings.push({ id, points: ring, name });
+        if (tags.building && tags.building !== 'no') buildings.push({ id, points: ring, rings: [ring], name, ...buildingMetadata(tags) });
+        const detail = detailKind(tags);
+        if (detail && !(tags.building && tags.building !== 'no')) details.push({ id, kind: detail, geometry: 'polygon', points: ring, rings: [ring], name, tags: safeTags(tags) });
         addPoi(way, centroid(ring));
       }
+    } else if (!closed && !relationMembers.has(String(way.id))) {
+      const detail = detailKind(tags);
+      if (detail) clipLine(points, boundWidth, boundHeight).forEach((part, i) => details.push({ id: `${id}-${i}`, kind: detail, geometry: 'line', points: part, name, tags: safeTags(tags) }));
     }
   }
-  for (const node of nodes.values()) if (Number.isFinite(Number(node.lon)) && Number.isFinite(Number(node.lat))) addPoi(node, project(node));
-  if (!roads.length && !rivers.length && !areas.length && !buildings.length) throw new Error('The selected bbox has no usable mapped geometry. Check the bounds and complete OSM data.');
+  for (const node of nodes.values()) if (Number.isFinite(Number(node.lon)) && Number.isFinite(Number(node.lat))) {
+    const point = project(node); addPoi(node, point);
+    const kind = detailKind(node.tags || {});
+    if (kind && inBounds(point, boundWidth, boundHeight)) details.push({ id: `node-${node.id}`, kind, geometry: 'point', points: [point], name: clean(node.tags?.name || ''), tags: safeTags(node.tags) });
+  }
+  if (!roads.length && !rivers.length && !areas.length && !buildings.length && !details.length) throw new Error('The selected bbox has no usable mapped geometry. Check the bounds and complete OSM data.');
   // Named objects take priority so the map is readable rather than a wall of anonymous shops.
   pois.sort((a, b) => Number(b.named) - Number(a.named) || Number(b.kind === 'town') - Number(a.kind === 'town') || a.id.localeCompare(b.id));
   const distinctPois = [];
@@ -291,7 +350,7 @@ export function convertOSM(input, options = {}) {
       downloadedAt: options.downloadedAt || new Date().toISOString(),
       snapshotAt: options.snapshotAt || parsed.osm3s?.timestamp_osm_base || elements.map(element => element.timestamp).filter(Boolean).sort().at(-1) || null,
     },
-    roads, rivers, areas, buildings, pois: distinctPois, labels, start,
-    statistics: { inputElements: elements.length, roads: roads.length, rivers: rivers.length, areas: areas.length, buildings: buildings.length, pois: distinctPois.length },
+    roads, rivers, areas, buildings, details, pois: distinctPois, labels, start,
+    statistics: { inputElements: elements.length, roads: roads.length, rivers: rivers.length, areas: areas.length, buildings: buildings.length, details: details.length, pois: distinctPois.length },
   };
 }

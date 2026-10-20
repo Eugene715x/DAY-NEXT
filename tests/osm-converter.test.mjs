@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFile } from 'node:fs/promises';
 import { convertOSM, createProjection, parseOSM, projectPoint, validateBbox } from '../scripts/lib/osm-converter.mjs';
 
 const bbox = [-122, 47, -121.98, 47.015];
@@ -95,4 +96,98 @@ test('real place nodes become named points, unrelated or outside nodes are not i
   assert.equal(map.labels[0].name, 'Snoqualmie');
   assert(map.pois.every(p => !p.discovered));
   assert.equal(map.country, 'US');
+});
+
+test('all small road types retain their complete geometry and explicit surface/width metadata', () => {
+  const map = convertOSM(fixture([
+    road(201, { highway: 'footway', width: '4 ft', surface: 'gravel', access: 'private' }, { nodes: [1, 3, 2] }),
+    road(202, { highway: 'track', tracktype: 'grade3' }),
+    road(203, { highway: 'service', service: 'driveway' }),
+    road(204, { highway: 'cycleway' }),
+  ]), options);
+  assert.deepEqual(map.roads.map(r => r.type), ['footway', 'track', 'service', 'cycleway']);
+  assert.equal(map.roads[0].points.length, 3);
+  assert.equal(map.roads[0].surface, 'gravel');
+  assert.equal(map.roads[0].access, 'private');
+  assert.equal(map.roads[0].widthSource, 'tag');
+  assert(Math.abs(map.roads[0].widthMeters - 1.2192) < 1e-9);
+  assert.equal(map.roads[1].widthSource, 'highway-default');
+  assert.equal(map.roads[1].tracktype, 'grade3');
+  assert.equal(map.roads[2].service, 'driveway');
+});
+
+test('individual buildings keep exact footprints and only mapped roof/height/address facts', () => {
+  const ring = [nodes[0], nodes[2], nodes[1], nodes[3], nodes[0]].map(({ lon, lat }) => ({ lon, lat }));
+  const map = convertOSM(fixture([
+    { type: 'way', id: 210, geometry: ring, tags: { building: 'house', name: 'Mapped House', 'roof:shape': 'gabled', 'building:levels': '2', height: `10' 6"`, 'building:material': 'brick', 'roof:material': 'metal', 'addr:housenumber': '18', 'addr:street': 'Main Street' } },
+    { type: 'way', id: 211, geometry: ring, tags: { building: 'yes' } },
+  ]), options);
+  assert.equal(map.buildings.length, 2);
+  assert.equal(map.buildings[0].points.length, ring.length);
+  assert.equal(map.buildings[0].rings.length, 1);
+  assert.equal(map.buildings[0].type, 'house');
+  assert.equal(map.buildings[0].roofShape, 'gabled');
+  assert.equal(map.buildings[0].levels, 2);
+  assert(Math.abs(map.buildings[0].heightMeters - 3.2004) < 1e-9);
+  assert.equal(map.buildings[0].material, 'brick');
+  assert.equal(map.buildings[0].roofMaterial, 'metal');
+  assert.equal(map.buildings[0].address, '18 Main Street');
+  for (const key of ['roofShape', 'levels', 'heightMeters', 'material', 'address', 'ruins']) assert.equal(Object.hasOwn(map.buildings[1], key), false);
+});
+
+test('courtyard building multipolygons retain holes without duplicating their component ways', () => {
+  const outer = [{ lon: -121.997, lat: 47.003 }, { lon: -121.983, lat: 47.003 }, { lon: -121.983, lat: 47.012 }, { lon: -121.997, lat: 47.012 }];
+  const inner = [{ lon: -121.993, lat: 47.006 }, { lon: -121.988, lat: 47.006 }, { lon: -121.988, lat: 47.009 }, { lon: -121.993, lat: 47.009 }];
+  const map = convertOSM(fixture([
+    { type: 'way', id: 220, geometry: [...outer, outer[0]], tags: { building: 'yes' } },
+    { type: 'way', id: 221, geometry: [...inner, inner[0]], tags: {} },
+    { type: 'relation', id: 222, tags: { type: 'multipolygon', building: 'apartments', name: 'Courtyard House' }, members: [{ type: 'way', ref: 220, role: 'outer' }, { type: 'way', ref: 221, role: 'inner' }] },
+  ]), options);
+  assert.equal(map.buildings.length, 1);
+  assert.equal(map.buildings[0].rings.length, 2);
+  assert.equal(map.buildings[0].type, 'apartments');
+  assert.deepEqual(map.buildings[0].rings[0], map.buildings[0].points);
+});
+
+test('small mapped objects retain point/line/polygon geometry without inventing buildings', () => {
+  const ring = [nodes[0], nodes[2], nodes[1], nodes[3], nodes[0]].map(({ lon, lat }) => ({ lon, lat }));
+  const map = convertOSM(fixture([
+    road(230),
+    { type: 'way', id: 231, nodes: [1, 2], tags: { barrier: 'fence' } },
+    { type: 'way', id: 232, nodes: [3, 4], tags: { railway: 'abandoned', name: 'Old Branch' } },
+    { type: 'way', id: 233, geometry: ring, tags: { amenity: 'parking' } },
+    { type: 'way', id: 234, geometry: ring, tags: { leisure: 'pitch', sport: 'tennis' } },
+    { type: 'node', id: 235, lon: -121.99, lat: 47.008, tags: { historic: 'ruins' } },
+    { type: 'node', id: 236, lon: -121.99, lat: 47.009, tags: { natural: 'tree' } },
+    { type: 'node', id: 237, lon: -121.99, lat: 47.01, tags: { amenity: 'bench' } },
+  ]), options);
+  assert.equal(map.details.length, 7);
+  assert.equal(map.buildings.length, 0, 'A point ruin has no known house footprint');
+  const byKind = Object.fromEntries(map.details.map(d => [d.kind, d]));
+  assert.equal(byKind.fence.geometry, 'line');
+  assert.equal(byKind.railway.tags.railway, 'abandoned');
+  assert.equal(byKind.parking.geometry, 'polygon');
+  assert.equal(byKind.parking.rings.length, 1);
+  assert.equal(byKind.pitch.tags.sport, 'tennis');
+  assert.equal(byKind.ruins.geometry, 'point');
+  assert.equal(byKind.ruins.points.length, 1);
+  assert.equal(byKind.tree.geometry, 'point');
+  assert.equal(byKind.bench.geometry, 'point');
+  assert.equal(map.statistics.details, 7);
+});
+
+test('Nevada source keeps every mapped house and pedestrian path plus actual minor features', async () => {
+  const raw = parseOSM(await readFile(new URL('../maps/source/beatty.osm', import.meta.url), 'utf8'));
+  const map = convertOSM(raw, { ...options, bbox: [-116.86, 36.86, -116.73, 36.94] });
+  const sourceBuildings = raw.elements.filter(element => element.type === 'way' && element.tags.building && element.tags.building !== 'no');
+  assert.equal(sourceBuildings.length, 104);
+  assert.deepEqual(new Set(map.buildings.map(building => building.id)), new Set(sourceBuildings.map(building => `way-${building.id}`)), 'No mapped house footprint may be dropped in the Nevada fixture');
+  assert.equal(map.roads.filter(road => road.type === 'footway').length, 11);
+  assert.equal(map.roads.filter(road => road.type === 'cycleway').length, 1);
+  assert.equal(map.roads.filter(road => road.type === 'track').length, 23);
+  assert.equal(map.buildings.filter(building => building.ruins).length, 8);
+  assert.equal(map.details.length, 43);
+  for (const kind of ['railway', 'parking', 'pool', 'pitch', 'cemetery', 'spring', 'playground', 'cattle_grid']) assert(map.details.some(detail => detail.kind === kind), `Lost real minor feature: ${kind}`);
+  const sourceIds = new Set(raw.elements.map(element => `${element.type}-${element.id}`));
+  for (const detail of map.details) assert(sourceIds.has(detail.id.match(/^(?:node|way|relation)-\d+/)[0]), `Invented source detail ${detail.id}`);
 });

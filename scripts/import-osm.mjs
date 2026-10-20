@@ -50,11 +50,11 @@ async function main() {
     if (endpoint.protocol !== 'https:') throw new Error('Overpass endpoint must use HTTPS');
     const [west, south, east, north] = bbox;
     const area = `${south},${west},${north},${east}`;
-    const query = `[out:json][timeout:80];(way[highway](${area});way[waterway](${area});way[natural](${area});way[landuse](${area});way[building](${area});way[amenity](${area});way[tourism](${area});relation[type=multipolygon][natural](${area});relation[type=multipolygon][landuse](${area});relation[type=multipolygon][waterway](${area});node[place](${area});node[amenity](${area});node[railway](${area});node[tourism](${area});node[shop](${area});node[man_made](${area}););out body geom;`;
+    const query = `[out:json][timeout:80];(way[highway](${area});way[waterway](${area});way[natural](${area});way[landuse](${area});way[building](${area});way[amenity](${area});way[tourism](${area});way[historic](${area});way[barrier](${area});way[railway](${area});way[leisure](${area});way[man_made](${area});relation[type=multipolygon][natural](${area});relation[type=multipolygon][landuse](${area});relation[type=multipolygon][waterway](${area});relation[type=multipolygon][building](${area});relation[type=multipolygon][amenity](${area});relation[type=multipolygon][leisure](${area});relation[type=multipolygon][historic](${area});node[place](${area});node[amenity](${area});node[railway](${area});node[tourism](${area});node[shop](${area});node[man_made](${area});node[historic](${area});node[barrier](${area});node[leisure](${area});node[natural](${area});node[highway=street_lamp](${area}););out body geom;`;
     console.log(`Downloading local OSM extract from ${endpoint.hostname}…`);
     let response;
     try {
-      response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': 'DAY-NEXT-map-import/0.2 (OpenStreetMap game prototype)' }, body: new URLSearchParams({ data: query }), signal: AbortSignal.timeout(100000) });
+      response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': 'DAY-NEXT-map-import/0.3 (OpenStreetMap game prototype)' }, body: new URLSearchParams({ data: query }), signal: AbortSignal.timeout(100000) });
     } catch {
       throw new Error(`Could not reach ${endpoint.hostname} through the current network settings. Use a local --input extract or enable that destination in environment settings.`);
     }
@@ -69,7 +69,7 @@ async function main() {
   const json = JSON.stringify(map);
   await writeFile(output, /\.(?:mjs|js)$/i.test(output) ? `export default ${json};\n` : json + '\n');
   console.log(`Saved ${output}`);
-  console.log(`${map.width}×${map.height}, ${map.metersPerUnit.toFixed(3)} m/unit; ${map.roads.length} roads, ${map.rivers.length} waterways, ${map.areas.length} land/water polygons, ${map.buildings.length} buildings, ${map.pois.length} places.`);
+  console.log(`${map.width}×${map.height}, ${map.metersPerUnit.toFixed(3)} m/unit; ${map.roads.length} roads, ${map.rivers.length} waterways, ${map.areas.length} land/water polygons, ${map.buildings.length} buildings, ${map.details.length} detail features, ${map.pois.length} places.`);
   console.log(`${map.source.copyright} · ${map.source.license} · ${map.source.url}`);
 }
 

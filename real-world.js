@@ -105,26 +105,44 @@ function rwNearestInComponent(world, components, source, componentId, maxDistanc
 }
 
 function rwCopyGeometry(geometry) {
-  return {
-    ...geometry,
-    ...(geometry.points ? { points: geometry.points.map(point => ({ ...point })) } : {}),
-    ...(geometry.rings ? { rings: geometry.rings.map(ring => ring.map(point => ({ ...point }))) } : {}),
-  };
+  // Imported maps are JSON data. Copy every additive metadata field as well as
+  // geometry so inspecting/styling a roof, address or OSM tag cannot mutate it.
+  if (Array.isArray(geometry)) return geometry.map(rwCopyGeometry);
+  if (geometry !== null && typeof geometry === 'object') return Object.fromEntries(
+    Object.entries(geometry).map(([key, value]) => [key, rwCopyGeometry(value)]),
+  );
+  return geometry;
 }
 
 function rwValidateMap(map) {
   if (!map || map.version !== 1) throw new Error('Unsupported map format: expected version 1');
   const { width, height, cellSize, metersPerUnit, bbox } = map;
   if (![width, height, cellSize, metersPerUnit].every(value => Number.isFinite(value) && value > 0)
+    || width > 10000 || height > 10000 || width * height > 20000000
     || width % cellSize !== 0 || height % cellSize !== 0 || width / cellSize * (height / cellSize) > 250000) throw new Error('Invalid map dimensions, scale or grid size');
   if (!Array.isArray(bbox) || bbox.length !== 4 || !bbox.every(Number.isFinite)
     || bbox[0] < -180 || bbox[2] > 180 || bbox[1] < -90 || bbox[3] > 90 || bbox[0] >= bbox[2] || bbox[1] >= bbox[3]) throw new Error('Invalid geographic bbox');
-  const arrays = ['roads', 'rivers', 'areas', 'buildings', 'pois', 'labels'];
+  const arrays = ['roads', 'rivers', 'areas', 'buildings', 'details', 'pois', 'labels'];
   for (const key of arrays) if (map[key] !== undefined && !Array.isArray(map[key])) throw new Error(`Invalid map ${key}`);
-  for (const feature of [...(map.roads || []), ...(map.rivers || []), ...(map.areas || []), ...(map.buildings || [])]) {
+  const validatePoints = points => {
+    if (!Array.isArray(points)) throw new Error('Invalid geometry coordinate array');
+    if (points.some(point => !point || !Number.isFinite(point.x) || !Number.isFinite(point.y)
+      || Math.abs(point.x) > 10000000 || Math.abs(point.y) > 10000000)) throw new Error('Invalid geometry coordinate');
+  };
+  for (const feature of [...(map.roads || []), ...(map.rivers || []), ...(map.areas || []), ...(map.buildings || []), ...(map.details || [])]) {
+    if (!feature || typeof feature !== 'object') throw new Error('Invalid geometry feature');
     if (feature.width !== undefined && (!Number.isFinite(feature.width) || feature.width <= 0)) throw new Error('Invalid geometry width');
-    const points = feature.points || feature.rings?.flat() || [];
-    if (points.some(point => !point || !Number.isFinite(point.x) || !Number.isFinite(point.y))) throw new Error('Invalid geometry coordinate');
+    if (feature.points !== undefined) validatePoints(feature.points);
+    if (feature.rings !== undefined) {
+      if (!Array.isArray(feature.rings)) throw new Error('Invalid geometry rings');
+      for (const ring of feature.rings) validatePoints(ring);
+    }
+  }
+  for (const detail of map.details || []) {
+    if (!['point', 'line', 'polygon'].includes(detail.geometry)) throw new Error('Invalid detail geometry type');
+    const minimumPoints = { point: 1, line: 2, polygon: 3 }[detail.geometry];
+    const points = detail.points || detail.rings?.[0];
+    if (!points || points.length < minimumPoints) throw new Error('Invalid detail geometry coordinate count');
   }
   for (const poi of map.pois || []) if (!Number.isFinite(poi.x) || !Number.isFinite(poi.y)) throw new Error('Invalid location coordinate');
 }
@@ -140,6 +158,7 @@ export function createRealWorld(map) {
     cells: Array.from({ length: width / cellSize * (height / cellSize) }, () => ({ type: 'plain', height: 0, cost: 1, walkable: true, radiation: 0 })),
     pois: [], roads: (map.roads || []).map(rwCopyGeometry), rivers: (map.rivers || []).map(rwCopyGeometry),
     areas: (map.areas || []).map(rwCopyGeometry), buildings: (map.buildings || []).map(rwCopyGeometry),
+    details: (map.details || []).map(rwCopyGeometry),
     labels: (map.labels || []).map(label => ({ ...label })), lakes: [], radiationZones: [], seed,
     id: map.id, name: map.name, region: map.region, country: map.country, bbox: [...map.bbox],
     source: { ...map.source }, geographic: true, relief: false,
