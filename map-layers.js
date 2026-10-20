@@ -2,29 +2,81 @@
 const mlPresent = value => value !== undefined && value !== null && !['', 'no', 'false', '0'].includes(String(value));
 const mlNaturalKinds = new Set(['tree', 'tree_row', 'wood', 'forest', 'scrub', 'heath', 'grassland', 'wetland', 'swamp', 'sand', 'beach', 'bare_rock', 'scree', 'shingle', 'peak', 'cliff', 'ridge', 'valley', 'fell', 'glacier']);
 const mlLeisureZones = new Set(['park', 'garden', 'pitch', 'playground', 'recreation_ground', 'nature_reserve', 'golf_course', 'dog_park', 'sports_centre', 'stadium', 'common']);
-const mlWaterKinds = new Set(['water', 'lake', 'river', 'reservoir', 'basin', 'pond', 'pool', 'swimming_pool', 'spring']);
+const mlWaterKinds = new Set(['water', 'lake', 'river', 'reservoir', 'basin', 'pond', 'pool', 'swimming_pool', 'spring', 'hot_tub', 'tailings_pond']);
 const mlWaterways = new Set(['river', 'stream', 'canal', 'drain', 'ditch', 'riverbank', 'dock', 'tidal_channel']);
+const mlServiceZones = new Map([
+  ['parking', 'parking'], ['parking_space', 'parking'], ['motorcycle_parking', 'parking'], ['bicycle_parking', 'parking'], ['parking_entrance', 'parking'],
+  ['place_of_worship', 'religious'], ['monastery', 'religious'],
+  ['hospital', 'healthcare'], ['clinic', 'healthcare'], ['doctors', 'healthcare'], ['dentist', 'healthcare'], ['pharmacy', 'healthcare'], ['nursing_home', 'healthcare'],
+  ['school', 'education'], ['college', 'education'], ['university', 'education'], ['kindergarten', 'education'], ['library', 'education'], ['music_school', 'education'], ['language_school', 'education'], ['driving_school', 'education'],
+  ['townhall', 'civic'], ['courthouse', 'civic'], ['community_centre', 'civic'], ['social_centre', 'civic'], ['social_facility', 'civic'], ['post_office', 'civic'], ['public_building', 'civic'], ['embassy', 'civic'], ['prison', 'civic'],
+  ['police', 'emergency'], ['fire_station', 'emergency'], ['ambulance_station', 'emergency'], ['rescue_station', 'emergency'],
+  ['bus_station', 'transport'], ['ferry_terminal', 'transport'], ['taxi', 'transport'],
+  ['restaurant', 'food_service'], ['cafe', 'food_service'], ['fast_food', 'food_service'], ['food_court', 'food_service'], ['pub', 'food_service'], ['bar', 'food_service'], ['biergarten', 'food_service'], ['ice_cream', 'food_service'],
+  ['marketplace', 'retail'],
+  ['fuel', 'service'], ['car_wash', 'service'], ['car_rental', 'service'], ['vehicle_inspection', 'service'], ['bank', 'service'], ['veterinary', 'service'], ['animal_shelter', 'service'], ['animal_boarding', 'service'], ['crematorium', 'service'], ['funeral_hall', 'service'],
+  ['waste_transfer_station', 'utilities'],
+]);
+const mlAccommodation = new Set(['hotel', 'motel', 'hostel', 'guest_house', 'apartment', 'chalet', 'alpine_hut', 'wilderness_hut', 'resort']);
+const mlCamping = new Set(['camp_site', 'caravan_site', 'camp_pitch']);
+const mlHeritageSites = new Set(['museum', 'attraction', 'zoo', 'theme_park', 'aquarium']);
+
+/**
+ * A site's function is separate from its physical building. This may identify a
+ * source point, but never manufactures a surrounding plot or a radius for it.
+ */
+export function mapZoneBiome(feature = {}) {
+  const tags = feature.tags || {};
+  const amenity = mlServiceZones.get(tags.amenity);
+  if (amenity) return amenity;
+  if (mlPresent(tags.healthcare)) return 'healthcare';
+  if (tags.landuse === 'religious') return 'religious';
+  if (tags.landuse === 'education') return 'education';
+  if (tags.landuse === 'institutional') return 'civic';
+  if (tags.office === 'government' || tags.office === 'diplomatic') return 'civic';
+  if (mlPresent(tags.office)) return 'service';
+  if (mlPresent(tags.shop)) return 'retail';
+  if (mlAccommodation.has(tags.tourism)) return 'accommodation';
+  if (mlCamping.has(tags.tourism)) return 'camping';
+  if (mlHeritageSites.has(tags.tourism)) return 'heritage';
+  if (tags.tourism === 'information' && ['office', 'visitor_centre', 'visitor_center'].includes(tags.information)) return 'civic';
+  if (['aerodrome', 'apron', 'helipad'].includes(tags.aeroway)) return 'transport';
+  if (['plant', 'substation'].includes(tags.power) || ['works', 'water_works', 'wastewater_plant'].includes(tags.man_made)) return 'utilities';
+  if (tags.amenity === 'recycling' && tags.recycling_type === 'centre') return 'utilities';
+  // A mapped archaeological/ruin territory is a zone; an individual statue,
+  // memorial or other historical point remains a small physical object.
+  if (feature.geometry === 'polygon' && ['archaeological_site', 'ruins', 'battlefield', 'castle', 'fort'].includes(tags.historic)) return 'heritage';
+  // Source-free imported maps can express the same semantic type directly.
+  if (!tags.amenity && mlServiceZones.has(feature.kind)) return mlServiceZones.get(feature.kind);
+  if (!tags.tourism && mlAccommodation.has(feature.kind)) return 'accommodation';
+  if (!tags.tourism && mlCamping.has(feature.kind)) return 'camping';
+  if (!tags.tourism && mlHeritageSites.has(feature.kind)) return 'heritage';
+  return null;
+}
 
 export function mapFeatureLayer(feature = {}, group = '') {
   const tags = feature.tags || {};
   const point = feature.geometry === 'point' || group === 'poi' || !feature.points?.length && Number.isFinite(feature.x) && Number.isFinite(feature.y) && group !== 'lake';
-  if (group === 'building' || mlPresent(tags.building) || mlPresent(tags['building:part'])) return 'buildings';
+  const siteMarker = point && group !== 'building' && mapZoneBiome(feature);
+  if (group === 'building' || !siteMarker && (mlPresent(tags.building) || mlPresent(tags['building:part']))) return 'buildings';
   // A former rail alignment can also be a current highway. Every facet of that
   // same road belongs to the road layer, so its second style cannot leak through.
   if (group === 'road' || !point && (mlPresent(tags.highway) || mlPresent(tags['area:highway']))) return 'roads';
   if (group === 'river' || group === 'lake' || feature.type === 'water' || mlWaterKinds.has(feature.kind)
     || tags.natural === 'water' || tags.natural === 'coastline' || tags.natural === 'spring' || mlPresent(tags.water)
     || mlWaterways.has(tags.waterway) || ['reservoir', 'basin'].includes(tags.landuse)
-    || tags.leisure === 'swimming_pool' || tags.amenity === 'swimming_pool') return 'water';
+    || ['swimming_pool', 'hot_tub'].includes(tags.leisure) || tags.amenity === 'swimming_pool' || tags.man_made === 'tailings_pond') return 'water';
   if (group === 'area' || mlPresent(tags.natural) || mlPresent(tags.landuse) || mlNaturalKinds.has(feature.kind)
     || mlLeisureZones.has(tags.leisure) || mlLeisureZones.has(feature.kind) || tags.amenity === 'grave_yard'
-    || feature.kind === 'cemetery' || feature.kind === 'quarry') return 'landscape';
+    || feature.kind === 'cemetery' || feature.kind === 'quarry' || mapZoneBiome(feature)) return 'landscape';
   return 'details';
 }
 
 /** Rendering categories never change or replace original OSM tags and geometry. */
 export function mapBiome(feature = {}) {
   const tags = feature.tags || {};
+  const zone = mapZoneBiome(feature);
+  if (zone) return zone;
   const natural = tags.natural || (mlNaturalKinds.has(feature.kind) ? feature.kind : '');
   const landuse = tags.landuse;
   if (tags.natural === 'wetland' || tags.wetland || feature.type === 'swamp') return 'wetland';

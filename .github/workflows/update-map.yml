@@ -33,7 +33,7 @@ jobs:
         run: npm run build
       - name: Publish source, provenance and playable downloads
         run: |
-          git add maps/usa.js maps/source/beatty.osm maps/source/beatty.provenance.json maps/source/coverage.json downloads/day-next.html downloads/day-next.zip
+          git add maps/usa.js maps/source/beatty.osm maps/source/beatty.provenance.json maps/source/coverage.json maps/source/remaining-objects.json maps/source/remaining-objects.md downloads/day-next.html downloads/day-next.zip
           if git diff --cached --quiet; then
             echo 'Map and build are already current.'
             exit 0
@@ -50,5 +50,7 @@ jobs:
             maps/source/beatty.osm
             maps/source/beatty.provenance.json
             maps/source/coverage.json
+            maps/source/remaining-objects.json
+            maps/source/remaining-objects.md
             downloads/day-next.zip
           retention-days: 14

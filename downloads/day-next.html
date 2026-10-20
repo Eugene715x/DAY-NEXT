@@ -35,6 +35,8 @@
 @media(max-width:620px){.map-tool-cluster{gap:5px;margin-top:12px}.map-tool-cluster .maps-button .icon,.layers-button .icon{width:19px;height:19px}.map-tool-cluster .detail-button .icon{width:20px;height:20px}.map-navigation .center-button{width:44px;height:44px}.layers-panel{right:16px;left:auto;top:85px;width:min(322px,calc(100% - 32px));padding:0;max-height:calc(100dvh - 110px)}.layers-heading{padding:17px 18px 15px}.layers-content{padding:6px 18px 16px}.layer-option{min-height:47px;font-size:11px}.coverage-summary{margin-bottom:15px}}
 @media(max-height:640px) and (min-width:621px){.layers-panel{top:91px;max-height:calc(100dvh - 111px)}}
 @media(max-height:500px) and (min-width:621px){.map-controls{top:74px}.zoom-controls{flex-direction:row}.zoom-rule{width:1px;height:20px;margin:auto 0}.map-tool-cluster{margin-top:10px}}
+
+.location .biome-label{display:block;max-width:190px;white-space:normal;line-height:1.5;margin-top:5px;color:#b8c58f}.location .biome-label[hidden]{display:none}
 </style>
   </head>
   <body>
@@ -63,7 +65,7 @@
       <div class="hud">
         <header class="top-bar">
           <div class="brand-block">
-            <div class="brand" aria-label="DAY NEXT"><span>DAY</span><span class="brand-divider">/</span><span class="brand-next">NEXT</span><span class="prototype">ПРОТОТИП <b>06</b></span></div>
+            <div class="brand" aria-label="DAY NEXT"><span>DAY</span><span class="brand-divider">/</span><span class="brand-next">NEXT</span><span class="prototype">ПРОТОТИП <b>07</b></span></div>
             <div class="brand-caption"><span class="live-dot"></span> ОДИНОЧНАЯ ЭКСПЕДИЦИЯ</div>
           </div>
           <div class="world-status glass">
@@ -111,7 +113,7 @@
             <div class="stat stat-stamina"><div class="stat-label"><svg class="icon"><use href="#i-bolt" /></svg><span>Выносливость</span><strong id="stamina-value">100</strong></div><div class="stat-track"><span id="stamina-bar" style="width:100%"></span></div></div>
             <div class="stat stat-water"><div class="stat-label"><svg class="icon"><use href="#i-water" /></svg><span>Вода</span><strong id="water-value">100</strong></div><div class="stat-track"><span id="water-bar" style="width:100%"></span></div></div>
           </div>
-          <div class="location"><svg class="icon"><use href="#i-pin" /></svg><div><strong id="location-name">Северный сектор</strong><span id="terrain-label">Открытая местность</span></div></div>
+          <div class="location"><svg class="icon"><use href="#i-pin" /></svg><div><strong id="location-name">Северный сектор</strong><span id="terrain-label">Открытая местность</span><span id="biome-label" class="biome-label" hidden></span></div></div>
         </section>
 
         <section id="travel-panel" class="travel-panel glass" aria-label="Текущий маршрут" hidden>
@@ -820,34 +822,86 @@ function createLandscapeBackdrop(world, palette) {
 
 return {createTerrainBackdrop,createLandscapeBackdrop};
 })();
-const {mapFeatureLayer,mapBiome} = (() => {
+const {mapFeatureLayer,mapBiome,mapZoneBiome} = (() => {
 /** Shared semantic ownership for vector geometry, map markers and layer switches. */
 const mlPresent = value => value !== undefined && value !== null && !['', 'no', 'false', '0'].includes(String(value));
 const mlNaturalKinds = new Set(['tree', 'tree_row', 'wood', 'forest', 'scrub', 'heath', 'grassland', 'wetland', 'swamp', 'sand', 'beach', 'bare_rock', 'scree', 'shingle', 'peak', 'cliff', 'ridge', 'valley', 'fell', 'glacier']);
 const mlLeisureZones = new Set(['park', 'garden', 'pitch', 'playground', 'recreation_ground', 'nature_reserve', 'golf_course', 'dog_park', 'sports_centre', 'stadium', 'common']);
-const mlWaterKinds = new Set(['water', 'lake', 'river', 'reservoir', 'basin', 'pond', 'pool', 'swimming_pool', 'spring']);
+const mlWaterKinds = new Set(['water', 'lake', 'river', 'reservoir', 'basin', 'pond', 'pool', 'swimming_pool', 'spring', 'hot_tub', 'tailings_pond']);
 const mlWaterways = new Set(['river', 'stream', 'canal', 'drain', 'ditch', 'riverbank', 'dock', 'tidal_channel']);
+const mlServiceZones = new Map([
+  ['parking', 'parking'], ['parking_space', 'parking'], ['motorcycle_parking', 'parking'], ['bicycle_parking', 'parking'], ['parking_entrance', 'parking'],
+  ['place_of_worship', 'religious'], ['monastery', 'religious'],
+  ['hospital', 'healthcare'], ['clinic', 'healthcare'], ['doctors', 'healthcare'], ['dentist', 'healthcare'], ['pharmacy', 'healthcare'], ['nursing_home', 'healthcare'],
+  ['school', 'education'], ['college', 'education'], ['university', 'education'], ['kindergarten', 'education'], ['library', 'education'], ['music_school', 'education'], ['language_school', 'education'], ['driving_school', 'education'],
+  ['townhall', 'civic'], ['courthouse', 'civic'], ['community_centre', 'civic'], ['social_centre', 'civic'], ['social_facility', 'civic'], ['post_office', 'civic'], ['public_building', 'civic'], ['embassy', 'civic'], ['prison', 'civic'],
+  ['police', 'emergency'], ['fire_station', 'emergency'], ['ambulance_station', 'emergency'], ['rescue_station', 'emergency'],
+  ['bus_station', 'transport'], ['ferry_terminal', 'transport'], ['taxi', 'transport'],
+  ['restaurant', 'food_service'], ['cafe', 'food_service'], ['fast_food', 'food_service'], ['food_court', 'food_service'], ['pub', 'food_service'], ['bar', 'food_service'], ['biergarten', 'food_service'], ['ice_cream', 'food_service'],
+  ['marketplace', 'retail'],
+  ['fuel', 'service'], ['car_wash', 'service'], ['car_rental', 'service'], ['vehicle_inspection', 'service'], ['bank', 'service'], ['veterinary', 'service'], ['animal_shelter', 'service'], ['animal_boarding', 'service'], ['crematorium', 'service'], ['funeral_hall', 'service'],
+  ['waste_transfer_station', 'utilities'],
+]);
+const mlAccommodation = new Set(['hotel', 'motel', 'hostel', 'guest_house', 'apartment', 'chalet', 'alpine_hut', 'wilderness_hut', 'resort']);
+const mlCamping = new Set(['camp_site', 'caravan_site', 'camp_pitch']);
+const mlHeritageSites = new Set(['museum', 'attraction', 'zoo', 'theme_park', 'aquarium']);
+
+/**
+ * A site's function is separate from its physical building. This may identify a
+ * source point, but never manufactures a surrounding plot or a radius for it.
+ */
+function mapZoneBiome(feature = {}) {
+  const tags = feature.tags || {};
+  const amenity = mlServiceZones.get(tags.amenity);
+  if (amenity) return amenity;
+  if (mlPresent(tags.healthcare)) return 'healthcare';
+  if (tags.landuse === 'religious') return 'religious';
+  if (tags.landuse === 'education') return 'education';
+  if (tags.landuse === 'institutional') return 'civic';
+  if (tags.office === 'government' || tags.office === 'diplomatic') return 'civic';
+  if (mlPresent(tags.office)) return 'service';
+  if (mlPresent(tags.shop)) return 'retail';
+  if (mlAccommodation.has(tags.tourism)) return 'accommodation';
+  if (mlCamping.has(tags.tourism)) return 'camping';
+  if (mlHeritageSites.has(tags.tourism)) return 'heritage';
+  if (tags.tourism === 'information' && ['office', 'visitor_centre', 'visitor_center'].includes(tags.information)) return 'civic';
+  if (['aerodrome', 'apron', 'helipad'].includes(tags.aeroway)) return 'transport';
+  if (['plant', 'substation'].includes(tags.power) || ['works', 'water_works', 'wastewater_plant'].includes(tags.man_made)) return 'utilities';
+  if (tags.amenity === 'recycling' && tags.recycling_type === 'centre') return 'utilities';
+  // A mapped archaeological/ruin territory is a zone; an individual statue,
+  // memorial or other historical point remains a small physical object.
+  if (feature.geometry === 'polygon' && ['archaeological_site', 'ruins', 'battlefield', 'castle', 'fort'].includes(tags.historic)) return 'heritage';
+  // Source-free imported maps can express the same semantic type directly.
+  if (!tags.amenity && mlServiceZones.has(feature.kind)) return mlServiceZones.get(feature.kind);
+  if (!tags.tourism && mlAccommodation.has(feature.kind)) return 'accommodation';
+  if (!tags.tourism && mlCamping.has(feature.kind)) return 'camping';
+  if (!tags.tourism && mlHeritageSites.has(feature.kind)) return 'heritage';
+  return null;
+}
 
 function mapFeatureLayer(feature = {}, group = '') {
   const tags = feature.tags || {};
   const point = feature.geometry === 'point' || group === 'poi' || !feature.points?.length && Number.isFinite(feature.x) && Number.isFinite(feature.y) && group !== 'lake';
-  if (group === 'building' || mlPresent(tags.building) || mlPresent(tags['building:part'])) return 'buildings';
+  const siteMarker = point && group !== 'building' && mapZoneBiome(feature);
+  if (group === 'building' || !siteMarker && (mlPresent(tags.building) || mlPresent(tags['building:part']))) return 'buildings';
   // A former rail alignment can also be a current highway. Every facet of that
   // same road belongs to the road layer, so its second style cannot leak through.
   if (group === 'road' || !point && (mlPresent(tags.highway) || mlPresent(tags['area:highway']))) return 'roads';
   if (group === 'river' || group === 'lake' || feature.type === 'water' || mlWaterKinds.has(feature.kind)
     || tags.natural === 'water' || tags.natural === 'coastline' || tags.natural === 'spring' || mlPresent(tags.water)
     || mlWaterways.has(tags.waterway) || ['reservoir', 'basin'].includes(tags.landuse)
-    || tags.leisure === 'swimming_pool' || tags.amenity === 'swimming_pool') return 'water';
+    || ['swimming_pool', 'hot_tub'].includes(tags.leisure) || tags.amenity === 'swimming_pool' || tags.man_made === 'tailings_pond') return 'water';
   if (group === 'area' || mlPresent(tags.natural) || mlPresent(tags.landuse) || mlNaturalKinds.has(feature.kind)
     || mlLeisureZones.has(tags.leisure) || mlLeisureZones.has(feature.kind) || tags.amenity === 'grave_yard'
-    || feature.kind === 'cemetery' || feature.kind === 'quarry') return 'landscape';
+    || feature.kind === 'cemetery' || feature.kind === 'quarry' || mapZoneBiome(feature)) return 'landscape';
   return 'details';
 }
 
 /** Rendering categories never change or replace original OSM tags and geometry. */
 function mapBiome(feature = {}) {
   const tags = feature.tags || {};
+  const zone = mapZoneBiome(feature);
+  if (zone) return zone;
   const natural = tags.natural || (mlNaturalKinds.has(feature.kind) ? feature.kind : '');
   const landuse = tags.landuse;
   if (tags.natural === 'wetland' || tags.wetland || feature.type === 'swamp') return 'wetland';
@@ -869,7 +923,7 @@ function mapBiome(feature = {}) {
   return landuse || natural || feature.type || 'landscape';
 }
 
-return {mapFeatureLayer,mapBiome};
+return {mapFeatureLayer,mapBiome,mapZoneBiome};
 })();
 const {createDetailRenderer} = (() => {
 /** Sharp, scale-aware cartography over the original mapped footprints and paths. */
@@ -933,7 +987,16 @@ const drNames = {
   construction: 'Стройплощадка', brownfield: 'Заброшенная территория', landfill: 'Полигон отходов', transport: 'Транспортная зона', glacier: 'Ледник',
 };
 
-const drBiomeNames = { ...drNames, residential: 'Жилая зона', industrial: 'Промышленная зона', commercial: 'Коммерческая зона', retail: 'Торговая зона', forest: 'Лес', garden: 'Сад', landscape: 'Ландшафт', plain: 'Открытая местность' };
+const drBiomeNames = {
+  ...drNames, residential: 'Жилая зона', industrial: 'Промышленная зона', commercial: 'Коммерческая зона', retail: 'Торговая зона',
+  parking: 'Парковочная зона', religious: 'Религиозная зона', healthcare: 'Медицинская зона', education: 'Образовательная зона',
+  civic: 'Общественная зона', emergency: 'Зона экстренных служб', transport: 'Транспортная зона', accommodation: 'Гостиничная зона',
+  camping: 'Кемпинг', food_service: 'Зона питания', service: 'Зона обслуживания', utilities: 'Коммунальная зона', heritage: 'Историческая зона',
+  forest: 'Лес', garden: 'Сад', landscape: 'Ландшафт', plain: 'Открытая местность',
+};
+const drSourceId = feature => feature.sourceId || String(feature.id || '').match(/^(?:node|way|relation)-\d+/)?.[0] || feature.id;
+const drSameFootprint = (a, b) => a.rings.length === b.rings.length && a.rings.every(ring => b.rings.some(other => ring.length === other.length
+  && ring.every(point => other.some(candidate => candidate.x === point.x && candidate.y === point.y))));
 
 function drFeatureLabel(feature, group) {
   if (feature.name) return feature.name;
@@ -942,7 +1005,7 @@ function drFeatureLabel(feature, group) {
   if (group === 'river') return drDry(feature) ? 'Сезонное русло' : drNames.river;
   if (group === 'lake') return drNames.lake;
   const tags = feature.tags || {};
-  if (mapFeatureLayer(feature, group) === 'landscape' && (group === 'area' || feature.geometry === 'polygon' || tags.landuse)) {
+  if (group === 'zone' || mapFeatureLayer(feature, group) === 'landscape' && (group === 'area' || feature.geometry === 'polygon' || tags.landuse || mapZoneBiome(feature))) {
     const biome = mapBiome(feature);
     return drBiomeNames[biome] || `Зона: ${String(tags.landuse || tags.natural || biome).replaceAll('_', ' ')}`;
   }
@@ -954,7 +1017,7 @@ function drFeatureLabel(feature, group) {
 
 function drCache(original, group, layer, metersPerUnit, index) {
   const feature = original.id ? original : { ...original, id: `${group}-${index}` };
-  const geometry = group === 'building' || group === 'area' || group === 'lake' ? 'polygon' : feature.geometry || 'line';
+  const geometry = group === 'building' || group === 'area' || group === 'lake' || group === 'zone' ? 'polygon' : feature.geometry || 'line';
   const ellipse = group === 'lake' && [feature.x, feature.y, feature.rx, feature.ry].every(Number.isFinite);
   const ellipseRing = ellipse ? Array.from({ length: 65 }, (_, i) => ({ x: feature.x + Math.cos(i / 64 * Math.PI * 2) * feature.rx, y: feature.y + Math.sin(i / 64 * Math.PI * 2) * feature.ry })) : null;
   const rings = ellipseRing ? [ellipseRing] : feature.rings?.length ? feature.rings : feature.points?.length ? [feature.points] : [];
@@ -994,12 +1057,25 @@ function createDetailRenderer(world) {
   const areas = cache(world.areas, 'area');
   const rivers = cache(world.rivers, 'river');
   const lakes = cache(world.lakes, 'lake');
+  const mappedZones = [...areas, ...details].filter(record => record.layer === 'landscape' && record.geometry === 'polygon');
+  const footprintZones = buildings.flatMap((building, index) => {
+    const biome = mapZoneBiome(building.feature);
+    if (!biome) return [];
+    // An existing campus/grounds polygon already provides the institution's zone.
+    // Otherwise its building outline is the only measured extent we can use.
+    if (mappedZones.some(zone => zone.biome === biome && (drSameFootprint(zone, building)
+      || building.rings[0].every(point => drInPolygon(point.x, point.y, zone.rings))))) return [];
+    const record = drCache(building.feature, 'zone', 'landscape', metersPerUnit, index);
+    record.footprintOnly = true;
+    return [record];
+  });
   const rank = record => record.group === 'building' ? 9
     : record.geometry === 'polygon' ? record.layer === 'landscape' ? 0 : record.layer === 'water' ? 1 : record.layer === 'roads' ? 5 : 2
     : record.geometry === 'point' ? 8 : record.layer === 'water' ? 3 : record.layer === 'landscape' ? 4 : record.group === 'road' ? 6 : 7;
   const surfaceSize = record => (record.bounds.maxX - record.bounds.minX) * (record.bounds.maxY - record.bounds.minY);
-  const registry = [...areas, ...rivers, ...lakes, ...details, ...roads, ...buildings]
+  const registry = [...areas, ...rivers, ...lakes, ...details, ...footprintZones, ...roads, ...buildings]
     .sort((a, b) => rank(a) - rank(b) || (a.geometry === 'polygon' && b.geometry === 'polygon' ? surfaceSize(b) - surfaceSize(a) : 0));
+  const zonePolygons = registry.filter(record => record.layer === 'landscape' && record.geometry === 'polygon');
   const layers = { landscape: true, water: true, roads: true, buildings: true, details: true };
   const stats = { features: registry.length };
   for (const layer of Object.keys(layers)) {
@@ -1211,10 +1287,14 @@ function createDetailRenderer(world) {
       sand: 'rgba(196,180,129,.58)', rock: 'rgba(145,137,113,.44)', quarry: 'rgba(149,132,104,.62)',
       construction: 'rgba(172,148,108,.54)', brownfield: 'rgba(142,129,104,.50)', landfill: 'rgba(139,137,105,.55)',
       transport: 'rgba(132,137,120,.47)', glacier: 'rgba(190,207,194,.72)', plain: 'rgba(164,168,126,.18)',
+      parking: 'rgba(145,148,125,.47)', religious: 'rgba(163,149,120,.48)', healthcare: 'rgba(133,157,145,.50)',
+      education: 'rgba(144,158,116,.49)', civic: 'rgba(143,151,132,.48)', emergency: 'rgba(165,140,119,.47)',
+      accommodation: 'rgba(166,155,126,.47)', camping: 'rgba(127,149,100,.53)', food_service: 'rgba(173,151,112,.48)',
+      service: 'rgba(150,145,121,.47)', utilities: 'rgba(132,142,128,.50)', heritage: 'rgba(162,145,113,.49)',
     };
     ctx.fillStyle = colors[biome] || 'rgba(145,153,113,.28)'; ctx.fill(path, 'evenodd');
     // Sparse print hatching expresses a land-use category, not extra mapped geometry.
-    const hatch = ['industrial', 'quarry', 'construction', 'brownfield', 'landfill', 'transport'].includes(biome);
+    const hatch = ['industrial', 'quarry', 'construction', 'brownfield', 'landfill', 'transport', 'parking', 'utilities'].includes(biome);
     const rows = ['farmland', 'orchard', 'vineyard'].includes(biome);
     if (hatch || rows) {
       const span = Math.max(b.maxX - b.minX, b.maxY - b.minY), spacing = Math.max(7 / zoom, span / 40);
@@ -1279,12 +1359,29 @@ function createDetailRenderer(world) {
 
   function describe(record, point = record.center) {
     const feature = record.feature;
-    const zone = record.layer === 'landscape' && record.geometry === 'polygon' && ['residential', 'industrial', 'commercial', 'retail'].includes(record.biome);
+    const zone = record.layer === 'landscape' && record.geometry === 'polygon' && (mapZoneBiome(feature) || ['residential', 'industrial', 'commercial', 'retail'].includes(record.biome));
     const kind = zone ? `${record.biome}_area` : record.group === 'building' ? feature.ruins ? 'ruins' : 'building' : record.group === 'road' ? 'road' : record.group === 'area' ? feature.type : record.group === 'river' ? 'river' : record.group === 'lake' ? 'lake' : feature.kind;
     const roadDescription = (drNames[feature.type === 'residential' ? 'residential_road' : feature.type] || 'Дорога') + (feature.tags?.railway === 'abandoned' ? ' · По бывшей железной дороге' : '');
-    return { id: feature.id, key: record.key, layer: record.layer, kind, biome: record.biome,
+    return { id: feature.id, key: record.key, sourceId: drSourceId(feature), layer: record.layer, kind, biome: record.biome,
+      biomeName: record.biome ? drBiomeNames[record.biome] || drFeatureLabel(feature, record.group) : null,
+      geometry: record.geometry, footprintOnly: record.footprintOnly === true,
       name: drFeatureLabel(feature, record.group), x: point.x, y: point.y, source: feature,
-      description: record.group === 'building' ? [feature.address, drNames[feature.type], feature.levels ? `${feature.levels} эт.` : ''].filter(Boolean).join(' · ') : record.group === 'road' ? roadDescription : feature.tags?.railway === 'abandoned' ? 'Заброшенная железная дорога' : record.layer === 'water' && drDry(feature) ? 'Сезонное русло' : drNames[kind] || drFeatureLabel(feature, record.group) };
+      description: record.group === 'building' ? [feature.address, drNames[feature.type], feature.levels ? `${feature.levels} эт.` : ''].filter(Boolean).join(' · ') : record.group === 'road' ? roadDescription : record.footprintOnly ? `${drBiomeNames[record.biome]} · По контуру здания` : feature.tags?.railway === 'abandoned' ? 'Заброшенная железная дорога' : record.layer === 'water' && drDry(feature) ? 'Сезонное русло' : drNames[kind] || drFeatureLabel(feature, record.group) };
+  }
+
+  /** All physical zone memberships coexist, including zones hidden from view. */
+  function zonesAt(x, y) {
+    if (!Number.isFinite(x) || !Number.isFinite(y) || x < 0 || y < 0 || x > world.width || y > world.height) return [];
+    const result = [], seen = new Set();
+    for (const record of zonePolygons) {
+      const b = record.bounds;
+      if (x < b.minX || x > b.maxX || y < b.minY || y > b.maxY || !drInPolygon(x, y, record.rings)) continue;
+      const item = describe(record, { x, y }), identity = `${item.sourceId}:${item.biome}`;
+      if (seen.has(identity)) continue;
+      seen.add(identity);
+      result.push({ id: item.id, key: item.key, sourceId: item.sourceId, biome: item.biome, biomeName: item.biomeName, name: item.name, layer: item.layer, footprintOnly: item.footprintOnly });
+    }
+    return result;
   }
 
   function pointPaintDistance(record, x, y, zoom) {
@@ -1361,10 +1458,11 @@ function createDetailRenderer(world) {
 
   function getFeatures() {
     return registry.map(record => ({
-      id: record.feature.id, key: record.key, layer: record.layer, group: record.group,
+      id: record.feature.id, key: record.key, sourceId: drSourceId(record.feature), layer: record.layer, group: record.group,
       kind: describe(record).kind, name: drFeatureLabel(record.feature, record.group), geometry: record.geometry,
       points: record.points.map(point => ({ ...point })), rings: record.geometry === 'polygon' ? record.rings.map(ring => ring.map(point => ({ ...point }))) : undefined,
-      bounds: { ...record.bounds }, biome: record.biome, width: record.width, enabled: layers[record.layer],
+      bounds: { ...record.bounds }, biome: record.biome, biomeName: record.biome ? drBiomeNames[record.biome] || drFeatureLabel(record.feature, record.group) : null,
+      footprintOnly: record.footprintOnly === true, width: record.width, enabled: layers[record.layer],
     }));
   }
 
@@ -1382,7 +1480,7 @@ function createDetailRenderer(world) {
     return { ...focusPoint };
   }
 
-  return { draw, pick, focus, setLayers, getLayers: () => ({ ...layers }), getFeatures, getStats: () => ({ ...stats, layers: { ...layers } }) };
+  return { draw, pick, focus, zonesAt, setLayers, getLayers: () => ({ ...layers }), getFeatures, getStats: () => ({ ...stats, layers: { ...layers } }) };
 }
 
 return {createDetailRenderer};
@@ -2103,12 +2201,15 @@ function inspectObject(point, screenX, screenY, touch = false) {
   const names = { building: 'ЗДАНИЕ', road: 'ДОРОГА', fence: 'ОГРАДА', wall: 'СТЕНА', gate: 'ВОРОТА', railway: 'ЖЕЛЕЗНАЯ ДОРОГА', parking: 'ПАРКОВКА', pitch: 'СПОРТПЛОЩАДКА', garden: 'САД', pool: 'БАССЕЙН', tree: 'ДЕРЕВО', bench: 'СКАМЕЙКА', picnic_table: 'МЕСТО ДЛЯ ПРИВАЛА', fountain: 'ФОНТАН', well: 'КОЛОДЕЦ', ruins: 'РУИНЫ', shelter: 'УКРЫТИЕ', cemetery: 'КЛАДБИЩЕ', park: 'ПАРК', spring: 'РОДНИК', quarry: 'КАРЬЕР', playground: 'ДЕТСКАЯ ПЛОЩАДКА', cattle_grid: 'РЕШЁТКА НА ДОРОГЕ', runway: 'ВЗЛЁТНАЯ ПОЛОСА', taxiway: 'РУЛЁЖНАЯ ДОРОЖКА', apron: 'ПЕРРОН АЭРОДРОМА', aerodrome: 'АЭРОДРОМ', river: 'ВОДОТОК', lake: 'ОЗЕРО', water: 'ВОДОЁМ', forest: 'ЛЕС', swamp: 'БОЛОТО', plain: 'УЧАСТОК МЕСТНОСТИ', boundary: 'ГРАНИЦА' };
   const zoneNames = { residential: 'ЖИЛАЯ ЗОНА', industrial: 'ПРОМЫШЛЕННАЯ ЗОНА', commercial: 'КОММЕРЧЕСКАЯ ЗОНА', retail: 'ТОРГОВАЯ ЗОНА', farmland: 'ПОЛЯ', sand: 'ПЕСКИ', rock: 'СКАЛЫ', scrub: 'КУСТАРНИК', wetland: 'БОЛОТО' };
   const layerNames = { landscape: 'ЛАНДШАФТ', water: 'ВОДА', roads: 'ДОРОГА', buildings: 'ЗДАНИЕ' };
-  $('object-kind').textContent = names[feature.kind] || zoneNames[feature.biome || feature.kind] || layerNames[feature.layer] || 'ОБЪЕКТ';
+  $('object-kind').textContent = names[feature.kind] || (feature.layer === 'landscape' && feature.biomeName ? feature.biomeName.toUpperCase() : zoneNames[feature.biome || feature.kind]) || layerNames[feature.layer] || 'ОБЪЕКТ';
   $('object-name').textContent = feature.name || (feature.kind === 'building' ? 'Безымянное здание' : 'Объект на карте');
   const source = feature.source || {};
   const address = typeof source.address === 'string' ? source.address : source.address ? Object.values(source.address).join(', ') : '';
   const extra = [feature.description, address, source.levels ? `${source.levels} эт.` : '', source.surface ? `Покрытие: ${source.surface}` : ''].filter(Boolean).flatMap(text => String(text).split(' · '));
   $('object-meta').textContent = [...new Set(extra)].filter(text => text !== feature.name).join(' · ') || (world.geographic ? 'Нанесён на карту OpenStreetMap' : 'Объект игровой карты');
+  const zones = detailRenderer.zonesAt(point.x, point.y);
+  if (zones.length) $('object-meta').textContent += `\nБиомы: ${[...new Set(zones.map(zone => zone.biomeName || zone.name))].join(' + ')}`;
+  if (feature.footprintOnly) $('object-meta').textContent += '\nЗона в пределах нанесённого контура здания.';
   if (touch && camera.zoom >= 2 && ['building', 'ruins'].includes(feature.kind)) $('object-meta').textContent += '\nКоснись земли рядом, чтобы подойти.';
   $('object-card').hidden = false;
   const bounds = $('object-card').getBoundingClientRect();
@@ -2423,6 +2524,10 @@ function updateUI() {
   $('location-name').textContent = atPoi ? poiTitle(nearest) : world.name || 'Северные пустоши';
   const terrain = terrainAt(world, player.x, player.y);
   $('terrain-label').textContent = `${terrainNames[terrain?.type] || 'Пустошь'}${route ? paused ? ' · привал' : ' · в пути' : ' · на привале'}`;
+  const biomes = [...new Set(detailRenderer.zonesAt(player.x, player.y).map(zone => zone.biomeName || zone.name))];
+  $('biome-label').hidden = !biomes.length;
+  $('biome-label').textContent = biomes.length ? `Биомы: ${biomes.join(' + ')}` : '';
+  $('biome-label').title = $('biome-label').textContent;
   if (world.geographic) {
     const [west, south, east, north] = world.bbox;
     const degree = 6371008.8 * Math.PI / 180, cosine = Math.cos((south + north) * Math.PI / 360);
@@ -2450,6 +2555,7 @@ window.__DAY_NEXT__ = {
   worldToScreen: position => worldToScreen(position),
   getDetails: () => detailRenderer.getStats(),
   inspectAt: (x, y) => detailRenderer.pick(x, y, 1),
+  zonesAt: (x, y) => detailRenderer.zonesAt(x, y),
   getLayers: () => ({ ...layers }),
   getFeatures: () => detailRenderer.getFeatures(),
 };

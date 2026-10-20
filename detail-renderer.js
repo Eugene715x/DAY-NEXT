@@ -1,4 +1,4 @@
-import { mapFeatureLayer, mapBiome } from './map-layers.js';
+import { mapFeatureLayer, mapBiome, mapZoneBiome } from './map-layers.js';
 
 /** Sharp, scale-aware cartography over the original mapped footprints and paths. */
 const drClamp = (n, min, max) => Math.max(min, Math.min(max, n));
@@ -61,7 +61,16 @@ const drNames = {
   construction: 'Стройплощадка', brownfield: 'Заброшенная территория', landfill: 'Полигон отходов', transport: 'Транспортная зона', glacier: 'Ледник',
 };
 
-const drBiomeNames = { ...drNames, residential: 'Жилая зона', industrial: 'Промышленная зона', commercial: 'Коммерческая зона', retail: 'Торговая зона', forest: 'Лес', garden: 'Сад', landscape: 'Ландшафт', plain: 'Открытая местность' };
+const drBiomeNames = {
+  ...drNames, residential: 'Жилая зона', industrial: 'Промышленная зона', commercial: 'Коммерческая зона', retail: 'Торговая зона',
+  parking: 'Парковочная зона', religious: 'Религиозная зона', healthcare: 'Медицинская зона', education: 'Образовательная зона',
+  civic: 'Общественная зона', emergency: 'Зона экстренных служб', transport: 'Транспортная зона', accommodation: 'Гостиничная зона',
+  camping: 'Кемпинг', food_service: 'Зона питания', service: 'Зона обслуживания', utilities: 'Коммунальная зона', heritage: 'Историческая зона',
+  forest: 'Лес', garden: 'Сад', landscape: 'Ландшафт', plain: 'Открытая местность',
+};
+const drSourceId = feature => feature.sourceId || String(feature.id || '').match(/^(?:node|way|relation)-\d+/)?.[0] || feature.id;
+const drSameFootprint = (a, b) => a.rings.length === b.rings.length && a.rings.every(ring => b.rings.some(other => ring.length === other.length
+  && ring.every(point => other.some(candidate => candidate.x === point.x && candidate.y === point.y))));
 
 function drFeatureLabel(feature, group) {
   if (feature.name) return feature.name;
@@ -70,7 +79,7 @@ function drFeatureLabel(feature, group) {
   if (group === 'river') return drDry(feature) ? 'Сезонное русло' : drNames.river;
   if (group === 'lake') return drNames.lake;
   const tags = feature.tags || {};
-  if (mapFeatureLayer(feature, group) === 'landscape' && (group === 'area' || feature.geometry === 'polygon' || tags.landuse)) {
+  if (group === 'zone' || mapFeatureLayer(feature, group) === 'landscape' && (group === 'area' || feature.geometry === 'polygon' || tags.landuse || mapZoneBiome(feature))) {
     const biome = mapBiome(feature);
     return drBiomeNames[biome] || `Зона: ${String(tags.landuse || tags.natural || biome).replaceAll('_', ' ')}`;
   }
@@ -82,7 +91,7 @@ function drFeatureLabel(feature, group) {
 
 function drCache(original, group, layer, metersPerUnit, index) {
   const feature = original.id ? original : { ...original, id: `${group}-${index}` };
-  const geometry = group === 'building' || group === 'area' || group === 'lake' ? 'polygon' : feature.geometry || 'line';
+  const geometry = group === 'building' || group === 'area' || group === 'lake' || group === 'zone' ? 'polygon' : feature.geometry || 'line';
   const ellipse = group === 'lake' && [feature.x, feature.y, feature.rx, feature.ry].every(Number.isFinite);
   const ellipseRing = ellipse ? Array.from({ length: 65 }, (_, i) => ({ x: feature.x + Math.cos(i / 64 * Math.PI * 2) * feature.rx, y: feature.y + Math.sin(i / 64 * Math.PI * 2) * feature.ry })) : null;
   const rings = ellipseRing ? [ellipseRing] : feature.rings?.length ? feature.rings : feature.points?.length ? [feature.points] : [];
@@ -122,12 +131,25 @@ export function createDetailRenderer(world) {
   const areas = cache(world.areas, 'area');
   const rivers = cache(world.rivers, 'river');
   const lakes = cache(world.lakes, 'lake');
+  const mappedZones = [...areas, ...details].filter(record => record.layer === 'landscape' && record.geometry === 'polygon');
+  const footprintZones = buildings.flatMap((building, index) => {
+    const biome = mapZoneBiome(building.feature);
+    if (!biome) return [];
+    // An existing campus/grounds polygon already provides the institution's zone.
+    // Otherwise its building outline is the only measured extent we can use.
+    if (mappedZones.some(zone => zone.biome === biome && (drSameFootprint(zone, building)
+      || building.rings[0].every(point => drInPolygon(point.x, point.y, zone.rings))))) return [];
+    const record = drCache(building.feature, 'zone', 'landscape', metersPerUnit, index);
+    record.footprintOnly = true;
+    return [record];
+  });
   const rank = record => record.group === 'building' ? 9
     : record.geometry === 'polygon' ? record.layer === 'landscape' ? 0 : record.layer === 'water' ? 1 : record.layer === 'roads' ? 5 : 2
     : record.geometry === 'point' ? 8 : record.layer === 'water' ? 3 : record.layer === 'landscape' ? 4 : record.group === 'road' ? 6 : 7;
   const surfaceSize = record => (record.bounds.maxX - record.bounds.minX) * (record.bounds.maxY - record.bounds.minY);
-  const registry = [...areas, ...rivers, ...lakes, ...details, ...roads, ...buildings]
+  const registry = [...areas, ...rivers, ...lakes, ...details, ...footprintZones, ...roads, ...buildings]
     .sort((a, b) => rank(a) - rank(b) || (a.geometry === 'polygon' && b.geometry === 'polygon' ? surfaceSize(b) - surfaceSize(a) : 0));
+  const zonePolygons = registry.filter(record => record.layer === 'landscape' && record.geometry === 'polygon');
   const layers = { landscape: true, water: true, roads: true, buildings: true, details: true };
   const stats = { features: registry.length };
   for (const layer of Object.keys(layers)) {
@@ -339,10 +361,14 @@ export function createDetailRenderer(world) {
       sand: 'rgba(196,180,129,.58)', rock: 'rgba(145,137,113,.44)', quarry: 'rgba(149,132,104,.62)',
       construction: 'rgba(172,148,108,.54)', brownfield: 'rgba(142,129,104,.50)', landfill: 'rgba(139,137,105,.55)',
       transport: 'rgba(132,137,120,.47)', glacier: 'rgba(190,207,194,.72)', plain: 'rgba(164,168,126,.18)',
+      parking: 'rgba(145,148,125,.47)', religious: 'rgba(163,149,120,.48)', healthcare: 'rgba(133,157,145,.50)',
+      education: 'rgba(144,158,116,.49)', civic: 'rgba(143,151,132,.48)', emergency: 'rgba(165,140,119,.47)',
+      accommodation: 'rgba(166,155,126,.47)', camping: 'rgba(127,149,100,.53)', food_service: 'rgba(173,151,112,.48)',
+      service: 'rgba(150,145,121,.47)', utilities: 'rgba(132,142,128,.50)', heritage: 'rgba(162,145,113,.49)',
     };
     ctx.fillStyle = colors[biome] || 'rgba(145,153,113,.28)'; ctx.fill(path, 'evenodd');
     // Sparse print hatching expresses a land-use category, not extra mapped geometry.
-    const hatch = ['industrial', 'quarry', 'construction', 'brownfield', 'landfill', 'transport'].includes(biome);
+    const hatch = ['industrial', 'quarry', 'construction', 'brownfield', 'landfill', 'transport', 'parking', 'utilities'].includes(biome);
     const rows = ['farmland', 'orchard', 'vineyard'].includes(biome);
     if (hatch || rows) {
       const span = Math.max(b.maxX - b.minX, b.maxY - b.minY), spacing = Math.max(7 / zoom, span / 40);
@@ -407,12 +433,29 @@ export function createDetailRenderer(world) {
 
   function describe(record, point = record.center) {
     const feature = record.feature;
-    const zone = record.layer === 'landscape' && record.geometry === 'polygon' && ['residential', 'industrial', 'commercial', 'retail'].includes(record.biome);
+    const zone = record.layer === 'landscape' && record.geometry === 'polygon' && (mapZoneBiome(feature) || ['residential', 'industrial', 'commercial', 'retail'].includes(record.biome));
     const kind = zone ? `${record.biome}_area` : record.group === 'building' ? feature.ruins ? 'ruins' : 'building' : record.group === 'road' ? 'road' : record.group === 'area' ? feature.type : record.group === 'river' ? 'river' : record.group === 'lake' ? 'lake' : feature.kind;
     const roadDescription = (drNames[feature.type === 'residential' ? 'residential_road' : feature.type] || 'Дорога') + (feature.tags?.railway === 'abandoned' ? ' · По бывшей железной дороге' : '');
-    return { id: feature.id, key: record.key, layer: record.layer, kind, biome: record.biome,
+    return { id: feature.id, key: record.key, sourceId: drSourceId(feature), layer: record.layer, kind, biome: record.biome,
+      biomeName: record.biome ? drBiomeNames[record.biome] || drFeatureLabel(feature, record.group) : null,
+      geometry: record.geometry, footprintOnly: record.footprintOnly === true,
       name: drFeatureLabel(feature, record.group), x: point.x, y: point.y, source: feature,
-      description: record.group === 'building' ? [feature.address, drNames[feature.type], feature.levels ? `${feature.levels} эт.` : ''].filter(Boolean).join(' · ') : record.group === 'road' ? roadDescription : feature.tags?.railway === 'abandoned' ? 'Заброшенная железная дорога' : record.layer === 'water' && drDry(feature) ? 'Сезонное русло' : drNames[kind] || drFeatureLabel(feature, record.group) };
+      description: record.group === 'building' ? [feature.address, drNames[feature.type], feature.levels ? `${feature.levels} эт.` : ''].filter(Boolean).join(' · ') : record.group === 'road' ? roadDescription : record.footprintOnly ? `${drBiomeNames[record.biome]} · По контуру здания` : feature.tags?.railway === 'abandoned' ? 'Заброшенная железная дорога' : record.layer === 'water' && drDry(feature) ? 'Сезонное русло' : drNames[kind] || drFeatureLabel(feature, record.group) };
+  }
+
+  /** All physical zone memberships coexist, including zones hidden from view. */
+  function zonesAt(x, y) {
+    if (!Number.isFinite(x) || !Number.isFinite(y) || x < 0 || y < 0 || x > world.width || y > world.height) return [];
+    const result = [], seen = new Set();
+    for (const record of zonePolygons) {
+      const b = record.bounds;
+      if (x < b.minX || x > b.maxX || y < b.minY || y > b.maxY || !drInPolygon(x, y, record.rings)) continue;
+      const item = describe(record, { x, y }), identity = `${item.sourceId}:${item.biome}`;
+      if (seen.has(identity)) continue;
+      seen.add(identity);
+      result.push({ id: item.id, key: item.key, sourceId: item.sourceId, biome: item.biome, biomeName: item.biomeName, name: item.name, layer: item.layer, footprintOnly: item.footprintOnly });
+    }
+    return result;
   }
 
   function pointPaintDistance(record, x, y, zoom) {
@@ -489,10 +532,11 @@ export function createDetailRenderer(world) {
 
   function getFeatures() {
     return registry.map(record => ({
-      id: record.feature.id, key: record.key, layer: record.layer, group: record.group,
+      id: record.feature.id, key: record.key, sourceId: drSourceId(record.feature), layer: record.layer, group: record.group,
       kind: describe(record).kind, name: drFeatureLabel(record.feature, record.group), geometry: record.geometry,
       points: record.points.map(point => ({ ...point })), rings: record.geometry === 'polygon' ? record.rings.map(ring => ring.map(point => ({ ...point }))) : undefined,
-      bounds: { ...record.bounds }, biome: record.biome, width: record.width, enabled: layers[record.layer],
+      bounds: { ...record.bounds }, biome: record.biome, biomeName: record.biome ? drBiomeNames[record.biome] || drFeatureLabel(record.feature, record.group) : null,
+      footprintOnly: record.footprintOnly === true, width: record.width, enabled: layers[record.layer],
     }));
   }
 
@@ -510,5 +554,5 @@ export function createDetailRenderer(world) {
     return { ...focusPoint };
   }
 
-  return { draw, pick, focus, setLayers, getLayers: () => ({ ...layers }), getFeatures, getStats: () => ({ ...stats, layers: { ...layers } }) };
+  return { draw, pick, focus, zonesAt, setLayers, getLayers: () => ({ ...layers }), getFeatures, getStats: () => ({ ...stats, layers: { ...layers } }) };
 }

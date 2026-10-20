@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mapFeatureLayer, mapBiome } from '../map-layers.js';
+import { mapFeatureLayer, mapBiome, mapZoneBiome } from '../map-layers.js';
 import nevadaMap from '../maps/usa.js';
 
 const feature = (tags, geometry = 'polygon', extra = {}) => ({ tags, geometry, ...extra });
@@ -55,10 +55,78 @@ test('source-free procedural geometry and markers use the same semantic layer co
   for (const type of ['forest', 'plain', 'swamp']) assert.equal(mapFeatureLayer({ type }, 'area'), 'landscape');
   assert.equal(mapFeatureLayer({ type: 'water' }, 'area'), 'water');
   assert.equal(mapFeatureLayer({ kind: 'tree', tags: { natural: 'tree' }, x: 10, y: 20 }, 'poi'), 'landscape');
-  assert.equal(mapFeatureLayer({ kind: 'town', tags: { building: 'retail', shop: 'convenience' }, x: 10, y: 20 }, 'poi'), 'buildings');
+  assert.equal(mapFeatureLayer({ kind: 'town', tags: { building: 'retail', shop: 'convenience' }, x: 10, y: 20 }, 'poi'), 'landscape', 'The service marker follows its zone while the physical shop building remains in buildings');
   assert.equal(mapFeatureLayer({ tags: { landuse: 'residential' }, x: 10, y: 20 }, 'poi'), 'landscape');
   assert.equal(mapFeatureLayer({ kind: 'camp', tags: { amenity: 'shelter' }, x: 10, y: 20 }, 'poi'), 'details');
   assert.equal(mapFeatureLayer({ kind: 'bench', tags: { amenity: 'bench' }, geometry: 'point' }, 'detail'), 'details');
+});
+
+test('parking and institutional grounds become functional zones rather than miscellaneous objects', () => {
+  const cases = [
+    [{ amenity: 'parking' }, 'parking'], [{ amenity: 'parking_space' }, 'parking'],
+    [{ amenity: 'place_of_worship', religion: 'christian' }, 'religious'],
+    [{ amenity: 'hospital' }, 'healthcare'], [{ amenity: 'clinic' }, 'healthcare'],
+    [{ healthcare: 'dentist' }, 'healthcare'], [{ amenity: 'pharmacy' }, 'healthcare'],
+    [{ amenity: 'school' }, 'education'], [{ amenity: 'college' }, 'education'],
+    [{ amenity: 'kindergarten' }, 'education'], [{ amenity: 'library' }, 'education'],
+    [{ amenity: 'courthouse' }, 'civic'], [{ amenity: 'townhall' }, 'civic'],
+    [{ amenity: 'community_centre' }, 'civic'], [{ amenity: 'post_office' }, 'civic'],
+    [{ amenity: 'police' }, 'emergency'], [{ amenity: 'fire_station' }, 'emergency'],
+    [{ amenity: 'fuel' }, 'service'], [{ amenity: 'car_wash' }, 'service'],
+    [{ amenity: 'restaurant' }, 'food_service'], [{ shop: 'confectionery' }, 'retail'],
+    [{ aeroway: 'aerodrome' }, 'transport'], [{ aeroway: 'apron' }, 'transport'],
+    [{ aeroway: 'helipad' }, 'transport'], [{ tourism: 'motel' }, 'accommodation'],
+    [{ tourism: 'camp_site' }, 'camping'], [{ tourism: 'caravan_site' }, 'camping'],
+    [{ tourism: 'museum' }, 'heritage'], [{ historic: 'ruins' }, 'heritage'],
+    [{ amenity: 'waste_transfer_station' }, 'utilities'], [{ power: 'substation' }, 'utilities'],
+  ];
+  for (const [tags, expected] of cases) {
+    const item = feature(tags);
+    assert.equal(mapZoneBiome(item), expected, JSON.stringify(tags));
+    assert.equal(mapFeatureLayer(item, 'detail'), 'landscape', JSON.stringify(tags));
+    assert.equal(mapBiome(item), expected, JSON.stringify(tags));
+  }
+});
+
+test('an institution retains its building and can also identify an exact-footprint zone', () => {
+  const points = [{ x: 10, y: 10 }, { x: 20, y: 10 }, { x: 20, y: 20 }, { x: 10, y: 20 }, { x: 10, y: 10 }];
+  const church = { id: 'church', tags: { building: 'church', amenity: 'place_of_worship' }, points, rings: [points] };
+  const before = structuredClone(church);
+  assert.equal(mapFeatureLayer(church, 'building'), 'buildings');
+  assert.equal(mapZoneBiome(church), 'religious');
+  assert.deepEqual(church, before, 'Identifying a zone must not enlarge, replace or mutate its source footprint');
+  assert.equal(mapFeatureLayer({ ...church, x: 15, y: 15 }, 'poi'), 'landscape', 'The related institution label follows the zone');
+  assert.equal(mapFeatureLayer({ tags: church.tags, geometry: 'point', points: [{ x: 15, y: 15 }] }, 'detail'), 'landscape', 'A node-only institution remains a point in the zone layer');
+  const hospital = feature({ amenity: 'hospital', landuse: 'residential' });
+  assert.equal(mapBiome(hospital), 'healthcare', 'The specific medical use must not disappear beneath a generic land-use tag');
+  assert.equal(mapBiome(feature({ landuse: 'residential' })), 'residential', 'A separately mapped overlapping residential zone keeps its own role');
+});
+
+test('zone classification never fabricates an extent for source points or consumes small fixtures', () => {
+  const point = { id: 'node-clinic', geometry: 'point', points: [{ x: 12, y: 23 }], tags: { amenity: 'clinic' } };
+  const before = structuredClone(point);
+  assert.equal(mapFeatureLayer(point, 'detail'), 'landscape');
+  assert.equal(mapZoneBiome(point), 'healthcare');
+  assert.deepEqual(point, before);
+  for (const tags of [
+    { amenity: 'bench' }, { amenity: 'atm' }, { amenity: 'toilets' }, { amenity: 'charging_station' },
+    { amenity: 'waste_disposal' }, { barrier: 'gate' }, { power: 'pole' }, { power: 'tower' },
+    { aeroway: 'windsock' }, { aeroway: 'parking_position' }, { tourism: 'artwork' },
+  ]) {
+    const fixture = feature(tags, 'point');
+    assert.equal(mapZoneBiome(fixture), null, JSON.stringify(tags));
+    assert.equal(mapFeatureLayer(fixture, 'detail'), 'details', JSON.stringify(tags));
+  }
+  for (const aeroway of ['runway', 'taxiway', 'taxilane', 'holding_position']) {
+    assert.equal(mapFeatureLayer(feature({ aeroway }, 'line'), 'detail'), 'details', 'An airport zone does not absorb each runway and taxiway');
+  }
+});
+
+test('specific physical road and water roles retain precedence over service zones', () => {
+  assert.equal(mapFeatureLayer(feature({ highway: 'pedestrian', amenity: 'parking' }), 'detail'), 'roads');
+  assert.equal(mapFeatureLayer(feature({ natural: 'water', amenity: 'parking' }), 'detail'), 'water');
+  assert.equal(mapFeatureLayer(feature({ leisure: 'hot_tub' }), 'detail'), 'water');
+  assert.equal(mapFeatureLayer(feature({ man_made: 'tailings_pond' }), 'detail'), 'water');
 });
 
 test('biome styling distinguishes urban use, forest, wetland and open countryside', () => {

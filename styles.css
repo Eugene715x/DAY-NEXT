@@ -26,3 +26,5 @@
 @media(max-width:620px){.map-tool-cluster{gap:5px;margin-top:12px}.map-tool-cluster .maps-button .icon,.layers-button .icon{width:19px;height:19px}.map-tool-cluster .detail-button .icon{width:20px;height:20px}.map-navigation .center-button{width:44px;height:44px}.layers-panel{right:16px;left:auto;top:85px;width:min(322px,calc(100% - 32px));padding:0;max-height:calc(100dvh - 110px)}.layers-heading{padding:17px 18px 15px}.layers-content{padding:6px 18px 16px}.layer-option{min-height:47px;font-size:11px}.coverage-summary{margin-bottom:15px}}
 @media(max-height:640px) and (min-width:621px){.layers-panel{top:91px;max-height:calc(100dvh - 111px)}}
 @media(max-height:500px) and (min-width:621px){.map-controls{top:74px}.zoom-controls{flex-direction:row}.zoom-rule{width:1px;height:20px;margin:auto 0}.map-tool-cluster{margin-top:10px}}
+
+.location .biome-label{display:block;max-width:190px;white-space:normal;line-height:1.5;margin-top:5px;color:#b8c58f}.location .biome-label[hidden]{display:none}

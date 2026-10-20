@@ -1,15 +1,17 @@
 import { readFile, mkdir, writeFile } from 'node:fs/promises';
 import { createZip } from './lib/zip.mjs';
+import { writeMapObjectsReport } from './report-map-objects.mjs';
 const root = new URL('../', import.meta.url);
 const read = path => readFile(new URL(path, root), 'utf8');
 const [html, css, world, realWorld, terrain, mapLayers, details, converter, map, game] = await Promise.all(['index.html', 'styles.css', 'world.js', 'real-world.js', 'terrain-renderer.js', 'map-layers.js', 'detail-renderer.js', 'scripts/lib/osm-converter.mjs', 'maps/usa.js', 'game.js'].map(read));
 const { version } = JSON.parse(await read('package.json'));
 const mapData = JSON.parse(map.replace(/^export default\s+/, '').trim().replace(/;$/, ''));
+const objectsReport = await writeMapObjectsReport(mapData, root);
 const wrap = (body, names) => `const {${names}} = (() => {\n${body.replace(/^export\s+/gm, '')}\nreturn {${names}};\n})();\n`;
 const source = wrap(world, 'createWorld,findPath,terrainAt,nearestWalkable')
   + wrap(realWorld, 'createRealWorld')
   + wrap(terrain, 'createTerrainBackdrop,createLandscapeBackdrop')
-  + wrap(mapLayers, 'mapFeatureLayer,mapBiome')
+  + wrap(mapLayers, 'mapFeatureLayer,mapBiome,mapZoneBiome')
   + wrap(details.replace(/^import\s+[^;]+;\s*/gm, ''), 'createDetailRenderer')
   + wrap(converter, 'convertOSM,validateBbox')
   + `const usaMap = ${map.replace(/^export default\s+/, '')}\n`
@@ -29,6 +31,8 @@ const instructions = `DAY / NEXT ${version} — одиночная экспед�
 B / кнопка дома — посмотреть застройку; наведение/касание — сведения об отдельном доме или дороге. F / прицел — вернуться к путнику.
 Кнопка «Слои» — отдельное включение подложки, ландшафта с природой и зонами, водоёмов и русел, дорог, домов и прочих объектов. Выключенные объекты не рисуются и не выбираются.
 Ландшафт объединяет леса, пески, скалы, парки, жилые и промышленные территории как биомы. Дороги и вода управляются независимо.
+Парковки и территории учреждений также относятся к зонам. Пересекающиеся зоны учитываются одновременно; список биомов виден в карточке путника и при осмотре объектов.
+remaining-objects.md содержит полный список того, что осталось в слое остальных объектов.
 Кнопка атласа — реальная/вымышленная карта, импорт OSM/XML/JSON, экспорт JSON и ссылка на свежий исходник OSM для выбранного участка.
 
 Реальная местность: ${mapData.name} / ${mapData.region}.
@@ -41,5 +45,9 @@ https://www.openstreetmap.org/copyright
 Исходники, происхождение данных и конвертер:
 https://github.com/Eugene715x/DAY-NEXT
 `;
-await writeFile(new URL('downloads/day-next.zip', root), createZip([{ name: 'day-next.html', data: standalone }, { name: 'README.txt', data: instructions }]));
+await writeFile(new URL('downloads/day-next.zip', root), createZip([
+  { name: 'day-next.html', data: standalone }, { name: 'README.txt', data: instructions },
+  { name: 'remaining-objects.md', data: objectsReport.markdown },
+  { name: 'remaining-objects.json', data: JSON.stringify(objectsReport.report, null, 2) + '\n' },
+]));
 console.log(`Built dist/day-next.html and repository downloads/day-next.{html,zip} (${Math.round(Buffer.byteLength(standalone) / 1024)} KiB HTML). Fully offline.`);

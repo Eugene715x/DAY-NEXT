@@ -1,6 +1,6 @@
 {
   "name": "day-next",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "private": true,
   "type": "module",
   "description": "Original single-player survival map prototype",
@@ -10,6 +10,7 @@
     "build": "node scripts/build.mjs",
     "test": "node --test tests/*.test.mjs",
     "map:import": "node scripts/import-osm.mjs",
-    "map:refresh": "node scripts/refresh-map.mjs"
+    "map:refresh": "node scripts/refresh-map.mjs",
+    "map:report": "node scripts/report-map-objects.mjs"
   }
 }
