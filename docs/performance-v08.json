@@ -1,0 +1,128 @@
+{
+  "version": 1,
+  "measurementDate": "2026-10-20",
+  "environment": {
+    "browser": "Chromium headless",
+    "viewport": {
+      "width": 1440,
+      "height": 960,
+      "deviceScaleFactor": 1
+    },
+    "scene": "Beatty city, zoom 6",
+    "sampling": {
+      "framesPerPhase": 120,
+      "canvasCounterFrames": 60,
+      "pan": "120 pointer steps of 3 CSS px (360 px total), same fixed camera trajectory"
+    },
+    "caveat": "Shared cloud environment with a software/headless browser. Relative comparison; not a guarantee of FPS on a particular PC."
+  },
+  "baselineVersion": "0.7",
+  "optimizedVersion": "0.8",
+  "phases": {
+    "idle": {
+      "before": {
+        "samples": 120,
+        "meanMs": 37.08166666666667,
+        "p50Ms": 33.30000000000018,
+        "p95Ms": 50,
+        "maxMs": 50.100000000000136,
+        "fps": 26.96750415749022
+      },
+      "after": {
+        "samples": 120,
+        "meanMs": 16.66583333333333,
+        "p50Ms": 16.699999999999818,
+        "p95Ms": 16.799999999999727,
+        "maxMs": 16.800000000000182,
+        "fps": 60.00300015000751
+      },
+      "fpsRatio": 2.225011250562529
+    },
+    "hover": {
+      "before": {
+        "samples": 120,
+        "meanMs": 39.30416666666667,
+        "p50Ms": 33.399999999999636,
+        "p95Ms": 50.100000000000364,
+        "maxMs": 66.69999999999982,
+        "fps": 25.44259514470476
+      },
+      "after": {
+        "samples": 120,
+        "meanMs": 16.66583333333334,
+        "p50Ms": 16.699999999999818,
+        "p95Ms": 16.700000000000728,
+        "maxMs": 16.800000000000182,
+        "fps": 60.00300015000748
+      },
+      "fpsRatio": 2.3583679183959187
+    },
+    "pan": {
+      "before": {
+        "samples": 120,
+        "meanMs": 41.52583333333334,
+        "p50Ms": 33.400000000001455,
+        "p95Ms": 50.100000000000364,
+        "maxMs": 100,
+        "fps": 24.081395115490356
+      },
+      "after": {
+        "samples": 120,
+        "meanMs": 16.94333333333333,
+        "p50Ms": 16.699999999999818,
+        "p95Ms": 16.800000000000182,
+        "maxMs": 50,
+        "fps": 59.020263623844194
+      },
+      "fpsRatio": 2.4508656305331504
+    }
+  },
+  "initMs": {
+    "before": 646,
+    "after": 550
+  },
+  "canvasOperationsPerFrame": {
+    "stroke": {
+      "before": 1625.4333333333334,
+      "after": 5.083333333333333
+    },
+    "fill": {
+      "before": 897.9666666666667,
+      "after": 5.083333333333333
+    },
+    "drawImage": {
+      "before": 0,
+      "after": 1.0166666666666666
+    },
+    "clip": {
+      "before": 408.1666666666667,
+      "after": 1.0166666666666666
+    },
+    "createLinearGradient": {
+      "before": 391.6333333333333,
+      "after": 1.0166666666666666
+    }
+  },
+  "optimizedCache": {
+    "frames": 457,
+    "staticRebuilds": 4,
+    "cachePixels": 2873344,
+    "cacheBytes": 11493376,
+    "lastStaticMs": 6.199999999254942,
+    "meanFrameMs": 0.7938730853734053
+  },
+  "acceptance": {
+    "buildings": 893,
+    "unknownBuildings": 824,
+    "powerFeatures": 272,
+    "remainingDetails": 241,
+    "closedAdministrativePolygons": 1,
+    "administrativeProfilesEmpty": true,
+    "panBackPixelMae": 0,
+    "panBackMaxPixelDelta": 0,
+    "powerPixelsDisappearAndReturnExactly": true,
+    "cacheInvalidatesOnLayerAndZoomChanges": true,
+    "offlineNetworkRequests": 0,
+    "javascriptErrors": []
+  }
+}

@@ -78,7 +78,7 @@ test('parking and institutional grounds become functional zones rather than misc
     [{ aeroway: 'helipad' }, 'transport'], [{ tourism: 'motel' }, 'accommodation'],
     [{ tourism: 'camp_site' }, 'camping'], [{ tourism: 'caravan_site' }, 'camping'],
     [{ tourism: 'museum' }, 'heritage'], [{ historic: 'ruins' }, 'heritage'],
-    [{ amenity: 'waste_transfer_station' }, 'utilities'], [{ power: 'substation' }, 'utilities'],
+    [{ amenity: 'waste_transfer_station' }, 'utilities'],
   ];
   for (const [tags, expected] of cases) {
     const item = feature(tags);
@@ -110,7 +110,7 @@ test('zone classification never fabricates an extent for source points or consum
   assert.deepEqual(point, before);
   for (const tags of [
     { amenity: 'bench' }, { amenity: 'atm' }, { amenity: 'toilets' }, { amenity: 'charging_station' },
-    { amenity: 'waste_disposal' }, { barrier: 'gate' }, { power: 'pole' }, { power: 'tower' },
+    { amenity: 'waste_disposal' }, { barrier: 'gate' },
     { aeroway: 'windsock' }, { aeroway: 'parking_position' }, { tourism: 'artwork' },
   ]) {
     const fixture = feature(tags, 'point');
@@ -129,6 +129,54 @@ test('specific physical road and water roles retain precedence over service zone
   assert.equal(mapFeatureLayer(feature({ man_made: 'tailings_pond' }), 'detail'), 'water');
 });
 
+test('electrical network points, lines and facilities share an independent power layer', () => {
+  const cases = [
+    [{ power: 'line' }, 'line'], [{ power: 'minor_line' }, 'line'], [{ power: 'cable' }, 'line'],
+    [{ power: 'pole' }, 'point'], [{ power: 'tower' }, 'point'], [{ power: 'transformer' }, 'point'],
+    [{ power: 'switch' }, 'point'], [{ power: 'generator' }, 'point'],
+    [{ man_made: 'utility_pole' }, 'point'], [{ power: 'substation' }, 'polygon'], [{ power: 'plant' }, 'polygon'],
+  ];
+  for (const [tags, geometry] of cases) {
+    const item = feature(tags, geometry), before = structuredClone(item);
+    assert.equal(mapFeatureLayer(item, 'detail'), 'power', JSON.stringify(tags));
+    assert.deepEqual(item, before, 'Classification cannot rewrite network geometry or source tags');
+    if (geometry === 'point') assert.equal(mapFeatureLayer({ ...item, x: 10, y: 20 }, 'poi'), 'power');
+  }
+  assert.equal(mapFeatureLayer({}, 'power'), 'power');
+  assert.equal(mapFeatureLayer({ kind: 'power_pole', geometry: 'point' }, 'detail'), 'power');
+  assert.equal(mapFeatureLayer({ kind: 'power_line', geometry: 'line' }, 'detail'), 'power');
+  assert.equal(mapZoneBiome(feature({ power: 'substation' })), 'utilities', 'The functional zone remains available separately from physical network visibility');
+  assert.equal(mapBiome(feature({ power: 'plant' })), 'utilities');
+});
+
+test('power ownership preserves buildings, water and roads while point equipment gets no fake building', () => {
+  const station = feature({ building: 'service', power: 'substation' });
+  assert.equal(mapFeatureLayer(station, 'building'), 'buildings');
+  assert.equal(mapFeatureLayer(station, 'detail'), 'buildings');
+  assert.equal(mapFeatureLayer(feature({ building: 'yes', power: 'transformer' }, 'point'), 'detail'), 'power');
+  assert.equal(mapFeatureLayer(feature({ building: 'yes', power: 'substation' }, 'point'), 'poi'), 'power');
+  assert.equal(mapFeatureLayer(feature({ highway: 'service', power: 'line' }, 'line'), 'detail'), 'roads');
+  assert.equal(mapFeatureLayer(feature({ natural: 'water', power: 'line' }), 'detail'), 'water');
+  assert.equal(mapFeatureLayer(feature({ power: 'no' }, 'point'), 'detail'), 'details');
+  assert.equal(mapFeatureLayer(feature({ man_made: 'tower' }, 'point'), 'detail'), 'details', 'A radio or observation tower is not an electrical tower');
+  assert.equal(mapFeatureLayer(feature({ highway: 'street_lamp' }, 'point'), 'detail'), 'details', 'A street light remains a road fixture');
+});
+
+test('census and administrative boundary geometry is a jurisdiction overlay rather than urban land use', () => {
+  for (const boundary of ['census', 'administrative']) {
+    for (const geometry of ['polygon', 'line']) {
+      const item = feature({ boundary, name: 'Town territory' }, geometry);
+      assert.equal(mapFeatureLayer(item, 'detail'), 'landscape');
+      assert.equal(mapBiome(item), 'administrative');
+      assert.equal(mapZoneBiome(item), null, 'A jurisdiction is not a service or residential site');
+    }
+  }
+  assert.equal(mapFeatureLayer(feature({ boundary: 'census' }, 'point'), 'detail'), 'details', 'A bare boundary point never becomes a fabricated zone');
+  assert.equal(mapFeatureLayer(feature({ boundary: 'maritime' }, 'line'), 'detail'), 'details');
+  assert.equal(mapFeatureLayer(feature({ boundary: 'political' }, 'polygon'), 'detail'), 'details');
+  assert.equal(mapBiome(feature({ boundary: 'census', landuse: 'residential' })), 'administrative', 'Administrative extents do not grant residential resource semantics');
+});
+
 test('biome styling distinguishes urban use, forest, wetland and open countryside', () => {
   const fixtures = [
     [{ landuse: 'residential' }, 'residential'], [{ landuse: 'industrial' }, 'industrial'],
@@ -142,7 +190,7 @@ test('biome styling distinguishes urban use, forest, wetland and open countrysid
 
 test('fresh Nevada geometry is fully categorized and former railway road facets stay together', () => {
   const before = JSON.stringify(nevadaMap);
-  const valid = new Set(['roads', 'water', 'landscape', 'buildings', 'details']);
+  const valid = new Set(['roads', 'water', 'power', 'landscape', 'buildings', 'details']);
   const groups = { roads: 'road', rivers: 'river', areas: 'area', buildings: 'building', details: 'detail' };
   for (const [collection, group] of Object.entries(groups)) {
     for (const item of nevadaMap[collection]) assert(valid.has(mapFeatureLayer(item, group)), `Uncategorized ${collection} ${item.id}`);

@@ -150,7 +150,7 @@ export function createMapObjectsReport(map) {
   return {
     version: 1, mapId: map.id, mapName: map.name,
     source: { file: map.source?.sourceFile || 'maps/source/beatty.osm', sha256: map.source?.sha256 || null, downloadedAt: map.source?.downloadedAt || null, snapshotAt: map.source?.snapshotAt || null },
-    layerCounts: Object.fromEntries(['landscape', 'water', 'roads', 'buildings', 'details'].map(layer => [layer, features.filter(feature => feature.layer === layer).length])),
+    layerCounts: Object.fromEntries(['landscape', 'water', 'roads', 'power', 'buildings', 'details'].map(layer => [layer, features.filter(feature => feature.layer === layer).length])),
     landscape: { count: landscape.length, geometryCounts: geometryCounts(landscape), biomes: groupRecords(landscape, feature => feature.biome || 'landscape').map(([id, records]) => ({ id, count: records.length, geometryCounts: geometryCounts(records) })).sort(byCount) },
     remaining: { count: remaining.length, uniqueSourceElements: new Set(remaining.map(record => record.sourceId)).size, geometryCounts: geometryCounts(remaining), categories, objects: remaining },
     notes: [

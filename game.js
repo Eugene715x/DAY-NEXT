@@ -5,15 +5,18 @@ import usaMap from './maps/usa.js';
 import { createDetailRenderer } from './detail-renderer.js';
 import { createTerrainBackdrop, createLandscapeBackdrop } from './terrain-renderer.js';
 import { mapFeatureLayer } from './map-layers.js';
+import { BUILDING_TYPES, BIOME_TYPES, RESOURCE_PROFILES, RESOURCE_KINDS, collectResourceProfiles, collectResourceCandidates } from './gameplay-types.js';
 
 const $ = id => document.getElementById(id);
 const canvas = $('map');
 const ctx = canvas.getContext('2d');
 const terrainCanvas = $('terrain-map');
 const terrainCtx = terrainCanvas.getContext('2d', { alpha: false });
+const objectCache = document.createElement('canvas');
+const objectCacheCtx = objectCache.getContext('2d');
 let world = createRealWorld(usaMap);
 let currentMap = usaMap;
-const layers = { terrain: true, landscape: true, water: true, roads: true, buildings: true, details: true };
+const layers = { terrain: true, landscape: true, water: true, roads: true, power: true, buildings: true, details: true };
 let detailRenderer = createDetailRenderer(world);
 let hoveredObject = null;
 const maximumZoom = () => 24;
@@ -48,6 +51,8 @@ let terrainBackdrop = createTerrainBackdrop(world, palette);
 let landscapeBackdrop = createLandscapeBackdrop(world, palette);
 let terrainFrameKey = '';
 let terrainRevision = 0;
+let objectRevision = 0, objectCacheState = null;
+const renderStats = { frames: 0, staticRebuilds: 0, lastStaticMs: 0, lastFrameMs: 0, totalFrameMs: 0 };
 
 function resize() {
   vw = innerWidth; vh = innerHeight; dpr = Math.min(devicePixelRatio || 1, 2);
@@ -56,6 +61,7 @@ function resize() {
   terrainCanvas.width = canvas.width; terrainCanvas.height = canvas.height;
   terrainCanvas.style.width = `${vw}px`; terrainCanvas.style.height = `${vh}px`;
   terrainFrameKey = '';
+  objectCacheState = null;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 addEventListener('resize', resize); resize();
@@ -165,7 +171,7 @@ function formatCoverage(coverage) {
 function syncLayerUI() {
   const features = detailRenderer.getFeatures();
   for (const key of Object.keys(layers)) $('layer-' + key).checked = layers[key];
-  for (const key of ['landscape', 'water', 'roads', 'buildings', 'details']) $('count-' + key).textContent = features.filter(feature => feature.layer === key).length;
+  for (const key of ['landscape', 'water', 'roads', 'power', 'buildings', 'details']) $('count-' + key).textContent = features.filter(feature => feature.layer === key).length;
   if (!world.geographic && landscapeBackdrop) $('count-landscape').textContent = 'биомы';
   terrainCanvas.hidden = !layers.terrain;
 }
@@ -173,6 +179,7 @@ function syncLayerUI() {
 function closeLayers() { $('layers-panel').hidden = true; $('layers-button').setAttribute('aria-expanded', 'false'); }
 for (const key of Object.keys(layers)) $('layer-' + key).addEventListener('change', e => {
   layers[key] = e.target.checked; detailRenderer.setLayers(layers);
+  objectRevision++;
   hideObjectCard(); hoveredPoi = null; syncLayerUI();
 });
 $('layers-button').addEventListener('click', () => {
@@ -186,6 +193,7 @@ function switchMap(map) {
   const next = map ? createRealWorld(map) : createWorld();
   world = next; currentMap = map;
   detailRenderer = createDetailRenderer(world);
+  objectCacheState = null; objectRevision++;
   palette = map ? desertPalette : greenPalette;
   terrainBackdrop = createTerrainBackdrop(world, palette); terrainRevision++; terrainFrameKey = '';
   landscapeBackdrop = createLandscapeBackdrop(world, palette);
@@ -209,7 +217,7 @@ function inspectObject(point, screenX, screenY, touch = false) {
   hoveredPoi = null;
   const names = { building: 'ЗДАНИЕ', road: 'ДОРОГА', fence: 'ОГРАДА', wall: 'СТЕНА', gate: 'ВОРОТА', railway: 'ЖЕЛЕЗНАЯ ДОРОГА', parking: 'ПАРКОВКА', pitch: 'СПОРТПЛОЩАДКА', garden: 'САД', pool: 'БАССЕЙН', tree: 'ДЕРЕВО', bench: 'СКАМЕЙКА', picnic_table: 'МЕСТО ДЛЯ ПРИВАЛА', fountain: 'ФОНТАН', well: 'КОЛОДЕЦ', ruins: 'РУИНЫ', shelter: 'УКРЫТИЕ', cemetery: 'КЛАДБИЩЕ', park: 'ПАРК', spring: 'РОДНИК', quarry: 'КАРЬЕР', playground: 'ДЕТСКАЯ ПЛОЩАДКА', cattle_grid: 'РЕШЁТКА НА ДОРОГЕ', runway: 'ВЗЛЁТНАЯ ПОЛОСА', taxiway: 'РУЛЁЖНАЯ ДОРОЖКА', apron: 'ПЕРРОН АЭРОДРОМА', aerodrome: 'АЭРОДРОМ', river: 'ВОДОТОК', lake: 'ОЗЕРО', water: 'ВОДОЁМ', forest: 'ЛЕС', swamp: 'БОЛОТО', plain: 'УЧАСТОК МЕСТНОСТИ', boundary: 'ГРАНИЦА' };
   const zoneNames = { residential: 'ЖИЛАЯ ЗОНА', industrial: 'ПРОМЫШЛЕННАЯ ЗОНА', commercial: 'КОММЕРЧЕСКАЯ ЗОНА', retail: 'ТОРГОВАЯ ЗОНА', farmland: 'ПОЛЯ', sand: 'ПЕСКИ', rock: 'СКАЛЫ', scrub: 'КУСТАРНИК', wetland: 'БОЛОТО' };
-  const layerNames = { landscape: 'ЛАНДШАФТ', water: 'ВОДА', roads: 'ДОРОГА', buildings: 'ЗДАНИЕ' };
+  const layerNames = { landscape: 'ЛАНДШАФТ', water: 'ВОДА', roads: 'ДОРОГА', power: 'ЭЛЕКТРОСЕТЬ', buildings: 'ЗДАНИЕ' };
   $('object-kind').textContent = names[feature.kind] || (feature.layer === 'landscape' && feature.biomeName ? feature.biomeName.toUpperCase() : zoneNames[feature.biome || feature.kind]) || layerNames[feature.layer] || 'ОБЪЕКТ';
   $('object-name').textContent = feature.name || (feature.kind === 'building' ? 'Безымянное здание' : 'Объект на карте');
   const source = feature.source || {};
@@ -218,6 +226,9 @@ function inspectObject(point, screenX, screenY, touch = false) {
   $('object-meta').textContent = [...new Set(extra)].filter(text => text !== feature.name).join(' · ') || (world.geographic ? 'Нанесён на карту OpenStreetMap' : 'Объект игровой карты');
   const zones = detailRenderer.zonesAt(point.x, point.y);
   if (zones.length) $('object-meta').textContent += `\nБиомы: ${[...new Set(zones.map(zone => zone.biomeName || zone.name))].join(' + ')}`;
+  if (feature.typeName) $('object-meta').textContent += `\nИгровой тип: ${feature.typeName}`;
+  const profiles = collectResourceProfiles(feature, zones);
+  if (profiles.length) $('object-meta').textContent += `\nПрофили ресурсов: ${profiles.map(id => RESOURCE_PROFILES[id]?.name || id).join(', ')}`;
   if (feature.footprintOnly) $('object-meta').textContent += '\nЗона в пределах нанесённого контура здания.';
   if (touch && camera.zoom >= 2 && ['building', 'ruins'].includes(feature.kind)) $('object-meta').textContent += '\nКоснись земли рядом, чтобы подойти.';
   $('object-card').hidden = false;
@@ -446,7 +457,36 @@ function drawPoi(poi, time) {
   ctx.restore();
 }
 
+function drawStaticObjects(time) {
+  const key = `${camera.zoom},${vw},${vh},${dpr},${objectRevision},${terrainRevision}`;
+  const cached = objectCacheState;
+  if (!cached || cached.key !== key || Math.abs(camera.x - cached.x) * camera.zoom > cached.margin || Math.abs(camera.y - cached.y) * camera.zoom > cached.margin) {
+    const started = performance.now();
+    const margin = Math.round(Math.min(256, Math.min(vw, vh) * .28));
+    const width = vw + margin * 2, height = vh + margin * 2;
+    // Cache a viewport with a small guard band, never the whole world at street zoom.
+    const scale = Math.min(dpr, Math.sqrt(16000000 / (width * height)));
+    const pixelWidth = Math.ceil(width * scale), pixelHeight = Math.ceil(height * scale);
+    if (objectCache.width !== pixelWidth) objectCache.width = pixelWidth;
+    if (objectCache.height !== pixelHeight) objectCache.height = pixelHeight;
+    objectCacheCtx.setTransform(1, 0, 0, 1, 0, 0);
+    objectCacheCtx.clearRect(0, 0, pixelWidth, pixelHeight);
+    objectCacheCtx.setTransform(scale, 0, 0, scale, 0, 0);
+    objectCacheCtx.save(); objectCacheCtx.translate(width / 2, height / 2); objectCacheCtx.scale(camera.zoom, camera.zoom); objectCacheCtx.translate(-camera.x, -camera.y);
+    if (layers.landscape && landscapeBackdrop) objectCacheCtx.drawImage(landscapeBackdrop, 0, 0);
+    detailRenderer.draw(objectCacheCtx, { zoom: camera.zoom, cameraX: camera.x, cameraY: camera.y, width, height, time, hoveredId: null });
+    objectCacheCtx.restore();
+    objectCacheState = { key, x: camera.x, y: camera.y, margin, scale, width, height };
+    renderStats.staticRebuilds++; renderStats.lastStaticMs = performance.now() - started;
+  }
+  const state = objectCacheState;
+  const x = (state.margin + (camera.x - state.x) * camera.zoom) * state.scale;
+  const y = (state.margin + (camera.y - state.y) * camera.zoom) * state.scale;
+  ctx.drawImage(objectCache, x, y, vw * state.scale, vh * state.scale, 0, 0, vw, vh);
+}
+
 function draw(time) {
+  const started = performance.now();
   const frameKey = `${camera.x.toFixed(4)},${camera.y.toFixed(4)},${camera.zoom},${canvas.width},${canvas.height},${terrainRevision}`;
   if (layers.terrain && terrainFrameKey !== frameKey) {
     terrainCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -456,9 +496,9 @@ function draw(time) {
   }
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, vw, vh);
+  drawStaticObjects(time);
   ctx.save(); ctx.translate(vw / 2, vh / 2); ctx.scale(camera.zoom, camera.zoom); ctx.translate(-camera.x, -camera.y);
-  if (layers.landscape && landscapeBackdrop) ctx.drawImage(landscapeBackdrop, 0, 0);
-  detailRenderer.draw(ctx, { zoom: camera.zoom, cameraX: camera.x, cameraY: camera.y, width: vw, height: vh, time, hoveredId: hoveredObject?.id });
+  detailRenderer.drawHighlight(ctx, { zoom: camera.zoom, cameraX: camera.x, cameraY: camera.y, width: vw, height: vh, time }, hoveredObject);
   if (trail.length > 1) {
     line(ctx, trail); ctx.strokeStyle = 'rgba(54,61,35,.45)'; ctx.lineWidth = 1.5 / camera.zoom; ctx.setLineDash([2 / camera.zoom, 5 / camera.zoom]); ctx.stroke(); ctx.setLineDash([]);
   }
@@ -518,6 +558,7 @@ function draw(time) {
     ctx.strokeStyle = 'rgba(222,227,199,.7)'; ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(x, y - 4); ctx.lineTo(x, y); ctx.lineTo(x + length, y); ctx.lineTo(x + length, y - 4); ctx.stroke();
     ctx.fillStyle = '#d4dbc0'; ctx.font = '9px monospace'; ctx.textAlign = 'right'; ctx.fillText(scaleMeters >= 1000 ? `${scaleMeters / 1000} КМ` : `${scaleMeters} М`, x + length, y - 9);
   }
+  renderStats.frames++; renderStats.lastFrameMs = performance.now() - started; renderStats.totalFrameMs += renderStats.lastFrameMs;
 }
 
 function updateUI() {
@@ -567,6 +608,9 @@ window.__DAY_NEXT__ = {
   zonesAt: (x, y) => detailRenderer.zonesAt(x, y),
   getLayers: () => ({ ...layers }),
   getFeatures: () => detailRenderer.getFeatures(),
+  getRenderStats: () => ({ ...renderStats, meanFrameMs: renderStats.totalFrameMs / Math.max(1, renderStats.frames), cachePixels: objectCache.width * objectCache.height, cacheBytes: objectCache.width * objectCache.height * 4, renderer: detailRenderer.getStats() }),
+  getTypeCatalogs: () => structuredClone({ buildingTypes: BUILDING_TYPES, biomeTypes: BIOME_TYPES, resourceProfiles: RESOURCE_PROFILES, resourceKinds: RESOURCE_KINDS }),
+  getResourceCandidatesAt: (x, y) => collectResourceCandidates(detailRenderer.pick(x, y, 1), detailRenderer.zonesAt(x, y)),
 };
 log('Невада. На карте — следы прежней жизни.', true); updateMapDetails(); updateUI();
 function frame(now) {

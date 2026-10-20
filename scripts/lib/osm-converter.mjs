@@ -142,6 +142,46 @@ function insideRing(point, ring) {
   }
   return inside;
 }
+
+/** Join only shared source endpoints. Gaps and ambiguous junctions stay open. */
+export function joinBoundaryFragments(fragments) {
+  const remaining = fragments.filter(points => points.length >= 2 && points.every(point => Number.isFinite(point?.x) && Number.isFinite(point?.y)))
+    .map(points => points.map(point => ({ x: point.x, y: point.y })));
+  const endpointKey = point => `${Math.round(point.x * 1e7)},${Math.round(point.y * 1e7)}`;
+  const degrees = new Map();
+  for (const points of remaining) for (const point of [points[0], points.at(-1)]) degrees.set(endpointKey(point), (degrees.get(endpointKey(point)) || 0) + 1);
+  const rings = [], chains = [];
+  let joins = 0;
+  while (remaining.length) {
+    const chain = remaining.shift();
+    if (chain.length >= 4 && same(chain[0], chain.at(-1))) { rings.push(chain); continue; }
+    let ambiguous = false;
+    for (;;) {
+      if (same(chain[0], chain.at(-1))) {
+        (chain.length >= 4 && !ambiguous ? rings : chains).push(chain);
+        break;
+      }
+      const tail = remaining.map((points, index) => ({ points, index })).filter(({ points }) => same(chain.at(-1), points[0]) || same(chain.at(-1), points.at(-1)));
+      const head = remaining.map((points, index) => ({ points, index })).filter(({ points }) => same(chain[0], points[0]) || same(chain[0], points.at(-1)));
+      const candidates = tail.length === 1 ? tail : head.length === 1 ? head : [];
+      if (!candidates.length) { chains.push(chain); break; }
+      const atTail = candidates === tail, endpoint = atTail ? chain.at(-1) : chain[0];
+      if ((degrees.get(endpointKey(endpoint)) || 0) > 2) { chains.push(chain); break; }
+      let next = remaining.splice(candidates[0].index, 1)[0];
+      if (atTail) {
+        if (same(chain.at(-1), next.at(-1))) next.reverse();
+        chain.push(...next.slice(1));
+      } else {
+        if (same(chain[0], next[0])) next.reverse();
+        chain.unshift(...next.slice(0, -1));
+      }
+      ambiguous ||= [chain[0], chain.at(-1)].some(point => (degrees.get(endpointKey(point)) || 0) > 2);
+      joins++;
+    }
+  }
+  return { rings, chains, joins };
+}
+
 function joinRings(fragments) {
   const remaining = fragments.filter(points => points.length >= 2).map(points => [...points]);
   const rings = [];
@@ -295,19 +335,33 @@ export function convertOSM(input, options = {}) {
     pois.push({ id, name, x: point.x, y: point.y, kind, tags: safeTags(tags), description: `Реальный объект OpenStreetMap: ${clean(tags.amenity || tags.place || tags.railway || tags.tourism || tags.shop || tags.man_made || tags.historic || tags.building || kind)}.`, discovered: false, named: !!tags.name });
   };
   for (const relation of elements.filter(e => e.type === 'relation' && ['multipolygon', 'boundary'].includes(e.tags?.type))) {
-    const type = areaType(relation.tags), isBuilding = relation.tags.building && relation.tags.building !== 'no', detail = detailKind(relation.tags) || (meaningfulTags(relation.tags).length && polygonSemantics(relation.tags) ? genericKind(relation.tags) : null);
+    const boundary = Boolean(relation.tags.boundary);
+    const type = areaType(relation.tags), isBuilding = relation.tags.building && relation.tags.building !== 'no', detail = detailKind(relation.tags) || (meaningfulTags(relation.tags).length && (boundary || polygonSemantics(relation.tags)) ? genericKind(relation.tags) : null);
     if (!type && !isBuilding && !detail) continue;
     const outers = [], inners = [];
     for (const member of relation.members || []) {
       if (member.type !== 'way') continue;
       const way = ways.get(String(member.ref));
-      const memberPoints = member.geometry ? geometry(member) : [];
-      const points = memberPoints.length ? memberPoints : way ? geometry(way) : [];
-      if (points.length < 2) continue;
-      (member.role === 'inner' ? inners : outers).push(points);
+      if (boundary) {
+        // Bounded Overpass geometry can contain gaps; never connect across them.
+        const fullMember = member.geometry ? geometry(member) : [], fullWay = way ? geometry(way) : [];
+        const parts = fullMember.length >= 2 ? [fullMember] : fullWay.length >= 2 ? [fullWay] : member.geometry ? geometryParts(member) : way ? geometryParts(way) : [];
+        (member.role === 'inner' ? inners : outers).push(...parts);
+      } else {
+        const memberPoints = member.geometry ? geometry(member) : [];
+        const points = memberPoints.length ? memberPoints : way ? geometry(way) : [];
+        if (points.length < 2) continue;
+        (member.role === 'inner' ? inners : outers).push(points);
+      }
     }
-    const outerRings = joinRings(outers), innerRings = joinRings(inners);
-    if (!outerRings.length) continue;
+    const assembly = boundary ? joinBoundaryFragments(outers) : null;
+    const innerAssembly = boundary ? joinBoundaryFragments(inners) : null;
+    const incompleteBoundary = boundary && ((relation.members || []).some(member => member.type === 'way' && geometry(member).length < 2 && (!ways.has(String(member.ref)) || geometry(ways.get(String(member.ref))).length < 2)) || assembly.chains.length > 0 || innerAssembly.chains.length > 0);
+    // With missing boundary geometry, an absent member could be an island hole.
+    // Retain the measured outlines, but never turn an uncertain shell into a zone.
+    if (incompleteBoundary) { assembly.chains.push(...assembly.rings, ...innerAssembly.rings, ...innerAssembly.chains); assembly.rings = []; }
+    const outerRings = assembly ? assembly.rings : joinRings(outers), innerRings = boundary ? innerAssembly.rings : joinRings(inners);
+    if (!outerRings.length && !assembly?.chains.length) continue;
     let index = 0;
     for (const outer of outerRings) {
       const ring = clipRing(outer, boundWidth, boundHeight);
@@ -315,11 +369,19 @@ export function convertOSM(input, options = {}) {
       const rings = [ring, ...innerRings.filter(hole => insideRing(hole[0], outer)).map(hole => clipRing(hole, boundWidth, boundHeight)).filter(Boolean)];
       const id = `relation-${relation.id}-${index++}`, name = clean(relation.tags.name || '');
       const geometryIncomplete = (relation.members || []).some(member => member.type === 'way' && geometry(member).length < 2 && (!ways.has(String(member.ref)) || geometry(ways.get(String(member.ref))).length < 2));
-      for (const member of relation.members || []) if (member.type === 'way') relationMembers.add(String(member.ref));
+      if (!boundary) for (const member of relation.members || []) if (member.type === 'way') relationMembers.add(String(member.ref));
       if (type) areas.push({ id, type, rings, name, tags: safeTags(relation.tags), intermittent: isIntermittent(relation.tags), seasonal: isSeasonal(relation.tags) });
       if (isBuilding) buildings.push({ id, points: ring, rings, name, ...buildingMetadata(relation.tags) });
-      if (detail && !isBuilding) details.push({ id, kind: detail, geometry: 'polygon', points: ring, rings, name, tags: safeTags(relation.tags), ...(geometryIncomplete ? { geometryIncomplete: true } : {}) });
+      if (detail && !isBuilding) details.push({ id, kind: detail, geometry: 'polygon', points: ring, rings, name, tags: safeTags(relation.tags), ...(boundary ? { boundaryClosed: true, joinedFragments: assembly.joins, memberSourceIds: (relation.members || []).filter(member => member.type === 'way').map(member => `way-${member.ref}`) } : {}), ...(geometryIncomplete ? { geometryIncomplete: true } : {}) });
       addPoi(relation, centroid(ring));
+    }
+    if (boundary) for (let chain = 0; chain < assembly.chains.length; chain++) {
+      clipLine(assembly.chains[chain], boundWidth, boundHeight).forEach((points, part) => details.push({
+        id: `relation-${relation.id}-chain-${chain}-${part}`, sourceId: `relation-${relation.id}`, kind: detail, geometry: 'line', points,
+        name: clean(relation.tags.name || ''), tags: safeTags(relation.tags), geometryIncomplete: true,
+        boundaryClosed: false, joinedFragments: assembly.joins,
+        memberSourceIds: (relation.members || []).filter(member => member.type === 'way').map(member => `way-${member.ref}`),
+      }));
     }
   }
   for (const way of ways.values()) {

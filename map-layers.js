@@ -4,6 +4,8 @@ const mlNaturalKinds = new Set(['tree', 'tree_row', 'wood', 'forest', 'scrub', '
 const mlLeisureZones = new Set(['park', 'garden', 'pitch', 'playground', 'recreation_ground', 'nature_reserve', 'golf_course', 'dog_park', 'sports_centre', 'stadium', 'common']);
 const mlWaterKinds = new Set(['water', 'lake', 'river', 'reservoir', 'basin', 'pond', 'pool', 'swimming_pool', 'spring', 'hot_tub', 'tailings_pond']);
 const mlWaterways = new Set(['river', 'stream', 'canal', 'drain', 'ditch', 'riverbank', 'dock', 'tidal_channel']);
+const mlPowerKinds = new Set(['utility_pole', 'power_pole', 'power_tower', 'power_line', 'power_cable', 'transformer', 'substation']);
+const mlPowerFeature = feature => mlPresent(feature.tags?.power) || feature.tags?.man_made === 'utility_pole' || mlPowerKinds.has(feature.kind);
 const mlServiceZones = new Map([
   ['parking', 'parking'], ['parking_space', 'parking'], ['motorcycle_parking', 'parking'], ['bicycle_parking', 'parking'], ['parking_entrance', 'parking'],
   ['place_of_worship', 'religious'], ['monastery', 'religious'],
@@ -57,7 +59,7 @@ export function mapZoneBiome(feature = {}) {
 export function mapFeatureLayer(feature = {}, group = '') {
   const tags = feature.tags || {};
   const point = feature.geometry === 'point' || group === 'poi' || !feature.points?.length && Number.isFinite(feature.x) && Number.isFinite(feature.y) && group !== 'lake';
-  const siteMarker = point && group !== 'building' && mapZoneBiome(feature);
+  const siteMarker = point && group !== 'building' && (mapZoneBiome(feature) || mlPowerFeature(feature));
   if (group === 'building' || !siteMarker && (mlPresent(tags.building) || mlPresent(tags['building:part']))) return 'buildings';
   // A former rail alignment can also be a current highway. Every facet of that
   // same road belongs to the road layer, so its second style cannot leak through.
@@ -66,6 +68,11 @@ export function mapFeatureLayer(feature = {}, group = '') {
     || tags.natural === 'water' || tags.natural === 'coastline' || tags.natural === 'spring' || mlPresent(tags.water)
     || mlWaterways.has(tags.waterway) || ['reservoir', 'basin'].includes(tags.landuse)
     || ['swimming_pool', 'hot_tub'].includes(tags.leisure) || tags.amenity === 'swimming_pool' || tags.man_made === 'tailings_pond') return 'water';
+  // Electrical network geometry belongs to one switch. A plant/substation can
+  // still identify a utilities biome through mapZoneBiome without its physical
+  // poles, cables or equipment leaking into the landscape/details layers.
+  if (group === 'power' || mlPowerFeature(feature)) return 'power';
+  if (!point && ['census', 'administrative'].includes(tags.boundary)) return 'landscape';
   if (group === 'area' || mlPresent(tags.natural) || mlPresent(tags.landuse) || mlNaturalKinds.has(feature.kind)
     || mlLeisureZones.has(tags.leisure) || mlLeisureZones.has(feature.kind) || tags.amenity === 'grave_yard'
     || feature.kind === 'cemetery' || feature.kind === 'quarry' || mapZoneBiome(feature)) return 'landscape';
@@ -75,6 +82,9 @@ export function mapFeatureLayer(feature = {}, group = '') {
 /** Rendering categories never change or replace original OSM tags and geometry. */
 export function mapBiome(feature = {}) {
   const tags = feature.tags || {};
+  // Jurisdiction extents may include undeveloped land. They coexist with land
+  // use but must not turn their entire area into residential/resource terrain.
+  if (['census', 'administrative'].includes(tags.boundary)) return 'administrative';
   const zone = mapZoneBiome(feature);
   if (zone) return zone;
   const natural = tags.natural || (mlNaturalKinds.has(feature.kind) ? feature.kind : '');
