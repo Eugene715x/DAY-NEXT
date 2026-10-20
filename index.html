@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#111614" />
+    <meta name="description" content="DAY NEXT — одиночная экспедиция. Интерактивный прототип передвижения по постапокалиптической карте." />
+    <title>DAY NEXT — За пределами тишины</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23141d18'/%3E%3Cpath d='M8 25V7h5l8 11V7h4v18h-5L12 14v11z' fill='%23d1df87'/%3E%3C/svg%3E" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <svg class="icon-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <symbol id="i-crosshair" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="1.5"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></symbol>
+      <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"/></symbol>
+      <symbol id="i-pin" viewBox="0 0 24 24"><path d="M18 9c0 4.5-6 12-6 12S6 13.5 6 9a6 6 0 1 1 12 0Z"/><circle cx="12" cy="9" r="2"/></symbol>
+      <symbol id="i-heart" viewBox="0 0 24 24"><path d="M20 5c-2.1-2.1-5.5-1.8-8 1-2.5-2.8-5.9-3.1-8-1-2.4 2.4-1.6 6 1 8.5L12 20l7-6.5c2.6-2.5 3.4-6.1 1-8.5Z"/></symbol>
+      <symbol id="i-bolt" viewBox="0 0 24 24"><path d="m13 2-8 12h6l-1 8 9-13h-6l1-7Z"/></symbol>
+      <symbol id="i-water" viewBox="0 0 24 24"><path d="M12 2S5 10 5 15a7 7 0 0 0 14 0c0-5-7-13-7-13Z"/><path d="M9 15a3 3 0 0 0 3 3"/></symbol>
+      <symbol id="i-person" viewBox="0 0 24 24"><circle cx="12" cy="6" r="3"/><path d="M8 22v-6H6v-5h12v5h-2v6m-4-7v7"/></symbol>
+      <symbol id="i-reset" viewBox="0 0 24 24"><path d="M4 10a8 8 0 1 1 1 7M4 4v6h6"/></symbol>
+      <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h16m-6-6 6 6-6 6"/></symbol>
+      <symbol id="i-route" viewBox="0 0 24 24"><circle cx="5" cy="5" r="2"/><circle cx="19" cy="19" r="2"/><path d="M5 7v7a5 5 0 0 0 5 5h7M10 5h5a4 4 0 0 1 0 8h-3"/></symbol>
+      <symbol id="i-map" viewBox="0 0 24 24"><path d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2V5Zm6-2v16m6-14v16"/></symbol>
+      <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V3m-5 5 5-5 5 5M4 15v6h16v-6"/></symbol>
+      <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v13m-5-5 5 5 5-5M4 15v6h16v-6"/></symbol>
+    </svg>
+
+    <main class="expedition" aria-label="Карта одиночной экспедиции">
+      <canvas id="map" aria-label="Карта. Нажмите на сушу, чтобы проложить маршрут. Потяните, чтобы сдвинуть карту." tabindex="0"></canvas>
+      <div class="map-vignette" aria-hidden="true"></div>
+      <div class="hud">
+        <header class="top-bar">
+          <div class="brand-block">
+            <div class="brand" aria-label="DAY NEXT"><span>DAY</span><span class="brand-divider">/</span><span class="brand-next">NEXT</span><span class="prototype">ПРОТОТИП <b>02</b></span></div>
+            <div class="brand-caption"><span class="live-dot"></span> ОДИНОЧНАЯ ЭКСПЕДИЦИЯ</div>
+          </div>
+          <div class="world-status glass">
+            <div class="world-clock"><span id="day-label">ДЕНЬ 01</span><strong id="time-label">08:30</strong></div>
+            <span class="status-divider"></span>
+            <div class="world-weather"><svg class="icon"><use href="#i-sun" /></svg><span id="weather-label">+14° · ЯСНО</span></div>
+            <button class="icon-button help-trigger" id="help-button" type="button" aria-label="Как играть" aria-controls="help-panel" aria-expanded="false">?</button>
+          </div>
+        </header>
+
+        <section class="mission" aria-label="Экспедиция">
+          <p class="eyebrow"><span class="short-line"></span><span id="sector-label">РЕАЛЬНАЯ МЕСТНОСТЬ / США</span></p>
+          <h1>За пределами<br /><span>тишины.</span></h1>
+          <p class="mission-caption">Найди дорогу. Остальное — потом.</p>
+          <div class="mission-tag"><span class="tiny-cross">+</span> СВОБОДНОЕ ИССЛЕДОВАНИЕ</div>
+        </section>
+
+        <nav class="map-controls" aria-label="Управление картой">
+          <div class="zoom-controls glass">
+            <button id="zoom-in" class="icon-button zoom-button" type="button" aria-label="Приблизить карту" title="Приблизить">+</button>
+            <span class="zoom-rule"></span>
+            <button id="zoom-out" class="icon-button zoom-button" type="button" aria-label="Отдалить карту" title="Отдалить">−</button>
+          </div>
+          <span id="zoom-label" class="zoom-label">100%</span>
+          <button id="center-button" class="icon-button glass center-button" type="button" aria-label="Вернуться к путнику" title="Вернуться к путнику · F"><svg class="icon"><use href="#i-crosshair" /></svg></button>
+          <span class="control-caption">К ПУТНИКУ</span>
+          <button id="maps-button" class="icon-button glass maps-button" type="button" aria-label="Карты и импорт" aria-controls="maps-panel" aria-expanded="false" title="Карты и импорт"><svg class="icon"><use href="#i-map" /></svg></button>
+          <span class="control-caption">КАРТЫ</span>
+        </nav>
+
+        <section class="survivor-card glass" aria-label="Состояние путника">
+          <div class="survivor-heading">
+            <div class="survivor-avatar" aria-hidden="true"><svg class="icon"><use href="#i-person" /></svg></div>
+            <div><p class="eyebrow">ПУТНИК</p><h2>Позывной: Север</h2></div>
+            <span class="survivor-online" title="В пути"></span>
+          </div>
+          <div class="survivor-stats">
+            <div class="stat stat-health"><div class="stat-label"><svg class="icon"><use href="#i-heart" /></svg><span>Здоровье</span><strong id="health-value">100</strong></div><div class="stat-track"><span id="health-bar" style="width:100%"></span></div></div>
+            <div class="stat stat-stamina"><div class="stat-label"><svg class="icon"><use href="#i-bolt" /></svg><span>Выносливость</span><strong id="stamina-value">100</strong></div><div class="stat-track"><span id="stamina-bar" style="width:100%"></span></div></div>
+            <div class="stat stat-water"><div class="stat-label"><svg class="icon"><use href="#i-water" /></svg><span>Вода</span><strong id="water-value">100</strong></div><div class="stat-track"><span id="water-bar" style="width:100%"></span></div></div>
+          </div>
+          <div class="location"><svg class="icon"><use href="#i-pin" /></svg><div><strong id="location-name">Северный сектор</strong><span id="terrain-label">Открытая местность</span></div></div>
+        </section>
+
+        <section id="travel-panel" class="travel-panel glass" aria-label="Текущий маршрут" hidden>
+          <div class="travel-top"><span class="eyebrow"><span class="live-dot"></span> МАРШРУТ</span><button id="speed-button" class="speed-button" type="button" title="Скорость передвижения">1×</button></div>
+          <div class="travel-destination"><svg class="icon"><use href="#i-route" /></svg><strong id="destination-label">Точка на карте</strong></div>
+          <div class="travel-bottom"><div class="travel-metrics"><strong id="distance-label">0,0 км</strong><span class="metric-divider"></span><span id="eta-label">0 мин</span></div><div class="travel-actions"><button id="pause-button" class="text-button" type="button" title="Пауза · Пробел">Пауза</button><button id="cancel-button" class="icon-button cancel-button" type="button" aria-label="Отменить маршрут" title="Отменить маршрут · Esc">×</button></div></div>
+        </section>
+
+        <aside class="journal" aria-label="Журнал экспедиции">
+          <p class="eyebrow"><span class="short-line"></span> ПОЛЕВОЙ ЖУРНАЛ</p>
+          <div id="activity-log" aria-live="polite" aria-relevant="additions"></div>
+        </aside>
+
+        <footer class="bottom-bar">
+          <div class="controls-hint"><span class="keycap mouse-key"></span><span class="desktop-hint">Клик — идти <i>·</i> Потяни — сдвинуть карту <i>·</i> Колесо — масштаб</span><span class="mobile-hint">Касание — идти · Потяни — двигать карту</span></div>
+          <span id="coords" class="coordinates">N 58° 21′ · E 42° 06′</span>
+          <button id="reset-button" class="reset-button" type="button" title="Начать экспедицию заново"><svg class="icon"><use href="#i-reset" /></svg><span>Заново</span></button>
+        </footer>
+
+        <div id="map-attribution" class="attribution"><a id="map-source-link" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors · ODbL</a></div>
+
+        <div id="toast" class="toast glass" role="status" hidden></div>
+
+        <section id="help-panel" class="help-panel glass" role="dialog" aria-label="Как играть" aria-modal="false" hidden>
+          <div class="help-heading"><div><p class="eyebrow">ПОЛЕВОЙ СПРАВОЧНИК</p><h2>Сначала — первый шаг.</h2></div><button id="help-close" class="icon-button" type="button" aria-label="Закрыть справку">×</button></div>
+          <p>Выбери точку на суше. Путник сам проложит маршрут, обойдёт воду и найдёт мост.</p>
+          <dl><div><dt>Клик / касание</dt><dd>Идти в выбранную точку</dd></div><div><dt>Перетаскивание</dt><dd>Осмотреть карту</dd></div><div><dt>Колесо / + −</dt><dd>Изменить масштаб</dd></div><div><dt>Пробел</dt><dd>Пауза в пути</dd></div><div><dt>F</dt><dd>Вернуться к путнику</dd></div><div><dt>Esc</dt><dd>Отменить маршрут</dd></div></dl>
+          <p class="help-note">Это первый прототип: только ты, карта и дорога. Лес и болото замедляют путь. Отдых восстанавливает выносливость.</p>
+        </section>
+
+        <section id="maps-panel" class="maps-panel help-panel glass" role="dialog" aria-label="Карты и импорт" aria-modal="false" hidden>
+          <div class="maps-heading help-heading"><div><p class="eyebrow">ПОЛЕВОЙ АТЛАС</p><h2>Выбери территорию</h2></div><button id="maps-close" class="icon-button" type="button" aria-label="Закрыть выбор карт">×</button></div>
+          <div class="maps-content">
+            <div class="map-choices" aria-label="Доступные территории">
+              <button id="map-usa" class="map-choice" type="button" data-map="usa" aria-pressed="true"><span class="map-choice-icon"><svg class="icon"><use href="#i-map" /></svg></span><span class="map-choice-copy"><strong>Реальная местность · США</strong><span id="usa-map-title">Подготовленная территория</span></span><span class="map-choice-dot" aria-hidden="true"></span></button>
+              <button id="map-generated" class="map-choice" type="button" data-map="generated" aria-pressed="false"><span class="map-choice-icon"><svg class="icon"><use href="#i-crosshair" /></svg></span><span class="map-choice-copy"><strong>Северные пустоши</strong><span>Вымышленная карта</span></span><span class="map-choice-dot" aria-hidden="true"></span></button>
+            </div>
+            <p id="map-summary" class="map-summary">Местность, дороги и вода на основе открытых данных.</p>
+            <div class="map-import-section">
+              <p class="eyebrow"><span class="short-line"></span> СВОЯ КАРТА</p>
+              <p class="map-import-intro">Экспортируй участок OpenStreetMap, загрузи файл — получишь игровую карту.</p>
+              <div class="map-field"><label for="map-name">Название территории</label><input id="map-name" type="text" maxlength="80" placeholder="Название территории" autocomplete="off" /></div>
+              <div class="map-field"><label for="map-bbox">Границы: запад, юг, восток, север</label><input id="map-bbox" class="bbox-input" type="text" placeholder="-121.87, 47.49, -121.75, 47.56" autocomplete="off" spellcheck="false" /></div>
+              <div class="map-file-picker"><input id="map-file" type="file" accept=".osm,.xml,.json,application/json,application/xml,text/xml" /><label for="map-file"><svg class="icon"><use href="#i-upload" /></svg><span id="map-file-label">Выбрать файл карты</span></label><span class="file-formats">OSM XML · Overpass JSON · JSON карты</span></div>
+              <button id="map-import" class="map-primary-button" type="button" disabled>Создать карту<svg class="icon"><use href="#i-arrow" /></svg></button>
+              <p id="map-import-status" class="map-import-status" role="status">Выбери файл. Для исходного OSM укажи границы; готовый JSON карты содержит их сам.</p>
+            </div>
+            <button id="map-export" class="map-export-button" type="button"><svg class="icon"><use href="#i-download" /></svg>Скачать JSON карты</button>
+          </div>
+        </section>
+      </div>
+    </main>
+    <script type="module" src="./game.js"></script>
+  </body>
+</html>
