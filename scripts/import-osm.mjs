@@ -50,7 +50,9 @@ async function main() {
     if (endpoint.protocol !== 'https:') throw new Error('Overpass endpoint must use HTTPS');
     const [west, south, east, north] = bbox;
     const area = `${south},${west},${north},${east}`;
-    const query = `[out:json][timeout:80];(way[highway](${area});way[waterway](${area});way[natural](${area});way[landuse](${area});way[building](${area});way[amenity](${area});way[tourism](${area});way[historic](${area});way[barrier](${area});way[railway](${area});way[leisure](${area});way[man_made](${area});relation[type=multipolygon][natural](${area});relation[type=multipolygon][landuse](${area});relation[type=multipolygon][waterway](${area});relation[type=multipolygon][building](${area});relation[type=multipolygon][amenity](${area});relation[type=multipolygon][leisure](${area});relation[type=multipolygon][historic](${area});node[place](${area});node[amenity](${area});node[railway](${area});node[tourism](${area});node[shop](${area});node[man_made](${area});node[historic](${area});node[barrier](${area});node[leisure](${area});node[natural](${area});node[highway=street_lamp](${area}););out body geom;`;
+    // Retrieve the local OSM data model instead of a lossy list of preferred tags.
+    // Bounded geometry keeps continent-sized boundary/route relations from bloating a local map.
+    const query = `[out:json][timeout:80];node(${area});out body;way(${area});out body geom;rel(${area});out body geom(${area});`;
     console.log(`Downloading local OSM extract from ${endpoint.hostname}…`);
     let response;
     try {

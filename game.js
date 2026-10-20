@@ -3,15 +3,19 @@ import { createRealWorld } from './real-world.js';
 import { convertOSM } from './scripts/lib/osm-converter.mjs';
 import usaMap from './maps/usa.js';
 import { createDetailRenderer } from './detail-renderer.js';
+import { createTerrainBackdrop } from './terrain-renderer.js';
 
 const $ = id => document.getElementById(id);
 const canvas = $('map');
-const ctx = canvas.getContext('2d', { alpha: false });
+const ctx = canvas.getContext('2d');
+const terrainCanvas = $('terrain-map');
+const terrainCtx = terrainCanvas.getContext('2d', { alpha: false });
 let world = createRealWorld(usaMap);
 let currentMap = usaMap;
+const layers = { terrain: true, landscape: true, roads: true, buildings: true, details: true };
 let detailRenderer = createDetailRenderer(world);
 let hoveredObject = null;
-const maximumZoom = () => world.geographic ? 24 : 5;
+const maximumZoom = () => 24;
 const greenPalette = { plain: '#a7ac8d', forest: '#6e8163', water: '#354d49', swamp: '#7f927c', hill: '#a8a38a', road: '#aaa88e', bridge: '#b7b39b' };
 const desertPalette = { plain: '#b2aa89', forest: '#788367', water: '#435b54', swamp: '#929b7c', hill: '#a99b7a', road: '#b6ab87', bridge: '#c7bc95' };
 let palette = desertPalette;
@@ -26,9 +30,7 @@ let stamina = 100, water = 100, minutes = 7 * 60 + 42, totalDistance = 0;
 let pointer = null, hover = null, hoveredPoi = null, trail = [];
 let discovered = new Set(world.pois.filter(p => p.discovered).map(p => p.id));
 let last = performance.now(), uiTick = 0, hintTimer, arrivalMarker = null, keys = new Set();
-let randomSeed = world.seed || 715;
 let mapLabelBoxes = [];
-function random() { randomSeed = (Math.imul(randomSeed, 1664525) + 1013904223) >>> 0; return randomSeed / 4294967296; }
 const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const poiTitle = poi => poi.name.replace(/\s*· OSM\s+\S+$/, '');
@@ -41,168 +43,17 @@ function line(context, points) {
   points.forEach((p, i) => i ? context.lineTo(p.x, p.y) : context.moveTo(p.x, p.y));
 }
 
-function makeAtlas() {
-  const atlas = document.createElement('canvas');
-  atlas.width = world.width; atlas.height = world.height;
-  const g = atlas.getContext('2d');
-  const terrain = document.createElement('canvas');
-  terrain.width = world.width; terrain.height = world.height;
-  const t = terrain.getContext('2d');
-  t.fillStyle = palette.plain; t.fillRect(0, 0, terrain.width, terrain.height);
-  world.cells.forEach((cell, i) => {
-    t.fillStyle = world.geographic && ['road', 'bridge'].includes(cell.type) ? palette.plain : palette[cell.type] || palette.plain;
-    t.fillRect((i % world.cols) * world.cellSize, Math.floor(i / world.cols) * world.cellSize, world.cellSize + 1, world.cellSize + 1);
-  });
-  g.fillStyle = palette.plain; g.fillRect(0, 0, atlas.width, atlas.height);
-  g.filter = 'blur(12px)'; g.drawImage(terrain, 0, 0); g.filter = 'none';
-  if (world.geographic) {
-    // Print patina is decorative paper texture, not inferred geography or elevation.
-    for (let i = 0; i < 18; i++) {
-      const x = random() * world.width, y = random() * world.height, r = 180 + random() * 500;
-      const stain = g.createRadialGradient(x, y, 0, x, y, r);
-      stain.addColorStop(0, i % 2 ? 'rgba(56,65,40,.06)' : 'rgba(245,234,186,.06)'); stain.addColorStop(1, 'rgba(60,62,39,0)');
-      g.fillStyle = stain; g.fillRect(x - r, y - r, r * 2, r * 2);
-    }
-  }
-
-  // OSM polygons keep their actual outlines and holes; no painted-in water or forests.
-  for (const area of world.areas || []) {
-    g.beginPath();
-    for (const ring of area.rings) {
-      ring.forEach((p, i) => i ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y));
-      g.closePath();
-    }
-    const dry = area.intermittent || area.seasonal;
-    g.fillStyle = dry ? '#bdb393' : palette[area.type] || palette.plain; g.fill('evenodd');
-    if (area.type === 'water' && !dry) { g.strokeStyle = '#8c9879'; g.lineWidth = 1.2; g.stroke(); }
-  }
-
-  // Contours use the same elevation field as the navigation map.
-  for (let level = .2; level < .95; level += .085) {
-    g.beginPath();
-    for (let y = 0; y < world.rows - 1; y++) for (let x = 0; x < world.cols - 1; x++) {
-      const cell = world.cellSize;
-      const corners = [world.cells[y * world.cols + x], world.cells[y * world.cols + x + 1], world.cells[(y + 1) * world.cols + x + 1], world.cells[(y + 1) * world.cols + x]];
-      if (corners.some(c => c.type === 'water')) continue;
-      const positions = [[x * cell + cell / 2, y * cell + cell / 2], [(x + 1) * cell + cell / 2, y * cell + cell / 2], [(x + 1) * cell + cell / 2, (y + 1) * cell + cell / 2], [x * cell + cell / 2, (y + 1) * cell + cell / 2]];
-      const edges = [];
-      for (let j = 0; j < 4; j++) {
-        const k = (j + 1) % 4, a = corners[j].height, b = corners[k].height;
-        if ((a < level) !== (b < level)) {
-          const f = (level - a) / (b - a);
-          edges.push({ x: positions[j][0] + (positions[k][0] - positions[j][0]) * f, y: positions[j][1] + (positions[k][1] - positions[j][1]) * f });
-        }
-      }
-      for (let j = 0; j + 1 < edges.length; j += 2) { g.moveTo(edges[j].x, edges[j].y); g.lineTo(edges[j + 1].x, edges[j + 1].y); }
-    }
-    g.strokeStyle = 'rgba(45, 55, 37, .19)'; g.lineWidth = .8; g.stroke();
-  }
-
-  for (const river of world.rivers) {
-    line(g, river.points); g.lineCap = 'round'; g.lineJoin = 'round';
-    if (river.intermittent || river.seasonal) {
-      g.strokeStyle = '#978d6f'; g.lineWidth = Math.max(2, river.width + 3); g.stroke();
-      g.strokeStyle = '#c2b996'; g.lineWidth = Math.max(1, river.width); g.stroke();
-      continue;
-    }
-    g.strokeStyle = '#768a74'; g.lineWidth = river.width + 14; g.stroke();
-    g.strokeStyle = palette.water; g.lineWidth = river.width; g.stroke();
-    g.strokeStyle = '#526b5d'; g.lineWidth = 1.5; g.stroke();
-  }
-  for (const lake of world.lakes) {
-    g.beginPath(); g.ellipse(lake.x, lake.y, lake.rx + 6, lake.ry + 6, 0, 0, Math.PI * 2); g.fillStyle = '#758a76'; g.fill();
-    g.beginPath(); g.ellipse(lake.x, lake.y, lake.rx, lake.ry, 0, 0, Math.PI * 2); g.fillStyle = palette.water; g.fill();
-    g.strokeStyle = '#96a18a'; g.lineWidth = 1; g.stroke();
-    g.beginPath(); g.ellipse(lake.x, lake.y, Math.max(1, lake.rx - 15), Math.max(1, lake.ry - 15), 0, 0, Math.PI * 2); g.strokeStyle = '#4c6356'; g.stroke();
-  }
-
-  // Fine-grained print texture, trees, reed beds and rocky hill marks.
-  for (let i = 0; i < 35000; i++) {
-    const x = random() * world.width, y = random() * world.height;
-    const cell = terrainAt(world, x, y);
-    if (!cell) continue;
-    g.fillStyle = random() > .4 ? 'rgba(27,40,25,.07)' : 'rgba(246,237,197,.09)';
-    g.fillRect(x, y, random() * 2 + .3, random() * 2 + .3);
-    if (cell.type === 'forest' && i % 3 === 0) {
-      const size = 2.8 + random() * 4;
-      g.beginPath(); g.moveTo(x, y - size); g.lineTo(x - size * .55, y + size * .5); g.lineTo(x + size * .55, y + size * .5); g.closePath();
-      g.fillStyle = 'rgba(34,60,37,.23)'; g.fill();
-      g.fillStyle = 'rgba(35,51,32,.25)'; g.fillRect(x - .4, y + size * .5, .8, 2);
-    } else if (cell.type === 'swamp' && i % 4 === 0) {
-      g.strokeStyle = 'rgba(44,67,49,.25)'; g.lineWidth = .8;
-      g.beginPath(); g.moveTo(x - 3, y); g.lineTo(x + 3, y); g.moveTo(x, y); g.lineTo(x, y - 3); g.stroke();
-    } else if (cell.type === 'hill' && i % 9 === 0) {
-      g.strokeStyle = 'rgba(66,60,39,.21)'; g.lineWidth = .8;
-      g.beginPath(); g.moveTo(x - 3, y + 1); g.lineTo(x, y - 3); g.lineTo(x + 3, y + 1); g.stroke();
-    }
-  }
-
-  for (const road of world.geographic ? [] : world.roads) {
-    line(g, road.points); g.lineJoin = 'round'; g.lineCap = 'round';
-    const width = world.geographic ? clamp(road.width, 1.2, 9) : 4;
-    g.strokeStyle = 'rgba(59,55,39,.3)'; g.lineWidth = width + 3; g.stroke();
-    g.strokeStyle = '#d0c6a3'; g.lineWidth = width; g.stroke();
-    g.setLineDash([9, 9]); g.strokeStyle = '#74725a'; g.lineWidth = .7; g.stroke(); g.setLineDash([]);
-  }
-  for (const road of world.geographic ? [] : world.roads) {
-    let span = [];
-    const paintBridge = () => {
-      if (span.length < 2) { span = []; return; }
-      line(g, span); g.lineCap = 'butt'; g.strokeStyle = '#4c5845'; g.lineWidth = 24; g.stroke();
-      g.strokeStyle = '#d1c7a2'; g.lineWidth = 19; g.stroke();
-      g.setLineDash([1.5, 7]); g.strokeStyle = '#7c7d60'; g.lineWidth = 17; g.stroke(); g.setLineDash([]);
-      span = [];
-    };
-    for (let i = 1; i < road.points.length; i++) {
-      const a = road.points[i - 1], b = road.points[i], steps = Math.ceil(dist(a, b) / 5);
-      for (let j = 0; j <= steps; j++) {
-        const point = { x: a.x + (b.x - a.x) * j / steps, y: a.y + (b.y - a.y) * j / steps };
-        if (terrainAt(world, point.x, point.y)?.type === 'bridge') span.push(point);
-        else paintBridge();
-      }
-    }
-    paintBridge();
-  }
-
-  for (const building of world.geographic ? [] : world.buildings || []) {
-    line(g, building.points); g.closePath();
-    g.fillStyle = '#a3997a'; g.fill(); g.strokeStyle = '#59604a'; g.lineWidth = .7; g.stroke();
-  }
-  for (const poi of world.geographic ? [] : world.pois) {
-    const n = poi.kind === 'town' || poi.kind === 'city' ? 20 : 7;
-    for (let i = 0; i < n; i++) {
-      const x = poi.x + (random() - .5) * 95, y = poi.y + (random() - .5) * 70;
-      if (!terrainAt(world, x, y)?.walkable) continue;
-      const width = 4 + random() * 8, height = 4 + random() * 6;
-      g.save(); g.translate(x, y); g.rotate(Math.round(random() * 3) * Math.PI / 4);
-      g.fillStyle = '#525b47'; g.fillRect(-width / 2 - 1, -height / 2 - 1, width + 2, height + 2);
-      g.fillStyle = '#beb798'; g.fillRect(-width / 2, -height / 2, width, height);
-      g.restore();
-    }
-  }
-
-  g.strokeStyle = 'rgba(45,61,40,.13)'; g.lineWidth = .7;
-  g.beginPath();
-  for (let x = 0; x <= world.width; x += 250) { g.moveTo(x, 0); g.lineTo(x, world.height); }
-  for (let y = 0; y <= world.height; y += 250) { g.moveTo(0, y); g.lineTo(world.width, y); }
-  g.stroke();
-  const mapText = (text, x, y, size, angle = 0) => {
-    g.save(); g.translate(x, y); g.rotate(angle); g.fillStyle = 'rgba(33,51,35,.26)';
-    g.font = `500 ${size}px Georgia, serif`; g.textAlign = 'center'; g.letterSpacing = '5px'; g.fillText(text, 0, 0); g.restore();
-  };
-  if (!world.geographic) {
-    mapText('С Е В Е Р Н Ы Е   П У С Т О Ш И', 1130, 370, 27, -.06);
-    mapText('Х В О Й Н Ы Й   Л Е С', 620, 1550, 17, -.32);
-    mapText('З А Р Е Ч Ь Е', 2300, 1450, 25, -.08);
-  }
-  return atlas;
-}
-let atlas = makeAtlas();
+let terrainBackdrop = createTerrainBackdrop(world, palette);
+let terrainFrameKey = '';
+let terrainRevision = 0;
 
 function resize() {
   vw = innerWidth; vh = innerHeight; dpr = Math.min(devicePixelRatio || 1, 2);
   canvas.width = Math.round(vw * dpr); canvas.height = Math.round(vh * dpr);
   canvas.style.width = `${vw}px`; canvas.style.height = `${vh}px`;
+  terrainCanvas.width = canvas.width; terrainCanvas.height = canvas.height;
+  terrainCanvas.style.width = `${vw}px`; terrainCanvas.style.height = `${vh}px`;
+  terrainFrameKey = '';
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 addEventListener('resize', resize); resize();
@@ -222,6 +73,7 @@ function toast(message) {
 }
 
 function pickPoi(position, radius = 35) {
+  if (!layers.details) return null;
   return world.pois.filter(p => p.reachable !== false).sort((a, b) => dist(a, position) - dist(b, position)).find(p => dist(p, position) < radius / Math.max(.65, camera.zoom)) || null;
 }
 
@@ -276,14 +128,45 @@ function updateMapDetails() {
   $('map-source-link').textContent = '© OpenStreetMap contributors · ODbL';
   $('map-export').disabled = !currentMap;
   $('detail-button').disabled = !world.buildings?.length;
+  syncLayerUI();
+  const coverage = world.coverage;
+  $('coverage-summary').textContent = coverage ? formatCoverage(coverage) : 'Этот файл не содержит отчёта полноты. Геометрия отображается без замены источника.';
 }
+
+function formatCoverage(coverage) {
+  const represented = coverage.representedSourceElements;
+  const eligible = coverage.eligibleInBounds;
+  const partial = coverage.partialRelations?.length || 0;
+  const missing = (coverage.omittedCounts?.incompleteGeometry || 0) + (coverage.omittedCounts?.invalidCoordinate || 0);
+  return `${Number.isFinite(represented) ? `Сохранено элементов исходника в границах: ${represented}${Number.isFinite(eligible) ? ` из ${eligible}` : ''}. ` : ''}${missing ? `Не хватает геометрии для ${missing} элементов. ` : ''}${partial ? `Составных объектов с неполной геометрией в исходнике: ${partial}. ` : ''}Снимок: ${world.source?.snapshotAt?.slice(0, 10) || 'дата не указана'}.`;
+}
+
+function syncLayerUI() {
+  const features = detailRenderer.getFeatures();
+  for (const key of Object.keys(layers)) $('layer-' + key).checked = layers[key];
+  for (const key of ['landscape', 'roads', 'buildings', 'details']) $('count-' + key).textContent = features.filter(feature => feature.layer === key).length;
+  terrainCanvas.hidden = !layers.terrain;
+}
+
+function closeLayers() { $('layers-panel').hidden = true; $('layers-button').setAttribute('aria-expanded', 'false'); }
+for (const key of Object.keys(layers)) $('layer-' + key).addEventListener('change', e => {
+  layers[key] = e.target.checked; detailRenderer.setLayers(layers);
+  hideObjectCard(); hoveredPoi = null; syncLayerUI();
+});
+$('layers-button').addEventListener('click', () => {
+  const open = $('layers-panel').hidden;
+  $('maps-close').click(); $('help-close').click(); hideObjectCard();
+  $('layers-panel').hidden = !open; $('layers-button').setAttribute('aria-expanded', String(open));
+});
+$('layers-close').addEventListener('click', closeLayers);
 
 function switchMap(map) {
   const next = map ? createRealWorld(map) : createWorld();
   world = next; currentMap = map;
   detailRenderer = createDetailRenderer(world);
   palette = map ? desertPalette : greenPalette;
-  randomSeed = world.seed || 715; atlas = makeAtlas();
+  terrainBackdrop = createTerrainBackdrop(world, palette); terrainRevision++; terrainFrameKey = '';
+  detailRenderer.setLayers(layers);
   camera.zoom = innerWidth < 640 ? .68 : .85;
   hover = null; hoveredPoi = null;
   reset(); updateMapDetails();
@@ -297,18 +180,18 @@ function hideObjectCard() {
 }
 
 function inspectObject(point, screenX, screenY, touch = false) {
-  if (!world.geographic || camera.zoom < 2) { hideObjectCard(); return; }
   const feature = detailRenderer.pick(point.x, point.y, 5 / camera.zoom);
   if (!feature) { hideObjectCard(); return; }
   hoveredObject = feature;
-  const names = { building: 'ЗДАНИЕ', road: 'ДОРОГА', fence: 'ОГРАДА', wall: 'СТЕНА', gate: 'ВОРОТА', railway: 'ЖЕЛЕЗНАЯ ДОРОГА', parking: 'ПАРКОВКА', pitch: 'СПОРТПЛОЩАДКА', garden: 'САД', pool: 'БАССЕЙН', tree: 'ДЕРЕВО', bench: 'СКАМЕЙКА', picnic_table: 'МЕСТО ДЛЯ ПРИВАЛА', fountain: 'ФОНТАН', well: 'КОЛОДЕЦ', ruins: 'РУИНЫ', shelter: 'УКРЫТИЕ', cemetery: 'КЛАДБИЩЕ', park: 'ПАРК', spring: 'РОДНИК', quarry: 'КАРЬЕР', playground: 'ДЕТСКАЯ ПЛОЩАДКА', cattle_grid: 'РЕШЁТКА НА ДОРОГЕ' };
+  hoveredPoi = null;
+  const names = { building: 'ЗДАНИЕ', road: 'ДОРОГА', fence: 'ОГРАДА', wall: 'СТЕНА', gate: 'ВОРОТА', railway: 'ЖЕЛЕЗНАЯ ДОРОГА', parking: 'ПАРКОВКА', pitch: 'СПОРТПЛОЩАДКА', garden: 'САД', pool: 'БАССЕЙН', tree: 'ДЕРЕВО', bench: 'СКАМЕЙКА', picnic_table: 'МЕСТО ДЛЯ ПРИВАЛА', fountain: 'ФОНТАН', well: 'КОЛОДЕЦ', ruins: 'РУИНЫ', shelter: 'УКРЫТИЕ', cemetery: 'КЛАДБИЩЕ', park: 'ПАРК', spring: 'РОДНИК', quarry: 'КАРЬЕР', playground: 'ДЕТСКАЯ ПЛОЩАДКА', cattle_grid: 'РЕШЁТКА НА ДОРОГЕ', runway: 'ВЗЛЁТНАЯ ПОЛОСА', taxiway: 'РУЛЁЖНАЯ ДОРОЖКА', apron: 'ПЕРРОН АЭРОДРОМА', aerodrome: 'АЭРОДРОМ', river: 'ВОДОТОК', lake: 'ОЗЕРО', water: 'ВОДОЁМ', forest: 'ЛЕС', swamp: 'БОЛОТО', plain: 'УЧАСТОК МЕСТНОСТИ', boundary: 'ГРАНИЦА' };
   $('object-kind').textContent = names[feature.kind] || 'ОБЪЕКТ';
   $('object-name').textContent = feature.name || (feature.kind === 'building' ? 'Безымянное здание' : 'Объект на карте');
   const source = feature.source || {};
   const address = typeof source.address === 'string' ? source.address : source.address ? Object.values(source.address).join(', ') : '';
   const extra = [feature.description, address, source.levels ? `${source.levels} эт.` : '', source.surface ? `Покрытие: ${source.surface}` : ''].filter(Boolean).flatMap(text => String(text).split(' · '));
-  $('object-meta').textContent = [...new Set(extra)].filter(text => text !== feature.name).join(' · ') || 'Нанесён на карту OpenStreetMap';
-  if (touch && ['building', 'ruins'].includes(feature.kind)) $('object-meta').textContent += '\nКоснись земли рядом, чтобы подойти.';
+  $('object-meta').textContent = [...new Set(extra)].filter(text => text !== feature.name).join(' · ') || (world.geographic ? 'Нанесён на карту OpenStreetMap' : 'Объект игровой карты');
+  if (touch && camera.zoom >= 2 && ['building', 'ruins'].includes(feature.kind)) $('object-meta').textContent += '\nКоснись земли рядом, чтобы подойти.';
   $('object-card').hidden = false;
   const bounds = $('object-card').getBoundingClientRect();
   $('object-card').style.left = `${clamp(screenX + 18, 12, vw - bounds.width - 12)}px`;
@@ -333,6 +216,7 @@ function downloadJSON(map) {
 }
 $('maps-button').addEventListener('click', () => {
   hideObjectCard();
+  closeLayers();
   $('maps-panel').hidden = !$('maps-panel').hidden;
   $('maps-button').setAttribute('aria-expanded', String(!$('maps-panel').hidden));
   $('help-panel').hidden = true; $('help-button').setAttribute('aria-expanded', 'false');
@@ -383,7 +267,7 @@ $('cancel-button').addEventListener('click', cancelRoute);
 $('center-button').addEventListener('click', () => { hideObjectCard(); following = true; camera.x = player.x; camera.y = player.y; updateUI(); });
 $('reset-button').addEventListener('click', reset);
 $('speed-button').addEventListener('click', () => { speed = speed === 1 ? 3 : 1; $('speed-button').textContent = `${speed}×`; toast(`Скорость путешествия: ${speed}×`); });
-$('help-button').addEventListener('click', () => { hideObjectCard(); $('help-panel').hidden = !$('help-panel').hidden; $('help-button').setAttribute('aria-expanded', String(!$('help-panel').hidden)); $('maps-close').click(); });
+$('help-button').addEventListener('click', () => { closeLayers(); hideObjectCard(); $('help-panel').hidden = !$('help-panel').hidden; $('help-button').setAttribute('aria-expanded', String(!$('help-panel').hidden)); $('maps-close').click(); });
 $('help-close').addEventListener('click', () => { $('help-panel').hidden = true; $('help-button').setAttribute('aria-expanded', 'false'); });
 function zoomBy(factor, point = { x: vw / 2, y: vh / 2 }) {
   const before = screenToWorld(point.x, point.y);
@@ -435,7 +319,8 @@ function pointerUp(e) {
     const point = screenToWorld(e.clientX, e.clientY);
     if (e.pointerType === 'touch') {
       inspectObject(point, e.clientX, e.clientY, true);
-      if (!hoveredObject || !['building', 'ruins'].includes(hoveredObject.kind)) setDestination(point);
+      const inspectOnly = camera.zoom >= 2 && hoveredObject && ['building', 'ruins'].includes(hoveredObject.kind);
+      if (!inspectOnly) setDestination(point);
     } else setDestination(point);
   }
   pointer = null; canvas.classList.remove('is-grabbing');
@@ -448,7 +333,7 @@ addEventListener('keydown', e => {
   if ([' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) e.preventDefault();
   if (e.repeat && [' ', 'f', 'F', 'r', 'R', 'b', 'B'].includes(e.key)) return;
   if (e.key === ' ') togglePause();
-  if (e.key === 'Escape') { if (!$('help-panel').hidden) $('help-close').click(); else if (!$('maps-panel').hidden) $('maps-close').click(); else cancelRoute(); }
+  if (e.key === 'Escape') { if (!$('help-panel').hidden) $('help-close').click(); else if (!$('maps-panel').hidden) $('maps-close').click(); else if (!$('layers-panel').hidden) closeLayers(); else cancelRoute(); }
   if (e.key.toLowerCase() === 'f') $('center-button').click();
   if (e.key.toLowerCase() === 'r') reset();
   if (e.key.toLowerCase() === 'b') focusBuildings();
@@ -532,11 +417,17 @@ function drawPoi(poi, time) {
 }
 
 function draw(time) {
+  const frameKey = `${camera.x.toFixed(4)},${camera.y.toFixed(4)},${camera.zoom},${canvas.width},${canvas.height},${terrainRevision}`;
+  if (layers.terrain && terrainFrameKey !== frameKey) {
+    terrainCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    terrainCtx.fillStyle = '#1b2721'; terrainCtx.fillRect(0, 0, vw, vh);
+    terrainCtx.save(); terrainCtx.translate(vw / 2, vh / 2); terrainCtx.scale(camera.zoom, camera.zoom); terrainCtx.translate(-camera.x, -camera.y);
+    terrainCtx.drawImage(terrainBackdrop, 0, 0); terrainCtx.restore(); terrainFrameKey = frameKey;
+  }
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.fillStyle = '#1b2721'; ctx.fillRect(0, 0, vw, vh);
+  ctx.clearRect(0, 0, vw, vh);
   ctx.save(); ctx.translate(vw / 2, vh / 2); ctx.scale(camera.zoom, camera.zoom); ctx.translate(-camera.x, -camera.y);
-  ctx.drawImage(atlas, 0, 0);
-  if (world.geographic) detailRenderer.draw(ctx, { zoom: camera.zoom, cameraX: camera.x, cameraY: camera.y, width: vw, height: vh, time, hoveredId: hoveredObject?.id });
+  detailRenderer.draw(ctx, { zoom: camera.zoom, cameraX: camera.x, cameraY: camera.y, width: vw, height: vh, time, hoveredId: hoveredObject?.id });
   if (trail.length > 1) {
     line(ctx, trail); ctx.strokeStyle = 'rgba(54,61,35,.45)'; ctx.lineWidth = 1.5 / camera.zoom; ctx.setLineDash([2 / camera.zoom, 5 / camera.zoom]); ctx.stroke(); ctx.setLineDash([]);
   }
@@ -551,7 +442,7 @@ function draw(time) {
   const playerOnScreen = worldToScreen(player);
   mapLabelBoxes = [{ x: playerOnScreen.x - 30, y: playerOnScreen.y - 22, width: 60, height: 56 }];
   const pois = world.geographic ? [...world.pois].sort((a, b) => Number(b.id === hoveredPoi?.id) - Number(a.id === hoveredPoi?.id) || Number(b.kind === 'town') - Number(a.kind === 'town') || Number(discovered.has(b.id)) - Number(discovered.has(a.id))) : world.pois;
-  for (const poi of pois) if (camera.zoom < 4 || hoveredPoi?.id === poi.id || poi.kind === 'town') drawPoi(poi, time);
+  if (layers.details) for (const poi of pois) if (camera.zoom < 4 || hoveredPoi?.id === poi.id || poi.kind === 'town') drawPoi(poi, time);
   if (arrivalMarker && route) {
     const p = worldToScreen(arrivalMarker);
     ctx.beginPath(); ctx.arc(p.x, p.y, 12 + Math.sin(time * 3) * 2, 0, Math.PI * 2); ctx.strokeStyle = '#f3edb3'; ctx.lineWidth = 1.5; ctx.stroke();
@@ -638,6 +529,8 @@ window.__DAY_NEXT__ = {
   worldToScreen: position => worldToScreen(position),
   getDetails: () => detailRenderer.getStats(),
   inspectAt: (x, y) => detailRenderer.pick(x, y, 1),
+  getLayers: () => ({ ...layers }),
+  getFeatures: () => detailRenderer.getFeatures(),
 };
 log('Невада. На карте — следы прежней жизни.', true); updateMapDetails(); updateUI();
 function frame(now) {

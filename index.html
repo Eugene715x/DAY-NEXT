@@ -23,17 +23,19 @@
       <symbol id="i-route" viewBox="0 0 24 24"><circle cx="5" cy="5" r="2"/><circle cx="19" cy="19" r="2"/><path d="M5 7v7a5 5 0 0 0 5 5h7M10 5h5a4 4 0 0 1 0 8h-3"/></symbol>
       <symbol id="i-map" viewBox="0 0 24 24"><path d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2V5Zm6-2v16m6-14v16"/></symbol>
       <symbol id="i-house" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7M5 9v12h14V9M10 21v-7h4v7M8 10h2m4 0h2"/></symbol>
+      <symbol id="i-layers" viewBox="0 0 24 24"><path d="m3 7 9-5 9 5-9 5-9-5Zm0 5 9 5 9-5M3 17l9 5 9-5"/></symbol>
       <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V3m-5 5 5-5 5 5M4 15v6h16v-6"/></symbol>
       <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v13m-5-5 5 5 5-5M4 15v6h16v-6"/></symbol>
     </svg>
 
     <main class="expedition" aria-label="Карта одиночной экспедиции">
+      <canvas id="terrain-map" aria-hidden="true"></canvas>
       <canvas id="map" aria-label="Карта. Нажмите на сушу, чтобы проложить маршрут. Потяните, чтобы сдвинуть карту." tabindex="0"></canvas>
       <div class="map-vignette" aria-hidden="true"></div>
       <div class="hud">
         <header class="top-bar">
           <div class="brand-block">
-            <div class="brand" aria-label="DAY NEXT"><span>DAY</span><span class="brand-divider">/</span><span class="brand-next">NEXT</span><span class="prototype">ПРОТОТИП <b>03</b></span></div>
+            <div class="brand" aria-label="DAY NEXT"><span>DAY</span><span class="brand-divider">/</span><span class="brand-next">NEXT</span><span class="prototype">ПРОТОТИП <b>04</b></span></div>
             <div class="brand-caption"><span class="live-dot"></span> ОДИНОЧНАЯ ЭКСПЕДИЦИЯ</div>
           </div>
           <div class="world-status glass">
@@ -52,19 +54,22 @@
         </section>
 
         <nav class="map-controls" aria-label="Управление картой">
-          <div class="zoom-controls glass">
-            <button id="zoom-in" class="icon-button zoom-button" type="button" aria-label="Приблизить карту" title="Приблизить">+</button>
-            <span class="zoom-rule"></span>
-            <button id="zoom-out" class="icon-button zoom-button" type="button" aria-label="Отдалить карту" title="Отдалить">−</button>
+          <div class="map-navigation">
+            <div class="zoom-controls glass">
+              <button id="zoom-in" class="icon-button zoom-button" type="button" aria-label="Приблизить карту" title="Приблизить">+</button>
+              <span class="zoom-rule"></span>
+              <button id="zoom-out" class="icon-button zoom-button" type="button" aria-label="Отдалить карту" title="Отдалить">−</button>
+            </div>
+            <span id="zoom-label" class="zoom-label">100%</span>
+            <span id="map-detail-label" class="map-detail-label">ОБЗОР</span>
+            <button id="center-button" class="icon-button glass center-button" type="button" aria-label="Вернуться к путнику" title="Вернуться к путнику · F"><svg class="icon"><use href="#i-crosshair" /></svg></button>
+            <span class="control-caption">К ПУТНИКУ</span>
           </div>
-          <span id="zoom-label" class="zoom-label">100%</span>
-          <span id="map-detail-label" class="map-detail-label">ОБЗОР</span>
-          <button id="center-button" class="icon-button glass center-button" type="button" aria-label="Вернуться к путнику" title="Вернуться к путнику · F"><svg class="icon"><use href="#i-crosshair" /></svg></button>
-          <span class="control-caption">К ПУТНИКУ</span>
-          <button id="maps-button" class="icon-button glass maps-button" type="button" aria-label="Карты и импорт" aria-controls="maps-panel" aria-expanded="false" title="Карты и импорт"><svg class="icon"><use href="#i-map" /></svg></button>
-          <span class="control-caption">КАРТЫ</span>
-          <button id="detail-button" class="icon-button glass detail-button" type="button" aria-label="Показать застройку · B" title="Показать застройку · B"><svg class="icon"><use href="#i-house" /></svg></button>
-          <span class="control-caption">ЗАСТРОЙКА</span>
+          <div class="map-tool-cluster">
+            <div class="map-tool"><button id="maps-button" class="icon-button glass maps-button" type="button" aria-label="Карты и импорт" aria-controls="maps-panel" aria-expanded="false" title="Карты и импорт"><svg class="icon"><use href="#i-map" /></svg></button><span class="control-caption">КАРТЫ</span></div>
+            <div class="map-tool"><button id="detail-button" class="icon-button glass detail-button" type="button" aria-label="Показать застройку · B" title="Показать застройку · B"><svg class="icon"><use href="#i-house" /></svg></button><span class="control-caption">ЗАСТРОЙКА</span></div>
+            <div class="map-tool"><button id="layers-button" class="icon-button glass layers-button" type="button" aria-label="Слои карты" aria-controls="layers-panel" aria-expanded="false" title="Слои карты"><svg class="icon"><use href="#i-layers" /></svg></button><span class="control-caption">СЛОИ</span></div>
+          </div>
         </nav>
 
         <section class="survivor-card glass" aria-label="Состояние путника">
@@ -111,8 +116,8 @@
         <section id="help-panel" class="help-panel glass" role="dialog" aria-label="Как играть" aria-modal="false" hidden>
           <div class="help-heading"><div><p class="eyebrow">ПОЛЕВОЙ СПРАВОЧНИК</p><h2>Сначала — первый шаг.</h2></div><button id="help-close" class="icon-button" type="button" aria-label="Закрыть справку">×</button></div>
           <p>Выбери точку на суше. Путник сам проложит маршрут, обойдёт воду и найдёт мост.</p>
-          <dl><div><dt>Клик / касание</dt><dd>Идти в выбранную точку</dd></div><div><dt>Перетаскивание</dt><dd>Осмотреть карту</dd></div><div><dt>Колесо / щипок / + −</dt><dd>Приблизить улицы и дома</dd></div><div><dt>B / кнопка дома</dt><dd>Показать застройку</dd></div><div><dt>Пробел</dt><dd>Пауза в пути</dd></div><div><dt>F</dt><dd>Вернуться к путнику</dd></div><div><dt>Esc</dt><dd>Отменить маршрут</dd></div></dl>
-          <p class="help-note">Приблизь карту, чтобы рассмотреть контуры домов и дорожки. На реальной карте они взяты из OpenStreetMap. Наведи на объект, а на телефоне коснись его, чтобы узнать детали. Отдых восстанавливает выносливость.</p>
+          <dl><div><dt>Клик / касание</dt><dd>Идти в выбранную точку</dd></div><div><dt>Перетаскивание</dt><dd>Осмотреть карту</dd></div><div><dt>Колесо / щипок / + −</dt><dd>Приблизить улицы и дома</dd></div><div><dt>B / кнопка дома</dt><dd>Показать застройку</dd></div><div><dt>Слои карты</dt><dd>Выбрать, что показывать</dd></div><div><dt>Пробел</dt><dd>Пауза в пути</dd></div><div><dt>F</dt><dd>Вернуться к путнику</dd></div><div><dt>Esc</dt><dd>Закрыть окно / отменить путь</dd></div></dl>
+          <p class="help-note">Наведи на объект, а на телефоне коснись его, чтобы узнать детали на любом масштабе. Приблизь карту, чтобы рассмотреть контуры домов и дорожки. В «Слоях карты» можно отдельно показать дороги, здания и природные объекты. Отдых восстанавливает выносливость.</p>
         </section>
 
         <section id="maps-panel" class="maps-panel help-panel glass" role="dialog" aria-label="Карты и импорт" aria-modal="false" hidden>
@@ -123,6 +128,7 @@
               <button id="map-generated" class="map-choice" type="button" data-map="generated" aria-pressed="false"><span class="map-choice-icon"><svg class="icon"><use href="#i-crosshair" /></svg></span><span class="map-choice-copy"><strong>Северные пустоши</strong><span>Вымышленная карта</span></span><span class="map-choice-dot" aria-hidden="true"></span></button>
             </div>
             <p id="map-summary" class="map-summary">Местность, дороги и вода на основе открытых данных.</p>
+            <p id="coverage-summary" class="coverage-summary">Проверка полноты исходных данных…</p>
             <div class="map-import-section">
               <p class="eyebrow"><span class="short-line"></span> СВОЯ КАРТА</p>
               <p class="map-import-intro">Экспортируй участок OpenStreetMap, загрузи файл — получишь игровую карту.</p>
@@ -133,6 +139,20 @@
               <p id="map-import-status" class="map-import-status" role="status">Выбери файл. Для исходного OSM укажи границы; готовый JSON карты содержит их сам.</p>
             </div>
             <button id="map-export" class="map-export-button" type="button"><svg class="icon"><use href="#i-download" /></svg>Скачать JSON карты</button>
+          </div>
+        </section>
+
+        <section id="layers-panel" class="layers-panel help-panel glass" role="dialog" aria-label="Слои карты" aria-modal="false" hidden>
+          <div class="layers-heading help-heading"><div><p class="eyebrow">ВИД КАРТЫ</p><h2>Слои карты</h2></div><button id="layers-close" class="icon-button" type="button" aria-label="Закрыть слои карты">×</button></div>
+          <div class="layers-content">
+            <div class="layer-options">
+              <label class="layer-option" for="layer-terrain"><input id="layer-terrain" type="checkbox" checked /><span>Подложка местности</span></label>
+              <label class="layer-option" for="layer-landscape"><input id="layer-landscape" type="checkbox" checked /><span>Вода и природные объекты</span><span id="count-landscape" class="layer-count">—</span></label>
+              <label class="layer-option" for="layer-roads"><input id="layer-roads" type="checkbox" checked /><span>Дороги и тропы</span><span id="count-roads" class="layer-count">—</span></label>
+              <label class="layer-option" for="layer-buildings"><input id="layer-buildings" type="checkbox" checked /><span>Здания</span><span id="count-buildings" class="layer-count">—</span></label>
+              <label class="layer-option" for="layer-details"><input id="layer-details" type="checkbox" checked /><span>Остальные объекты</span><span id="count-details" class="layer-count">—</span></label>
+            </div>
+            <p class="layers-note">Выключенный слой не рисуется и не выбирается.</p>
           </div>
         </section>
       </div>

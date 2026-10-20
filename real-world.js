@@ -122,7 +122,7 @@ function rwValidateMap(map) {
     || width % cellSize !== 0 || height % cellSize !== 0 || width / cellSize * (height / cellSize) > 250000) throw new Error('Invalid map dimensions, scale or grid size');
   if (!Array.isArray(bbox) || bbox.length !== 4 || !bbox.every(Number.isFinite)
     || bbox[0] < -180 || bbox[2] > 180 || bbox[1] < -90 || bbox[3] > 90 || bbox[0] >= bbox[2] || bbox[1] >= bbox[3]) throw new Error('Invalid geographic bbox');
-  const arrays = ['roads', 'rivers', 'areas', 'buildings', 'details', 'pois', 'labels'];
+  const arrays = ['roads', 'rivers', 'areas', 'buildings', 'details', 'pois', 'labels', 'relations'];
   for (const key of arrays) if (map[key] !== undefined && !Array.isArray(map[key])) throw new Error(`Invalid map ${key}`);
   const validatePoints = points => {
     if (!Array.isArray(points)) throw new Error('Invalid geometry coordinate array');
@@ -159,9 +159,9 @@ export function createRealWorld(map) {
     pois: [], roads: (map.roads || []).map(rwCopyGeometry), rivers: (map.rivers || []).map(rwCopyGeometry),
     areas: (map.areas || []).map(rwCopyGeometry), buildings: (map.buildings || []).map(rwCopyGeometry),
     details: (map.details || []).map(rwCopyGeometry),
-    labels: (map.labels || []).map(label => ({ ...label })), lakes: [], radiationZones: [], seed,
+    labels: (map.labels || []).map(rwCopyGeometry), relations: (map.relations || []).map(rwCopyGeometry), lakes: [], radiationZones: [], seed,
     id: map.id, name: map.name, region: map.region, country: map.country, bbox: [...map.bbox],
-    source: { ...map.source }, geographic: true, relief: false,
+    source: rwCopyGeometry(map.source || {}), coverage: rwCopyGeometry(map.coverage || null), geographic: true, relief: false,
     metadata: { type: 'osm', version: map.version, relief: false, navigationResolutionMeters: cellSize * metersPerUnit, maxPoiSnapMeters: 100 },
   };
   // Elevation deliberately stays flat: OSM surface tags do not supply a DEM.
@@ -177,6 +177,9 @@ export function createRealWorld(map) {
   for (const river of world.rivers) if (river.intermittent !== true && river.seasonal !== true) {
     rwRasterLine(world, river, index => rwTerrain(world, index, 'water'), cellSize * .55);
   }
+  // Rendering the ground must never inherit the wider navigation corridors
+  // painted below. Keep the original land/water beneath roads and bridges.
+  world.terrainCells = world.cells.map(rwCopyGeometry);
   // Paint roads on land first. Missing/false bridge tags must never unblock water.
   for (const road of world.roads) rwRasterLine(world, road, index => {
     if (world.cells[index].type !== 'water') rwTerrain(world, index, 'road');
@@ -193,7 +196,7 @@ export function createRealWorld(map) {
   world.metadata.startSnapDistanceMeters = Math.hypot(world.start.x - desiredStart.x, world.start.y - desiredStart.y) * metersPerUnit;
 
   for (const original of map.pois || []) {
-    const poi = { ...original, sourceX: original.x, sourceY: original.y };
+    const poi = { ...rwCopyGeometry(original), sourceX: original.x, sourceY: original.y };
     const originalIndex = rwIndexAt(world, poi);
     // Preserve locations on the other bank. Only snap water/on-edge markers to a nearby accessible landing.
     if (originalIndex >= 0 && world.cells[originalIndex].walkable) poi.reachable = components.ids[originalIndex] === components.main;

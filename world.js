@@ -67,7 +67,11 @@ export function createWorld() {
     { x: 2550, y: 1730, radius: 280, strength: 0.8 },
     { x: 440, y: 1880, radius: 190, strength: 0.45 },
   ];
+  roads.forEach((road, index) => Object.assign(road, { id: `generated-road-${index}`, type: 'unclassified', widthMeters: 20, name: `Старая дорога ${index + 1}` }));
+  rivers.forEach((river, index) => { river.id = `generated-river-${index}`; });
+  lakes.forEach((lake, index) => { lake.id = `generated-lake-${index}`; });
   const cells = new Array(cols * rows);
+  const terrainCells = new Array(cols * rows);
   for (let gy = 0; gy < rows; gy++) {
     for (let gx = 0; gx < cols; gx++) {
       const x = (gx + 0.5) * CELL_SIZE;
@@ -89,6 +93,7 @@ export function createWorld() {
       if (moisture > 0.46 && height < 0.68) { type = 'forest'; cost = 1.45; }
       if ((riverDistance < 100 || lakeshore) && moisture > 0.45) { type = 'swamp'; cost = 2.1; }
       if (inLake || riverDistance < 43) { type = 'water'; cost = Infinity; }
+      const groundType = type, groundCost = cost;
       // The raster corridor is wider than the ink road so bridge cells stay connected.
       const onRoad = roads.some(road => polylineDistance(x, y, road.points) <= Math.max(19, road.width));
       if (onRoad) { type = type === 'water' ? 'bridge' : 'road'; cost = 0.75; }
@@ -97,6 +102,7 @@ export function createWorld() {
         radiation = Math.max(radiation, Math.max(0, 1 - Math.hypot(x - zone.x, y - zone.y) / zone.radius) * zone.strength);
       }
       cells[gy * cols + gx] = { type, height, cost, walkable: type !== 'water', radiation };
+      terrainCells[gy * cols + gx] = { type: groundType, height, cost: groundCost, walkable: groundType !== 'water', radiation };
     }
   }
   const pois = [
@@ -113,11 +119,25 @@ export function createWorld() {
     { id: 'redhill', name: 'КРАСНЫЙ ХОЛМ', x: 460, y: 1880, kind: 'danger', description: 'Выжженный склон. Пыль здесь лучше не поднимать.', discovered: false },
     { id: 'east', name: 'ВОСТОЧНЫЙ ТРАКТ', x: 2780, y: 910, kind: 'station', description: 'Старая дорога уходит за край карты. Пока ты остаёшься здесь.', discovered: false },
   ];
-  const world = { width: WIDTH, height: HEIGHT, cols, rows, cellSize: CELL_SIZE, cells, pois, roads, rivers, lakes, radiationZones, seed: SEED, start: { x: 1125, y: 1125 } };
+  const world = { width: WIDTH, height: HEIGHT, cols, rows, cellSize: CELL_SIZE, cells, terrainCells, pois, roads, rivers, lakes, buildings: [], details: [], areas: [], radiationZones, seed: SEED, start: { x: 1125, y: 1125 } };
   for (const poi of pois) {
     if (!terrainAt(world, poi.x, poi.y)?.walkable) Object.assign(poi, nearestWalkable(world, poi.x, poi.y));
   }
   world.start = nearestWalkable(world, world.start.x, world.start.y);
+  // Fictional settlement props are separate objects, just like imported footprints.
+  for (const poi of pois) {
+    const count = poi.kind === 'town' ? 20 : 7;
+    for (let i = 0; i < count; i++) {
+      const x = poi.x + (hash(i, poi.x, SEED + 5) - .5) * 95;
+      const y = poi.y + (hash(i, poi.y, SEED + 6) - .5) * 70;
+      if (!terrainAt(world, x, y)?.walkable) continue;
+      const halfWidth = (4 + hash(i, poi.x, SEED + 7) * 8) / 2;
+      const halfHeight = (4 + hash(i, poi.y, SEED + 8) * 6) / 2;
+      const angle = Math.round(hash(i, poi.x, SEED + 9) * 3) * Math.PI / 4;
+      const points = [[-halfWidth, -halfHeight], [halfWidth, -halfHeight], [halfWidth, halfHeight], [-halfWidth, halfHeight], [-halfWidth, -halfHeight]].map(([dx, dy]) => ({ x: x + dx * Math.cos(angle) - dy * Math.sin(angle), y: y + dx * Math.sin(angle) + dy * Math.cos(angle) }));
+      world.buildings.push({ id: `generated-building-${poi.id}-${i}`, name: 'Заброшенный дом', type: 'house', points, rings: [points] });
+    }
+  }
   return world;
 }
 

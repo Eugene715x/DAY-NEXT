@@ -232,6 +232,33 @@ function detailKind(tags) {
   return null;
 }
 
+// OSM objects outside the styled subset still retain their geometry and tags.
+// Import bookkeeping and untagged shape vertices do not become game objects.
+function meaningfulTags(tags = {}) {
+  return Object.keys(tags).filter(key => !/^(?:source(?::|$)|tiger:|gnis:|created_by$|attribution$|note$|fixme$|FIXME$|odbl$|import_uuid$|type$|is_in(?::|$))/.test(key));
+}
+function genericKind(tags) {
+  const known = detailKind(tags);
+  if (known) return known;
+  if (tags.boundary) return 'boundary';
+  for (const key of ['aeroway', 'boundary', 'highway', 'railway', 'landuse', 'natural', 'amenity', 'tourism', 'shop', 'man_made', 'historic', 'leisure', 'power', 'public_transport', 'place']) {
+    if (tags[key] && !['no', 'false', '0'].includes(tags[key])) return clean(tags[key]);
+  }
+  return meaningfulTags(tags).some(key => key.startsWith('addr:')) ? 'address' : 'mapped_feature';
+}
+function polygonSemantics(tags) {
+  if (tags.area === 'no') return false;
+  if (tags.area === 'yes') return true;
+  if (tags.barrier || tags.boundary || tags.highway) return false;
+  if (tags.waterway) return tags.waterway === 'riverbank';
+  if (tags.aeroway) return !['runway', 'taxiway', 'navigationaid'].includes(tags.aeroway);
+  if (tags.railway) return ['station', 'platform', 'turntable', 'roundhouse'].includes(tags.railway);
+  if (['cliff', 'coastline', 'ridge', 'arete', 'tree_row'].includes(tags.natural)) return false;
+  if (['pier', 'breakwater', 'pipeline', 'embankment', 'cutline'].includes(tags.man_made)) return false;
+  return Boolean(tags.building && tags.building !== 'no' || tags.landuse || tags.natural || tags.amenity || tags.leisure || tags.shop || tags.tourism || tags.man_made || tags.historic);
+}
+const originalId = id => String(id).match(/^(?:node|way|relation)-\d+/)?.[0] || String(id);
+
 export function convertOSM(input, options = {}) {
   const parsed = parseOSM(input);
   const projection = createProjection(options.bbox, options);
@@ -246,7 +273,17 @@ export function convertOSM(input, options = {}) {
     if (points.some(p => !p || !Number.isFinite(Number(p.lon)) || !Number.isFinite(Number(p.lat)))) return [];
     return points.map(project);
   };
-  const roads = [], rivers = [], areas = [], buildings = [], details = [], pois = [], labels = [];
+  const geometryParts = element => {
+    const source = element.geometry || (element.nodes || []).map(id => nodes.get(String(id)));
+    const parts = []; let part = [];
+    for (const point of source) {
+      if (point && Number.isFinite(Number(point.lon)) && Number.isFinite(Number(point.lat))) part.push(project(point));
+      else { if (part.length > 1) parts.push(part); part = []; }
+    }
+    if (part.length > 1) parts.push(part);
+    return parts;
+  };
+  const roads = [], rivers = [], areas = [], buildings = [], details = [], pois = [], labels = [], relations = [];
   const relationMembers = new Set();
   const addPoi = (element, point) => {
     const tags = element.tags || {}, kind = poiKind(tags);
@@ -255,31 +292,33 @@ export function convertOSM(input, options = {}) {
     if (!kind) return;
     const id = `${element.type}-${element.id}`;
     const name = clean(tags.name || `${fallbackNames[kind]} · OSM ${element.id}`);
-    pois.push({ id, name, x: point.x, y: point.y, kind, description: `Реальный объект OpenStreetMap: ${clean(tags.amenity || tags.place || tags.railway || tags.tourism || tags.shop || tags.man_made || tags.historic || tags.building || kind)}.`, discovered: false, named: !!tags.name });
+    pois.push({ id, name, x: point.x, y: point.y, kind, tags: safeTags(tags), description: `Реальный объект OpenStreetMap: ${clean(tags.amenity || tags.place || tags.railway || tags.tourism || tags.shop || tags.man_made || tags.historic || tags.building || kind)}.`, discovered: false, named: !!tags.name });
   };
   for (const relation of elements.filter(e => e.type === 'relation' && ['multipolygon', 'boundary'].includes(e.tags?.type))) {
-    const type = areaType(relation.tags), isBuilding = relation.tags.building && relation.tags.building !== 'no', detail = detailKind(relation.tags);
+    const type = areaType(relation.tags), isBuilding = relation.tags.building && relation.tags.building !== 'no', detail = detailKind(relation.tags) || (meaningfulTags(relation.tags).length && polygonSemantics(relation.tags) ? genericKind(relation.tags) : null);
     if (!type && !isBuilding && !detail) continue;
     const outers = [], inners = [];
     for (const member of relation.members || []) {
       if (member.type !== 'way') continue;
       const way = ways.get(String(member.ref));
-      const points = member.geometry ? geometry(member) : way ? geometry(way) : [];
+      const memberPoints = member.geometry ? geometry(member) : [];
+      const points = memberPoints.length ? memberPoints : way ? geometry(way) : [];
       if (points.length < 2) continue;
       (member.role === 'inner' ? inners : outers).push(points);
     }
     const outerRings = joinRings(outers), innerRings = joinRings(inners);
     if (!outerRings.length) continue;
-    for (const member of relation.members || []) if (member.type === 'way') relationMembers.add(String(member.ref));
     let index = 0;
     for (const outer of outerRings) {
       const ring = clipRing(outer, boundWidth, boundHeight);
       if (!ring) continue;
       const rings = [ring, ...innerRings.filter(hole => insideRing(hole[0], outer)).map(hole => clipRing(hole, boundWidth, boundHeight)).filter(Boolean)];
       const id = `relation-${relation.id}-${index++}`, name = clean(relation.tags.name || '');
-      if (type) areas.push({ id, type, rings, name, intermittent: isIntermittent(relation.tags), seasonal: isSeasonal(relation.tags) });
+      const geometryIncomplete = (relation.members || []).some(member => member.type === 'way' && geometry(member).length < 2 && (!ways.has(String(member.ref)) || geometry(ways.get(String(member.ref))).length < 2));
+      for (const member of relation.members || []) if (member.type === 'way') relationMembers.add(String(member.ref));
+      if (type) areas.push({ id, type, rings, name, tags: safeTags(relation.tags), intermittent: isIntermittent(relation.tags), seasonal: isSeasonal(relation.tags) });
       if (isBuilding) buildings.push({ id, points: ring, rings, name, ...buildingMetadata(relation.tags) });
-      if (detail && !isBuilding) details.push({ id, kind: detail, geometry: 'polygon', points: ring, rings, name, tags: safeTags(relation.tags) });
+      if (detail && !isBuilding) details.push({ id, kind: detail, geometry: 'polygon', points: ring, rings, name, tags: safeTags(relation.tags), ...(geometryIncomplete ? { geometryIncomplete: true } : {}) });
       addPoi(relation, centroid(ring));
     }
   }
@@ -295,20 +334,23 @@ export function convertOSM(input, options = {}) {
       const tunnel = !!tags.tunnel && !['no', 'false', '0'].includes(tags.tunnel);
       const metadata = { widthMeters, widthSource: taggedWidth ? 'tag' : 'highway-default' };
       for (const key of ['surface', 'access', 'tracktype', 'foot', 'service']) if (tags[key]) metadata[key] = clean(tags[key]);
-      clipLine(points, boundWidth, boundHeight).forEach((part, i) => roads.push({ id: `${id}-${i}`, points: part, width: Math.max(2, widthMeters / metersPerUnit), type: tags.highway, bridge, tunnel, name, ...metadata }));
+      clipLine(points, boundWidth, boundHeight).forEach((part, i) => roads.push({ id: `${id}-${i}`, points: part, width: Math.max(2, widthMeters / metersPerUnit), type: tags.highway, bridge, tunnel, name, tags: safeTags(tags), ...metadata }));
     }
     if (['river', 'stream', 'canal', 'drain', 'ditch'].includes(tags.waterway) && !closed) {
       const widthMeters = Math.max(1, Math.min(300, Number.parseFloat(tags.width) || (tags.waterway === 'river' ? 25 : tags.waterway === 'canal' ? 12 : 3)));
-      clipLine(points, boundWidth, boundHeight).forEach((part, i) => rivers.push({ id: `${id}-${i}`, points: part, width: Math.max(2, widthMeters / metersPerUnit), name, intermittent: isIntermittent(tags), seasonal: isSeasonal(tags) }));
+      clipLine(points, boundWidth, boundHeight).forEach((part, i) => rivers.push({ id: `${id}-${i}`, points: part, width: Math.max(2, widthMeters / metersPerUnit), name, tags: safeTags(tags), intermittent: isIntermittent(tags), seasonal: isSeasonal(tags) }));
     }
     if (closed && !relationMembers.has(String(way.id))) {
       const ring = clipRing(points, boundWidth, boundHeight);
       if (ring) {
         const type = areaType(tags);
-        if (type) areas.push({ id, type, rings: [ring], name, intermittent: isIntermittent(tags), seasonal: isSeasonal(tags) });
+        if (type) areas.push({ id, type, rings: [ring], name, tags: safeTags(tags), intermittent: isIntermittent(tags), seasonal: isSeasonal(tags) });
         if (tags.building && tags.building !== 'no') buildings.push({ id, points: ring, rings: [ring], name, ...buildingMetadata(tags) });
         const detail = detailKind(tags);
-        if (detail && !(tags.building && tags.building !== 'no')) details.push({ id, kind: detail, geometry: 'polygon', points: ring, rings: [ring], name, tags: safeTags(tags) });
+        if (detail && !(tags.building && tags.building !== 'no')) {
+          if (polygonSemantics(tags)) details.push({ id, kind: detail, geometry: 'polygon', points: ring, rings: [ring], name, tags: safeTags(tags) });
+          else clipLine(points, boundWidth, boundHeight).forEach((part, i) => details.push({ id: `${id}-${i}`, kind: detail, geometry: 'line', points: part, name, tags: safeTags(tags) }));
+        }
         addPoi(way, centroid(ring));
       }
     } else if (!closed && !relationMembers.has(String(way.id))) {
@@ -321,6 +363,114 @@ export function convertOSM(input, options = {}) {
     const kind = detailKind(node.tags || {});
     if (kind && inBounds(point, boundWidth, boundHeight)) details.push({ id: `node-${node.id}`, kind, geometry: 'point', points: [point], name: clean(node.tags?.name || ''), tags: safeTags(node.tags) });
   }
+
+  const represented = new Set([...roads, ...rivers, ...areas, ...buildings, ...details].map(feature => originalId(feature.id)).filter(Boolean));
+  const coverage = {
+    inputElements: elements.length,
+    sourceTaggedElements: 0,
+    eligibleInBounds: 0,
+    representedSourceElements: 0,
+    representedByRelation: 0,
+    metadataOnlyElements: 0,
+    partialRelations: [],
+    partialWays: [],
+    omittedByReason: { outsideBounds: [], incompleteGeometry: [], invalidCoordinate: [] },
+  };
+  const bySource = new Map(elements.map(element => [`${element.type}-${element.id}`, element]));
+  const markGeneric = (element, points, suffix = '', incomplete = false) => {
+    const tags = element.tags || {}, name = clean(tags.name || ''), sourceId = `${element.type}-${element.id}`;
+    if (points.length === 1) {
+      if (!inBounds(points[0], boundWidth, boundHeight)) return false;
+      details.push({ id: `${sourceId}${suffix}`, sourceId, kind: genericKind(tags), geometry: 'point', points, name, tags: safeTags(tags), ...(incomplete ? { geometryIncomplete: true } : {}) });
+      represented.add(sourceId); return true;
+    }
+    const closed = points.length >= 4 && same(points[0], points.at(-1));
+    if (closed && polygonSemantics(tags) && !incomplete) {
+      const ring = clipRing(points, boundWidth, boundHeight);
+      if (!ring) return false;
+      details.push({ id: `${sourceId}${suffix}`, sourceId, kind: genericKind(tags), geometry: 'polygon', points: ring, rings: [ring], name, tags: safeTags(tags) });
+      represented.add(sourceId); return true;
+    }
+    const parts = clipLine(points, boundWidth, boundHeight);
+    parts.forEach((part, i) => details.push({ id: `${sourceId}${suffix}-${i}`, sourceId, kind: genericKind(tags), geometry: 'line', points: part, name, tags: safeTags(tags), ...(incomplete ? { geometryIncomplete: true } : {}) }));
+    if (parts.length) represented.add(sourceId);
+    return parts.length > 0;
+  };
+  // Preserve unstyled but meaningful points and ways, rather than silently filtering a whitelist.
+  for (const element of elements.filter(element => element.type !== 'relation')) {
+    const sourceId = `${element.type}-${element.id}`, tags = element.tags || {};
+    if (!meaningfulTags(tags).length) { coverage.metadataOnlyElements++; continue; }
+    coverage.sourceTaggedElements++;
+    if (represented.has(sourceId)) { coverage.eligibleInBounds++; continue; }
+    if (element.type === 'way' && relationMembers.has(String(element.id))) { coverage.representedByRelation++; continue; }
+    const points = element.type === 'node' ? Number.isFinite(Number(element.lon)) && Number.isFinite(Number(element.lat)) ? [project(element)] : [] : geometry(element);
+    if (!points.length) {
+      const parts = element.type === 'way' ? geometryParts(element) : [];
+      let included = false;
+      for (let i = 0; i < parts.length; i++) included = markGeneric(element, parts[i], `-fragment-${i}`, true) || included;
+      if (included) { coverage.eligibleInBounds++; coverage.partialWays.push(sourceId); }
+      else coverage.omittedByReason[element.type === 'node' ? 'invalidCoordinate' : 'incompleteGeometry'].push(sourceId);
+      continue;
+    }
+    if (markGeneric(element, points)) coverage.eligibleInBounds++;
+    else coverage.omittedByReason.outsideBounds.push(sourceId);
+  }
+  // A route relation is a logical grouping of existing roads, never a second painted road.
+  // Incomplete area/boundary relations retain available source fragments; no fake polygon is closed.
+  for (const relation of elements.filter(element => element.type === 'relation')) {
+    const sourceId = `relation-${relation.id}`, tags = relation.tags || {};
+    if (!meaningfulTags(tags).length) { coverage.metadataOnlyElements++; continue; }
+    coverage.sourceTaggedElements++;
+    const availableMemberIds = [], missingMemberIds = [], incompleteMemberIds = [], fragments = [];
+    for (const member of relation.members || []) {
+      const memberId = `${member.type}-${member.ref}`, source = bySource.get(memberId);
+      const memberParts = member.geometry ? geometryParts(member) : [];
+      if (memberParts.length || source) availableMemberIds.push(memberId); else missingMemberIds.push(memberId);
+      if (member.type === 'way') {
+        const full = member.geometry ? geometry(member) : [];
+        const sourcePoints = source ? geometry(source) : [];
+        if (full.length >= 2 || sourcePoints.length >= 2) fragments.push({ points: full.length ? full : sourcePoints, member });
+        else {
+          if (memberParts.length || source) incompleteMemberIds.push(memberId);
+          for (const points of memberParts) fragments.push({ points, member });
+        }
+      }
+    }
+    const record = { id: sourceId, name: clean(tags.name || ''), tags: safeTags(tags), members: (relation.members || []).map(member => ({ ...member, ...(member.geometry ? { geometry: member.geometry.map(point => point ? { ...point } : null) } : {}) })), availableMemberIds, missingMemberIds, incompleteMemberIds, geometryComplete: missingMemberIds.length === 0 && incompleteMemberIds.length === 0 };
+    relations.push(record);
+    if (missingMemberIds.length || incompleteMemberIds.length) coverage.partialRelations.push({ id: sourceId, available: availableMemberIds.length, missing: missingMemberIds.length, incomplete: incompleteMemberIds.length });
+    if (represented.has(sourceId)) { coverage.eligibleInBounds++; continue; }
+    if (tags.type === 'route' || tags.type === 'superroute') {
+      if (availableMemberIds.some(memberId => represented.has(memberId))) { represented.add(sourceId); coverage.eligibleInBounds++; }
+      else coverage.omittedByReason.incompleteGeometry.push(sourceId);
+      continue;
+    }
+    if (!fragments.length) { coverage.omittedByReason.incompleteGeometry.push(sourceId); continue; }
+    let included = false;
+    for (let i = 0; i < fragments.length; i++) {
+      const memberId = `${fragments[i].member.type}-${fragments[i].member.ref}`;
+      if (tags.boundary && represented.has(memberId)) {
+        for (const feature of details.filter(feature => (feature.sourceId || originalId(feature.id)) === memberId)) {
+          feature.relationIds = [...new Set([...(feature.relationIds || []), sourceId])];
+          if (!feature.name && tags.name) feature.name = clean(tags.name);
+        }
+        represented.add(sourceId); included = true;
+      } else included = markGeneric(relation, fragments[i].points, `-member-${i}`, true) || included;
+    }
+    if (included) coverage.eligibleInBounds++;
+    else coverage.omittedByReason.outsideBounds.push(sourceId);
+  }
+  for (let pass = 0; pass < relations.length; pass++) {
+    let changed = false;
+    for (const relation of relations) if (['route', 'superroute'].includes(relation.tags.type) && !represented.has(relation.id) && relation.availableMemberIds.some(memberId => represented.has(memberId))) {
+      represented.add(relation.id); coverage.eligibleInBounds++; changed = true;
+      coverage.omittedByReason.incompleteGeometry = coverage.omittedByReason.incompleteGeometry.filter(id => id !== relation.id);
+    }
+    if (!changed) break;
+  }
+  for (const feature of [...roads, ...rivers, ...areas, ...buildings, ...details, ...pois]) feature.sourceId ||= originalId(feature.id);
+  coverage.representedSourceElements = represented.size;
+  coverage.omittedCounts = Object.fromEntries(Object.entries(coverage.omittedByReason).map(([reason, ids]) => [reason, ids.length]));
   if (!roads.length && !rivers.length && !areas.length && !buildings.length && !details.length) throw new Error('The selected bbox has no usable mapped geometry. Check the bounds and complete OSM data.');
   // Named objects take priority so the map is readable rather than a wall of anonymous shops.
   pois.sort((a, b) => Number(b.named) - Number(a.named) || Number(b.kind === 'town') - Number(a.kind === 'town') || a.id.localeCompare(b.id));
@@ -350,7 +500,7 @@ export function convertOSM(input, options = {}) {
       downloadedAt: options.downloadedAt || new Date().toISOString(),
       snapshotAt: options.snapshotAt || parsed.osm3s?.timestamp_osm_base || elements.map(element => element.timestamp).filter(Boolean).sort().at(-1) || null,
     },
-    roads, rivers, areas, buildings, details, pois: distinctPois, labels, start,
+    roads, rivers, areas, buildings, details, relations, coverage, pois: distinctPois, labels, start,
     statistics: { inputElements: elements.length, roads: roads.length, rivers: rivers.length, areas: areas.length, buildings: buildings.length, details: details.length, pois: distinctPois.length },
   };
 }

@@ -48,6 +48,19 @@ test('один seed воспроизводит ту же карту, локац�
   assert.deepEqual(createWorld(), world);
 });
 
+test('подложка процедурной карты не содержит дорог, а дома и дороги имеют отдельные идентификаторы', () => {
+  assert.ok(world.cells.some(cell => cell.type === 'bridge'));
+  assert.ok(world.terrainCells.every(cell => !['road', 'bridge'].includes(cell.type)));
+  for (let index = 0; index < world.cells.length; index++) {
+    assert.notEqual(world.cells[index], world.terrainCells[index], 'Навигация не должна менять сохранённую поверхность');
+    if (world.cells[index].type === 'bridge') assert.equal(world.terrainCells[index].type, 'water');
+  }
+  const objects = [...world.roads, ...world.buildings, ...world.rivers, ...world.lakes];
+  assert.ok(world.buildings.length > 0, 'Дома должны быть объектами, а не рисунком подложки');
+  assert.equal(new Set(objects.map(object => object.id)).size, objects.length);
+  assert.ok(objects.every(object => typeof object.id === 'string' && object.id.length));
+});
+
 test('от старта можно дойти до каждой локации с точным прибытием', () => {
   for (const poi of world.pois) {
     const route = findPath(world, world.start, poi);

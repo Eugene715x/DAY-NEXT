@@ -143,6 +143,57 @@ test('mapped building holes, roofs, road metadata and small objects survive with
   assert.deepEqual(input, before, 'Runtime detail geometry and metadata must not retain writable source references');
 });
 
+test('terrain cells retain the actual ground beneath road and bridge navigation corridors', () => {
+  const input = sourceMap();
+  input.areas.unshift({ id: 'forest', type: 'forest', rings: [ring(0, 0, 300, 200)] });
+  input.roads[0].bridge = true;
+  const world = createRealWorld(input);
+  const index = (x, y) => Math.floor(y / world.cellSize) * world.cols + Math.floor(x / world.cellSize);
+  const landIndex = index(80, 95), bridgeIndex = index(150, 95);
+
+  assert.equal(world.cells[landIndex].type, 'road');
+  assert.equal(world.terrainCells[landIndex].type, 'forest');
+  assert.equal(world.cells[bridgeIndex].type, 'bridge');
+  assert.equal(world.terrainCells[bridgeIndex].type, 'water');
+  assert.equal(world.terrainCells[bridgeIndex].walkable, false);
+  assert.ok(world.terrainCells.every(cell => !['road', 'bridge'].includes(cell.type)));
+  assert.equal(world.terrainCells.length, world.cells.length);
+  assert.ok(findPath(world, { x: 80, y: 95 }, { x: 230, y: 95 }), 'Separating render terrain must preserve navigation');
+
+  world.cells[landIndex].type = 'swamp';
+  assert.equal(world.terrainCells[landIndex].type, 'forest', 'Navigation edits cannot repaint the ground');
+  world.terrainCells[bridgeIndex].walkable = true;
+  assert.equal(world.cells[bridgeIndex].type, 'bridge', 'Render terrain edits cannot remove a navigation bridge');
+  assert.notStrictEqual(world.terrainCells[bridgeIndex], world.cells[bridgeIndex]);
+});
+
+test('coverage reports and nested source identities survive runtime conversion without sharing references', () => {
+  const input = sourceMap({
+    coverage: { eligibleInBounds: 3, representedSourceElements: 2, partialRelations: [{ type: 'relation', id: '700' }], omittedCounts: { outsideBounds: 1 } },
+    source: { provider: 'OpenStreetMap', provenance: { sourceId: 'historical-extract' } },
+    labels: [{ name: 'Main Street', x: 50, y: 50, source: { type: 'way', id: '123' } }],
+    pois: [{ id: 'west', name: 'West bank', x: 80, y: 95, source: { type: 'node', id: '42' }, tags: { amenity: 'bench' } }],
+    relations: [{ id: 'relation-700', name: 'Incomplete boundary', tags: { type: 'boundary' }, members: [{ type: 'way', ref: '123', role: 'outer' }], availableMemberIds: ['way-123'], missingMemberIds: ['way-456'], geometryComplete: false }],
+  });
+  const before = structuredClone(input), world = createRealWorld(input);
+  assert.deepEqual(world.coverage, input.coverage);
+  assert.deepEqual(world.labels, input.labels);
+  assert.deepEqual(world.pois[0].source, input.pois[0].source);
+  assert.deepEqual(world.pois[0].tags, input.pois[0].tags);
+  assert.deepEqual(world.relations, input.relations, 'Logical relations must survive without inventing closed geometry');
+
+  world.coverage.partialRelations[0].id = 'changed';
+  world.source.provenance.sourceId = 'changed';
+  world.labels[0].source.id = 'changed';
+  world.pois[0].source.id = 'changed';
+  world.pois[0].tags.amenity = 'changed';
+  world.relations[0].tags.type = 'changed';
+  world.relations[0].members[0].ref = 'changed';
+  world.relations[0].availableMemberIds[0] = 'changed';
+  world.relations[0].missingMemberIds[0] = 'changed';
+  assert.deepEqual(input, before, 'Inspecting copied layer metadata cannot change the source map or coverage report');
+});
+
 test('invalid geographic bounds, unsafe grid sizes and malformed geometry are rejected', () => {
   assert.throws(() => createRealWorld(sourceMap({ bbox: [-121, 47, -122, 48] })), /bbox/);
   assert.throws(() => createRealWorld(sourceMap({ bbox: [-122, 47, -121, 91] })), /bbox/);

@@ -1,0 +1,124 @@
+{
+  "source": "beatty.osm",
+  "snapshotAt": "2017-08-18T15:44:51Z",
+  "bbox": [
+    -116.86,
+    36.86,
+    -116.73,
+    36.94
+  ],
+  "inputElements": 6976,
+  "sourceTaggedElements": 425,
+  "eligibleInBounds": 372,
+  "representedSourceElements": 372,
+  "representedByRelation": 0,
+  "metadataOnlyElements": 6551,
+  "partialRelations": [
+    {
+      "id": "relation-170095",
+      "available": 4,
+      "missing": 2,
+      "incomplete": 0
+    },
+    {
+      "id": "relation-1322942",
+      "available": 1,
+      "missing": 4,
+      "incomplete": 0
+    },
+    {
+      "id": "relation-2306492",
+      "available": 10,
+      "missing": 513,
+      "incomplete": 0
+    },
+    {
+      "id": "relation-6746882",
+      "available": 1,
+      "missing": 4,
+      "incomplete": 0
+    },
+    {
+      "id": "relation-6746903",
+      "available": 3,
+      "missing": 23,
+      "incomplete": 0
+    },
+    {
+      "id": "relation-7095725",
+      "available": 1,
+      "missing": 2,
+      "incomplete": 0
+    }
+  ],
+  "partialWays": [],
+  "omittedByReason": {
+    "outsideBounds": [
+      "node-357546373",
+      "node-357552051",
+      "node-357561815",
+      "node-369159005",
+      "node-369159255",
+      "node-369160259",
+      "node-369160892",
+      "node-369160903",
+      "node-369161305",
+      "node-585366626",
+      "node-2869398050",
+      "way-14367373",
+      "way-14400435",
+      "way-14423461",
+      "way-37550687",
+      "way-40662568",
+      "way-108156128",
+      "way-168226511",
+      "way-168226514",
+      "way-169629658",
+      "way-283021679",
+      "way-283021684",
+      "way-283021693",
+      "way-283021697",
+      "way-283021699",
+      "way-283021701",
+      "way-283021708",
+      "way-353969984",
+      "way-353970920",
+      "way-353971160",
+      "way-353971485",
+      "way-353972129",
+      "way-354206765",
+      "way-354206766",
+      "way-354206767",
+      "way-354206768",
+      "way-354206796",
+      "way-354206807",
+      "way-354206816",
+      "way-354206826",
+      "way-354206828",
+      "way-354206851",
+      "way-354206858",
+      "way-354206864",
+      "way-354206877",
+      "way-354206968",
+      "way-354206986",
+      "way-354207005",
+      "way-354207008",
+      "way-354207031",
+      "way-444133530",
+      "way-496389415",
+      "relation-7095725"
+    ],
+    "incompleteGeometry": [],
+    "invalidCoordinate": []
+  },
+  "omittedCounts": {
+    "outsideBounds": 53,
+    "incompleteGeometry": 0,
+    "invalidCoordinate": 0
+  },
+  "notes": [
+    "Historical local OSM extract; not a comparison against present-day OpenStreetMap.",
+    "Unstyled meaningful features are retained with source geometry; no missing relation member is synthesized.",
+    "Untagged shape vertices are not independent map objects."
+  ]
+}

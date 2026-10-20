@@ -13,6 +13,12 @@
 
 Machine-readable provenance, original bounds, timestamp range and selected-area counts are in `beatty.provenance.json`.
 
+## Conversion coverage
+
+`coverage.json` records the conversion audit of this exact source file and selected bbox. The current conversion retains 372 of 372 eligible source elements inside the selected bounds; 53 further tagged features are outside them. Untagged coordinate vertices are geometry, not standalone map objects. Physical map layers preserve 156 road segments, 104 buildings and 100 other features, plus natural areas and watercourses. Route/group relations are kept as metadata rather than painting duplicate road geometry.
+
+Six relations in the original extract have missing members. The converter preserves available fragments, source identities and missing-member references; it does not fabricate closed polygons. Coverage is relative to this historical file, not to today's OpenStreetMap website.
+
 ## Source-data attribution and license
 
 **© OpenStreetMap contributors.** OpenStreetMap source data and the derived geographic database are available under the **Open Database License 1.0 (ODbL-1.0)**:

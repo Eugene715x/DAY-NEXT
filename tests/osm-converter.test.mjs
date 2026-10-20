@@ -186,8 +186,91 @@ test('Nevada source keeps every mapped house and pedestrian path plus actual min
   assert.equal(map.roads.filter(road => road.type === 'cycleway').length, 1);
   assert.equal(map.roads.filter(road => road.type === 'track').length, 23);
   assert.equal(map.buildings.filter(building => building.ruins).length, 8);
-  assert.equal(map.details.length, 43);
+  assert(map.details.length > 43, 'Objects outside the old style whitelist must remain mapped features');
   for (const kind of ['railway', 'parking', 'pool', 'pitch', 'cemetery', 'spring', 'playground', 'cattle_grid']) assert(map.details.some(detail => detail.kind === kind), `Lost real minor feature: ${kind}`);
   const sourceIds = new Set(raw.elements.map(element => `${element.type}-${element.id}`));
   for (const detail of map.details) assert(sourceIds.has(detail.id.match(/^(?:node|way|relation)-\d+/)[0]), `Invented source detail ${detail.id}`);
+});
+
+test('unlisted meaningful OSM features survive with original tags instead of disappearing', () => {
+  const map = convertOSM(fixture([
+    road(301),
+    { type: 'way', id: 302, nodes: [1, 2], tags: { aeroway: 'runway', ref: '16/34' } },
+    { type: 'way', id: 303, nodes: [3, 4], tags: { aeroway: 'taxiway' } },
+    { type: 'way', id: 304, nodes: [1, 3, 2, 4, 1], tags: { aeroway: 'apron' } },
+    { type: 'way', id: 305, nodes: [1, 2], tags: { highway: 'construction', construction: 'residential' } },
+    { type: 'node', id: 306, lon: -121.99, lat: 47.008, tags: { shop: 'bakery', name: 'Bread', opening_hours: '08:00-18:00' } },
+    { type: 'node', id: 307, lon: -121.99, lat: 47.009, tags: { natural: 'peak', ele: '1812' } },
+    { type: 'node', id: 308, lon: -121.99, lat: 47.01, tags: { man_made: 'monitoring_station' } },
+  ]), options);
+  const byId = new Map(map.details.map(feature => [feature.sourceId, feature]));
+  assert.equal(map.roads.length, 1, 'A planned/construction way is not a usable road');
+  assert.equal(byId.get('way-302').kind, 'runway');
+  assert.equal(byId.get('way-302').geometry, 'line');
+  assert.equal(byId.get('way-303').kind, 'taxiway');
+  assert.equal(byId.get('way-304').geometry, 'polygon');
+  assert.equal(byId.get('way-305').tags.construction, 'residential');
+  assert.equal(byId.get('node-306').tags.opening_hours, '08:00-18:00');
+  assert.equal(byId.get('node-307').tags.ele, '1812');
+  assert.equal(byId.get('node-308').kind, 'monitoring_station');
+  assert.equal(map.coverage.eligibleInBounds, map.coverage.representedSourceElements);
+});
+
+test('closed fences and roundabouts stay lines, and complete generic areas retain their holes', () => {
+  const outer = [{ lon: -121.997, lat: 47.003 }, { lon: -121.983, lat: 47.003 }, { lon: -121.983, lat: 47.012 }, { lon: -121.997, lat: 47.012 }];
+  const inner = [{ lon: -121.993, lat: 47.006 }, { lon: -121.988, lat: 47.006 }, { lon: -121.988, lat: 47.009 }, { lon: -121.993, lat: 47.009 }];
+  const ring = [...outer, outer[0]];
+  const map = convertOSM(fixture([
+    { type: 'way', id: 320, geometry: ring, tags: { barrier: 'fence' } },
+    { type: 'way', id: 321, geometry: ring, tags: { highway: 'residential', junction: 'roundabout' } },
+    { type: 'way', id: 322, geometry: ring, tags: {} },
+    { type: 'way', id: 323, geometry: [...inner, inner[0]], tags: {} },
+    { type: 'relation', id: 324, tags: { type: 'multipolygon', landuse: 'industrial', name: 'Works' }, members: [{ type: 'way', ref: 322, role: 'outer' }, { type: 'way', ref: 323, role: 'inner' }] },
+  ]), options);
+  assert.equal(map.details.find(d => d.kind === 'fence').geometry, 'line');
+  assert.equal(map.details.some(d => d.sourceId === 'way-321'), false);
+  assert.equal(map.roads.find(r => r.sourceId === 'way-321').points.length, 5);
+  const area = map.details.find(d => d.sourceId === 'relation-324');
+  assert.equal(area.kind, 'industrial'); assert.equal(area.geometry, 'polygon'); assert.equal(area.rings.length, 2);
+});
+
+test('incomplete relations expose actual fragments and omissions without inventing closed areas', () => {
+  const map = convertOSM(fixture([
+    road(340),
+    { type: 'way', id: 341, nodes: [1, 3], tags: {} },
+    { type: 'relation', id: 342, tags: { type: 'boundary', boundary: 'administrative', name: 'Partial boundary' }, members: [{ type: 'way', ref: 341, role: 'outer' }, { type: 'way', ref: 999, role: 'outer' }] },
+    { type: 'way', id: 343, nodes: [1, 999], tags: { waterway: 'stream' } },
+  ]), options);
+  const partial = map.details.find(d => d.sourceId === 'relation-342');
+  assert.equal(partial.kind, 'boundary'); assert.equal(partial.geometry, 'line');
+  assert.equal(partial.geometryIncomplete, true); assert.equal(partial.points.length, 2);
+  assert.equal(map.relations.find(r => r.id === 'relation-342').geometryComplete, false);
+  assert.deepEqual(map.relations.find(r => r.id === 'relation-342').missingMemberIds, ['way-999']);
+  assert(map.coverage.omittedByReason.incompleteGeometry.includes('way-343'));
+});
+
+test('Nevada coverage accounts for every meaningful source feature and preserves missing old categories', async () => {
+  const raw = parseOSM(await readFile(new URL('../maps/source/beatty.osm', import.meta.url), 'utf8'));
+  const map = convertOSM(raw, { ...options, bbox: [-116.86, 36.86, -116.73, 36.94] });
+  const accounted = map.coverage.representedSourceElements + map.coverage.representedByRelation + Object.values(map.coverage.omittedCounts).reduce((sum, count) => sum + count, 0);
+  assert.equal(accounted, map.coverage.sourceTaggedElements);
+  assert.equal(map.coverage.sourceTaggedElements, 425);
+  assert.equal(map.coverage.eligibleInBounds, map.coverage.representedSourceElements);
+  for (const kind of ['runway', 'taxiway', 'apron', 'aerodrome', 'peak', 'boundary', 'restaurant', 'hotel', 'car_repair']) assert(map.details.some(detail => detail.kind === kind), `Missing OSM category: ${kind}`);
+  assert(map.relations.find(r => r.id === 'relation-2306492').missingMemberIds.length > 500, 'The historical local extract must not pretend to contain the full interstate relation');
+  assert(map.coverage.partialRelations.some(relation => relation.id === 'relation-170095'));
+  assert.equal(map.roads.length, 156); assert.equal(map.buildings.length, 104);
+});
+
+test('bounded Overpass geometry retains known fragments without joining across missing vertices', () => {
+  const map = convertOSM(fixture([
+    road(360),
+    { type: 'way', id: 361, tags: { highway: 'footway' }, geometry: [null, { lon: -121.998, lat: 47.004 }, { lon: -121.994, lat: 47.005 }, null, { lon: -121.988, lat: 47.008 }, { lon: -121.983, lat: 47.01 }, null] },
+  ]), options);
+  const pieces = map.details.filter(detail => detail.sourceId === 'way-361');
+  assert.equal(pieces.length, 2);
+  assert(pieces.every(piece => piece.geometry === 'line' && piece.points.length === 2 && piece.geometryIncomplete));
+  assert(map.coverage.partialWays.includes('way-361'));
+  assert(!map.coverage.omittedByReason.incompleteGeometry.includes('way-361'));
+  assert.equal(map.roads.length, 1, 'Unknown segments cannot become a connected navigable road');
 });
