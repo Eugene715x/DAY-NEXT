@@ -35,7 +35,7 @@
       <div class="hud">
         <header class="top-bar">
           <div class="brand-block">
-            <div class="brand" aria-label="DAY NEXT"><span>DAY</span><span class="brand-divider">/</span><span class="brand-next">NEXT</span><span class="prototype">ПРОТОТИП <b>04</b></span></div>
+            <div class="brand" aria-label="DAY NEXT"><span>DAY</span><span class="brand-divider">/</span><span class="brand-next">NEXT</span><span class="prototype">ПРОТОТИП <b>05</b></span></div>
             <div class="brand-caption"><span class="live-dot"></span> ОДИНОЧНАЯ ЭКСПЕДИЦИЯ</div>
           </div>
           <div class="world-status glass">
@@ -131,9 +131,11 @@
             <p id="coverage-summary" class="coverage-summary">Проверка полноты исходных данных…</p>
             <div class="map-import-section">
               <p class="eyebrow"><span class="short-line"></span> СВОЯ КАРТА</p>
-              <p class="map-import-intro">Экспортируй участок OpenStreetMap, загрузи файл — получишь игровую карту.</p>
+              <p class="map-import-intro">Скачай актуальный участок OpenStreetMap, затем выбери файл ниже — получишь игровую карту.</p>
               <div class="map-field"><label for="map-name">Название территории</label><input id="map-name" type="text" maxlength="80" placeholder="Название территории" autocomplete="off" /></div>
               <div class="map-field"><label for="map-bbox">Границы: запад, юг, восток, север</label><input id="map-bbox" class="bbox-input" type="text" placeholder="-121.87, 47.49, -121.75, 47.56" autocomplete="off" spellcheck="false" /></div>
+              <a id="map-source-download" class="map-source-download" target="_blank" rel="noopener noreferrer" aria-describedby="map-source-status"><svg class="icon"><use href="#i-download" /></svg>Скачать исходник OSM</a>
+              <p id="map-source-status" class="map-source-status" role="status">Укажи границы участка для скачивания.</p>
               <div class="map-file-picker"><input id="map-file" type="file" accept=".osm,.xml,.json,application/json,application/xml,text/xml" /><label for="map-file"><svg class="icon"><use href="#i-upload" /></svg><span id="map-file-label">Выбрать файл карты</span></label><span class="file-formats">OSM XML · Overpass JSON · JSON карты</span></div>
               <button id="map-import" class="map-primary-button" type="button" disabled>Создать карту<svg class="icon"><use href="#i-arrow" /></svg></button>
               <p id="map-import-status" class="map-import-status" role="status">Выбери файл. Для исходного OSM укажи границы; готовый JSON карты содержит их сам.</p>

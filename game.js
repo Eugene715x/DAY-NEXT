@@ -1,6 +1,6 @@
 import { createWorld, findPath, terrainAt, nearestWalkable } from './world.js';
 import { createRealWorld } from './real-world.js';
-import { convertOSM } from './scripts/lib/osm-converter.mjs';
+import { convertOSM, validateBbox } from './scripts/lib/osm-converter.mjs';
 import usaMap from './maps/usa.js';
 import { createDetailRenderer } from './detail-renderer.js';
 import { createTerrainBackdrop } from './terrain-renderer.js';
@@ -131,6 +131,26 @@ function updateMapDetails() {
   syncLayerUI();
   const coverage = world.coverage;
   $('coverage-summary').textContent = coverage ? formatCoverage(coverage) : 'Этот файл не содержит отчёта полноты. Геометрия отображается без замены источника.';
+  $('map-bbox').value = (currentMap?.bbox || usaMap.bbox).join(', ');
+  updateSourceDownload();
+}
+
+function updateSourceDownload() {
+  const link = $('map-source-download');
+  try {
+    const bbox = validateBbox($('map-bbox').value.trim());
+    if ((bbox[2] - bbox[0]) * (bbox[3] - bbox[1]) > .25) throw new Error('api-area');
+    const url = new URL('https://api.openstreetmap.org/api/0.6/map');
+    url.searchParams.set('bbox', bbox.join(','));
+    link.href = url.href;
+    link.removeAttribute('aria-disabled'); link.removeAttribute('tabindex');
+    $('map-source-status').textContent = 'Откроется скачивание свежего map.osm. Выбери его ниже. Нужен интернет; загружаются объекты, нанесённые в OSM.';
+  } catch (error) {
+    link.removeAttribute('href'); link.setAttribute('aria-disabled', 'true'); link.setAttribute('tabindex', '-1');
+    $('map-source-status').textContent = error.message === 'api-area'
+      ? 'Для скачивания уменьши участок: API OSM допускает до 0,25 квадратного градуса.'
+      : 'Укажи корректные границы: запад, юг, восток, север. Участок — до 400 км² и 60 км по стороне.';
+  }
 }
 
 function formatCoverage(coverage) {
@@ -225,6 +245,8 @@ $('maps-close').addEventListener('click', () => { $('maps-panel').hidden = true;
 $('map-usa').addEventListener('click', () => switchMap(usaMap));
 $('map-generated').addEventListener('click', () => switchMap(null));
 $('map-export').addEventListener('click', () => { if (currentMap) downloadJSON(currentMap); });
+$('map-bbox').addEventListener('input', updateSourceDownload);
+$('map-source-download').addEventListener('click', event => { if (event.currentTarget.getAttribute('aria-disabled') === 'true') event.preventDefault(); });
 $('map-file').addEventListener('change', () => {
   const file = $('map-file').files[0];
   $('map-file-label').textContent = file ? file.name : 'OSM XML / Overpass JSON / DAY NEXT JSON';

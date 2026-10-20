@@ -3,12 +3,14 @@ import { createZip } from './lib/zip.mjs';
 const root = new URL('../', import.meta.url);
 const read = path => readFile(new URL(path, root), 'utf8');
 const [html, css, world, realWorld, terrain, details, converter, map, game] = await Promise.all(['index.html', 'styles.css', 'world.js', 'real-world.js', 'terrain-renderer.js', 'detail-renderer.js', 'scripts/lib/osm-converter.mjs', 'maps/usa.js', 'game.js'].map(read));
+const { version } = JSON.parse(await read('package.json'));
+const mapData = JSON.parse(map.replace(/^export default\s+/, '').trim().replace(/;$/, ''));
 const wrap = (body, names) => `const {${names}} = (() => {\n${body.replace(/^export\s+/gm, '')}\nreturn {${names}};\n})();\n`;
 const source = wrap(world, 'createWorld,findPath,terrainAt,nearestWalkable')
   + wrap(realWorld, 'createRealWorld')
   + wrap(terrain, 'createTerrainBackdrop')
   + wrap(details, 'createDetailRenderer')
-  + wrap(converter, 'convertOSM')
+  + wrap(converter, 'convertOSM,validateBbox')
   + `const usaMap = ${map.replace(/^export default\s+/, '')}\n`
   + game.replace(/^import\s+[^;]+;\s*/gm, '');
 const standalone = html
@@ -19,6 +21,23 @@ await mkdir(new URL('dist/', root), { recursive: true });
 await writeFile(new URL('dist/day-next.html', root), standalone);
 await mkdir(new URL('downloads/', root), { recursive: true });
 await writeFile(new URL('downloads/day-next.html', root), standalone);
-const instructions = 'DAY / NEXT 0.4 — одиночная экспедиция\n\nОткройте day-next.html в браузере. Установка и интернет не нужны.\nКлик/касание — идти, перетаскивание — карта, колесо/щипок — масштаб до 24x.\nB / кнопка дома — посмотреть застройку; наведение/касание — сведения об отдельном доме или дороге. F / прицел — вернуться к путнику.\nКнопка «Слои» — отдельное включение подложки, природных объектов, дорог, домов и прочих объектов. Выключенные объекты не рисуются и не выбираются.\nКнопка атласа — реальная/вымышленная карта, импорт OSM/XML/JSON, экспорт JSON.\n\nРеальная местность: Beatty / Rhyolite, Nevada, USA. Исторический снимок OSM 2017-08-18.\nГеоданные: © OpenStreetMap contributors, ODbL 1.0\nhttps://www.openstreetmap.org/copyright\nИсходники, происхождение данных и конвертер:\nhttps://github.com/Eugene715x/DAY-NEXT\n';
+const instructions = `DAY / NEXT ${version} — одиночная экспедиция
+
+Откройте day-next.html в браузере. Установка и интернет не нужны.
+Клик/касание — идти, перетаскивание — карта, колесо/щипок — масштаб до 24x.
+B / кнопка дома — посмотреть застройку; наведение/касание — сведения об отдельном доме или дороге. F / прицел — вернуться к путнику.
+Кнопка «Слои» — отдельное включение подложки, природных объектов, дорог, домов и прочих объектов. Выключенные объекты не рисуются и не выбираются.
+Кнопка атласа — реальная/вымышленная карта, импорт OSM/XML/JSON, экспорт JSON и ссылка на свежий исходник OSM для выбранного участка.
+
+Реальная местность: ${mapData.name} / ${mapData.region}.
+Снимок OSM: ${mapData.source?.snapshotAt || 'дата не указана'}.
+Загружено: ${mapData.source?.downloadedAt || 'дата не указана'}.
+${mapData.roads.length} дорог, ${mapData.buildings.length} зданий.
+Полнота относится к исходному файлу, а не ко всем существующим в реальности объектам.
+Геоданные: © OpenStreetMap contributors, ODbL 1.0
+https://www.openstreetmap.org/copyright
+Исходники, происхождение данных и конвертер:
+https://github.com/Eugene715x/DAY-NEXT
+`;
 await writeFile(new URL('downloads/day-next.zip', root), createZip([{ name: 'day-next.html', data: standalone }, { name: 'README.txt', data: instructions }]));
 console.log(`Built dist/day-next.html and repository downloads/day-next.{html,zip} (${Math.round(Buffer.byteLength(standalone) / 1024)} KiB HTML). Fully offline.`);

@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { convertOSM, createProjection, parseOSM, projectPoint, validateBbox } from '../scripts/lib/osm-converter.mjs';
+import nevadaMap from '../maps/usa.js';
 
 const bbox = [-122, 47, -121.98, 47.015];
 const options = { bbox, id: 'fixture', name: 'Test Valley', region: 'Washington', country: 'US', downloadedAt: '2026-10-20T00:00:00.000Z' };
@@ -176,20 +177,38 @@ test('small mapped objects retain point/line/polygon geometry without inventing 
   assert.equal(map.statistics.details, 7);
 });
 
-test('Nevada source keeps every mapped house and pedestrian path plus actual minor features', async () => {
+test('Nevada source keeps every complete in-bounds house and small path without inventing source features', async () => {
   const raw = parseOSM(await readFile(new URL('../maps/source/beatty.osm', import.meta.url), 'utf8'));
-  const map = convertOSM(raw, { ...options, bbox: [-116.86, 36.86, -116.73, 36.94] });
-  const sourceBuildings = raw.elements.filter(element => element.type === 'way' && element.tags.building && element.tags.building !== 'no');
-  assert.equal(sourceBuildings.length, 104);
-  assert.deepEqual(new Set(map.buildings.map(building => building.id)), new Set(sourceBuildings.map(building => `way-${building.id}`)), 'No mapped house footprint may be dropped in the Nevada fixture');
-  assert.equal(map.roads.filter(road => road.type === 'footway').length, 11);
-  assert.equal(map.roads.filter(road => road.type === 'cycleway').length, 1);
-  assert.equal(map.roads.filter(road => road.type === 'track').length, 23);
-  assert.equal(map.buildings.filter(building => building.ruins).length, 8);
-  assert(map.details.length > 43, 'Objects outside the old style whitelist must remain mapped features');
-  for (const kind of ['railway', 'parking', 'pool', 'pitch', 'cemetery', 'spring', 'playground', 'cattle_grid']) assert(map.details.some(detail => detail.kind === kind), `Lost real minor feature: ${kind}`);
-  const sourceIds = new Set(raw.elements.map(element => `${element.type}-${element.id}`));
-  for (const detail of map.details) assert(sourceIds.has(detail.id.match(/^(?:node|way|relation)-\d+/)[0]), `Invented source detail ${detail.id}`);
+  const map = convertOSM(raw, { ...options, bbox: nevadaMap.bbox });
+  const [west, south, east, north] = nevadaMap.bbox;
+  const inside = point => point && Number.isFinite(point.lon) && Number.isFinite(point.lat)
+    && point.lon >= west && point.lon <= east && point.lat >= south && point.lat <= north;
+  const sourceById = new Map(raw.elements.map(element => [`${element.type}-${element.id}`, element]));
+  const pointsOf = way => way.geometry || (way.nodes || []).map(id => sourceById.get(`node-${id}`));
+  const buildingMembers = new Set(raw.elements
+    .filter(element => element.type === 'relation' && element.tags.type === 'multipolygon' && element.tags.building && element.tags.building !== 'no')
+    .flatMap(relation => relation.members.filter(member => member.type === 'way').map(member => `way-${member.ref}`)));
+  const sourceBuildings = raw.elements.filter(element => {
+    if (element.type !== 'way' || !element.tags.building || element.tags.building === 'no' || buildingMembers.has(`way-${element.id}`)) return false;
+    const points = pointsOf(element);
+    return points.length >= 4 && String(element.nodes[0]) === String(element.nodes.at(-1)) && points.every(inside);
+  });
+  assert(sourceBuildings.length > 0, 'The real city extract must contain mapped house footprints');
+  const buildingIds = new Set(map.buildings.map(building => building.sourceId));
+  for (const building of sourceBuildings) assert(buildingIds.has(`way-${building.id}`), `Dropped in-bounds house way-${building.id}`);
+
+  // Counts can change when OSM is refreshed; actual eligible source identities cannot disappear.
+  const roadIds = new Set(map.roads.map(road => road.sourceId));
+  const smallPaths = raw.elements.filter(element => element.type === 'way'
+    && ['footway', 'path', 'cycleway', 'track', 'steps', 'service'].includes(element.tags.highway)
+    && element.tags.area !== 'yes' && pointsOf(element).length >= 2 && pointsOf(element).every(Boolean) && pointsOf(element).some(inside));
+  assert(smallPaths.length > 0, 'The city extract must contain small roads or paths');
+  for (const path of smallPaths) assert(roadIds.has(`way-${path.id}`), `Dropped small road way-${path.id}`);
+  for (const feature of [...map.roads, ...map.rivers, ...map.areas, ...map.buildings, ...map.details]) {
+    const source = sourceById.get(feature.sourceId);
+    assert(source, `Invented source feature ${feature.id}`);
+    assert.deepEqual(feature.tags, { ...source.tags }, `Changed source tags for ${feature.id}`);
+  }
 });
 
 test('unlisted meaningful OSM features survive with original tags instead of disappearing', () => {
@@ -249,17 +268,27 @@ test('incomplete relations expose actual fragments and omissions without inventi
   assert(map.coverage.omittedByReason.incompleteGeometry.includes('way-343'));
 });
 
-test('Nevada coverage accounts for every meaningful source feature and preserves missing old categories', async () => {
+test('checked-in Nevada map and coverage reproduce the exact source file after any refresh', async () => {
   const raw = parseOSM(await readFile(new URL('../maps/source/beatty.osm', import.meta.url), 'utf8'));
-  const map = convertOSM(raw, { ...options, bbox: [-116.86, 36.86, -116.73, 36.94] });
+  const map = convertOSM(raw, { ...options, bbox: nevadaMap.bbox });
+  const report = JSON.parse(await readFile(new URL('../maps/source/coverage.json', import.meta.url), 'utf8'));
   const accounted = map.coverage.representedSourceElements + map.coverage.representedByRelation + Object.values(map.coverage.omittedCounts).reduce((sum, count) => sum + count, 0);
   assert.equal(accounted, map.coverage.sourceTaggedElements);
-  assert.equal(map.coverage.sourceTaggedElements, 425);
+  assert.equal(map.coverage.sourceTaggedElements + map.coverage.metadataOnlyElements, raw.elements.length);
+  assert.equal(map.coverage.inputElements, raw.elements.length);
   assert.equal(map.coverage.eligibleInBounds, map.coverage.representedSourceElements);
-  for (const kind of ['runway', 'taxiway', 'apron', 'aerodrome', 'peak', 'boundary', 'restaurant', 'hotel', 'car_repair']) assert(map.details.some(detail => detail.kind === kind), `Missing OSM category: ${kind}`);
-  assert(map.relations.find(r => r.id === 'relation-2306492').missingMemberIds.length > 500, 'The historical local extract must not pretend to contain the full interstate relation');
-  assert(map.coverage.partialRelations.some(relation => relation.id === 'relation-170095'));
-  assert.equal(map.roads.length, 156); assert.equal(map.buildings.length, 104);
+  for (const key of ['roads', 'rivers', 'areas', 'buildings', 'details', 'relations', 'coverage', 'statistics', 'start']) {
+    assert.deepEqual(nevadaMap[key], map[key], `Checked-in ${key} must match conversion of the saved source`);
+  }
+  for (const key of Object.keys(map.coverage)) assert.deepEqual(report[key], map.coverage[key], `Stale coverage report field ${key}`);
+  assert.equal(report.snapshotAt, nevadaMap.source.snapshotAt);
+
+  const sourceIds = new Set(raw.elements.map(element => `${element.type}-${element.id}`));
+  for (const relation of map.relations) {
+    const missing = relation.members.filter(member => !sourceIds.has(`${member.type}-${member.ref}`)).map(member => `${member.type}-${member.ref}`);
+    assert.deepEqual(relation.missingMemberIds, missing, `Relation ${relation.id} must expose its actual missing members`);
+    assert.equal(map.coverage.partialRelations.some(partial => partial.id === relation.id), !relation.geometryComplete);
+  }
 });
 
 test('bounded Overpass geometry retains known fragments without joining across missing vertices', () => {
