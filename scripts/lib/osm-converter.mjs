@@ -370,7 +370,13 @@ export function convertOSM(input, options = {}) {
       const rings = [ring, ...holes.map(hole => clipRing(hole, boundWidth, boundHeight)).filter(Boolean)];
       const id = `relation-${relation.id}-${index++}`, name = clean(relation.tags.name || '');
       const geometryIncomplete = (relation.members || []).some(member => member.type === 'way' && geometry(member).length < 2 && (!ways.has(String(member.ref)) || geometry(ways.get(String(member.ref))).length < 2));
-      if (!boundary) for (const member of relation.members || []) if (member.type === 'way') relationMembers.add(String(member.ref));
+      if (!boundary) for (const member of relation.members || []) if (member.type === 'way') {
+        // A tagged inner ring also describes an independent object: a house,
+        // airport, cemetery, etc. Its hole excludes the parent biome but must
+        // not remove that object's own geometry or tags from the other layers.
+        const independentInner = member.role === 'inner' && meaningfulTags(ways.get(String(member.ref))?.tags).length > 0;
+        if (!independentInner) relationMembers.add(String(member.ref));
+      }
       if (type) areas.push({ id, type, rings, name, tags: safeTags(relation.tags), intermittent: isIntermittent(relation.tags), seasonal: isSeasonal(relation.tags) });
       if (isBuilding) buildings.push({ id, points: ring, rings, name, ...buildingMetadata(relation.tags) });
       if (detail && !isBuilding) details.push({ id, kind: detail, geometry: 'polygon', points: ring, rings, name, tags: safeTags(relation.tags), ...(boundary ? {

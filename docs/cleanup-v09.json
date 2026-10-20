@@ -1,0 +1,77 @@
+{
+  "version": "0.9.0",
+  "platform": "Chromium /usr/bin/chromium, headless, 1440×960, deviceScaleFactor=1",
+  "automatedTests": {
+    "passed": 109,
+    "failed": 0
+  },
+  "offline": {
+    "javascriptErrors": 0,
+    "networkRequests": 0
+  },
+  "map": {
+    "rawRoads": 658,
+    "rawBuildings": 893,
+    "rawPowerLines": 13,
+    "displayRoads": 595,
+    "displayPowerLines": 13,
+    "power": 14,
+    "details": 148,
+    "staticCacheReused": true,
+    "performance": {
+      "samples": 120,
+      "meanMs": 16.665833333333335,
+      "p95Ms": 16.700000000000728,
+      "fps": 60.003000150007495
+    }
+  },
+  "checks": {
+    "powerInkToggle": true,
+    "administrativeBoundaryOnly": true,
+    "sandTyped": true,
+    "overlapTypes": [
+      "biome.residential",
+      "biome.parking",
+      "biome.healthcare"
+    ],
+    "classCheckboxes": {
+      "highway": true,
+      "road": true,
+      "street": true,
+      "track": true,
+      "trail": true
+    }
+  },
+  "sand": {
+    "sourceId": "relation-15569711",
+    "rawSha256": "a11681c538c5d897758cfafdadfaf325fab4cd1bc529acbaeb5766b098fed297",
+    "rawBytes": 576178,
+    "sourceMembers": {
+      "outer": 8,
+      "inner": 134
+    },
+    "displayRings": 14,
+    "interior": {
+      "point": {
+        "x": 240,
+        "y": 1320
+      },
+      "alpha": 154,
+      "biomes": [
+        "desert",
+        "sand"
+      ]
+    },
+    "hole": {
+      "point": {
+        "x": 1652.0636666666667,
+        "y": 1932.5106666666666
+      },
+      "alpha": 0,
+      "biomes": [
+        "desert",
+        "transport"
+      ]
+    }
+  }
+}

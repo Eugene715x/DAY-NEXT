@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { convertOSM, mergeOSMSources, parseOSM } from '../scripts/lib/osm-converter.mjs';
 import { downloadSandSource, prepareSandSupplement, SAND_SOURCE_URL, writeSandSupplement } from '../scripts/enrich-sand.mjs';
 import { BEATTY_BBOX, loadLocalSandSupplement, main as refreshMap, prepareMapUpdate, writeMapUpdate } from '../scripts/refresh-map.mjs';
+import nevadaMap from '../maps/usa.js';
 
 const coordinates = [
   [-116.88, 36.84], [-116.71, 36.84], [-116.71, 36.90], [-116.88, 36.90],
@@ -61,6 +62,21 @@ test('settlement boundary outlines clip real source segments without stroking th
   assert.equal(boundary.boundaryPaths[0][0].x, 3000);
   assert.equal(boundary.boundaryPaths[0][1].x, 0);
   assert(boundary.points.length > boundary.boundaryPaths[0].length, 'Fill clipping retains frame edges that the outline excludes.');
+});
+
+test('tagged sand holes keep their independent houses and institutional zones', () => {
+  const source = fixture();
+  source.elements = source.elements.map(element => element.id === '104' ? { ...element, tags: { building: 'house', 'addr:housenumber': '17' } }
+    : element.id === '105' ? { ...element, tags: { aeroway: 'aerodrome', name: 'Mapped Airport' } } : element);
+  const map = convertOSM(source, options), polygon = sandFeatures(map)[0];
+  assert.equal(polygon.rings.length, 3, 'Both independent objects remain holes in the parent sand biome.');
+  assert.equal(map.buildings.length, 1);
+  assert.equal(map.buildings[0].sourceId, 'way-104');
+  assert.equal(map.buildings[0].address, '17');
+  const airport = map.details.find(feature => feature.sourceId === 'way-105');
+  assert.equal(airport.geometry, 'polygon');
+  assert.equal(airport.tags.aeroway, 'aerodrome');
+  assert.equal(map.coverage.representedSourceElements, map.coverage.eligibleInBounds);
 });
 
 test('a missing sand outer or inner member cannot produce a filled biome', () => {
@@ -139,4 +155,25 @@ test('supplement fills the source gap with exact provenance while a rebuild pres
     await rm(join(root, 'maps/source/beatty-sand.provenance.json'));
     await assert.rejects(loadLocalSandSupplement(root), /source\/provenance pair/);
   } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+test('published real sand biome has a complete source and preserves every base house and road', async () => {
+  const baseBytes = await readFile(new URL('../maps/source/beatty.osm', import.meta.url));
+  const supplement = await loadLocalSandSupplement();
+  assert(supplement, 'Publish the full sand source alongside its generated biome.');
+  const validated = prepareSandSupplement(supplement.bytes, supplement.provenance);
+  assert.equal(validated.provenance.sha256, supplement.provenance.sha256);
+  assert.equal(nevadaMap.source.sha256, createHash('sha256').update(baseBytes).digest('hex'));
+  assert.equal(nevadaMap.source.supplementalSources[0].sha256, validated.provenance.sha256);
+  const relation = nevadaMap.relations.find(relation => relation.id === 'relation-15569711');
+  assert.equal(relation.geometryComplete, true);
+  assert.equal(relation.availableMemberIds.length, relation.members.length);
+  assert.equal(relation.missingMemberIds.length, 0);
+  const polygons = sandFeatures(nevadaMap);
+  assert(polygons.length > 0 && polygons.every(feature => feature.geometry === 'polygon' && feature.rings.length > 1));
+  const base = convertOSM(baseBytes.toString('utf8'), options);
+  for (const collection of ['buildings', 'roads']) {
+    const full = new Map(nevadaMap[collection].map(feature => [feature.id, feature]));
+    for (const feature of base[collection]) assert.deepEqual(full.get(feature.id), feature, `Lost or changed base ${collection} object ${feature.id}`);
+  }
 });

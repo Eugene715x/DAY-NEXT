@@ -21,15 +21,15 @@
     ]
   },
   "layerCounts": {
-    "landscape": 429,
-    "water": 111,
+    "landscape": 432,
+    "water": 112,
     "roads": 595,
     "power": 14,
-    "buildings": 885,
+    "buildings": 893,
     "details": 148
   },
   "presentation": {
-    "inputFeatures": 2595,
+    "inputFeatures": 2607,
     "filteredFeatures": 354,
     "coalescedFeatures": 13,
     "sourceRoads": 658,
@@ -45,11 +45,11 @@
     }
   },
   "landscape": {
-    "count": 429,
+    "count": 432,
     "geometryCounts": {
       "point": 34,
       "line": 11,
-      "polygon": 384
+      "polygon": 387
     },
     "biomes": [
       {
@@ -125,6 +125,15 @@
         }
       },
       {
+        "id": "recreation",
+        "count": 8,
+        "geometryCounts": {
+          "point": 0,
+          "line": 0,
+          "polygon": 8
+        }
+      },
+      {
         "id": "accommodation",
         "count": 7,
         "geometryCounts": {
@@ -135,15 +144,6 @@
       },
       {
         "id": "industrial",
-        "count": 7,
-        "geometryCounts": {
-          "point": 0,
-          "line": 0,
-          "polygon": 7
-        }
-      },
-      {
-        "id": "recreation",
         "count": 7,
         "geometryCounts": {
           "point": 0,
@@ -215,6 +215,24 @@
         }
       },
       {
+        "id": "transport",
+        "count": 3,
+        "geometryCounts": {
+          "point": 0,
+          "line": 0,
+          "polygon": 3
+        }
+      },
+      {
+        "id": "cemetery",
+        "count": 2,
+        "geometryCounts": {
+          "point": 0,
+          "line": 0,
+          "polygon": 2
+        }
+      },
+      {
         "id": "education",
         "count": 2,
         "geometryCounts": {
@@ -257,24 +275,6 @@
           "point": 0,
           "line": 0,
           "polygon": 2
-        }
-      },
-      {
-        "id": "transport",
-        "count": 2,
-        "geometryCounts": {
-          "point": 0,
-          "line": 0,
-          "polygon": 2
-        }
-      },
-      {
-        "id": "cemetery",
-        "count": 1,
-        "geometryCounts": {
-          "point": 0,
-          "line": 0,
-          "polygon": 1
         }
       },
       {
