@@ -1,0 +1,235 @@
+{
+  "version": "0.11.0",
+  "environment": "Chromium headless /usr/bin/chromium, 1440×960, deviceScaleFactor=1",
+  "tests": {
+    "passed": 148,
+    "failed": 0
+  },
+  "javascriptErrors": [],
+  "networkRequests": 0,
+  "rawGeometry": {
+    "roads": 658,
+    "buildings": 893
+  },
+  "layerCounts": {
+    "landscape": 389,
+    "water": 53,
+    "roads": 83,
+    "power": 6,
+    "buildings": 893,
+    "details": 87
+  },
+  "biomeGeneration": {
+    "enabled": true,
+    "method": "building-density-contours",
+    "occupiedCutsDeferred": true,
+    "sampleSpacingMeters": 15,
+    "grid": {
+      "cols": 773,
+      "rows": 600
+    },
+    "sourceBuildings": 893,
+    "sampledNodes": 25094,
+    "urbanVertices": 5196,
+    "generatedZones": 47,
+    "byBiome": {
+      "wasteland": 1,
+      "suburb": 27,
+      "urban": 9,
+      "dense": 10,
+      "aircraft_parking": 0
+    }
+  },
+  "urbanFillerClipping": {
+    "inputFeatures": 46,
+    "outputFeatures": 29,
+    "removedFeatures": 17,
+    "sourceMaskCount": 338,
+    "beforeArea": 188085.79566115036,
+    "afterArea": 74380.82568684708
+  },
+  "pixelChecks": [
+    {
+      "id": "diagonal",
+      "point": {
+        "x": 580,
+        "y": 450
+      },
+      "excluded": true,
+      "alpha": 0,
+      "biomes": [
+        "parking",
+        "park"
+      ],
+      "picked": {
+        "key": "landscape:detail:park",
+        "kind": "park",
+        "urbanFiller": false
+      }
+    },
+    {
+      "id": "park",
+      "point": {
+        "x": 570,
+        "y": 460
+      },
+      "excluded": true,
+      "alpha": 0,
+      "biomes": [
+        "park"
+      ],
+      "picked": {
+        "key": "landscape:detail:park",
+        "kind": "park",
+        "urbanFiller": false
+      }
+    },
+    {
+      "id": "park-hole",
+      "point": {
+        "x": 615,
+        "y": 470
+      },
+      "excluded": false,
+      "alpha": 255,
+      "biomes": [
+        "urban"
+      ],
+      "picked": {
+        "key": "landscape:area:urban-fill",
+        "kind": "urban",
+        "urbanFiller": true
+      }
+    },
+    {
+      "id": "residential",
+      "point": {
+        "x": 450,
+        "y": 500
+      },
+      "excluded": true,
+      "alpha": 0,
+      "biomes": [
+        "residential"
+      ],
+      "picked": {
+        "key": "landscape:detail:residential",
+        "kind": "residential_area",
+        "urbanFiller": false
+      }
+    },
+    {
+      "id": "native-overlap",
+      "point": {
+        "x": 450,
+        "y": 600
+      },
+      "excluded": true,
+      "alpha": 0,
+      "biomes": [
+        "residential",
+        "religious"
+      ],
+      "picked": {
+        "key": "landscape:detail:church-ground",
+        "kind": "religious_area",
+        "urbanFiller": false
+      }
+    },
+    {
+      "id": "fusion-gap",
+      "point": {
+        "x": 690,
+        "y": 600
+      },
+      "excluded": true,
+      "alpha": 0,
+      "biomes": [
+        "residential"
+      ],
+      "picked": {
+        "key": "landscape:detail:game-zone-residential-zrdlta",
+        "kind": "residential_area",
+        "urbanFiller": false
+      }
+    },
+    {
+      "id": "substation",
+      "point": {
+        "x": 650,
+        "y": 660
+      },
+      "excluded": true,
+      "alpha": 0,
+      "biomes": [],
+      "picked": {
+        "key": "power:detail:substation",
+        "kind": "substation",
+        "urbanFiller": false
+      }
+    },
+    {
+      "id": "free",
+      "point": {
+        "x": 520,
+        "y": 390
+      },
+      "excluded": false,
+      "alpha": 255,
+      "biomes": [
+        "urban"
+      ],
+      "picked": {
+        "key": "landscape:area:urban-fill",
+        "kind": "urban",
+        "urbanFiller": true
+      }
+    }
+  ],
+  "smoothDensityCheck": {
+    "report": {
+      "enabled": true,
+      "method": "building-density-contours",
+      "occupiedCutsDeferred": false,
+      "sampleSpacingMeters": 15,
+      "grid": {
+        "cols": 122,
+        "rows": 62
+      },
+      "sourceBuildings": 49,
+      "sampledNodes": 1270,
+      "urbanVertices": 436,
+      "generatedZones": 7,
+      "byBiome": {
+        "wasteland": 1,
+        "suburb": 3,
+        "urban": 2,
+        "dense": 1,
+        "aircraft_parking": 0
+      }
+    },
+    "types": [
+      "suburb",
+      "urban",
+      "dense"
+    ],
+    "edges": 427,
+    "axisEdges": 1,
+    "axisRatio": 0.00234192037470726
+  },
+  "overlapAreaToleranceWorldUnitsSquared": 1e-06,
+  "realOverlapsAboveTolerance": [],
+  "idlePerformance": {
+    "samples": 120,
+    "meanMs": 16.666666666666668,
+    "fps": 59.99999999999999
+  },
+  "hoverPerformance": {
+    "samples": 120,
+    "meanMs": 16.805000000000003,
+    "fps": 59.50609937518595
+  },
+  "hoverNetworkMembers": 151,
+  "staticCacheReused": true,
+  "sourceSha256": "44f3641860c1e3966edf259c5487b89f1997699aec77cff783360f8c66414d99"
+}

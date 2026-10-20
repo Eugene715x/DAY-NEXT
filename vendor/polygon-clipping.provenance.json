@@ -1,0 +1,30 @@
+{
+  "name": "polygon-clipping",
+  "version": "0.15.7",
+  "sourceUrl": "https://registry.npmjs.org/polygon-clipping/-/polygon-clipping-0.15.7.tgz",
+  "tarballSha256": "23bdea671a65011107d91536881f527c8e2e6820f59e4bc1408a94d7cc11d5b7",
+  "bundlePath": "package/dist/polygon-clipping.umd.min.js",
+  "originalBundleSha256": "7f8619e84a86ce8dd400c9b50430e9c8cf8f26027b19eeb479f109f5c1a9d688",
+  "vendoredFileSha256": "8f78acc936c7b528740fe345d56a54ef351166b3d76fc29d9fb4d0e7bb4928d7",
+  "modifications": [
+    "Local ESM module wrapper prevents global pollution.",
+    "Removed sourceMappingURL to an unavailable map; runtime code and notices unchanged.",
+    "Prepended complete license notices for standalone HTML distribution."
+  ],
+  "bundledDependencies": [
+    {
+      "name": "splaytree",
+      "version": "3.1.2",
+      "url": "https://registry.npmjs.org/splaytree/-/splaytree-3.1.2.tgz",
+      "tarballSha256": "0942df3c271c0831f65f2c7b898f50c000f61864b0702fc50c2de13a8467a8da",
+      "licenseSource": "package/Readme.md"
+    },
+    {
+      "name": "robust-predicates",
+      "version": "3.0.2",
+      "url": "https://registry.npmjs.org/robust-predicates/-/robust-predicates-3.0.2.tgz",
+      "tarballSha256": "962cacbec5dc58976307fa534c335331c11a1f8f315fc698776c4e1fc931e17e",
+      "licenseSource": "package/LICENSE"
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createDetailRenderer } from '../detail-renderer.js';
+import { polygonIntersection } from '../polygon-geometry.js';
 
 // Picking uses the same cached source geometry in browsers. Node has no Canvas
 // Path2D; only its inert construction methods are needed for these hit tests.
@@ -281,4 +282,69 @@ test('geographic empty land receives a named fallback biome while mapped zones a
   assert.deepEqual(renderer.zonesAt(350, 250).map(zone => zone.biome), ['wasteland']);
   assert.equal(renderer.pick(350, 250), null);
   assert.deepEqual(input, before);
+});
+
+const urbanArea = (id, biome, points) => ({ id, type: biome, kind: biome, biome, derived: true, urbanFiller: true, geometry: 'polygon', points, rings: [points], provenance: { method: 'test-density-contour' } });
+const urbanMembership = (renderer, x, y) => renderer.zonesAt(x, y).filter(zone => zone.urbanFiller);
+
+test('city filler is actually cut by oblique parking, source zones, footprint sites and water with native holes left free', () => {
+  const park = { id: 'park', geometry: 'polygon', rings: [ring(180, 40, 280, 140), ring(210, 70, 250, 110)], tags: { leisure: 'park' } };
+  const input = world({ areas: [urbanArea('city', 'urban', ring(5, 5, 390, 290))], details: [
+    { id: 'housing', geometry: 'polygon', points: ring(20, 20, 90, 80), tags: { landuse: 'residential' } },
+    { id: 'retail', geometry: 'polygon', points: ring(50, 50, 110, 100), tags: { landuse: 'retail' } },
+    { id: 'diagonal-parking', geometry: 'polygon', points: [{ x: 80, y: 0 }, { x: 84, y: 0 }, { x: 244, y: 280 }, { x: 240, y: 280 }, { x: 80, y: 0 }], tags: { amenity: 'parking' } },
+    park,
+    { id: 'power-site', geometry: 'polygon', points: ring(250, 220, 280, 250), tags: { power: 'substation' } },
+    { id: 'lake', geometry: 'polygon', points: ring(20, 220, 50, 250), tags: { natural: 'water' } },
+  ], buildings: [{ id: 'clinic', points: ring(320, 180, 350, 210), tags: { building: 'yes', amenity: 'clinic' } }], rivers: [
+    { id: 'wet-stream', points: [{ x: 100, y: 200 }, { x: 160, y: 200 }], width: 4, tags: { waterway: 'stream' } },
+  ] });
+  const before = structuredClone(input), renderer = createDetailRenderer(input), features = renderer.getFeatures();
+  const urban = features.filter(feature => feature.urbanFiller);
+  assert.equal(urban.length, 1);
+  const occupied = features.filter(feature => feature.geometry === 'polygon' && !feature.urbanFiller && !feature.fallback).flatMap(feature => feature.parts);
+  assert.deepEqual(polygonIntersection(urban.flatMap(feature => feature.parts), occupied), [], 'The registered geometry, not only drawing order, excludes occupied land');
+  for (const [x, y] of [[60, 60], [139, 100], [190, 90], [265, 235], [35, 235], [335, 195], [130, 200]]) assert.deepEqual(urbanMembership(renderer, x, y), [], `Occupied point ${x},${y} must not inherit urban resources`);
+  assert.deepEqual(renderer.zonesAt(60, 60).map(zone => zone.biome).sort(), ['residential', 'retail'], 'Original mapped zone overlaps are still allowed');
+  assert.equal(urbanMembership(renderer, 225, 90).length, 1, 'An actual park hole is available for city filler');
+  assert.equal(urbanMembership(renderer, 150, 150).length, 1, 'Unzoned city space remains filled');
+  assert.equal(renderer.pick(150, 150, 0).id, 'city');
+  assert.equal(renderer.pick(139, 100, 0).biome, 'parking');
+  assert.equal(urban[0].provenance.method, 'test-density-contour');
+  assert.equal(urban[0].provenance.fillOnlyUnzoned, true);
+  const memberships = renderer.zonesAt(225, 90);
+  renderer.setLayers({ landscape: false, water: false, power: false, buildings: false });
+  assert.deepEqual(renderer.zonesAt(225, 90), memberships, 'Hidden zones still reserve their space');
+  assert.deepEqual(urbanMembership(renderer, 139, 100), []);
+  assert.deepEqual(input, before, 'Clipping cannot mutate imported geometry');
+});
+
+test('city filler is subtracted after functional zone fusion so the added corridor cannot paint it back', () => {
+  const renderer = createDetailRenderer(world({ areas: [urbanArea('city', 'suburb', ring(0, 0, 400, 300))], details: [
+    { id: 'west', geometry: 'polygon', points: ring(20, 20, 100, 100), tags: { landuse: 'residential' } },
+    { id: 'east', geometry: 'polygon', points: ring(120, 20, 200, 100), tags: { landuse: 'residential' } },
+  ] }));
+  assert.deepEqual(renderer.zonesAt(110, 70).map(zone => zone.biome), ['residential']);
+  assert.deepEqual(urbanMembership(renderer, 110, 70), []);
+  assert.equal(urbanMembership(renderer, 110, 140).length, 1);
+  const filler = renderer.getFeatures().find(feature => feature.urbanFiller);
+  const housing = renderer.getFeatures().find(feature => feature.biome === 'residential');
+  assert.deepEqual(polygonIntersection(filler.parts, housing.parts), []);
+  assert.equal(filler.provenance.exclusionStage, 'after-zone-fusion');
+  assert(renderer.getStats().urbanFillerClipping.afterArea < renderer.getStats().urbanFillerClipping.beforeArea);
+});
+
+test('urban density classes remain exclusive and fully occupied filler records disappear from selection', () => {
+  const renderer = createDetailRenderer(world({ areas: [
+    urbanArea('suburb', 'suburb', ring(10, 10, 390, 290)),
+    urbanArea('urban', 'urban', ring(100, 100, 300, 260)),
+    urbanArea('dense', 'dense', ring(160, 160, 240, 230)),
+    urbanArea('occupied-city', 'urban', ring(20, 20, 60, 60)),
+  ], details: [{ id: 'native-plot', geometry: 'polygon', points: ring(15, 15, 65, 65), tags: { landuse: 'commercial' } }] }));
+  assert.deepEqual(urbanMembership(renderer, 200, 200).map(zone => zone.biome), ['dense']);
+  assert.deepEqual(urbanMembership(renderer, 120, 120).map(zone => zone.biome), ['urban']);
+  assert.deepEqual(urbanMembership(renderer, 350, 250).map(zone => zone.biome), ['suburb']);
+  assert.deepEqual(urbanMembership(renderer, 40, 40), []);
+  assert(!renderer.getFeatures().some(feature => feature.id === 'occupied-city'));
+  assert.equal(renderer.getStats().urbanFillerClipping.removedFeatures, 1);
 });

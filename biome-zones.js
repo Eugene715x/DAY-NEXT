@@ -1,4 +1,5 @@
-import { mapBiome, mapFeatureLayer } from './map-layers.js';
+import { mapBiome, mapFeatureLayer, mapZoneBiome, shouldRenderFeature } from './map-layers.js';
+import { polygonDifference, polygonUnion, polygonIntersection } from './polygon-geometry.js';
 
 // Gameplay geography derived from mapped geometry. No source feature is edited.
 const bzClone = value => Array.isArray(value) ? value.map(bzClone) : value && typeof value === 'object' ? Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, bzClone(entry)])) : value;
@@ -61,114 +62,190 @@ function bzPolygonRecords(world) {
     return [{ feature, parts, biome: mapBiome(feature), layer: mapFeatureLayer(feature, group), bounds: bzBounds(parts.flat(2)) }];
   }));
 }
-function bzSimplify(ring) {
-  const points = ring.slice(0, -1);
-  const simplified = points.filter((point, index) => {
-    const a = points[(index + points.length - 1) % points.length], b = points[(index + 1) % points.length];
-    return (point.x - a.x) * (b.y - point.y) !== (point.y - a.y) * (b.x - point.x);
-  });
-  return simplified.length >= 3 ? [...simplified, { ...simplified[0] }] : ring;
+function bzSmoothRing(ring, iterations = 2) {
+  let points = ring.slice(0, -1);
+  for (let pass = 0; pass < iterations; pass++) {
+    const rounded = [];
+    for (let i = 0; i < points.length; i++) {
+      const a = points[i], b = points[(i + 1) % points.length];
+      rounded.push({ x: a.x * .75 + b.x * .25, y: a.y * .75 + b.y * .25 }, { x: a.x * .25 + b.x * .75, y: a.y * .25 + b.y * .75 });
+    }
+    points = rounded;
+  }
+  return [...points, { ...points[0] }];
 }
-function bzCellParts(cells, cols, cellSize, width, height) {
-  const has = index => cells.has(index), edges = new Map();
-  const add = (x, y, nx, ny, direction) => {
-    const key = `${x},${y}`;
-    if (!edges.has(key)) edges.set(key, []);
-    edges.get(key).push({ x: nx, y: ny, direction });
+function bzSimplifyLine(points, tolerance) {
+  if (points.length <= 2) return points;
+  const a = points[0], b = points.at(-1);
+  let selected = -1, maximum = tolerance;
+  for (let i = 1; i < points.length - 1; i++) {
+    const distance = bzNearest(points[i], a, b).distance;
+    if (distance > maximum) { maximum = distance; selected = i; }
+  }
+  return selected < 0 ? [a, b] : [...bzSimplifyLine(points.slice(0, selected + 1), tolerance).slice(0, -1), ...bzSimplifyLine(points.slice(selected), tolerance)];
+}
+function bzSmoothParts(parts, metersPerUnit) {
+  return parts.map(rings => rings.map(ring => {
+    const rounded = bzSmoothRing(ring), half = Math.floor((rounded.length - 1) / 2);
+    return [...bzSimplifyLine(rounded.slice(0, half + 1), .35 / metersPerUnit).slice(0, -1), ...bzSimplifyLine(rounded.slice(half), .35 / metersPerUnit)];
+  }));
+}
+
+// Trace level-set segments, rather than exposed square cell edges. Shared edge
+// identities join neighboring samples exactly; interpolation makes the contour
+// continuous even though the density calculation uses a bounded sample lattice.
+function bzDensityContours(field, activeCells, cols, rows, cellSize, threshold) {
+  const stride = cols + 1, nodes = new Map(), edges = new Map();
+  const pointFor = (index) => ({ x: (index % stride - 1) * cellSize, y: (Math.floor(index / stride) - 1) * cellSize });
+  const intersection = (first, second) => {
+    const av = field[first], bv = field[second];
+    const key = Math.abs(av - threshold) < 1e-10 ? `n${first}` : Math.abs(bv - threshold) < 1e-10 ? `n${second}` : first < second ? `${first}:${second}` : `${second}:${first}`;
+    if (!nodes.has(key)) {
+      const a = pointFor(first), b = pointFor(second), ratio = (threshold - av) / (bv - av);
+      nodes.set(key, { x: a.x + (b.x - a.x) * ratio, y: a.y + (b.y - a.y) * ratio });
+    }
+    return key;
   };
-  for (const index of cells) {
-    const x = index % cols, y = Math.floor(index / cols);
-    if (y === 0 || !has(index - cols)) add(x, y, x + 1, y, 0);
-    if (x === cols - 1 || !has(index + 1)) add(x + 1, y, x + 1, y + 1, 1);
-    if (!has(index + cols)) add(x + 1, y + 1, x, y + 1, 2);
-    if (x === 0 || !has(index - 1)) add(x, y + 1, x, y, 3);
+  const add = (a, b) => {
+    if (a === b) return;
+    if (!edges.has(a)) edges.set(a, new Set()); if (!edges.has(b)) edges.set(b, new Set());
+    edges.get(a).add(b); edges.get(b).add(a);
+  };
+  for (const cell of activeCells) {
+    const x = cell % cols, y = Math.floor(cell / cols);
+    if (x < 0 || x >= cols || y < 0 || y >= rows) continue;
+    const corners = [y * stride + x, y * stride + x + 1, (y + 1) * stride + x + 1, (y + 1) * stride + x];
+    const crossings = [];
+    for (let edge = 0; edge < 4; edge++) {
+      const a = corners[edge], b = corners[(edge + 1) % 4];
+      if ((field[a] >= threshold) !== (field[b] >= threshold)) crossings.push({ edge, key: intersection(a, b) });
+    }
+    if (crossings.length === 2) add(crossings[0].key, crossings[1].key);
+    else if (crossings.length === 4) {
+      const centerInside = corners.reduce((sum, index) => sum + field[index], 0) / 4 >= threshold;
+      const diagonalFirst = field[corners[0]] >= threshold;
+      const pairs = centerInside === diagonalFirst ? [[0, 1], [2, 3]] : [[0, 3], [1, 2]];
+      for (const [a, b] of pairs) add(crossings[a].key, crossings[b].key);
+    }
   }
   const rings = [];
   while (edges.size) {
-    const start = edges.keys().next().value, [sx, sy] = start.split(',').map(Number);
-    const ring = [bzPoint(Math.min(width, sx * cellSize), Math.min(height, sy * cellSize))];
-    let key = start, previous = null, iterations = 0;
+    const start = edges.keys().next().value, ring = [nodes.get(start)];
+    let current = start, iterations = 0;
     do {
-      const choices = edges.get(key);
-      if (!choices?.length || iterations++ > cells.size * 4 + 4) throw new Error('Invalid gameplay-zone cell boundary.');
-      let selected = 0;
-      if (previous !== null && choices.length > 1) {
-        const priority = direction => [1, 0, 3, 2].indexOf((direction - previous + 4) % 4);
-        choices.forEach((choice, i) => { if (priority(choice.direction) < priority(choices[selected].direction)) selected = i; });
-      }
-      const edge = choices.splice(selected, 1)[0];
-      if (!choices.length) edges.delete(key);
-      previous = edge.direction; key = `${edge.x},${edge.y}`;
-      ring.push(bzPoint(Math.min(width, edge.x * cellSize), Math.min(height, edge.y * cellSize)));
-    } while (key !== start);
-    if (ring.length >= 4 && Math.abs(bzArea(ring)) > .0001) rings.push(bzSimplify(ring));
+      const choices = edges.get(current);
+      if (!choices?.size || iterations++ > activeCells.size * 2 + 4) throw new Error('Invalid gameplay density contour.');
+      const next = choices.values().next().value;
+      choices.delete(next); if (!choices.size) edges.delete(current);
+      const reverse = edges.get(next); reverse.delete(current); if (!reverse.size) edges.delete(next);
+      ring.push(nodes.get(next)); current = next;
+    } while (current !== start);
+    if (ring.length >= 4 && Math.abs(bzArea(ring)) > 1e-9) rings.push(ring);
   }
-  const outers = rings.filter(ring => bzArea(ring) > 0), holes = rings.filter(ring => bzArea(ring) < 0);
-  return outers.map(outer => [outer, ...holes.filter(hole => bzInRing(hole[0], outer))]);
+  // The interpolated graph has arbitrary winding. Nesting, not trace direction,
+  // distinguishes holes and islands before the boolean geometry normalizes it.
+  rings.sort((a, b) => Math.abs(bzArea(b)) - Math.abs(bzArea(a)));
+  const entries = [];
+  for (const ring of rings) {
+    let parent = -1;
+    for (let i = entries.length - 1; i >= 0; i--) if (bzInRing(ring[0], entries[i].ring)) { parent = i; break; }
+    entries.push({ ring, parent, depth: parent < 0 ? 0 : entries[parent].depth + 1 });
+  }
+  return entries.flatMap((entry, index) => entry.depth % 2 ? [] : [[entry.ring, ...entries.filter(other => other.parent === index && other.depth % 2).map(other => other.ring)]]);
+}
+
+function bzLineMask(record) {
+  const masks = [], radius = record.radius, points = record.feature.points;
+  for (let i = 1; i < points.length; i++) {
+    const a = points[i - 1], b = points[i], length = Math.hypot(b.x - a.x, b.y - a.y);
+    if (!length) continue;
+    const nx = (b.y - a.y) / length * radius, ny = -(b.x - a.x) / length * radius;
+    masks.push([[{ x: a.x + nx, y: a.y + ny }, { x: b.x + nx, y: b.y + ny }, { x: b.x - nx, y: b.y - ny }, { x: a.x - nx, y: a.y - ny }, { x: a.x + nx, y: a.y + ny }]]);
+  }
+  for (const point of points) {
+    const ring = Array.from({ length: 12 }, (_, index) => ({ x: point.x + Math.cos(index / 12 * Math.PI * 2) * radius, y: point.y + Math.sin(index / 12 * Math.PI * 2) * radius }));
+    masks.push([[...ring, { ...ring[0] }]]);
+  }
+  return masks;
 }
 function bzGeneratedFeature(id, biome, parts, provenance, extra = {}) {
   return { id, sourceId: id, name: { wasteland: 'Пустошь', suburb: 'Пригород', urban: 'Городская застройка', dense: 'Плотная застройка', aircraft_parking: 'Стоянка самолётов' }[biome] || '', type: biome, kind: biome, biome, geometry: 'polygon', points: parts[0][0], rings: parts[0], parts, derived: true, sourceIds: [...(provenance.sourceIds || [])], provenance, ...extra };
 }
 
-/** Coarse ground inference, run once per map. Source tags and building purposes remain facts. */
-export function buildGameplayBiomes(world = {}) {
+/** Smooth density inference over unzoned ground, built once per geographic map. */
+export function buildGameplayBiomes(world = {}, { deferOccupiedCuts = false } = {}) {
   if (!(world.geographic || Array.isArray(world.bbox)) || !(world.width > 0 && world.height > 0)) return { features: [], report: { enabled: false, generatedZones: 0 } };
   const metersPerUnit = Number(world.metersPerUnit) || 5;
-  const cellSize = Math.max(60 / metersPerUnit, world.width / 320, world.height / 320), cols = Math.ceil(world.width / cellSize), rows = Math.ceil(world.height / cellSize);
+  const cellSize = Math.max(15 / metersPerUnit, world.width / 800, world.height / 800);
+  const cols = Math.ceil(world.width / cellSize) + 2, rows = Math.ceil(world.height / cellSize) + 2, stride = cols + 1;
   const polygons = bzPolygonRecords(world);
-  const protectedBiomes = new Set(['forest', 'wetland', 'grassland', 'scrub', 'park', 'garden', 'recreation', 'farmland', 'orchard', 'vineyard', 'cemetery', 'sand', 'rock', 'quarry', 'glacier', 'transport', 'aircraft_parking', 'religious', 'healthcare', 'education', 'civic', 'emergency', 'camping', 'heritage', 'utilities', 'landfill']);
-  const blockers = polygons.filter(record => record.layer === 'water' && !bzDry(record.feature) || record.layer === 'landscape' && protectedBiomes.has(record.biome));
-  const waterLines = bzWaterLines(world);
-  const radius = 120 / metersPerUnit, isolatedRadius = 40 / metersPerUnit;
+  const radius = 120 / metersPerUnit;
   const buildings = (world.buildings || []).filter(feature => feature.points?.length >= 3).map(feature => {
     const bounds = bzBounds(feature.points);
     return { point: { x: (bounds.minX + bounds.maxX) / 2, y: (bounds.minY + bounds.maxY) / 2 }, sourceId: bzSourceId(feature) };
-  });
-  const bins = new Map(), active = new Set(), binSize = radius;
+  }).sort((a, b) => String(a.sourceId).localeCompare(String(b.sourceId)));
+  const bins = new Map(), activeNodes = new Set(), activeCells = new Set(), binSize = radius;
   for (const building of buildings) {
     const bx = Math.floor(building.point.x / binSize), by = Math.floor(building.point.y / binSize), key = `${bx},${by}`;
-    if (!bins.has(key)) bins.set(key, []);
-    bins.get(key).push(building);
-    const minX = Math.max(0, Math.floor((building.point.x - radius) / cellSize)), maxX = Math.min(cols - 1, Math.floor((building.point.x + radius) / cellSize));
-    const minY = Math.max(0, Math.floor((building.point.y - radius) / cellSize)), maxY = Math.min(rows - 1, Math.floor((building.point.y + radius) / cellSize));
-    for (let y = minY; y <= maxY; y++) for (let x = minX; x <= maxX; x++) active.add(y * cols + x);
+    if (!bins.has(key)) bins.set(key, []); bins.get(key).push(building);
+    const minX = Math.max(1, Math.floor((building.point.x - radius) / cellSize) + 1), maxX = Math.min(cols - 1, Math.ceil((building.point.x + radius) / cellSize) + 1);
+    const minY = Math.max(1, Math.floor((building.point.y - radius) / cellSize) + 1), maxY = Math.min(rows - 1, Math.ceil((building.point.y + radius) / cellSize) + 1);
+    for (let y = minY; y <= maxY; y++) for (let x = minX; x <= maxX; x++) activeNodes.add(y * stride + x);
   }
-  const classes = new Map(), sourcesForCell = new Map();
-  for (const index of [...active].sort((a, b) => a - b)) {
-    const x = index % cols, y = Math.floor(index / cols), center = { x: Math.min(world.width, (x + .5) * cellSize), y: Math.min(world.height, (y + .5) * cellSize) };
-    const rect = { minX: x * cellSize, minY: y * cellSize, maxX: Math.min(world.width, (x + 1) * cellSize), maxY: Math.min(world.height, (y + 1) * cellSize) };
-    if (blockers.some(record => bzOverlap(rect, record.bounds) && bzRectTouchesParts(rect, record.parts)) || waterLines.some(record => bzRectTouchesLine(rect, record))) continue;
-    const bx = Math.floor(center.x / binSize), by = Math.floor(center.y / binSize), nearby = [];
+  const field = new Float64Array((cols + 1) * (rows + 1));
+  for (const index of activeNodes) {
+    const x = index % stride, y = Math.floor(index / stride), point = { x: (x - 1) * cellSize, y: (y - 1) * cellSize };
+    const bx = Math.floor(point.x / binSize), by = Math.floor(point.y / binSize);
+    let density = 0;
     for (let yy = by - 1; yy <= by + 1; yy++) for (let xx = bx - 1; xx <= bx + 1; xx++) {
       for (const building of bins.get(`${xx},${yy}`) || []) {
-        const distance = Math.hypot(building.point.x - center.x, building.point.y - center.y);
-        if (distance <= radius) nearby.push({ ...building, distance });
+        const squared = ((building.point.x - point.x) ** 2 + (building.point.y - point.y) ** 2) / radius ** 2;
+        if (squared < 1) density += (1 - squared) ** 2;
       }
     }
-    if (!nearby.length) continue;
-    const nearest = Math.min(...nearby.map(building => building.distance));
-    const biome = nearby.length >= 18 && nearest <= 75 / metersPerUnit ? 'dense'
-      : nearby.length >= 7 && nearest <= 100 / metersPerUnit ? 'urban'
-      : nearby.length >= 2 || nearest <= isolatedRadius ? 'suburb' : null;
-    if (!biome) continue;
-    classes.set(index, biome); sourcesForCell.set(index, nearby.map(building => building.sourceId));
+    field[index] = density;
+    for (const [cx, cy] of [[x - 1, y - 1], [x, y - 1], [x - 1, y], [x, y]]) if (cx >= 0 && cx < cols && cy >= 0 && cy < rows) activeCells.add(cy * cols + cx);
   }
-  const fallbackRing = [bzPoint(0, 0), bzPoint(world.width, 0), bzPoint(world.width, world.height), bzPoint(0, world.height), bzPoint(0, 0)];
+  const fallbackRing = [{ x: 0, y: 0 }, { x: world.width, y: 0 }, { x: world.width, y: world.height }, { x: 0, y: world.height }, { x: 0, y: 0 }];
   const features = [bzGeneratedFeature('game-biome-wasteland', 'wasteland', [[fallbackRing]], { method: 'unmapped-ground-fallback', sourceIds: [], notes: 'Gameplay fallback, not a claim about mapped grass or soil.' }, { fallback: true })];
-  const visited = new Set();
-  for (const start of classes.keys()) {
-    if (visited.has(start)) continue;
-    const biome = classes.get(start), queue = [start], cells = new Set(), sources = new Set(); visited.add(start);
-    for (let position = 0; position < queue.length; position++) {
-      const index = queue[position], x = index % cols; cells.add(index);
-      for (const sourceId of sourcesForCell.get(index) || []) if (sourceId) sources.add(sourceId);
-      for (const neighbor of [x > 0 ? index - 1 : -1, x < cols - 1 ? index + 1 : -1, index - cols, index + cols]) if (neighbor >= 0 && neighbor < cols * rows && !visited.has(neighbor) && classes.get(neighbor) === biome) { visited.add(neighbor); queue.push(neighbor); }
-    }
-    const parts = bzCellParts(cells, cols, cellSize, world.width, world.height);
-    if (parts.length) features.push(bzGeneratedFeature(`game-biome-${biome}-${start}`, biome, parts, { method: 'building-density-grid', cellSizeMeters: cellSize * metersPerUnit, radiusMeters: 120, thresholds: { urban: 7, dense: 18 }, buildingCount: sources.size, sourceIds: [...sources].sort() }));
+  const aircraft = buildAircraftParkingZones(world, polygons, metersPerUnit);
+  const thresholds = { suburb: (1 - (40 / 120) ** 2) ** 2, urban: 4, dense: 10 };
+  const envelopes = {};
+  for (const biome of ['suburb', 'urban', 'dense']) {
+    const contours = bzDensityContours(field, activeCells, cols, rows, cellSize, thresholds[biome]);
+    envelopes[biome] = contours.length ? polygonIntersection(polygonUnion(bzSmoothParts(contours, metersPerUnit)), [[fallbackRing]]) : [];
   }
-  features.push(...buildAircraftParkingZones(world, polygons, metersPerUnit));
-  return { features, report: { enabled: true, cellSizeMeters: cellSize * metersPerUnit, grid: { cols, rows }, sourceBuildings: buildings.length, urbanCells: classes.size, generatedZones: features.length, byBiome: Object.fromEntries(['wasteland', 'suburb', 'urban', 'dense', 'aircraft_parking'].map(biome => [biome, features.filter(feature => feature.biome === biome).length])) } };
+  // Higher-density envelopes take priority, leaving exclusive smooth bands.
+  const dense = polygonIntersection(envelopes.dense, envelopes.suburb);
+  const urban = polygonDifference(polygonIntersection(envelopes.urban, envelopes.suburb), dense);
+  const suburb = polygonDifference(envelopes.suburb, [...dense, ...urban]);
+  const sourceMasks = deferOccupiedCuts ? [] : polygons.filter(record => {
+    const group = record.layer === 'water' ? 'lake' : 'detail';
+    return shouldRenderFeature(record.feature, group) && ['landscape', 'water', 'power'].includes(record.layer);
+  }).map(record => ({ parts: record.parts, bounds: record.bounds }));
+  if (!deferOccupiedCuts) for (const building of world.buildings || []) if (mapZoneBiome(building)) {
+    const parts = bzParts(building); if (parts.length) sourceMasks.push({ parts, bounds: bzBounds(parts.flat(2)) });
+  }
+  if (!deferOccupiedCuts) for (const feature of aircraft) sourceMasks.push({ parts: feature.parts, bounds: bzBounds(feature.parts.flat(2)) });
+  if (!deferOccupiedCuts) for (const record of bzWaterLines(world)) sourceMasks.push({ parts: bzLineMask(record), bounds: { minX: record.bounds.minX - record.radius, minY: record.bounds.minY - record.radius, maxX: record.bounds.maxX + record.radius, maxY: record.bounds.maxY + record.radius } });
+  let urbanVertices = 0;
+  for (const [biome, parts] of Object.entries({ suburb, urban, dense })) {
+    let region = 0;
+    for (const part of parts) {
+      const bounds = bzBounds(part.flat());
+      const masks = sourceMasks.filter(mask => bzOverlap(bounds, mask.bounds)).flatMap(mask => mask.parts);
+      const clipped = masks.length ? polygonDifference([part], masks) : [part];
+      for (const rings of clipped) {
+        if (Math.abs(bzArea(rings[0])) * metersPerUnit ** 2 < 4) continue;
+        const extent = bzBounds(rings.flat());
+        const sourceIds = buildings.filter(building => building.point.x >= extent.minX - radius && building.point.x <= extent.maxX + radius && building.point.y >= extent.minY - radius && building.point.y <= extent.maxY + radius).map(building => building.sourceId).filter(Boolean);
+        urbanVertices += rings.flat().length;
+        features.push(bzGeneratedFeature(`game-biome-${biome}-${region++}`, biome, [rings], { method: 'building-density-contours', sampleSpacingMeters: cellSize * metersPerUnit, radiusMeters: 120, kernel: 'compact-biweight', thresholds: { ...thresholds }, smoothingIterations: 2, sourceZoneExclusion: !deferOccupiedCuts, buildingCount: sourceIds.length, sourceIds }, { urbanFiller: true }));
+      }
+    }
+  }
+  features.push(...aircraft);
+  return { features, report: { enabled: true, method: 'building-density-contours', occupiedCutsDeferred: deferOccupiedCuts, sampleSpacingMeters: cellSize * metersPerUnit, grid: { cols, rows }, sourceBuildings: buildings.length, sampledNodes: activeNodes.size, urbanVertices, generatedZones: features.length, byBiome: Object.fromEntries(['wasteland', 'suburb', 'urban', 'dense', 'aircraft_parking'].map(biome => [biome, features.filter(feature => feature.biome === biome).length])) } };
 }
 
 function bzHull(points) {

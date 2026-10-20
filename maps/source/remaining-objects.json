@@ -21,7 +21,7 @@
     ]
   },
   "layerCounts": {
-    "landscape": 406,
+    "landscape": 389,
     "water": 53,
     "roads": 83,
     "power": 6,
@@ -43,27 +43,38 @@
     "displayWaterAreas": 11,
     "biomeGeneration": {
       "enabled": true,
-      "cellSizeMeters": 60,
+      "method": "building-density-contours",
+      "occupiedCutsDeferred": true,
+      "sampleSpacingMeters": 15,
       "grid": {
-        "cols": 193,
-        "rows": 150
+        "cols": 773,
+        "rows": 600
       },
       "sourceBuildings": 893,
-      "urbanCells": 693,
-      "generatedZones": 72,
+      "sampledNodes": 25094,
+      "urbanVertices": 5196,
+      "generatedZones": 47,
       "byBiome": {
         "wasteland": 1,
-        "suburb": 39,
-        "urban": 25,
-        "dense": 7,
+        "suburb": 27,
+        "urban": 9,
+        "dense": 10,
         "aircraft_parking": 0
       }
     },
+    "urbanFillerClipping": {
+      "inputFeatures": 46,
+      "outputFeatures": 29,
+      "removedFeatures": 17,
+      "sourceMaskCount": 338,
+      "beforeArea": 188085.79566115036,
+      "afterArea": 74380.82568684708
+    },
     "zoneMerging": {
-      "inputFeatures": 459,
-      "displayFeatures": 363,
-      "mergedGroups": 28,
-      "joinedFeatures": 96,
+      "inputFeatures": 388,
+      "displayFeatures": 317,
+      "mergedGroups": 14,
+      "joinedFeatures": 71,
       "addedCorridors": 62,
       "maxDistanceMeters": 35
     },
@@ -77,11 +88,11 @@
     }
   },
   "landscape": {
-    "count": 406,
+    "count": 389,
     "geometryCounts": {
       "point": 34,
       "line": 9,
-      "polygon": 363
+      "polygon": 346
     },
     "biomes": [
       {
@@ -95,20 +106,11 @@
       },
       {
         "id": "suburb",
-        "count": 25,
+        "count": 16,
         "geometryCounts": {
           "point": 0,
           "line": 0,
-          "polygon": 25
-        }
-      },
-      {
-        "id": "urban",
-        "count": 15,
-        "geometryCounts": {
-          "point": 0,
-          "line": 0,
-          "polygon": 15
+          "polygon": 16
         }
       },
       {
@@ -148,6 +150,15 @@
         }
       },
       {
+        "id": "dense",
+        "count": 9,
+        "geometryCounts": {
+          "point": 0,
+          "line": 0,
+          "polygon": 9
+        }
+      },
+      {
         "id": "recreation",
         "count": 8,
         "geometryCounts": {
@@ -181,15 +192,6 @@
           "point": 4,
           "line": 0,
           "polygon": 2
-        }
-      },
-      {
-        "id": "dense",
-        "count": 6,
-        "geometryCounts": {
-          "point": 0,
-          "line": 0,
-          "polygon": 6
         }
       },
       {
@@ -233,6 +235,15 @@
         "count": 5,
         "geometryCounts": {
           "point": 1,
+          "line": 0,
+          "polygon": 4
+        }
+      },
+      {
+        "id": "urban",
+        "count": 4,
+        "geometryCounts": {
+          "point": 0,
           "line": 0,
           "polygon": 4
         }
@@ -2204,7 +2215,7 @@
     "Counts are rendered geometry records. Clipped ways can have several fragments; connected same-type road, water and power segments form whole selectable networks with branches, retaining all source IDs. Navigation keeps the original roads.",
     "Institution/building zone facets share the original footprint; point-only mapped institutions do not acquire invented site boundaries.",
     "Crossings, traffic signs, barriers, aircraft parking marks and point electrical equipment are retained in raw data but omitted from the game presentation. Administrative boundaries are hidden. Railway lines belong to roads; aircraft apron grounds belong to zones.",
-    "Unzoned land uses a wasteland fallback biome. Suburb, urban and dense gameplay zones are derived from actual building positions; near functional plots can share a gameplay zone with measured source parts and explicitly derived connecting strips.",
+    "Unzoned land uses a wasteland fallback biome. Suburb, urban and dense gameplay fillers use smooth density contours from mapped buildings. Other known zones are subtracted from their actual geometry after plot grouping; source zone overlaps and holes remain unchanged. Near functional plots can share a gameplay zone with measured source parts and explicitly derived connecting strips.",
     "Categories partition the details layer exactly. Source tags and IDs are retained for every record."
   ]
 }

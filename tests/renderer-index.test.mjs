@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createDetailRenderer } from '../detail-renderer.js';
+import { polygonIntersection } from '../polygon-geometry.js';
 
 globalThis.Path2D = class { moveTo() {} lineTo() {} closePath() {} ellipse() {} };
 const ring = (x1, y1, x2, y2) => [{ x: x1, y: y1 }, { x: x2, y: y1 }, { x: x2, y: y2 }, { x: x1, y: y2 }, { x: x1, y: y1 }];
@@ -177,4 +178,27 @@ test('overlapping polygon components use union filling for both scene and select
   assert.deepEqual(rules, ['nonzero', 'nonzero']);
   assert.equal(renderer.pick(50, 120, 0).key, selected.key);
   assert.equal(renderer.pick(250, 120, 0).key, selected.key);
+});
+
+test('the saved Nevada map clips smooth city fillers after real native-zone fusion without altering source geometry', async () => {
+  const { default: map } = await import('../maps/usa.js');
+  const before = JSON.stringify(map), renderer = createDetailRenderer(map), stats = renderer.getStats();
+  assert.equal(stats.buildings, map.buildings.length);
+  assert.equal(stats.sourceRoads, map.roads.length);
+  assert.equal(JSON.stringify(map), before);
+  const fillers = renderer.getFeatures().filter(feature => feature.urbanFiller);
+  assert(fillers.length > 0, 'Unzoned city spaces still have a useful filler');
+  assert(fillers.every(feature => feature.provenance.fillOnlyUnzoned && feature.provenance.exclusionStage === 'after-zone-fusion'));
+  assert(stats.urbanFillerClipping.beforeArea > stats.urbanFillerClipping.afterArea, 'Native and newly fused plots reserve their actual geometry');
+  assert.equal(stats.urbanFillerClipping.outputFeatures, fillers.length);
+  assert(fillers.every(feature => feature.parts.flat(2).every(point => Number.isFinite(point.x) && Number.isFinite(point.y))));
+  const occupied = renderer.getFeatures().filter(feature => feature.geometry === 'polygon' && !feature.urbanFiller && !feature.fallback && ['landscape', 'power', 'water'].includes(feature.layer));
+  const intersection = polygonIntersection(fillers.flatMap(feature => feature.parts), occupied.flatMap(feature => feature.parts));
+  const ringArea = ring => {
+    const origin = ring[0]; let sum = 0;
+    for (let index = 1; index < ring.length - 1; index++) sum += (ring[index].x - origin.x) * (ring[index + 1].y - origin.y) - (ring[index + 1].x - origin.x) * (ring[index].y - origin.y);
+    return Math.abs(sum) / 2;
+  };
+  const overlapArea = intersection.reduce((total, rings) => total + ringArea(rings[0]) - rings.slice(1).reduce((sum, hole) => sum + ringArea(hole), 0), 0);
+  assert(overlapArea < 1e-6, `Only sub-nanounit floating-point boundary slivers are tolerated, got ${overlapArea}`);
 });

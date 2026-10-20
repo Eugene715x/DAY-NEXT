@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import map from '../maps/usa.js';
 import { buildGameplayBiomes, buildAircraftParkingZones, groupNearbyZones } from '../biome-zones.js';
+import { polygonIntersection } from '../polygon-geometry.js';
 
 const point = (x, y) => ({ x, y });
 const rect = (id, x1, y1, x2, y2, tags = {}) => {
@@ -42,13 +43,15 @@ test('building density yields exclusive suburb, urban and dense regions without 
   for (const biome of ['suburb', 'urban', 'dense']) assert(first.features.some(feature => feature.biome === biome), `Missing ${biome}`);
   assert(first.features.some(feature => feature.biome === 'suburb' && feature.sourceIds.includes('isolated')));
   assert(!first.features.some(feature => ['urban', 'dense'].includes(feature.biome) && feature.sourceIds.includes('isolated')), 'A lone house cannot create a city');
-  const density = first.features.filter(feature => feature.provenance.method === 'building-density-grid');
-  assert(density.every(feature => feature.provenance.cellSizeMeters === 60 && feature.sourceIds.length));
+  const density = first.features.filter(feature => feature.urbanFiller);
+  assert(density.length > 0);
+  assert(density.every(feature => feature.provenance.method === 'building-density-contours' && feature.provenance.sampleSpacingMeters === 15 && feature.sourceIds.length));
+  for (let i = 0; i < density.length; i++) for (let j = i + 1; j < density.length; j++) assert.deepEqual(polygonIntersection(density[i].parts, density[j].parts), [], 'Smoothed density classes remain geometrically exclusive');
   for (let y = 30; y < input.height; y += 60) for (let x = 30; x < input.width; x += 60) assert(density.filter(feature => contains(feature, x, y)).length <= 1, 'Density classes must not overlap');
   assert(input.buildings.every(building => building.tags.building === 'yes'), 'The original unknown-purpose buildings remain unknown');
 });
 
-test('known natural areas and permanent water block generated built-up cells while broad desert can coexist', () => {
+test('every explicit natural zone and permanent water is cut from generated settlement fillers', () => {
   const buildings = [...cluster('lake', 150, 300, 24), ...cluster('forest', 750, 300, 24), ...cluster('desert', 1350, 300, 24)];
   const lake = rect('lake', 50, 200, 250, 400, { natural: 'water' });
   const forest = rect('forest', 650, 200, 850, 400, { natural: 'wood' });
@@ -57,7 +60,7 @@ test('known natural areas and permanent water block generated built-up cells whi
   const density = result.features.filter(feature => !feature.fallback);
   assert(!density.some(feature => contains(feature, 150, 300)), 'A lake must not become an urban biome');
   assert(!density.some(feature => contains(feature, 750, 300)), 'An explicit forest must remain natural');
-  assert(density.some(feature => contains(feature, 1350, 300)), 'A broad desert region must not prevent actual settlement inference');
+  assert(!density.some(feature => contains(feature, 1350, 300)), 'Even a broad desert polygon is an existing zone, not unzoned city space');
   const line = { id: 'river', geometry: 'line', points: [point(1350, 0), point(1350, 600)], width: 8, tags: { waterway: 'river' } };
   const wet = buildGameplayBiomes(world({ buildings, rivers: [line] })).features.filter(feature => !feature.fallback);
   assert(!wet.some(feature => contains(feature, 1350, 300)), 'A permanent river must not be painted over');
@@ -111,6 +114,49 @@ test('the actual Nevada source retains every building and gets compact derived s
   assert.equal(JSON.stringify(map), before); assert.equal(result.report.sourceBuildings, map.buildings.length);
   assert(result.features.some(feature => feature.biome === 'urban')); assert(result.features.some(feature => feature.biome === 'dense'));
   assert(result.features.every(feature => feature.parts.flat(2).every(point => Number.isFinite(point.x) && Number.isFinite(point.y) && point.x >= 0 && point.y >= 0 && point.x <= map.width && point.y <= map.height)));
-  assert(result.features.reduce((total, feature) => total + feature.parts.flat(2).length, 0) < 15000, 'Compact shared cell contours, not a polygon per cell');
+  assert(result.features.reduce((total, feature) => total + feature.parts.flat(2).length, 0) < 15000, 'Compact continuous contours, not a polygon per density sample');
   assert(performance.now() - start < 3000, 'Generation belongs to map construction and must remain practical');
+});
+
+
+test('isolated settlement ground has a rounded vector outline rather than square sample-cell steps', () => {
+  const result = buildGameplayBiomes(world({ buildings: [house('alone', 300, 300)] }));
+  const zone = result.features.find(feature => feature.urbanFiller);
+  const ring = zone.parts[0][0], radii = ring.slice(0, -1).map(p => Math.hypot(p.x - 300, p.y - 300));
+  assert(ring.length >= 24, 'The outline has enough real polygon vertices for a round perimeter');
+  assert(Math.max(...radii) - Math.min(...radii) < 2, 'An isolated building produces a near-circular 40m envelope');
+  const diagonal = ring.slice(1).filter((point, i) => Math.abs(point.x - ring[i].x) > .001 && Math.abs(point.y - ring[i].y) > .001).length;
+  assert(diagonal / (ring.length - 1) > .9, 'The actual fill/pick geometry is rounded, not axis-aligned cell edges');
+  assert.equal(zone.provenance.smoothingIterations, 2);
+});
+
+test('settlement filler is exactly removed from residential, parking, service footprints and park ground while real holes stay available', () => {
+  const park = rect('park', 335, 280, 365, 320, { leisure: 'park' });
+  park.rings.push(rect('park-hole', 344, 290, 356, 310).points);
+  const residential = rect('residential', 255, 280, 270, 300, { landuse: 'residential' });
+  const parking = rect('parking', 290, 280, 310, 300, { amenity: 'parking' });
+  const clinic = { ...house('clinic', 320, 320), tags: { building: 'yes', amenity: 'clinic' } };
+  const substation = rect('substation', 300, 330, 315, 345, { power: 'substation' });
+  const input = world({ buildings: [...cluster('dense', 300, 300, 24), clinic], details: [park, residential, parking, substation] });
+  const before = JSON.stringify(input), zones = buildGameplayBiomes(input).features.filter(feature => feature.urbanFiller);
+  for (const occupied of [park, residential, parking, clinic, substation]) for (const zone of zones) {
+    assert.deepEqual(polygonIntersection(zone.parts, [occupied.rings]), [], `Filler overlaps occupied ${occupied.id}`);
+  }
+  assert(zones.some(feature => contains(feature, 350, 300)), 'A real hole inside a mapped park is still unzoned and can be filled');
+  assert(zones.some(feature => contains(feature, 280, 300)), 'Unzoned space between measured plots remains filled');
+  assert.equal(JSON.stringify(input), before, 'Existing zone/building geometry must remain untouched');
+});
+
+test('thin diagonal masks remove only their exact footprint and deferred renderer cuts preserve the uncut envelope', () => {
+  const strip = { id: 'strip', geometry: 'polygon', tags: { amenity: 'parking' }, rings: [[point(280.125, 220), point(281.325, 220), point(321.325, 380), point(320.125, 380), point(280.125, 220)]] };
+  strip.points = strip.rings[0];
+  const input = world({ buildings: cluster('dense', 300, 300, 24), details: [strip] });
+  const cut = buildGameplayBiomes(input).features.filter(feature => feature.urbanFiller);
+  const deferred = buildGameplayBiomes(input, { deferOccupiedCuts: true }).features.filter(feature => feature.urbanFiller);
+  assert(deferred.some(feature => polygonIntersection(feature.parts, [strip.rings]).length), 'The renderer can receive a smooth uncut envelope for one authoritative final subtraction');
+  assert(cut.every(feature => !polygonIntersection(feature.parts, [strip.rings]).length), 'A 1.2m diagonal source strip is exactly excluded, not raster approximated');
+  assert(cut.some(feature => contains(feature, 299.5, 300)));
+  assert(cut.some(feature => contains(feature, 302, 300)), 'The remaining strip outside the mask is not thrown away as a whole density cell');
+  assert(cut.every(feature => feature.provenance.sourceZoneExclusion));
+  assert(deferred.every(feature => !feature.provenance.sourceZoneExclusion));
 });

@@ -250,7 +250,7 @@ function inspectObject(point, screenX, screenY, touch = false) {
   if (feature.typeName) $('object-meta').textContent += `\nИгровой тип: ${feature.typeName}`;
   const profiles = collectResourceProfiles(feature, zones);
   if (profiles.length) $('object-meta').textContent += `\nПрофили ресурсов: ${profiles.map(id => RESOURCE_PROFILES[id]?.name || id).join(', ')}`;
-  if (feature.derived && feature.provenance?.method === 'building-density-grid') $('object-meta').textContent += '\nИгровая зона по плотности застройки.';
+  if (feature.derived && feature.provenance?.method?.startsWith('building-density-')) $('object-meta').textContent += '\nСвободная территория среди застройки.';
   if (feature.footprintOnly) $('object-meta').textContent += '\nЗона в пределах нанесённого контура здания.';
   if (touch && camera.zoom >= 2 && ['building', 'ruins'].includes(feature.kind)) $('object-meta').textContent += '\nКоснись земли рядом, чтобы подойти.';
   $('object-card').hidden = false;
