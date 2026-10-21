@@ -6,6 +6,7 @@ import { createDetailRenderer } from './detail-renderer.js';
 import { createTerrainBackdrop, createLandscapeBackdrop } from './terrain-renderer.js';
 import { mapFeatureLayer, shouldRenderFeature } from './map-layers.js';
 import { ROAD_CLASSES } from './map-presentation.js';
+import { BUILDING_CATEGORIES, BUILDING_ROLES } from './building-roles.js';
 import { createOverviewMarkers, OVERVIEW_MAX_ZOOM } from './map-overview.js';
 import { BUILDING_TYPES, BIOME_TYPES, RESOURCE_PROFILES, RESOURCE_KINDS, collectResourceProfiles, collectResourceCandidates } from './gameplay-types.js';
 
@@ -22,6 +23,7 @@ let overviewMarkers = createOverviewMarkers(world);
 const layers = { terrain: true, landscape: true, water: true, roads: true, power: true, buildings: true, details: true };
 const roadClasses = Object.fromEntries(Object.keys(ROAD_CLASSES).map(key => [key, true]));
 let detailRenderer = createDetailRenderer(world);
+let typedBuildingSources = new Set();
 let hoveredObject = null;
 const maximumZoom = () => 24;
 const greenPalette = { plain: '#a7ac8d', forest: '#6e8163', water: '#354d49', swamp: '#7f927c', hill: '#a8a38a', road: '#aaa88e', bridge: '#b7b39b' };
@@ -86,7 +88,7 @@ function toast(message) {
 
 function displayedPois() {
   if (world.geographic && camera.zoom <= OVERVIEW_MAX_ZOOM) return overviewMarkers;
-  return world.pois.filter(p => !world.geographic || !overviewMarkers.some(marker => marker.sourceId === (p.sourceId || p.id)));
+  return world.pois.filter(p => !typedBuildingSources.has(p.sourceId || p.id) && (!world.geographic || !overviewMarkers.some(marker => marker.sourceId === (p.sourceId || p.id))));
 }
 function poiEnabled(poi) { return shouldRenderFeature(poi, 'poi') && (poi.overview ? layers.landscape : layers[mapFeatureLayer(poi, 'poi')]); }
 function pickPoi(position, radius = 35) {
@@ -189,8 +191,29 @@ function syncLayerUI() {
   $('road-classes').classList.toggle('is-disabled', !layers.roads);
   if (!world.geographic && landscapeBackdrop) $('count-landscape').textContent = 'биомы';
   terrainCanvas.hidden = !layers.terrain;
+  syncBuildingLegend(features);
 }
 
+function syncBuildingLegend(features = detailRenderer.getFeatures()) {
+  const counts = new Map();
+  typedBuildingSources = new Set(features.filter(feature => feature.gameplayAssignment).flatMap(feature => [feature.sourceId || feature.id, ...(feature.gameplayAssignment.evidenceIds || [])]));
+  for (const feature of features) if (feature.gameplayAssignment) counts.set(feature.gameplayAssignment.categoryId, (counts.get(feature.gameplayAssignment.categoryId) || 0) + 1);
+  const rows = Object.values(BUILDING_CATEGORIES).map(category => {
+    const row = document.createElement('div'); row.className = 'building-type-row'; row.setAttribute('role', 'listitem'); row.dataset.categoryId = category.id;
+    const swatch = document.createElement('span'); swatch.className = 'building-type-swatch'; swatch.style.backgroundColor = category.color || category.fill; swatch.setAttribute('aria-hidden', 'true');
+    const name = document.createElement('span'); name.className = 'building-type-name'; name.textContent = category.name;
+    const count = document.createElement('span'); count.className = 'building-type-count'; count.textContent = counts.get(category.id) || 0;
+    row.append(swatch, name, count); return row;
+  });
+  $('building-type-legend').replaceChildren(...rows);
+}
+function closeBuildingTypes() { $('building-types-panel').hidden = true; $('building-types-button').setAttribute('aria-expanded', 'false'); }
+$('building-types-button').addEventListener('click', () => {
+  const open = $('building-types-panel').hidden;
+  closeLayers(); $('maps-close').click(); $('help-close').click(); hideObjectCard();
+  $('building-types-panel').hidden = !open; $('building-types-button').setAttribute('aria-expanded', String(open));
+});
+$('building-types-close').addEventListener('click', closeBuildingTypes);
 function closeLayers() { $('layers-panel').hidden = true; $('layers-button').setAttribute('aria-expanded', 'false'); }
 for (const key of Object.keys(layers)) $('layer-' + key).addEventListener('change', e => {
   layers[key] = e.target.checked; detailRenderer.setLayers(layers);
@@ -203,7 +226,7 @@ for (const key of Object.keys(roadClasses)) $('road-class-' + key).addEventListe
 });
 $('layers-button').addEventListener('click', () => {
   const open = $('layers-panel').hidden;
-  $('maps-close').click(); $('help-close').click(); hideObjectCard();
+  closeBuildingTypes(); $('maps-close').click(); $('help-close').click(); hideObjectCard();
   $('layers-panel').hidden = !open; $('layers-button').setAttribute('aria-expanded', String(open));
 });
 $('layers-close').addEventListener('click', closeLayers);
@@ -211,6 +234,7 @@ $('layers-close').addEventListener('click', closeLayers);
 function switchMap(map) {
   const next = map ? createRealWorld(map) : createWorld();
   world = next; currentMap = map;
+  closeBuildingTypes();
   overviewMarkers = createOverviewMarkers(world);
   detailRenderer = createDetailRenderer(world);
   objectCacheState = null; objectRevision++;
@@ -231,24 +255,30 @@ function hideObjectCard() {
   $('object-card').hidden = true;
 }
 
-function inspectObject(point, screenX, screenY, touch = false) {
-  const feature = detailRenderer.pick(point.x, point.y, 5 / camera.zoom);
+function inspectObject(point, screenX, screenY, touch = false, pickedFeature = null) {
+  const feature = pickedFeature || detailRenderer.pick(point.x, point.y, 5 / camera.zoom);
   if (!feature) { hideObjectCard(); return; }
   hoveredObject = feature;
   hoveredPoi = null;
   const names = { settlement_boundary: 'ГРАНИЦА ПОСЕЛЕНИЯ', building: 'ЗДАНИЕ', road: 'ДОРОГА', fence: 'ОГРАДА', wall: 'СТЕНА', gate: 'ВОРОТА', railway: 'ЖЕЛЕЗНАЯ ДОРОГА', parking: 'ПАРКОВКА', pitch: 'СПОРТПЛОЩАДКА', garden: 'САД', pool: 'БАССЕЙН', tree: 'ДЕРЕВО', bench: 'СКАМЕЙКА', picnic_table: 'МЕСТО ДЛЯ ПРИВАЛА', fountain: 'ФОНТАН', well: 'КОЛОДЕЦ', ruins: 'РУИНЫ', shelter: 'УКРЫТИЕ', cemetery: 'КЛАДБИЩЕ', park: 'ПАРК', spring: 'РОДНИК', quarry: 'КАРЬЕР', playground: 'ДЕТСКАЯ ПЛОЩАДКА', cattle_grid: 'РЕШЁТКА НА ДОРОГЕ', runway: 'ВЗЛЁТНАЯ ПОЛОСА', taxiway: 'РУЛЁЖНАЯ ДОРОЖКА', apron: 'ПЕРРОН АЭРОДРОМА', aerodrome: 'АЭРОДРОМ', river: 'ВОДОТОК', lake: 'ОЗЕРО', water: 'ВОДОЁМ', forest: 'ЛЕС', swamp: 'БОЛОТО', plain: 'УЧАСТОК МЕСТНОСТИ', boundary: 'ГРАНИЦА' };
   const zoneNames = { residential: 'ЖИЛАЯ ЗОНА', industrial: 'ПРОМЫШЛЕННАЯ ЗОНА', commercial: 'КОММЕРЧЕСКАЯ ЗОНА', retail: 'ТОРГОВАЯ ЗОНА', farmland: 'ПОЛЯ', sand: 'ПЕСКИ', rock: 'СКАЛЫ', scrub: 'КУСТАРНИК', wetland: 'БОЛОТО' };
   const layerNames = { landscape: 'ЛАНДШАФТ', water: 'ВОДА', roads: 'ДОРОГА', power: 'ЭЛЕКТРОСЕТЬ', buildings: 'ЗДАНИЕ' };
-  $('object-kind').textContent = (feature.roadClassName && feature.roadClassName.toUpperCase()) || names[feature.kind] || (feature.layer === 'landscape' && feature.biomeName ? feature.biomeName.toUpperCase() : zoneNames[feature.biome || feature.kind]) || layerNames[feature.layer] || 'ОБЪЕКТ';
-  $('object-name').textContent = feature.name || (feature.kind === 'building' ? 'Безымянное здание' : 'Объект на карте');
+  const assignment = feature.gameplayAssignment;
+  const card = $('object-card');
+  card.classList.toggle('is-building', !!assignment);
+  card.style.setProperty('--object-type-color', assignment?.color || assignment?.category?.color || '#bccca4');
+  card.dataset.roleId = assignment?.roleId || '';
+  $('object-kind').textContent = assignment?.categoryName?.toUpperCase() || (feature.roadClassName && feature.roadClassName.toUpperCase()) || names[feature.kind] || (feature.layer === 'landscape' && feature.biomeName ? feature.biomeName.toUpperCase() : zoneNames[feature.biome || feature.kind]) || layerNames[feature.layer] || 'ОБЪЕКТ';
+  $('object-name').textContent = assignment?.roleName || feature.name || (feature.kind === 'building' ? 'Безымянное здание' : 'Объект на карте');
   const source = feature.source || {};
   const address = typeof source.address === 'string' ? source.address : source.address ? Object.values(source.address).join(', ') : '';
-  const extra = [feature.description, address, source.levels ? `${source.levels} эт.` : '', source.surface ? `Покрытие: ${source.surface}` : ''].filter(Boolean).flatMap(text => String(text).split(' · '));
-  $('object-meta').textContent = [...new Set(extra)].filter(text => text !== feature.name).join(' · ') || (feature.derived ? 'Игровая зона' : world.geographic ? 'Нанесён на карту OpenStreetMap' : 'Объект игровой карты');
+  const buildingDescription = assignment ? [source.name, assignment.condition === 'ruined' ? 'Руины' : assignment.condition === 'abandoned' ? 'Заброшено' : '', assignment.roleOrigin === 'gameplay' ? 'Игровое назначение' : assignment.roleOrigin === 'context' ? 'Назначение по окружению' : 'Назначение по меткам карты'].filter(Boolean).join(' · ') : feature.description;
+  const extra = [buildingDescription, address, source.levels ? `${source.levels} эт.` : '', source.surface ? `Покрытие: ${source.surface}` : ''].filter(Boolean).flatMap(text => String(text).split(' · '));
+  $('object-meta').textContent = [...new Set(extra)].filter(text => text !== (assignment?.roleName || feature.name)).join(' · ') || (feature.derived ? 'Игровая зона' : world.geographic ? 'Нанесён на карту OpenStreetMap' : 'Объект игровой карты');
   const zones = detailRenderer.zonesAt(point.x, point.y);
   if (zones.length) $('object-meta').textContent += `\nБиомы: ${[...new Set(zones.map(zone => zone.biomeName || zone.name))].join(' + ')}`;
-  if (feature.typeName) $('object-meta').textContent += `\nИгровой тип: ${feature.typeName}`;
-  const profiles = collectResourceProfiles(feature, zones);
+  if (feature.typeName && !assignment) $('object-meta').textContent += `\nИгровой тип: ${feature.typeName}`;
+  const profiles = collectResourceProfiles(assignment || feature, zones);
   if (profiles.length) $('object-meta').textContent += `\nПрофили ресурсов: ${profiles.map(id => RESOURCE_PROFILES[id]?.name || id).join(', ')}`;
   if (feature.derived && feature.provenance?.method?.startsWith('building-density-')) $('object-meta').textContent += '\nСвободная территория среди застройки.';
   if (feature.footprintOnly) $('object-meta').textContent += '\nЗона в пределах нанесённого контура здания.';
@@ -276,6 +306,7 @@ function downloadJSON(map) {
   a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 $('maps-button').addEventListener('click', () => {
+  closeBuildingTypes();
   hideObjectCard();
   closeLayers();
   $('maps-panel').hidden = !$('maps-panel').hidden;
@@ -330,7 +361,7 @@ $('cancel-button').addEventListener('click', cancelRoute);
 $('center-button').addEventListener('click', () => { hideObjectCard(); following = true; camera.x = player.x; camera.y = player.y; updateUI(); });
 $('reset-button').addEventListener('click', reset);
 $('speed-button').addEventListener('click', () => { speed = speed === 1 ? 3 : 1; $('speed-button').textContent = `${speed}×`; toast(`Скорость путешествия: ${speed}×`); });
-$('help-button').addEventListener('click', () => { closeLayers(); hideObjectCard(); $('help-panel').hidden = !$('help-panel').hidden; $('help-button').setAttribute('aria-expanded', String(!$('help-panel').hidden)); $('maps-close').click(); });
+$('help-button').addEventListener('click', () => { closeLayers(); closeBuildingTypes(); hideObjectCard(); $('help-panel').hidden = !$('help-panel').hidden; $('help-button').setAttribute('aria-expanded', String(!$('help-panel').hidden)); $('maps-close').click(); });
 $('help-close').addEventListener('click', () => { $('help-panel').hidden = true; $('help-button').setAttribute('aria-expanded', 'false'); });
 function zoomBy(factor, point = { x: vw / 2, y: vh / 2 }) {
   const before = screenToWorld(point.x, point.y);
@@ -359,9 +390,11 @@ canvas.addEventListener('pointerdown', e => {
   canvas.classList.add('is-grabbing');
 });
 canvas.addEventListener('pointermove', e => {
-  hover = screenToWorld(e.clientX, e.clientY); hoveredPoi = pickPoi(hover);
+  hover = screenToWorld(e.clientX, e.clientY);
+  const pickedFeature = !pointer && !pinch && camera.zoom >= 2.5 ? detailRenderer.pick(hover.x, hover.y, 5 / camera.zoom) : null;
+  hoveredPoi = pickedFeature?.gameplayAssignment ? null : pickPoi(hover);
   if (!pointer && !pinch) {
-    if (hoveredPoi) hideObjectCard(); else inspectObject(hover, e.clientX, e.clientY);
+    if (hoveredPoi) hideObjectCard(); else inspectObject(hover, e.clientX, e.clientY, false, pickedFeature);
   }
   canvas.style.cursor = pointer?.moved ? 'grabbing' : hoveredPoi || hoveredObject ? 'pointer' : 'crosshair';
   if (touches.has(e.pointerId)) touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -398,7 +431,7 @@ addEventListener('keydown', e => {
   if ([' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) e.preventDefault();
   if (e.repeat && [' ', 'f', 'F', 'r', 'R', 'b', 'B'].includes(e.key)) return;
   if (e.key === ' ') togglePause();
-  if (e.key === 'Escape') { if (!$('help-panel').hidden) $('help-close').click(); else if (!$('maps-panel').hidden) $('maps-close').click(); else if (!$('layers-panel').hidden) closeLayers(); else cancelRoute(); }
+  if (e.key === 'Escape') { if (!$('help-panel').hidden) $('help-close').click(); else if (!$('maps-panel').hidden) $('maps-close').click(); else if (!$('layers-panel').hidden) closeLayers(); else if (!$('building-types-panel').hidden) closeBuildingTypes(); else cancelRoute(); }
   if (e.key.toLowerCase() === 'f') $('center-button').click();
   if (e.key.toLowerCase() === 'r') reset();
   if (e.key.toLowerCase() === 'b') focusBuildings();
@@ -648,8 +681,8 @@ window.__DAY_NEXT__ = {
   getOverviewMarkers: () => overviewMarkers.map(marker => ({ ...structuredClone(marker), visible: world.geographic && camera.zoom <= OVERVIEW_MAX_ZOOM && poiEnabled(marker) })),
   getFeatures: () => detailRenderer.getFeatures(),
   getRenderStats: () => ({ ...renderStats, meanFrameMs: renderStats.totalFrameMs / Math.max(1, renderStats.frames), cachePixels: objectCache.width * objectCache.height, cacheBytes: objectCache.width * objectCache.height * 4, renderer: detailRenderer.getStats() }),
-  getTypeCatalogs: () => structuredClone({ buildingTypes: BUILDING_TYPES, biomeTypes: BIOME_TYPES, resourceProfiles: RESOURCE_PROFILES, resourceKinds: RESOURCE_KINDS }),
-  getResourceCandidatesAt: (x, y) => collectResourceCandidates(detailRenderer.pick(x, y, 1), detailRenderer.zonesAt(x, y)),
+  getTypeCatalogs: () => structuredClone({ buildingTypes: BUILDING_TYPES, buildingRoles: BUILDING_ROLES, buildingCategories: BUILDING_CATEGORIES, biomeTypes: BIOME_TYPES, resourceProfiles: RESOURCE_PROFILES, resourceKinds: RESOURCE_KINDS }),
+  getResourceCandidatesAt: (x, y) => { const feature = detailRenderer.pick(x, y, 1); return collectResourceCandidates(feature?.gameplayAssignment || feature, detailRenderer.zonesAt(x, y)); },
 };
 log('Невада. На карте — следы прежней жизни.', true); updateMapDetails(); updateUI();
 function frame(now) {

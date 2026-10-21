@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createDetailRenderer } from '../detail-renderer.js';
-import { polygonIntersection } from '../polygon-geometry.js';
 
 // Picking uses the same cached source geometry in browsers. Node has no Canvas
 // Path2D; only its inert construction methods are needed for these hit tests.
@@ -25,7 +24,7 @@ test('natural points, zone polygons and water follow their own switches during s
   const renderer = createDetailRenderer(world({
     roads: [{ id: 'street', points: [{ x: 30, y: 50 }, { x: 370, y: 50 }], width: 6 }],
     details: [
-      { id: 'zone', geometry: 'polygon', points: ring(0, 0, 400, 300), tags: { landuse: 'residential' }, kind: 'residential' },
+      { id: 'zone', geometry: 'polygon', points: ring(0, 0, 400, 300), tags: { natural: 'grassland' }, kind: 'grassland' },
       { id: 'tree', geometry: 'point', points: [{ x: 60, y: 100 }], kind: 'tree', tags: { natural: 'tree' } },
       { id: 'pool', geometry: 'polygon', points: ring(150, 150, 250, 250), kind: 'pool', tags: { leisure: 'swimming_pool' } },
       { id: 'fountain', geometry: 'point', points: [{ x: 100, y: 100 }], kind: 'fountain', tags: { amenity: 'fountain' } },
@@ -37,7 +36,7 @@ test('natural points, zone polygons and water follow their own switches during s
   assert.equal(renderer.pick(300, 100).layer, 'landscape');
   assert.equal(renderer.pick(200, 200).layer, 'water');
   assert.equal(renderer.pick(100, 100).layer, 'details');
-  assert.equal(renderer.pick(300, 200).biome, 'residential');
+  assert.equal(renderer.pick(300, 200).biome, 'grassland');
   renderer.setLayers({ landscape: false });
   assert.equal(renderer.pick(60, 100), null);
   assert.equal(renderer.pick(300, 100), null);
@@ -64,81 +63,68 @@ test('water holes remain land and generic seasonal waterways cannot escape the w
   assert.equal(renderer.pick(175, 155).layer, 'landscape');
 });
 
-test('overlapping service and land-use polygons retain every biome independently of visibility', () => {
-  const parking = ring(100, 50, 300, 250), hole = ring(150, 100, 250, 200);
-  const renderer = createDetailRenderer(world({ details: [
-    { id: 'way-100', sourceId: 'way-100', geometry: 'polygon', points: ring(0, 0, 400, 300), tags: { landuse: 'residential' } },
-    { id: 'way-200', sourceId: 'way-200', geometry: 'polygon', points: parking, rings: [parking, hole], tags: { amenity: 'parking' } },
-    { id: 'way-300', sourceId: 'way-300', name: 'Campus', geometry: 'polygon', points: ring(50, 20, 350, 270), tags: { amenity: 'school' } },
-  ] }));
-  const memberships = point => renderer.zonesAt(...point).map(zone => zone.biome).sort();
-  assert.deepEqual(memberships([120, 80]), ['education', 'parking', 'residential']);
-  assert.deepEqual(memberships([200, 150]), ['education', 'residential'], 'A courtyard/hole cannot grant parking membership');
-  const zones = renderer.zonesAt(120, 80);
-  assert.equal(zones.find(zone => zone.biome === 'education').name, 'Campus');
-  assert.equal(zones.find(zone => zone.biome === 'education').biomeName, 'Образовательная зона');
+test('city and service grounds retire while overlapping natural biomes retain their holes and memberships', () => {
+  const outer = ring(100, 50, 300, 250), hole = ring(150, 100, 250, 200);
+  const input = world({ details: [
+    { id: 'housing', geometry: 'polygon', points: ring(0, 0, 400, 300), tags: { landuse: 'residential' } },
+    { id: 'parking', geometry: 'polygon', points: outer, tags: { amenity: 'parking' } },
+    { id: 'school', geometry: 'polygon', points: outer, tags: { amenity: 'school' } },
+    { id: 'grass', geometry: 'polygon', points: ring(0, 0, 400, 300), tags: { natural: 'grassland' } },
+    { id: 'forest', geometry: 'polygon', points: outer, rings: [outer, hole], tags: { natural: 'wood' } },
+  ] });
+  const before = structuredClone(input), renderer = createDetailRenderer(input);
+  const memberships = (x, y) => renderer.zonesAt(x, y).map(zone => zone.biome).sort();
+  assert.deepEqual(memberships(120, 80), ['forest', 'grassland']);
+  assert.deepEqual(memberships(200, 150), ['grassland']);
+  assert(!renderer.getFeatures().some(feature => ['housing', 'parking', 'school'].includes(feature.id)));
   renderer.setLayers({ landscape: false });
   assert.equal(renderer.pick(120, 80), null);
-  assert.deepEqual(memberships([120, 80]), ['education', 'parking', 'residential'], 'Hiding a layer cannot change physical biome membership');
-  zones[0].name = 'Changed by caller';
-  assert.notEqual(renderer.zonesAt(120, 80)[0].name, 'Changed by caller');
+  assert.deepEqual(memberships(120, 80), ['forest', 'grassland']);
+  assert.deepEqual(input, before);
   for (const point of [[-1, 10], [401, 10], [NaN, 10], [10, Infinity]]) assert.deepEqual(renderer.zonesAt(...point), []);
 });
 
-test('institution buildings retain native geometry and gain only an exact measured zone footprint', () => {
+test('institution buildings retain native holes and carry their role without a redundant footprint biome', () => {
   const outer = ring(50, 50, 150, 150), inner = ring(80, 80, 120, 120);
   const input = world({ buildings: [{ id: 'way-700', sourceId: 'way-700', name: 'Mapped church', points: outer, rings: [outer, inner], type: 'church', tags: { building: 'church', amenity: 'place_of_worship' } }] });
-  const before = structuredClone(input), renderer = createDetailRenderer(input);
-  const features = renderer.getFeatures(), building = features.find(feature => feature.group === 'building'), zone = features.find(feature => feature.group === 'zone');
-  assert.equal(features.length, 2);
+  const before = structuredClone(input), renderer = createDetailRenderer(input), features = renderer.getFeatures();
+  assert.equal(features.length, 1);
+  const building = features[0];
   assert.equal(building.layer, 'buildings');
-  assert.equal(zone.layer, 'landscape');
-  assert.equal(zone.biome, 'religious');
-  assert.equal(zone.sourceId, building.sourceId);
-  assert.equal(zone.footprintOnly, true);
-  assert.deepEqual(zone.rings, building.rings);
-  assert.notEqual(zone.key, building.key);
+  assert.equal(building.typeId, 'building.religious');
+  assert(building.gameplayAssignment);
+  assert.equal(building.gameplayAssignment.roleOrigin, 'mapped');
+  assert.deepEqual(building.rings, [outer, inner]);
   assert.equal(renderer.pick(60, 60).layer, 'buildings');
-  assert.deepEqual(renderer.zonesAt(60, 60).map(item => item.biome), ['religious']);
-  assert.deepEqual(renderer.zonesAt(100, 100), [], 'The building courtyard is not part of its footprint zone');
+  assert.equal(renderer.pick(100, 100, 0), null, 'Courtyard remains empty');
+  assert.deepEqual(renderer.zonesAt(60, 60), []);
   renderer.setLayers({ buildings: false });
-  assert.equal(renderer.pick(60, 60).layer, 'landscape');
-  renderer.setLayers({ landscape: false });
   assert.equal(renderer.pick(60, 60), null);
-  assert.deepEqual(renderer.zonesAt(60, 60).map(item => item.biome), ['religious']);
   assert.deepEqual(input, before);
 });
 
-test('mapped institution grounds avoid a redundant building zone and point markers never acquire invented extent', () => {
-  const renderer = createDetailRenderer(world({
-    buildings: [{ id: 'way-800', points: ring(70, 70, 120, 120), type: 'hospital', tags: { building: 'hospital', amenity: 'hospital' } }],
-    details: [
-      { id: 'way-801', geometry: 'polygon', points: ring(50, 50, 180, 180), tags: { amenity: 'hospital' } },
-      { id: 'node-900', geometry: 'point', points: [{ x: 250, y: 100 }], tags: { amenity: 'clinic' }, kind: 'clinic' },
-    ],
-  }));
-  assert.equal(renderer.getFeatures().filter(feature => feature.group === 'zone').length, 0, 'Measured campus already supplies its medical zone');
-  assert.deepEqual(renderer.zonesAt(100, 100).map(item => item.biome), ['healthcare']);
-  assert.equal(renderer.pick(250, 100).layer, 'landscape');
-  assert.deepEqual(renderer.zonesAt(250, 100), [], 'An OSM clinic node provides a location, not a fabricated campus radius');
-  renderer.setLayers({ landscape: false });
-  assert.equal(renderer.pick(250, 100), null);
-
-  const outline = ring(50, 50, 150, 150);
-  const sameExtent = createDetailRenderer(world({
-    buildings: [{ id: 'way-802', points: outline, type: 'hospital', tags: { building: 'hospital', amenity: 'hospital' } }],
-    details: [{ id: 'way-803', points: [...outline].reverse(), geometry: 'polygon', tags: { amenity: 'hospital' } }],
-  }));
-  assert.equal(sameExtent.getFeatures().filter(feature => feature.group === 'zone').length, 0, 'An explicitly mapped zone with the same outline needs no generated twin');
+test('institution grounds and markers inform building roles but never become extra city biomes', () => {
+  const input = world({ buildings: [{ id: 'clinic-house', points: ring(70, 70, 120, 120), tags: { building: 'yes' } }], details: [
+    { id: 'campus', geometry: 'polygon', points: ring(50, 50, 180, 180), tags: { amenity: 'hospital' } },
+    { id: 'clinic-point', geometry: 'point', points: [{ x: 90, y: 90 }], tags: { amenity: 'clinic' }, kind: 'clinic' },
+    { id: 'park', geometry: 'polygon', points: ring(200, 30, 350, 200), tags: { leisure: 'park' } },
+  ] });
+  const renderer = createDetailRenderer(input), building = renderer.pick(90, 90, 0);
+  assert.equal(building.layer, 'buildings');
+  assert.equal(building.gameplayAssignment.roleOrigin, 'mapped');
+  assert.equal(building.gameplayAssignment.categoryId, 'category.medical');
+  assert.equal(building.typeId, 'building.unknown', 'Mapped point informs gameplay role without editing original building facts');
+  assert.deepEqual(renderer.zonesAt(90, 90), []);
+  assert.deepEqual(renderer.zonesAt(250, 100).map(zone => zone.biome), ['park']);
+  assert(!renderer.getFeatures().some(feature => ['campus', 'clinic-point'].includes(feature.id)));
 });
 
-test('multiple polygon parts from one source do not duplicate zone memberships', () => {
+test('separate natural parts retain measured footprints without duplicating their common source membership', () => {
   const renderer = createDetailRenderer(world({ details: [
-    { id: 'relation-1000-0', sourceId: 'relation-1000', geometry: 'polygon', points: ring(50, 50, 200, 200), tags: { amenity: 'parking' } },
-    { id: 'relation-1000-1', sourceId: 'relation-1000', geometry: 'polygon', points: ring(100, 100, 250, 250), tags: { amenity: 'parking' } },
+    { id: 'relation-1000-0', sourceId: 'relation-1000', geometry: 'polygon', points: ring(50, 50, 200, 200), tags: { natural: 'grassland' } },
+    { id: 'relation-1000-1', sourceId: 'relation-1000', geometry: 'polygon', points: ring(100, 100, 250, 250), tags: { natural: 'grassland' } },
   ] }));
-  assert.equal(renderer.getFeatures().length, 1, 'Connected parts form one selectable zone');
-  assert.equal(renderer.getFeatures()[0].parts.length, 2, 'Both source footprints remain in the union');
+  assert.equal(renderer.getFeatures().length, 2, 'Native nature is not inflated by gameplay corridors');
   assert.equal(renderer.zonesAt(150, 150).length, 1);
   assert.deepEqual(renderer.zonesAt(150, 150)[0].sourceIds, ['relation-1000']);
 });
@@ -150,11 +136,11 @@ test('administrative boundaries disappear from draw registry, selection and biom
     { id: 'residential', geometry: 'polygon', points: ring(200, 200, 300, 250), tags: { landuse: 'residential' } },
   ] });
   const before = structuredClone(input), renderer = createDetailRenderer(input);
-  assert.deepEqual(renderer.getFeatures().map(feature => feature.id), ['residential']);
+  assert.deepEqual(renderer.getFeatures(), []);
   for (const point of [[20, 150], [70, 60], [250, 150]]) assert.equal(renderer.pick(...point, 0), null);
   assert.deepEqual(renderer.zonesAt(250, 150), []);
-  assert.equal(renderer.pick(250, 220, 0).biome, 'residential');
-  assert.deepEqual(renderer.zonesAt(250, 220).map(zone => zone.biome), ['residential']);
+  assert.equal(renderer.pick(250, 220, 0), null);
+  assert.deepEqual(renderer.zonesAt(250, 220), []);
   assert.deepEqual(input, before, 'Administrative source data is retained for future imports');
 });
 
@@ -249,20 +235,18 @@ test('water branches and matching touching lake parts form whole selectable obje
   assert.equal(renderer.pick(180, 240, 0), null);
 });
 
-test('nearby functional zones share a small game corridor without erasing overlapping service biomes', () => {
-  const renderer = createDetailRenderer(world({ details: [
-    { id: 'west-housing', geometry: 'polygon', points: ring(20, 20, 120, 120), tags: { landuse: 'residential' } },
-    { id: 'east-housing', geometry: 'polygon', points: ring(140, 20, 240, 120), tags: { landuse: 'residential' } },
-    { id: 'clinic-site', geometry: 'polygon', points: ring(40, 40, 100, 100), tags: { amenity: 'clinic' } },
-    { id: 'far-housing', geometry: 'polygon', points: ring(300, 20, 380, 120), tags: { landuse: 'residential' } },
-  ] }));
-  const west = renderer.pick(30, 30, 0), east = renderer.pick(230, 30, 0);
-  assert.equal(west.key, east.key);
-  assert.equal(west.derived, true);
-  assert.equal(west.provenance.method, 'nearby-zone-fusion');
-  assert(renderer.zonesAt(130, 20).some(zone => zone.biome === 'residential'), 'The short gap has an explicit derived connecting corridor');
-  assert.deepEqual(renderer.zonesAt(60, 60).map(zone => zone.biome).sort(), ['healthcare', 'residential']);
-  assert.notEqual(renderer.pick(350, 30, 0).key, west.key);
+test('retired urban grounds cannot leave their old gameplay corridors in the map registry', () => {
+  const input = world({ details: [
+    { id: 'west', geometry: 'polygon', points: ring(20, 20, 100, 100), tags: { landuse: 'residential' } },
+    { id: 'east', geometry: 'polygon', points: ring(120, 20, 200, 100), tags: { landuse: 'residential' } },
+    { id: 'clinic', geometry: 'polygon', points: ring(50, 50, 90, 90), tags: { amenity: 'clinic' } },
+    { id: 'garden', geometry: 'polygon', points: ring(250, 40, 350, 150), tags: { leisure: 'garden' } },
+  ] });
+  const renderer = createDetailRenderer(input);
+  assert.equal(renderer.pick(110, 70, 0), null);
+  assert.deepEqual(renderer.zonesAt(60, 60), []);
+  assert.deepEqual(renderer.zonesAt(300, 100).map(zone => zone.biome), ['garden']);
+  assert.equal(renderer.getStats().zoneMerging.addedCorridors, 0);
 });
 
 test('geographic empty land receives a named fallback biome while mapped zones and permanent water override it', () => {
@@ -284,67 +268,37 @@ test('geographic empty land receives a named fallback biome while mapped zones a
   assert.deepEqual(input, before);
 });
 
-const urbanArea = (id, biome, points) => ({ id, type: biome, kind: biome, biome, derived: true, urbanFiller: true, geometry: 'polygon', points, rings: [points], provenance: { method: 'test-density-contour' } });
-const urbanMembership = (renderer, x, y) => renderer.zonesAt(x, y).filter(zone => zone.urbanFiller);
-
-test('city filler is actually cut by oblique parking, source zones, footprint sites and water with native holes left free', () => {
-  const park = { id: 'park', geometry: 'polygon', rings: [ring(180, 40, 280, 140), ring(210, 70, 250, 110)], tags: { leisure: 'park' } };
-  const input = world({ areas: [urbanArea('city', 'urban', ring(5, 5, 390, 290))], details: [
-    { id: 'housing', geometry: 'polygon', points: ring(20, 20, 90, 80), tags: { landuse: 'residential' } },
-    { id: 'retail', geometry: 'polygon', points: ring(50, 50, 110, 100), tags: { landuse: 'retail' } },
-    { id: 'diagonal-parking', geometry: 'polygon', points: [{ x: 80, y: 0 }, { x: 84, y: 0 }, { x: 244, y: 280 }, { x: 240, y: 280 }, { x: 80, y: 0 }], tags: { amenity: 'parking' } },
-    park,
-    { id: 'power-site', geometry: 'polygon', points: ring(250, 220, 280, 250), tags: { power: 'substation' } },
-    { id: 'lake', geometry: 'polygon', points: ring(20, 220, 50, 250), tags: { natural: 'water' } },
-  ], buildings: [{ id: 'clinic', points: ring(320, 180, 350, 210), tags: { building: 'yes', amenity: 'clinic' } }], rivers: [
-    { id: 'wet-stream', points: [{ x: 100, y: 200 }, { x: 160, y: 200 }], width: 4, tags: { waterway: 'stream' } },
+test('imported city fillers and service zoning retire while every building keeps an explicit gameplay role', () => {
+  const city = (id, biome) => ({ id, type: biome, kind: biome, biome, derived: true, urbanFiller: true, geometry: 'polygon', points: ring(0, 0, 400, 300), provenance: { method: 'test-density-contour' } });
+  const input = world({ areas: [city('suburb', 'suburb'), city('urban', 'urban'), city('dense', 'dense')], buildings: [
+    { id: 'home', points: ring(20, 20, 60, 60), tags: { building: 'yes' } },
+    { id: 'school', points: ring(100, 100, 200, 200), tags: { building: 'school', amenity: 'school' } },
+  ], details: [
+    { id: 'retail-zone', geometry: 'polygon', points: ring(80, 80, 220, 220), tags: { landuse: 'retail' } },
+    { id: 'school-ground', geometry: 'polygon', points: ring(80, 80, 220, 220), tags: { amenity: 'school' } },
+    { id: 'sand', geometry: 'polygon', points: ring(250, 30, 380, 250), tags: { natural: 'sand' } },
   ] });
   const before = structuredClone(input), renderer = createDetailRenderer(input), features = renderer.getFeatures();
-  const urban = features.filter(feature => feature.urbanFiller);
-  assert.equal(urban.length, 1);
-  const occupied = features.filter(feature => feature.geometry === 'polygon' && !feature.urbanFiller && !feature.fallback).flatMap(feature => feature.parts);
-  assert.deepEqual(polygonIntersection(urban.flatMap(feature => feature.parts), occupied), [], 'The registered geometry, not only drawing order, excludes occupied land');
-  for (const [x, y] of [[60, 60], [139, 100], [190, 90], [265, 235], [35, 235], [335, 195], [130, 200]]) assert.deepEqual(urbanMembership(renderer, x, y), [], `Occupied point ${x},${y} must not inherit urban resources`);
-  assert.deepEqual(renderer.zonesAt(60, 60).map(zone => zone.biome).sort(), ['residential', 'retail'], 'Original mapped zone overlaps are still allowed');
-  assert.equal(urbanMembership(renderer, 225, 90).length, 1, 'An actual park hole is available for city filler');
-  assert.equal(urbanMembership(renderer, 150, 150).length, 1, 'Unzoned city space remains filled');
-  assert.equal(renderer.pick(150, 150, 0).id, 'city');
-  assert.equal(renderer.pick(139, 100, 0).biome, 'parking');
-  assert.equal(urban[0].provenance.method, 'test-density-contour');
-  assert.equal(urban[0].provenance.fillOnlyUnzoned, true);
-  const memberships = renderer.zonesAt(225, 90);
-  renderer.setLayers({ landscape: false, water: false, power: false, buildings: false });
-  assert.deepEqual(renderer.zonesAt(225, 90), memberships, 'Hidden zones still reserve their space');
-  assert.deepEqual(urbanMembership(renderer, 139, 100), []);
-  assert.deepEqual(input, before, 'Clipping cannot mutate imported geometry');
+  assert(!features.some(feature => feature.urbanFiller || ['suburb', 'urban', 'dense', 'retail', 'education'].includes(feature.biome)));
+  assert.equal(features.filter(feature => feature.layer === 'buildings').length, 2);
+  assert(features.filter(feature => feature.layer === 'buildings').every(feature => feature.roleId && feature.roleName && feature.color));
+  assert.deepEqual(renderer.zonesAt(40, 40), []);
+  assert.deepEqual(renderer.zonesAt(150, 150), []);
+  assert.deepEqual(renderer.zonesAt(300, 100).map(zone => zone.biome), ['sand']);
+  assert.equal(renderer.getStats().urbanFillerClipping.inputFeatures, 0);
+  assert.deepEqual(input, before);
 });
 
-test('city filler is subtracted after functional zone fusion so the added corridor cannot paint it back', () => {
-  const renderer = createDetailRenderer(world({ areas: [urbanArea('city', 'suburb', ring(0, 0, 400, 300))], details: [
-    { id: 'west', geometry: 'polygon', points: ring(20, 20, 100, 100), tags: { landuse: 'residential' } },
-    { id: 'east', geometry: 'polygon', points: ring(120, 20, 200, 100), tags: { landuse: 'residential' } },
+test('airport and apron retain physical measured surfaces instead of urban biome membership', () => {
+  const renderer = createDetailRenderer(world({ details: [
+    { id: 'airport', geometry: 'polygon', points: ring(10, 10, 390, 290), tags: { aeroway: 'aerodrome' }, kind: 'aerodrome' },
+    { id: 'apron', geometry: 'polygon', points: ring(40, 40, 180, 160), tags: { aeroway: 'apron' }, kind: 'apron' },
   ] }));
-  assert.deepEqual(renderer.zonesAt(110, 70).map(zone => zone.biome), ['residential']);
-  assert.deepEqual(urbanMembership(renderer, 110, 70), []);
-  assert.equal(urbanMembership(renderer, 110, 140).length, 1);
-  const filler = renderer.getFeatures().find(feature => feature.urbanFiller);
-  const housing = renderer.getFeatures().find(feature => feature.biome === 'residential');
-  assert.deepEqual(polygonIntersection(filler.parts, housing.parts), []);
-  assert.equal(filler.provenance.exclusionStage, 'after-zone-fusion');
-  assert(renderer.getStats().urbanFillerClipping.afterArea < renderer.getStats().urbanFillerClipping.beforeArea);
-});
-
-test('urban density classes remain exclusive and fully occupied filler records disappear from selection', () => {
-  const renderer = createDetailRenderer(world({ areas: [
-    urbanArea('suburb', 'suburb', ring(10, 10, 390, 290)),
-    urbanArea('urban', 'urban', ring(100, 100, 300, 260)),
-    urbanArea('dense', 'dense', ring(160, 160, 240, 230)),
-    urbanArea('occupied-city', 'urban', ring(20, 20, 60, 60)),
-  ], details: [{ id: 'native-plot', geometry: 'polygon', points: ring(15, 15, 65, 65), tags: { landuse: 'commercial' } }] }));
-  assert.deepEqual(urbanMembership(renderer, 200, 200).map(zone => zone.biome), ['dense']);
-  assert.deepEqual(urbanMembership(renderer, 120, 120).map(zone => zone.biome), ['urban']);
-  assert.deepEqual(urbanMembership(renderer, 350, 250).map(zone => zone.biome), ['suburb']);
-  assert.deepEqual(urbanMembership(renderer, 40, 40), []);
-  assert(!renderer.getFeatures().some(feature => feature.id === 'occupied-city'));
-  assert.equal(renderer.getStats().urbanFillerClipping.removedFeatures, 1);
+  assert.deepEqual(renderer.zonesAt(100, 100), []);
+  assert.equal(renderer.pick(100, 100, 0).layer, 'details');
+  assert.equal(renderer.getFeatures().filter(feature => feature.layer === 'details').length, 2);
+  renderer.setLayers({ landscape: false });
+  assert.equal(renderer.pick(100, 100, 0).layer, 'details');
+  renderer.setLayers({ details: false });
+  assert.equal(renderer.pick(100, 100, 0), null);
 });

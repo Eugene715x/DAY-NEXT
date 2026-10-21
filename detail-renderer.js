@@ -1,8 +1,7 @@
-import { mapFeatureLayer, mapBiome, mapZoneBiome, shouldRenderFeature } from './map-layers.js';
+import { mapFeatureLayer, mapBiome, mapZoneBiome, shouldRenderFeature, shouldRenderLandscapeFeature, mapLandscapeBiome } from './map-layers.js';
 import { classifyBuilding, classifyBiome } from './gameplay-types.js';
 import { ROAD_CLASSES, roadClass, mergeConnectedNetworks } from './map-presentation.js';
-import { buildGameplayBiomes, groupNearbyZones } from './biome-zones.js';
-import { polygonDifference } from './polygon-geometry.js';
+import { createBuildingAssignments } from './building-roles.js';
 
 /** Sharp, scale-aware cartography over the original mapped footprints and paths. */
 const drClamp = (n, min, max) => Math.max(min, Math.min(max, n));
@@ -116,13 +115,41 @@ const drBiomeNames = {
   administrative: 'Административная территория', wasteland: 'Пустошь', suburb: 'Пригород', urban: 'Городская застройка', dense: 'Плотная застройка', aircraft_parking: 'Стоянка самолётов',
 };
 const drSourceId = feature => feature.sourceId || String(feature.id || '').match(/^(?:node|way|relation)-\d+/)?.[0] || feature.id;
-const drSameFootprint = (a, b) => a.rings.length === b.rings.length && a.rings.every(ring => b.rings.some(other => ring.length === other.length
-  && ring.every(point => other.some(candidate => candidate.x === point.x && candidate.y === point.y))));
 const drTypeMetadata = record => {
   const type = record.gameplayType;
   if (!type) return { typeId: null, typeName: null, resourceProfileIds: [], gameplayType: null };
   return { typeId: type.typeId, typeName: type.typeName, resourceProfileIds: [...type.resourceProfileIds], gameplayType: { ...type, resourceProfileIds: [...type.resourceProfileIds] } };
 };
+
+const drRoleMetadata = record => {
+  const assignment = record.feature.gameplayAssignment;
+  if (!assignment) return { gameplayAssignment: null, roleId: null, roleName: null, categoryId: null, categoryName: null, color: null, stroke: null, icon: null, roleOrigin: null };
+  return { gameplayAssignment: structuredClone(assignment), roleId: assignment.roleId, roleName: assignment.roleName,
+    categoryId: assignment.categoryId, categoryName: assignment.categoryName, color: assignment.color || assignment.fill,
+    stroke: assignment.stroke, icon: assignment.icon, roleOrigin: assignment.roleOrigin };
+};
+const drPhysicalAirSurface = feature => ['aerodrome', 'apron', 'helipad'].includes(feature.tags?.aeroway || feature.kind)
+  && (feature.geometry === 'polygon' || feature.rings?.length || feature.points?.length > 2);
+const drLayer = (feature, group) => {
+  const layer = mapFeatureLayer(feature, group);
+  return layer === 'landscape' && drPhysicalAirSurface(feature) ? 'details' : layer;
+};
+const drPresentFeature = (feature, group) => shouldRenderFeature(feature, group)
+  && (drLayer(feature, group) !== 'landscape' || shouldRenderLandscapeFeature(feature, group));
+
+function drInteriorPoint(parts, bounds) {
+  const contains = point => parts.some(rings => drInPolygon(point.x, point.y, rings));
+  const center = { x: (bounds.minX + bounds.maxX) / 2, y: (bounds.minY + bounds.maxY) / 2 };
+  if (contains(center)) return center;
+  let best = center, distance = -1;
+  for (let row = 0; row < 7; row++) for (let column = 0; column < 7; column++) {
+    const candidate = { x: bounds.minX + (column + .5) / 7 * (bounds.maxX - bounds.minX), y: bounds.minY + (row + .5) / 7 * (bounds.maxY - bounds.minY) };
+    if (!contains(candidate)) continue;
+    const clearance = drNearestOnRings(candidate.x, candidate.y, parts.flat(), true).distance;
+    if (clearance > distance) { best = candidate; distance = clearance; }
+  }
+  return best;
+}
 
 function drFeatureLabel(feature, group) {
   if (feature.name) return feature.name;
@@ -131,7 +158,7 @@ function drFeatureLabel(feature, group) {
     const names = { pole: 'Столб электросети', tower: 'Опора ЛЭП', line: 'Линия электропередачи', minor_line: 'Линия местной электросети', cable: 'Электрический кабель', transformer: 'Трансформатор', substation: 'Подстанция', plant: 'Электростанция', switch: 'Выключатель электросети' };
     return feature.tags?.man_made === 'utility_pole' ? 'Коммунальный столб' : names[feature.tags?.power] || 'Объект электросети';
   }
-  if (group === 'building') return drNames[feature.ruins ? 'ruins' : feature.type] || drNames.building;
+  if (group === 'building') return feature.gameplayAssignment?.roleName || drNames[feature.ruins ? 'ruins' : feature.type] || drNames.building;
   if (group === 'road' && feature.names?.length > 4) return `${ROAD_CLASSES[roadClass(feature)]?.pluralName || 'Дороги'} · сеть`;
   if (group === 'road') return feature.roadClassName || ROAD_CLASSES[roadClass(feature)]?.name || 'Дорога';
   if (group === 'river') return drDry(feature) ? 'Сезонное русло' : drNames.river;
@@ -187,9 +214,9 @@ function drCache(original, group, layer, metersPerUnit, index) {
     if (!longest || length > longest.length) longest = { a, b, length, angle: Math.atan2(b.y - a.y, b.x - a.x) };
   }
   const actualWidth = Number(feature.widthMeters ?? feature.tags?.width) / metersPerUnit;
-  const biome = layer === 'landscape' && !outlineOnly ? feature.biome || mapBiome(feature) : null;
+  const biome = layer === 'landscape' && !outlineOnly ? mapLandscapeBiome(feature, group) : null;
   const gameplayType = group === 'building' ? classifyBuilding(feature) : layer === 'landscape' && !outlineOnly ? classifyBiome(biome) : layer === 'water' ? classifyBiome(drDry(feature) ? 'dry_riverbed' : 'water') : null;
-  return { feature, group, layer, sourceOrder: index, biome, gameplayType, outlineOnly, fallback: feature.fallback === true, footprintOnly: feature.footprintOnly === true && feature.zoneFusion !== true, roadClass: layer === 'roads' ? roadClass(feature) : null, geometry, ellipse, key: `${layer}:${group}:${feature.id}`, parts, rings, points, path, fillRule: 'nonzero', bounds, center, longest, hash: drHash(feature.id), width: Number.isFinite(actualWidth) && actualWidth > 0 ? actualWidth : Number(feature.width) || 1 };
+  return { feature, group, layer, labelPoint: group === 'building' ? drInteriorPoint(parts, bounds) : center, sourceOrder: index, biome, gameplayType, outlineOnly, fallback: feature.fallback === true, footprintOnly: feature.footprintOnly === true && feature.zoneFusion !== true, roadClass: layer === 'roads' ? roadClass(feature) : null, geometry, ellipse, key: `${layer}:${group}:${feature.id}`, parts, rings, points, path, fillRule: 'nonzero', bounds, center, longest, hash: drHash(feature.id), width: Number.isFinite(actualWidth) && actualWidth > 0 ? actualWidth : Number(feature.width) || 1 };
 }
 
 function drWaterKey(record) {
@@ -228,65 +255,19 @@ function drMergeWaterPolygons(records) {
   });
 }
 
-const drUrbanBiomes = new Set(['suburb', 'urban', 'dense']);
-const drUrbanFiller = record => record.feature.urbanFiller === true || record.feature.derived === true && drUrbanBiomes.has(record.biome);
-const drBoundsOverlap = (a, b) => a.minX <= b.maxX && a.maxX >= b.minX && a.minY <= b.maxY && a.maxY >= b.minY;
-const drPartsArea = parts => parts.reduce((total, rings) => total + Math.abs(drSignedArea(rings[0])) - rings.slice(1).reduce((sum, ring) => sum + Math.abs(drSignedArea(ring)), 0), 0);
-const drMaskSourceIds = record => record.feature.sourceIds || [drSourceId(record.feature)];
-
-function drWaterLineMask(record) {
-  const radius = Math.max(.1, record.width) / 2, parts = [];
-  // These masks use physical source width. Their construction happens once per
-  // map, and does not change with zoom, visible layers or the selection halo.
-  for (const path of record.rings) {
-    for (let index = 1; index < path.length; index++) {
-      const a = path[index - 1], b = path[index], length = Math.hypot(b.x - a.x, b.y - a.y);
-      if (!length) continue;
-      const nx = -(b.y - a.y) / length * radius, ny = (b.x - a.x) / length * radius;
-      const ring = [{ x: a.x + nx, y: a.y + ny }, { x: b.x + nx, y: b.y + ny }, { x: b.x - nx, y: b.y - ny }, { x: a.x - nx, y: a.y - ny }];
-      ring.push({ ...ring[0] }); parts.push([ring]);
-    }
-    for (const point of path) {
-      const ring = Array.from({ length: 16 }, (_, index) => ({ x: point.x + Math.cos(index / 16 * Math.PI * 2) * radius, y: point.y + Math.sin(index / 16 * Math.PI * 2) * radius }));
-      ring.push({ ...ring[0] }); parts.push([ring]);
-    }
-  }
-  return parts.length ? { feature: record.feature, parts, bounds: drBounds(parts.flat(2)) } : null;
-}
-
-function drCutUrbanFillers(records, masks, metersPerUnit) {
-  const priority = { dense: 0, urban: 1, suburb: 2 };
-  const ordered = [...records].sort((a, b) => priority[a.biome] - priority[b.biome] || String(a.feature.id).localeCompare(String(b.feature.id)));
-  const clipped = [], previous = [];
-  const report = { inputFeatures: records.length, outputFeatures: 0, removedFeatures: 0, sourceMaskCount: masks.length, beforeArea: records.reduce((sum, record) => sum + drPartsArea(record.parts), 0), afterArea: 0 };
-  for (const record of ordered) {
-    const relevant = masks.filter(mask => drBoundsOverlap(record.bounds, mask.bounds));
-    const occupied = previous.filter(mask => drBoundsOverlap(record.bounds, mask.bounds));
-    const parts = polygonDifference(record.parts, [...relevant, ...occupied].flatMap(mask => mask.parts));
-    if (!parts.length) continue;
-    const feature = { ...record.feature, geometry: 'polygon', urbanFiller: true, parts, rings: parts[0], points: parts[0][0],
-      provenance: { ...record.feature.provenance, sourceZoneExclusion: true, fillOnlyUnzoned: true, exclusionStage: 'after-zone-fusion',
-        maskSourceIds: [...new Set(relevant.flatMap(drMaskSourceIds).filter(Boolean))].sort() } };
-    const cached = drCache(feature, record.group, 'landscape', metersPerUnit, clipped.length);
-    if (!cached) continue;
-    clipped.push(cached); previous.push(cached); report.afterArea += drPartsArea(parts);
-  }
-  report.outputFeatures = clipped.length; report.removedFeatures = records.length - clipped.length;
-  return { records: clipped, report };
-}
-
 /** Call draw inside a world transform; view dimensions are CSS screen pixels. */
 export function createDetailRenderer(world) {
   const metersPerUnit = world.metersPerUnit || 5;
   const groups = [['roads', 'road'], ['buildings', 'building'], ['areas', 'area'], ['rivers', 'river'], ['lakes', 'lake'], ['details', 'detail']];
   const inputFeatures = groups.reduce((sum, [key]) => sum + (world[key]?.length || 0), 0);
-  const filteredFeatures = groups.reduce((sum, [key, group]) => sum + (world[key] || []).filter(feature => !shouldRenderFeature(feature, group)).length, 0);
-  const cache = (features, group) => (features || []).filter(feature => shouldRenderFeature(feature, group)).map((feature, index) => drCache(feature, group, mapFeatureLayer(feature, group), metersPerUnit, index)).filter(Boolean);
+  const filteredFeatures = groups.reduce((sum, [key, group]) => sum + (world[key] || []).filter(feature => !drPresentFeature(feature, group)).length, 0);
+  const cache = (features, group) => (features || []).filter(feature => drPresentFeature(feature, group)).map((feature, index) => drCache(feature, group, drLayer(feature, group), metersPerUnit, index)).filter(Boolean);
   const nativeRoads = new Map((world.roads || []).filter(feature => shouldRenderFeature(feature, 'road')).map((feature, index) => {
     const road = feature.id ? feature : { ...feature, id: `road-${index}` };
     return [road.id, road];
   }));
-  const buildings = cache(world.buildings, 'building');
+  const buildingAssignments = createBuildingAssignments(world);
+  const buildings = cache(buildingAssignments.features, 'building');
   const detailSources = cache(world.details, 'detail');
   const coalescedDetails = detailSources.filter(record => {
     const road = record.layer === 'roads' && nativeRoads.get(record.feature.id);
@@ -307,30 +288,17 @@ export function createDetailRenderer(world) {
   const waterAreas = drMergeWaterPolygons(waterPolygons).map((feature, index) => drCache({ ...feature, geometry: 'polygon', kind: feature.kind || feature.type || 'water' }, 'detail', 'water', metersPerUnit, index));
   const details = [...coalescedDetails.filter(record => !(record.layer === 'power' && record.geometry === 'line') && !(record.layer === 'roads' && record.geometry === 'line') && !(record.layer === 'water' && record.geometry !== 'point')), ...cache(powerNetwork.features, 'detail')];
   const areas = sourceAreas.filter(record => record.layer !== 'water');
-  const mappedZones = [...areas, ...details].filter(record => record.layer === 'landscape' && record.geometry === 'polygon' && !record.outlineOnly);
-  const footprintZones = buildings.flatMap((building, index) => {
-    const biome = mapZoneBiome(building.feature);
-    if (!biome) return [];
-    if (mappedZones.some(zone => zone.biome === biome && (drSameFootprint(zone, building)
-      || building.parts[0][0].every(point => drPartContains(zone, point.x, point.y))))) return [];
-    const record = drCache({ ...building.feature, footprintOnly: true }, 'zone', 'landscape', metersPerUnit, index);
-    return [record];
-  });
-  const generated = world.geographic === true || Array.isArray(world.bbox) ? buildGameplayBiomes(world, { deferOccupiedCuts: true }) : { features: [], report: {} };
-  const derivedZones = generated.features.map((feature, index) => drCache(feature, 'zone', 'landscape', metersPerUnit, index)).filter(Boolean);
-  const allZones = [...mappedZones, ...footprintZones, ...derivedZones];
-  const urbanFillers = allZones.filter(drUrbanFiller);
-  // Existing use/site zones keep their overlaps. City-density areas fill only
-  // what remains after those actual zones and their gameplay unions are final.
-  const groupedZones = groupNearbyZones(allZones.filter(record => !drUrbanFiller(record)).map(record => ({ ...record.feature, biome: record.biome, presentationGroup: record.group, footprintOnly: record.footprintOnly })), {
-    metersPerUnit, maxDistanceMeters: 35, blockers: waterSources.filter(record => record.geometry !== 'point' && !drDry(record.feature)).map(record => ({ ...record.feature, geometry: record.geometry, parts: record.parts, width: record.width })),
-  });
-  const existingZones = groupedZones.features.map((feature, index) => drCache(feature, feature.presentationGroup || 'zone', 'landscape', metersPerUnit, index)).filter(Boolean);
-  const physicalSites = [...details, ...sourceAreas].filter(record => record.geometry === 'polygon' && ['power', 'roads'].includes(record.layer));
-  const waterLineMasks = waterLines.filter(record => !drDry(record.feature)).map(drWaterLineMask).filter(Boolean);
-  const masks = [...existingZones.filter(record => !record.fallback), ...waterPolygons, ...physicalSites, ...waterLineMasks];
-  const clippedUrban = drCutUrbanFillers(urbanFillers, masks, metersPerUnit);
-  const landscapePolygons = [...existingZones, ...clippedUrban.records];
+  // Building purpose now carries the city information. Source urban/service
+  // polygons stay available to assignment inference but have no registry facet.
+  // Natural geometry is retained exactly; no density filler or plot fusion runs.
+  const landscapePolygons = [...areas, ...details].filter(record => record.layer === 'landscape' && record.geometry === 'polygon');
+  let fallbackCount = 0;
+  if ((world.geographic === true || Array.isArray(world.bbox)) && world.width > 0 && world.height > 0) {
+    const ring = [{ x: 0, y: 0 }, { x: world.width, y: 0 }, { x: world.width, y: world.height }, { x: 0, y: world.height }, { x: 0, y: 0 }];
+    const feature = { id: 'game-biome-wasteland', type: 'wasteland', biome: 'wasteland', geometry: 'polygon', points: ring, rings: [ring], derived: true, fallback: true,
+      sourceIds: [], provenance: { method: 'unmapped-ground-fallback', sourceIds: [] } };
+    landscapePolygons.push(drCache(feature, 'zone', 'landscape', metersPerUnit, 0)); fallbackCount = 1;
+  }
   const nonZoneAreas = areas.filter(record => record.layer !== 'landscape' || record.geometry !== 'polygon');
   const nonZoneDetails = details.filter(record => record.layer !== 'landscape' || record.geometry !== 'polygon');
   const roadPriority = { trail: 0, track: 1, street: 2, road: 3, highway: 4, railway: 5 };
@@ -357,7 +325,7 @@ export function createDetailRenderer(world) {
   const roadClasses = Object.fromEntries(Object.keys(ROAD_CLASSES).map(key => [key, true]));
   const isEnabled = record => layers[record.layer] && (record.layer !== 'roads' || roadClasses[record.roadClass] !== false);
   const stats = { features: registry.length, inputFeatures, filteredFeatures, coalescedFeatures: detailSources.length - coalescedDetails.length,
-    sourceRoads: nativeRoads.size, sourceRailwayLines: roadSources.length - nativeRoads.size, displayRoads: roads.length, sourcePowerLines: powerSources.length, displayPowerLines: powerNetwork.features.length, sourceWaterLines: waterLines.length, displayWaterLines: rivers.length, sourceWaterAreas: waterPolygons.length, displayWaterAreas: waterAreas.length, generatedBiomes: generated.features.length, biomeGeneration: generated.report, zoneMerging: groupedZones.report, urbanFillerClipping: clippedUrban.report,
+    sourceRoads: nativeRoads.size, sourceRailwayLines: roadSources.length - nativeRoads.size, displayRoads: roads.length, sourcePowerLines: powerSources.length, displayPowerLines: powerNetwork.features.length, sourceWaterLines: waterLines.length, displayWaterLines: rivers.length, sourceWaterAreas: waterPolygons.length, displayWaterAreas: waterAreas.length, generatedBiomes: fallbackCount, biomeGeneration: { method: 'natural-landscape-only', generatedZones: fallbackCount }, zoneMerging: { inputFeatures: landscapePolygons.length, displayFeatures: landscapePolygons.length, mergedGroups: 0, joinedFeatures: 0, addedCorridors: 0 }, urbanFillerClipping: { inputFeatures: 0, outputFeatures: 0, removedFeatures: 0, sourceMaskCount: 0, beforeArea: 0, afterArea: 0 }, buildingAssignments: buildingAssignments.report,
     drawCount: 0, highlightDrawCount: 0, viewCandidates: 0, pickCandidates: 0, zoneCandidates: 0 };
   for (const layer of Object.keys(layers)) {
     stats[layer] = registry.filter(record => record.layer === layer).length;
@@ -455,21 +423,80 @@ export function createDetailRenderer(world) {
     ctx.setLineDash([10 / zoom, 5 / zoom]); ctx.stroke(record.path); ctx.setLineDash([]);
   }
 
+  function paintBuildingIcon(ctx, record, zoom) {
+    const assignment = record.feature.gameplayAssignment, b = record.bounds;
+    if (!assignment || zoom < 3.5 || Math.min(b.maxX - b.minX, b.maxY - b.minY) * zoom < 17) return;
+    ctx.save(); ctx.clip(record.path, record.fillRule);
+    ctx.translate(record.labelPoint.x, record.labelPoint.y); ctx.scale(1 / zoom, 1 / zoom);
+    const icon = assignment.icon || 'house';
+    ctx.strokeStyle = '#25352c'; ctx.fillStyle = '#25352c'; ctx.lineWidth = 1.4; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    ctx.beginPath();
+    if (icon === 'house') {
+      ctx.moveTo(-5, 0); ctx.lineTo(0, -4); ctx.lineTo(5, 0); ctx.moveTo(-3.5, -1); ctx.lineTo(-3.5, 4); ctx.lineTo(3.5, 4); ctx.lineTo(3.5, -1); ctx.moveTo(0, 4); ctx.lineTo(0, 1);
+    } else if (icon === 'shop') {
+      ctx.rect(-4, -1, 8, 5); ctx.moveTo(-5, -1); ctx.lineTo(-3.5, -4); ctx.lineTo(3.5, -4); ctx.lineTo(5, -1); ctx.moveTo(1, 4); ctx.lineTo(1, 1);
+    } else if (icon === 'medical') {
+      ctx.moveTo(-4, 0); ctx.lineTo(4, 0); ctx.moveTo(0, -4); ctx.lineTo(0, 4); ctx.lineWidth = 2.7;
+    } else if (icon === 'school') {
+      ctx.rect(-4, -1.5, 8, 5.5); ctx.moveTo(-5, -1.5); ctx.lineTo(0, -4); ctx.lineTo(5, -1.5); ctx.moveTo(-1.5, 4); ctx.lineTo(-1.5, 1); ctx.lineTo(1.5, 1); ctx.lineTo(1.5, 4);
+    } else if (icon === 'industry') {
+      ctx.moveTo(-5, 4); ctx.lineTo(-5, -1); ctx.lineTo(-1.5, 1); ctx.lineTo(-1.5, -1); ctx.lineTo(2, 1); ctx.lineTo(2, -4); ctx.lineTo(4, -4); ctx.lineTo(4, 4); ctx.closePath();
+    } else if (icon === 'storage') {
+      ctx.rect(-4.5, -4, 9, 8); ctx.moveTo(-4.5, -1); ctx.lineTo(4.5, -1); ctx.moveTo(0, -1); ctx.lineTo(0, 4);
+    } else if (icon === 'plane') {
+      ctx.moveTo(0, -5); ctx.lineTo(0, 5); ctx.moveTo(-5, 0); ctx.lineTo(0, -2); ctx.lineTo(5, 0); ctx.moveTo(-2.5, 4); ctx.lineTo(0, 2.5); ctx.lineTo(2.5, 4);
+    } else if (icon === 'food') {
+      ctx.moveTo(-3, -4); ctx.lineTo(-3, 4); ctx.moveTo(-5, -4); ctx.lineTo(-5, -1); ctx.lineTo(-1, -1); ctx.lineTo(-1, -4); ctx.moveTo(3, -4); ctx.lineTo(3, 4);
+    } else if (icon === 'bed') {
+      ctx.moveTo(-5, -2); ctx.lineTo(-5, 4); ctx.moveTo(5, 0); ctx.lineTo(5, 4); ctx.moveTo(-5, 2); ctx.lineTo(5, 2); ctx.rect(-4, -1, 3, 3); ctx.moveTo(-1, 0); ctx.lineTo(4, 0);
+    } else if (icon === 'civic') {
+      ctx.moveTo(-5, -2); ctx.lineTo(0, -5); ctx.lineTo(5, -2); ctx.moveTo(-5, 4); ctx.lineTo(5, 4); for (const x of [-3, 0, 3]) { ctx.moveTo(x, -1); ctx.lineTo(x, 3); }
+    } else if (icon === 'ruin') {
+      ctx.moveTo(-5, 4); ctx.lineTo(-4, -3); ctx.lineTo(-1, -1); ctx.lineTo(1, -4); ctx.lineTo(4, -2); ctx.lineTo(5, 4); ctx.moveTo(-1, -1); ctx.lineTo(1, 1); ctx.lineTo(-1, 4);
+    } else {
+      ctx.moveTo(-4, 4); ctx.lineTo(2, -2); ctx.moveTo(1, -4); ctx.lineTo(1, -1); ctx.lineTo(4, -1); ctx.moveTo(-4, 4); ctx.lineTo(-2, 4);
+    }
+    ctx.stroke(); ctx.restore();
+  }
+
+  function paintBuildingLabels(ctx, visible, view) {
+    if (view.zoom < 4 || typeof ctx.fillText !== 'function') return;
+    const boxes = [], candidates = visible.filter(record => record.group === 'building' && record.feature.gameplayAssignment
+      && !['category.housing', 'category.ruin'].includes(record.feature.gameplayAssignment.categoryId));
+    const priority = record => record.feature.gameplayAssignment.roleOrigin === 'mapped' ? 0 : record.feature.gameplayAssignment.roleOrigin === 'context' ? 1 : 2;
+    candidates.sort((a, b) => priority(a) - priority(b) || a.hash - b.hash);
+    for (const record of candidates) {
+      if (boxes.length >= 12) break;
+      const { feature, bounds, labelPoint } = record, assignment = feature.gameplayAssignment;
+      if (Math.max(bounds.maxX - bounds.minX, bounds.maxY - bounds.minY) * view.zoom < 26) continue;
+      const text = assignment.roleName.length > 30 ? assignment.roleName.slice(0, 29) + '…' : assignment.roleName;
+      const x = labelPoint.x, y = bounds.maxY + 8 / view.zoom;
+      const screenX = (x - view.cameraX) * view.zoom + view.width / 2, screenY = (y - view.cameraY) * view.zoom + view.height / 2;
+      if (screenX < 25 || screenX > view.width - 25 || screenY < 20 || screenY > view.height - 20) continue;
+      const width = text.length * 5.2, box = { x: screenX - width / 2 - 4, y: screenY - 4, width: width + 8, height: 15 };
+      if (boxes.some(other => box.x < other.x + other.width && box.x + box.width > other.x && box.y < other.y + other.height && box.y + box.height > other.y)) continue;
+      ctx.save(); ctx.translate(x, y); ctx.scale(1 / view.zoom, 1 / view.zoom);
+      ctx.font = '600 9px "Segoe UI", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      ctx.strokeStyle = 'rgba(191,181,147,.94)'; ctx.lineWidth = 3; ctx.strokeText(text, 0, 0); ctx.fillStyle = '#263b30'; ctx.fillText(text, 0, 0); ctx.restore();
+      boxes.push(box);
+    }
+  }
+
   function paintBuilding(ctx, record, zoom, hoveredId) {
     const { feature, path, bounds: b, center, longest } = record;
+    const assignment = feature.gameplayAssignment;
     const high = zoom >= 2.5, hovered = hoveredId === feature.id;
-    const ruin = feature.ruins === true || feature.type === 'ruins';
-    const colors = ['#a39f7c', '#b4a583', '#8b9675', '#b7b18d', '#9b9b7c'];
-    const roof = ruin ? '#9a9476' : colors[record.hash % colors.length];
+    const ruin = assignment?.condition === 'ruined' || feature.ruins === true || feature.type === 'ruins';
+    const roof = assignment?.roof || assignment?.color || assignment?.fill || '#ad9f79';
     if (high) {
       ctx.save(); ctx.translate(.55, .8);
       ctx.fillStyle = 'rgba(39,47,32,.3)'; ctx.fill(path, record.fillRule); ctx.restore();
       const gradient = ctx.createLinearGradient(b.minX, b.minY, b.maxX, b.maxY);
-      gradient.addColorStop(0, roof); gradient.addColorStop(.5, roof); gradient.addColorStop(1, '#74785b');
+      gradient.addColorStop(0, roof); gradient.addColorStop(.58, assignment?.color || roof); gradient.addColorStop(1, assignment?.stroke || '#59614c');
       ctx.fillStyle = gradient;
-    } else ctx.fillStyle = '#80876a';
+    } else ctx.fillStyle = assignment?.color || assignment?.fill || roof;
     ctx.fill(path, record.fillRule);
-    ctx.strokeStyle = hovered ? '#eff0be' : '#3f503c'; ctx.lineWidth = high ? Math.max(.26, .9 / zoom) : .8 / zoom;
+    ctx.strokeStyle = hovered ? '#eff0be' : assignment?.stroke || '#3f503c'; ctx.lineWidth = high ? Math.max(.26, .9 / zoom) : .8 / zoom;
     if (ruin) ctx.setLineDash([.7, .4]);
     ctx.stroke(path); ctx.setLineDash([]);
     if (!high) return;
@@ -500,6 +527,7 @@ export function createDetailRenderer(world) {
       ctx.strokeRect(-diagonal * .28, -diagonal * .22, diagonal * .56, diagonal * .44);
     }
     ctx.restore();
+    paintBuildingIcon(ctx, record, zoom);
   }
 
   function paintDetail(ctx, record, zoom, hoveredId) {
@@ -687,6 +715,7 @@ export function createDetailRenderer(world) {
       else paintDetail(ctx, record, view.zoom, view.hoveredId);
     }
     paintRoadLabels(ctx, visibleRoads, view);
+    paintBuildingLabels(ctx, visible, view);
     ctx.restore();
   }
 
@@ -723,14 +752,14 @@ export function createDetailRenderer(world) {
     const zone = !record.outlineOnly && record.layer === 'landscape' && record.geometry === 'polygon' && (mapZoneBiome(feature) || ['residential', 'industrial', 'commercial', 'retail'].includes(record.biome));
     const kind = record.outlineOnly ? 'settlement_boundary' : zone ? `${record.biome}_area` : record.group === 'building' ? feature.ruins ? 'ruins' : 'building' : record.group === 'road' ? 'road' : record.group === 'area' ? feature.type : record.group === 'river' ? 'river' : record.group === 'lake' ? 'lake' : feature.kind;
     const roadDescription = (ROAD_CLASSES[record.roadClass]?.name || 'Дорога') + ((feature.members || [feature]).some(member => member.tags?.railway === 'abandoned') ? ' · По бывшей железной дороге' : '');
-    return { id: feature.id, key: record.key, sourceId: drSourceId(feature), layer: record.layer, kind, biome: record.biome, ...drTypeMetadata(record),
+    return { id: feature.id, key: record.key, sourceId: drSourceId(feature), layer: record.layer, kind, biome: record.biome, ...drTypeMetadata(record), ...drRoleMetadata(record),
       biomeName: record.biome ? drBiomeNames[record.biome] || drFeatureLabel(feature, record.group) : null,
       geometry: record.geometry, footprintOnly: record.footprintOnly === true, outlineOnly: record.outlineOnly, derived: feature.derived === true, urbanFiller: feature.urbanFiller === true, fallback: record.fallback, provenance: feature.provenance ? structuredClone(feature.provenance) : null,
       roadClass: record.roadClass, roadClassName: ROAD_CLASSES[record.roadClass]?.name || null,
       sourceIds: [...(feature.sourceIds || [drSourceId(feature)])], memberIds: [...(feature.memberIds || [feature.id])],
-      name: drFeatureLabel(feature, record.group), x: point.x, y: point.y, source: feature, members: (feature.members || []).map(member => structuredClone(member)),
+      name: drFeatureLabel(feature, record.group), x: point.x, y: point.y, source: record.group === 'building' ? structuredClone(feature) : feature, members: (feature.members || []).map(member => structuredClone(member)),
       paths: record.geometry === 'line' ? record.rings.map(path => path.map(point => ({ ...point }))) : undefined, parts: record.geometry === 'polygon' ? record.parts.map(part => part.map(ring => ring.map(point => ({ ...point })))) : undefined,
-      description: feature.derived ? `${drBiomeNames[record.biome] || 'Игровая зона'} · Игровая разметка местности` : record.outlineOnly ? 'Граница населённого пункта' : record.group === 'building' ? [feature.address, drNames[feature.type], feature.levels ? `${feature.levels} эт.` : ''].filter(Boolean).join(' · ') : record.group === 'road' ? roadDescription : record.footprintOnly ? `${drBiomeNames[record.biome]} · По контуру здания` : feature.tags?.railway === 'abandoned' ? 'Заброшенная железная дорога' : record.layer === 'water' && drDry(feature) ? 'Сезонное русло' : drNames[kind] || drFeatureLabel(feature, record.group) };
+      description: feature.derived ? `${drBiomeNames[record.biome] || 'Игровая зона'} · Игровая разметка местности` : record.outlineOnly ? 'Граница населённого пункта' : record.group === 'building' ? [feature.gameplayAssignment?.roleName, feature.address, feature.levels ? `${feature.levels} эт.` : ''].filter(Boolean).join(' · ') : record.group === 'road' ? roadDescription : record.footprintOnly ? `${drBiomeNames[record.biome]} · По контуру здания` : feature.tags?.railway === 'abandoned' ? 'Заброшенная железная дорога' : record.layer === 'water' && drDry(feature) ? 'Сезонное русло' : drNames[kind] || drFeatureLabel(feature, record.group) };
   }
 
   /** All physical zone memberships coexist, including zones hidden from view. */
@@ -848,7 +877,7 @@ export function createDetailRenderer(world) {
       sourceIds: [...(record.feature.sourceIds || [drSourceId(record.feature)])], memberIds: [...(record.feature.memberIds || [record.feature.id])],
       sourceTypes: [...(record.feature.sourceTypes || [record.feature.type || record.feature.kind].filter(Boolean))], names: [...(record.feature.names || [record.feature.name].filter(Boolean))], merged: record.feature.merged === true,
       roadClass: record.roadClass, roadClassName: ROAD_CLASSES[record.roadClass]?.name || null,
-      ...drTypeMetadata(record),
+      ...drTypeMetadata(record), ...drRoleMetadata(record),
       kind: describe(record).kind, name: drFeatureLabel(record.feature, record.group), geometry: record.geometry,
       points: record.points.map(point => ({ ...point })), rings: record.geometry === 'polygon' ? record.parts[0].map(ring => ring.map(point => ({ ...point }))) : undefined,
       parts: record.geometry === 'polygon' ? record.parts.map(part => part.map(ring => ring.map(point => ({ ...point })))) : undefined,

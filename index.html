@@ -24,6 +24,7 @@
       <symbol id="i-map" viewBox="0 0 24 24"><path d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2V5Zm6-2v16m6-14v16"/></symbol>
       <symbol id="i-house" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7M5 9v12h14V9M10 21v-7h4v7M8 10h2m4 0h2"/></symbol>
       <symbol id="i-layers" viewBox="0 0 24 24"><path d="m3 7 9-5 9 5-9 5-9-5Zm0 5 9 5 9-5M3 17l9 5 9-5"/></symbol>
+      <symbol id="i-types" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
       <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V3m-5 5 5-5 5 5M4 15v6h16v-6"/></symbol>
       <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v13m-5-5 5 5 5-5M4 15v6h16v-6"/></symbol>
     </svg>
@@ -35,7 +36,7 @@
       <div class="hud">
         <header class="top-bar">
           <div class="brand-block">
-            <div class="brand" aria-label="DAY NEXT"><span>DAY</span><span class="brand-divider">/</span><span class="brand-next">NEXT</span><span class="prototype">ПРОТОТИП <b>11</b></span></div>
+            <div class="brand" aria-label="DAY NEXT"><span>DAY</span><span class="brand-divider">/</span><span class="brand-next">NEXT</span><span class="prototype">ПРОТОТИП <b>12</b></span></div>
             <div class="brand-caption"><span class="live-dot"></span> ОДИНОЧНАЯ ЭКСПЕДИЦИЯ</div>
           </div>
           <div class="world-status glass">
@@ -68,6 +69,7 @@
           <div class="map-tool-cluster">
             <div class="map-tool"><button id="maps-button" class="icon-button glass maps-button" type="button" aria-label="Карты и импорт" aria-controls="maps-panel" aria-expanded="false" title="Карты и импорт"><svg class="icon"><use href="#i-map" /></svg></button><span class="control-caption">КАРТЫ</span></div>
             <div class="map-tool"><button id="detail-button" class="icon-button glass detail-button" type="button" aria-label="Показать застройку · B" title="Показать застройку · B"><svg class="icon"><use href="#i-house" /></svg></button><span class="control-caption">ЗАСТРОЙКА</span></div>
+            <div class="map-tool"><button id="building-types-button" class="icon-button glass building-types-button" type="button" aria-label="Типы зданий" aria-controls="building-types-panel" aria-expanded="false" title="Типы зданий"><svg class="icon"><use href="#i-types" /></svg></button><span class="control-caption">ТИПЫ</span></div>
             <div class="map-tool"><button id="layers-button" class="icon-button glass layers-button" type="button" aria-label="Слои карты" aria-controls="layers-panel" aria-expanded="false" title="Слои карты"><svg class="icon"><use href="#i-layers" /></svg></button><span class="control-caption">СЛОИ</span></div>
           </div>
         </nav>
@@ -144,12 +146,17 @@
           </div>
         </section>
 
+        <section id="building-types-panel" class="building-types-panel help-panel glass" role="dialog" aria-label="Типы зданий" aria-describedby="building-types-note" aria-modal="false" hidden>
+          <div class="layers-heading help-heading"><div><p class="eyebrow">ЛЕГЕНДА КАРТЫ</p><h2>Назначение зданий</h2></div><button id="building-types-close" class="icon-button" type="button" aria-label="Закрыть типы зданий">×</button></div>
+          <div class="building-types-content"><div id="building-type-legend" class="building-type-legend" role="list"></div><p class="layers-note" id="building-types-note">Наведи на дом, чтобы узнать его тип. Игровое назначение отмечено в карточке здания.</p></div>
+        </section>
+
         <section id="layers-panel" class="layers-panel help-panel glass" role="dialog" aria-label="Слои карты" aria-describedby="layers-note" aria-modal="false" hidden>
           <div class="layers-heading help-heading"><div><p class="eyebrow">ВИД КАРТЫ</p><h2>Слои карты</h2></div><button id="layers-close" class="icon-button" type="button" aria-label="Закрыть слои карты">×</button></div>
           <div class="layers-content">
             <div class="layer-options">
               <label class="layer-option" for="layer-terrain"><input id="layer-terrain" type="checkbox" checked /><span>Подложка</span></label>
-              <label class="layer-option" for="layer-landscape"><input id="layer-landscape" type="checkbox" checked /><span>Ландшафт и зоны</span><span id="count-landscape" class="layer-count">—</span></label>
+              <label class="layer-option" for="layer-landscape"><input id="layer-landscape" type="checkbox" checked /><span>Природа и ландшафт</span><span id="count-landscape" class="layer-count">—</span></label>
               <label class="layer-option" for="layer-water"><input id="layer-water" type="checkbox" checked /><span>Водоёмы и русла</span><span id="count-water" class="layer-count">—</span></label>
               <label class="layer-option" for="layer-roads"><input id="layer-roads" type="checkbox" checked /><span>Дороги и тропы</span><span id="count-roads" class="layer-count">—</span></label>
               <fieldset id="road-classes" class="road-classes"><legend>Типы дорог</legend>
@@ -164,7 +171,7 @@
               <label class="layer-option" for="layer-buildings"><input id="layer-buildings" type="checkbox" checked /><span>Здания</span><span id="count-buildings" class="layer-count">—</span></label>
               <label class="layer-option" for="layer-details"><input id="layer-details" type="checkbox" checked /><span>Остальные объекты</span><span id="count-details" class="layer-count">—</span></label>
             </div>
-            <p class="layers-note" id="layers-note">Пустоши и застройка тоже образуют биомы. При отдалении появляются метки поселений и аэропорта. Соединённые однотипные сети выбираются целиком; типы дорог можно скрывать отдельно.</p>
+            <p class="layers-note" id="layers-note">Цвет здания показывает его назначение. Легенда — кнопка «Типы». Природные биомы сохраняются отдельно; городская зональная заливка убрана.</p>
           </div>
         </section>
       </div>

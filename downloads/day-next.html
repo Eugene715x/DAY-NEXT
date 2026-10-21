@@ -42,6 +42,9 @@
 .layers-panel{max-height:calc(100dvh - 145px)}.road-classes{margin:0;padding:6px 0 9px 25px;border:0;border-bottom:1px solid var(--line);min-width:0}.road-classes legend{padding:7px 0 3px;font-size:9px;color:#8fa27d}.road-class-option{display:flex;align-items:center;gap:8px;min-height:30px;color:#b8c8a8;font-size:10px;cursor:pointer}.road-class-option input{width:13px;height:13px;accent-color:var(--accent);cursor:pointer}.road-class-option input:focus-visible{outline:2px solid var(--accent);outline-offset:3px}.road-swatch{width:23px;flex-shrink:0;border-radius:2px;border-top:3px solid #c0ae7e}.road-swatch-highway{border-top:5px solid #e2c490}.road-swatch-road{border-top:4px solid #cfbb8b}.road-swatch-street{border-top:3px solid #b5ab8d}.road-swatch-track{border-top:2px dashed #9e9674}.road-swatch-trail{border-top:1px dotted #b3b18b}.road-classes.is-disabled{opacity:.4}.road-classes.is-disabled label{cursor:default}
 
 .road-swatch-railway{height:5px;border-top:2px solid #535d4b;border-bottom:2px solid #535d4b;background:repeating-linear-gradient(90deg,transparent 0 4px,#535d4b 4px 5px,transparent 5px 9px)}
+
+/* Building purposes: a dedicated key keeps the map readable at close zoom. */
+.building-types-button{width:44px;height:44px;min-width:44px;min-height:44px}.building-types-button[aria-expanded="true"]{color:var(--accent);border-color:rgba(209,223,135,.55)}.building-types-panel{width:366px;padding:0;display:flex;flex-direction:column;overflow:hidden;z-index:3;max-height:calc(100dvh - 145px)}.building-types-content{padding:8px 20px 18px;overflow-y:auto;scrollbar-width:thin;min-height:0}.building-type-legend{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:16px}.building-type-row{display:flex;align-items:center;gap:8px;min-height:51px;padding:8px 0;border-bottom:1px solid var(--line);font-size:10px;line-height:1.5;color:#c5d1b8}.building-type-swatch{width:18px;height:18px;flex-shrink:0;border:1px solid rgba(227,231,198,.55);box-shadow:0 2px 3px rgba(0,0,0,.22);border-radius:2px}.building-type-name{flex:1;overflow-wrap:break-word}.building-type-count{font:9px monospace;color:#8fa47e;min-width:17px;text-align:right}.object-card.is-building{border-left:3px solid var(--object-type-color,var(--accent))}.object-card.is-building #object-kind{color:var(--object-type-color,var(--accent))}
 </style>
   </head>
   <body>
@@ -59,6 +62,7 @@
       <symbol id="i-map" viewBox="0 0 24 24"><path d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2V5Zm6-2v16m6-14v16"/></symbol>
       <symbol id="i-house" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7M5 9v12h14V9M10 21v-7h4v7M8 10h2m4 0h2"/></symbol>
       <symbol id="i-layers" viewBox="0 0 24 24"><path d="m3 7 9-5 9 5-9 5-9-5Zm0 5 9 5 9-5M3 17l9 5 9-5"/></symbol>
+      <symbol id="i-types" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
       <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V3m-5 5 5-5 5 5M4 15v6h16v-6"/></symbol>
       <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v13m-5-5 5 5 5-5M4 15v6h16v-6"/></symbol>
     </svg>
@@ -70,7 +74,7 @@
       <div class="hud">
         <header class="top-bar">
           <div class="brand-block">
-            <div class="brand" aria-label="DAY NEXT"><span>DAY</span><span class="brand-divider">/</span><span class="brand-next">NEXT</span><span class="prototype">ПРОТОТИП <b>11</b></span></div>
+            <div class="brand" aria-label="DAY NEXT"><span>DAY</span><span class="brand-divider">/</span><span class="brand-next">NEXT</span><span class="prototype">ПРОТОТИП <b>12</b></span></div>
             <div class="brand-caption"><span class="live-dot"></span> ОДИНОЧНАЯ ЭКСПЕДИЦИЯ</div>
           </div>
           <div class="world-status glass">
@@ -103,6 +107,7 @@
           <div class="map-tool-cluster">
             <div class="map-tool"><button id="maps-button" class="icon-button glass maps-button" type="button" aria-label="Карты и импорт" aria-controls="maps-panel" aria-expanded="false" title="Карты и импорт"><svg class="icon"><use href="#i-map" /></svg></button><span class="control-caption">КАРТЫ</span></div>
             <div class="map-tool"><button id="detail-button" class="icon-button glass detail-button" type="button" aria-label="Показать застройку · B" title="Показать застройку · B"><svg class="icon"><use href="#i-house" /></svg></button><span class="control-caption">ЗАСТРОЙКА</span></div>
+            <div class="map-tool"><button id="building-types-button" class="icon-button glass building-types-button" type="button" aria-label="Типы зданий" aria-controls="building-types-panel" aria-expanded="false" title="Типы зданий"><svg class="icon"><use href="#i-types" /></svg></button><span class="control-caption">ТИПЫ</span></div>
             <div class="map-tool"><button id="layers-button" class="icon-button glass layers-button" type="button" aria-label="Слои карты" aria-controls="layers-panel" aria-expanded="false" title="Слои карты"><svg class="icon"><use href="#i-layers" /></svg></button><span class="control-caption">СЛОИ</span></div>
           </div>
         </nav>
@@ -179,12 +184,17 @@
           </div>
         </section>
 
+        <section id="building-types-panel" class="building-types-panel help-panel glass" role="dialog" aria-label="Типы зданий" aria-describedby="building-types-note" aria-modal="false" hidden>
+          <div class="layers-heading help-heading"><div><p class="eyebrow">ЛЕГЕНДА КАРТЫ</p><h2>Назначение зданий</h2></div><button id="building-types-close" class="icon-button" type="button" aria-label="Закрыть типы зданий">×</button></div>
+          <div class="building-types-content"><div id="building-type-legend" class="building-type-legend" role="list"></div><p class="layers-note" id="building-types-note">Наведи на дом, чтобы узнать его тип. Игровое назначение отмечено в карточке здания.</p></div>
+        </section>
+
         <section id="layers-panel" class="layers-panel help-panel glass" role="dialog" aria-label="Слои карты" aria-describedby="layers-note" aria-modal="false" hidden>
           <div class="layers-heading help-heading"><div><p class="eyebrow">ВИД КАРТЫ</p><h2>Слои карты</h2></div><button id="layers-close" class="icon-button" type="button" aria-label="Закрыть слои карты">×</button></div>
           <div class="layers-content">
             <div class="layer-options">
               <label class="layer-option" for="layer-terrain"><input id="layer-terrain" type="checkbox" checked /><span>Подложка</span></label>
-              <label class="layer-option" for="layer-landscape"><input id="layer-landscape" type="checkbox" checked /><span>Ландшафт и зоны</span><span id="count-landscape" class="layer-count">—</span></label>
+              <label class="layer-option" for="layer-landscape"><input id="layer-landscape" type="checkbox" checked /><span>Природа и ландшафт</span><span id="count-landscape" class="layer-count">—</span></label>
               <label class="layer-option" for="layer-water"><input id="layer-water" type="checkbox" checked /><span>Водоёмы и русла</span><span id="count-water" class="layer-count">—</span></label>
               <label class="layer-option" for="layer-roads"><input id="layer-roads" type="checkbox" checked /><span>Дороги и тропы</span><span id="count-roads" class="layer-count">—</span></label>
               <fieldset id="road-classes" class="road-classes"><legend>Типы дорог</legend>
@@ -199,7 +209,7 @@
               <label class="layer-option" for="layer-buildings"><input id="layer-buildings" type="checkbox" checked /><span>Здания</span><span id="count-buildings" class="layer-count">—</span></label>
               <label class="layer-option" for="layer-details"><input id="layer-details" type="checkbox" checked /><span>Остальные объекты</span><span id="count-details" class="layer-count">—</span></label>
             </div>
-            <p class="layers-note" id="layers-note">Пустоши и застройка тоже образуют биомы. При отдалении появляются метки поселений и аэропорта. Соединённые однотипные сети выбираются целиком; типы дорог можно скрывать отдельно.</p>
+            <p class="layers-note" id="layers-note">Цвет здания показывает его назначение. Легенда — кнопка «Типы». Природные биомы сохраняются отдельно; городская зональная заливка убрана.</p>
           </div>
         </section>
       </div>
@@ -836,7 +846,7 @@ function createLandscapeBackdrop(world, palette) {
 
 return {createTerrainBackdrop,createLandscapeBackdrop};
 })();
-const {mapFeatureLayer,mapBiome,mapZoneBiome,shouldRenderFeature} = (() => {
+const {mapFeatureLayer,mapBiome,mapZoneBiome,shouldRenderFeature,shouldRenderLandscapeFeature,mapLandscapeBiome} = (() => {
 /** Shared semantic ownership for vector geometry, map markers and layer switches. */
 const mlPresent = value => value !== undefined && value !== null && !['', 'no', 'false', '0'].includes(String(value));
 const mlNaturalKinds = new Set(['tree', 'tree_row', 'wood', 'forest', 'scrub', 'heath', 'grassland', 'wetland', 'swamp', 'sand', 'beach', 'bare_rock', 'scree', 'shingle', 'peak', 'cliff', 'ridge', 'valley', 'fell', 'glacier']);
@@ -949,6 +959,41 @@ function shouldRenderFeature(feature = {}, group = '') {
   return true;
 }
 
+// Presentation is separate from source semantics: city/site tags remain usable
+// as evidence for building roles even after their blanket ground fill is retired.
+const mlLandscapeLanduse = new Set(['forest', 'wood', 'farmland', 'farm', 'meadow', 'grass', 'grassland', 'village_green', 'orchard', 'vineyard', 'allotments', 'plant_nursery', 'greenhouse_horticulture', 'flowerbed', 'conservation', 'nature_reserve', 'cemetery', 'quarry', 'recreation_ground']);
+const mlLandscapeLeisure = new Set(['park', 'garden', 'pitch', 'playground', 'recreation_ground', 'nature_reserve', 'golf_course', 'dog_park', 'common']);
+const mlLandscapeBiomes = new Set(['landscape', 'plain', 'wasteland', 'forest', 'wood', 'swamp', 'wetland', 'grassland', 'grass', 'meadow', 'scrub', 'heath', 'park', 'garden', 'recreation', 'farmland', 'orchard', 'vineyard', 'cemetery', 'sand', 'desert', 'valley', 'gully', 'rock', 'quarry', 'glacier']);
+
+/**
+ * The visible landscape contains nature and outdoor landscaped ground, not
+ * residential/service territory inferred or mapped around buildings. Preserve
+ * an explicit natural facet when the same feature also names an institution.
+ * This does not rewrite mapBiome/mapFeatureLayer or the source tags.
+ */
+function mapLandscapeBiome(feature = {}, group = '') {
+  if (!shouldRenderFeature(feature, group)) return null;
+  const layer = mapFeatureLayer(feature, group);
+  if (['buildings', 'roads', 'water', 'power'].includes(layer)) return null;
+  if (layer !== 'landscape' && group !== 'zone' && feature.derived !== true) return null;
+  const tags = feature.tags || {}, nature = {};
+  if (mlPresent(tags.natural)) nature.natural = tags.natural;
+  if (mlPresent(tags.wetland)) nature.wetland = tags.wetland;
+  if (mlLandscapeLanduse.has(tags.landuse)) nature.landuse = tags.landuse;
+  if (mlLandscapeLeisure.has(tags.leisure)) nature.leisure = tags.leisure;
+  if (tags.amenity === 'grave_yard') nature.amenity = tags.amenity;
+  if (Object.keys(nature).length) return mapBiome({ tags: nature, kind: feature.kind, type: feature.type });
+  if (mlNaturalKinds.has(feature.kind)) return mapBiome({ kind: feature.kind });
+  if (mapZoneBiome(feature)) return null;
+  const biome = mapBiome(feature);
+  return mlLandscapeBiomes.has(biome) ? biome : null;
+}
+
+/** Only use for a landscape facet; physical buildings, roads and sites keep theirs. */
+function shouldRenderLandscapeFeature(feature = {}, group = '') {
+  return mapLandscapeBiome(feature, group) !== null;
+}
+
 /** Rendering categories never change or replace original OSM tags and geometry. */
 function mapBiome(feature = {}) {
   if (feature.derived === true && feature.biome) return feature.biome;
@@ -979,7 +1024,7 @@ function mapBiome(feature = {}) {
   return landuse || natural || feature.type || 'landscape';
 }
 
-return {mapFeatureLayer,mapBiome,mapZoneBiome,shouldRenderFeature};
+return {mapFeatureLayer,mapBiome,mapZoneBiome,shouldRenderFeature,shouldRenderLandscapeFeature,mapLandscapeBiome};
 })();
 const {ROAD_CLASSES,roadClass,mergeNetworkLines,mergeConnectedNetworks} = (() => {
 // Derived display geometry only. Navigation and the original OSM features stay intact.
@@ -1372,440 +1417,6 @@ function createOverviewMarkers(world) {
 
 return {OVERVIEW_MAX_ZOOM,createOverviewMarkers};
 })();
-const {polygonClipping} = (() => {
-// polygon-clipping 0.15.7. Vendored UMD bundle, unchanged apart from the local
-// ESM wrapper and removal of its unavailable source-map URL. Sources and hashes
-// are recorded in polygon-clipping.provenance.json. Full distribution notices:
-// THIRD_PARTY_NOTICES.txt.
-/*
-DAY / NEXT vendored geometry notices
-
-polygon-clipping 0.15.7
-Source: https://registry.npmjs.org/polygon-clipping/-/polygon-clipping-0.15.7.tgz
-Original tarball SHA-256: 23bdea671a65011107d91536881f527c8e2e6820f59e4bc1408a94d7cc11d5b7
-
-The MIT License (MIT)
-
-Copyright (c) 2018 Mike Fogel <mike@fogel.ca> - covers everything not specially attributed to others below.
-
-Copyright (c) 2016 Alexander Milevski <info@w8r.name> - covers all portions originally part of github:w8r/martinez, from which this project was forked on Febuary 2, 2018.
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-splaytree 3.1.2
-Source: https://registry.npmjs.org/splaytree/-/splaytree-3.1.2.tgz
-
-The MIT License (MIT)
-
-Copyright (c) 2019 Alexander Milevski <info@w8r.name>
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in
-the Software without restriction, including without limitation the rights to
-use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
-FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
-IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-robust-predicates 3.0.2
-Source: https://registry.npmjs.org/robust-predicates/-/robust-predicates-3.0.2.tgz
-
-This is free and unencumbered software released into the public domain.
-
-Anyone is free to copy, modify, publish, use, compile, sell, or
-distribute this software, either in source code form or as a compiled
-binary, for any purpose, commercial or non-commercial, and by any
-means.
-
-In jurisdictions that recognize copyright laws, the author or authors
-of this software dedicate any and all copyright interest in the
-software to the public domain. We make this dedication for the benefit
-of the public at large and to the detriment of our heirs and
-successors. We intend this dedication to be an overt act of
-relinquishment in perpetuity of all present and future rights to this
-software under copyright law.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
-OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-OTHER DEALINGS IN THE SOFTWARE.
-
-For more information, please refer to <http://unlicense.org>
-
-TypeScript emitted helpers; Microsoft copyright and Apache-2.0 notice remain in upstream bundle.
-
-Apache License
-                           Version 2.0, January 2004
-                        http://www.apache.org/licenses/
-
-   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
-
-   1. Definitions.
-
-      "License" shall mean the terms and conditions for use, reproduction,
-      and distribution as defined by Sections 1 through 9 of this document.
-
-      "Licensor" shall mean the copyright owner or entity authorized by
-      the copyright owner that is granting the License.
-
-      "Legal Entity" shall mean the union of the acting entity and all
-      other entities that control, are controlled by, or are under common
-      control with that entity. For the purposes of this definition,
-      "control" means (i) the power, direct or indirect, to cause the
-      direction or management of such entity, whether by contract or
-      otherwise, or (ii) ownership of fifty percent (50%) or more of the
-      outstanding shares, or (iii) beneficial ownership of such entity.
-
-      "You" (or "Your") shall mean an individual or Legal Entity
-      exercising permissions granted by this License.
-
-      "Source" form shall mean the preferred form for making modifications,
-      including but not limited to software source code, documentation
-      source, and configuration files.
-
-      "Object" form shall mean any form resulting from mechanical
-      transformation or translation of a Source form, including but
-      not limited to compiled object code, generated documentation,
-      and conversions to other media types.
-
-      "Work" shall mean the work of authorship, whether in Source or
-      Object form, made available under the License, as indicated by a
-      copyright notice that is included in or attached to the work
-      (an example is provided in the Appendix below).
-
-      "Derivative Works" shall mean any work, whether in Source or Object
-      form, that is based on (or derived from) the Work and for which the
-      editorial revisions, annotations, elaborations, or other modifications
-      represent, as a whole, an original work of authorship. For the purposes
-      of this License, Derivative Works shall not include works that remain
-      separable from, or merely link (or bind by name) to the interfaces of,
-      the Work and Derivative Works thereof.
-
-      "Contribution" shall mean any work of authorship, including
-      the original version of the Work and any modifications or additions
-      to that Work or Derivative Works thereof, that is intentionally
-      submitted to Licensor for inclusion in the Work by the copyright owner
-      or by an individual or Legal Entity authorized to submit on behalf of
-      the copyright owner. For the purposes of this definition, "submitted"
-      means any form of electronic, verbal, or written communication sent
-      to the Licensor or its representatives, including but not limited to
-      communication on electronic mailing lists, source code control systems,
-      and issue tracking systems that are managed by, or on behalf of, the
-      Licensor for the purpose of discussing and improving the Work, but
-      excluding communication that is conspicuously marked or otherwise
-      designated in writing by the copyright owner as "Not a Contribution."
-
-      "Contributor" shall mean Licensor and any individual or Legal Entity
-      on behalf of whom a Contribution has been received by Licensor and
-      subsequently incorporated within the Work.
-
-   2. Grant of Copyright License. Subject to the terms and conditions of
-      this License, each Contributor hereby grants to You a perpetual,
-      worldwide, non-exclusive, no-charge, royalty-free, irrevocable
-      copyright license to reproduce, prepare Derivative Works of,
-      publicly display, publicly perform, sublicense, and distribute the
-      Work and such Derivative Works in Source or Object form.
-
-   3. Grant of Patent License. Subject to the terms and conditions of
-      this License, each Contributor hereby grants to You a perpetual,
-      worldwide, non-exclusive, no-charge, royalty-free, irrevocable
-      (except as stated in this section) patent license to make, have made,
-      use, offer to sell, sell, import, and otherwise transfer the Work,
-      where such license applies only to those patent claims licensable
-      by such Contributor that are necessarily infringed by their
-      Contribution(s) alone or by combination of their Contribution(s)
-      with the Work to which such Contribution(s) was submitted. If You
-      institute patent litigation against any entity (including a
-      cross-claim or counterclaim in a lawsuit) alleging that the Work
-      or a Contribution incorporated within the Work constitutes direct
-      or contributory patent infringement, then any patent licenses
-      granted to You under this License for that Work shall terminate
-      as of the date such litigation is filed.
-
-   4. Redistribution. You may reproduce and distribute copies of the
-      Work or Derivative Works thereof in any medium, with or without
-      modifications, and in Source or Object form, provided that You
-      meet the following conditions:
-
-      (a) You must give any other recipients of the Work or
-          Derivative Works a copy of this License; and
-
-      (b) You must cause any modified files to carry prominent notices
-          stating that You changed the files; and
-
-      (c) You must retain, in the Source form of any Derivative Works
-          that You distribute, all copyright, patent, trademark, and
-          attribution notices from the Source form of the Work,
-          excluding those notices that do not pertain to any part of
-          the Derivative Works; and
-
-      (d) If the Work includes a "NOTICE" text file as part of its
-          distribution, then any Derivative Works that You distribute must
-          include a readable copy of the attribution notices contained
-          within such NOTICE file, excluding those notices that do not
-          pertain to any part of the Derivative Works, in at least one
-          of the following places: within a NOTICE text file distributed
-          as part of the Derivative Works; within the Source form or
-          documentation, if provided along with the Derivative Works; or,
-          within a display generated by the Derivative Works, if and
-          wherever such third-party notices normally appear. The contents
-          of the NOTICE file are for informational purposes only and
-          do not modify the License. You may add Your own attribution
-          notices within Derivative Works that You distribute, alongside
-          or as an addendum to the NOTICE text from the Work, provided
-          that such additional attribution notices cannot be construed
-          as modifying the License.
-
-      You may add Your own copyright statement to Your modifications and
-      may provide additional or different license terms and conditions
-      for use, reproduction, or distribution of Your modifications, or
-      for any such Derivative Works as a whole, provided Your use,
-      reproduction, and distribution of the Work otherwise complies with
-      the conditions stated in this License.
-
-   5. Submission of Contributions. Unless You explicitly state otherwise,
-      any Contribution intentionally submitted for inclusion in the Work
-      by You to the Licensor shall be under the terms and conditions of
-      this License, without any additional terms or conditions.
-      Notwithstanding the above, nothing herein shall supersede or modify
-      the terms of any separate license agreement you may have executed
-      with Licensor regarding such Contributions.
-
-   6. Trademarks. This License does not grant permission to use the trade
-      names, trademarks, service marks, or product names of the Licensor,
-      except as required for reasonable and customary use in describing the
-      origin of the Work and reproducing the content of the NOTICE file.
-
-   7. Disclaimer of Warranty. Unless required by applicable law or
-      agreed to in writing, Licensor provides the Work (and each
-      Contributor provides its Contributions) on an "AS IS" BASIS,
-      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
-      implied, including, without limitation, any warranties or conditions
-      of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A
-      PARTICULAR PURPOSE. You are solely responsible for determining the
-      appropriateness of using or redistributing the Work and assume any
-      risks associated with Your exercise of permissions under this License.
-
-   8. Limitation of Liability. In no event and under no legal theory,
-      whether in tort (including negligence), contract, or otherwise,
-      unless required by applicable law (such as deliberate and grossly
-      negligent acts) or agreed to in writing, shall any Contributor be
-      liable to You for damages, including any direct, indirect, special,
-      incidental, or consequential damages of any character arising as a
-      result of this License or out of the use or inability to use the
-      Work (including but not limited to damages for loss of goodwill,
-      work stoppage, computer failure or malfunction, or any and all
-      other commercial damages or losses), even if such Contributor
-      has been advised of the possibility of such damages.
-
-   9. Accepting Warranty or Additional Liability. While redistributing
-      the Work or Derivative Works thereof, You may choose to offer,
-      and charge a fee for, acceptance of support, warranty, indemnity,
-      or other liability obligations and/or rights consistent with this
-      License. However, in accepting such obligations, You may act only
-      on Your own behalf and on Your sole responsibility, not on behalf
-      of any other Contributor, and only if You agree to indemnify,
-      defend, and hold each Contributor harmless for any liability
-      incurred by, or claims asserted against, such Contributor by reason
-      of your accepting any such warranty or additional liability.
-
-   END OF TERMS AND CONDITIONS
-
-   APPENDIX: How to apply the Apache License to your work.
-
-      To apply the Apache License to your work, attach the following
-      boilerplate notice, with the fields enclosed by brackets "[]"
-      replaced with your own identifying information. (Don't include
-      the brackets!)  The text should be enclosed in the appropriate
-      comment syntax for the file format. We also recommend that a
-      file or class name and description of purpose be included on the
-      same "printed page" as the copyright notice for easier
-      identification within third-party archives.
-
-   Copyright [yyyy] [name of copyright owner]
-
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
-
-       http://www.apache.org/licenses/LICENSE-2.0
-
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
-*/
-const polygonClipping = (() => {
-  const module = { exports: {} };
-  const exports = module.exports;
-!function(t,e){"object"==typeof exports&&"undefined"!=typeof module?module.exports=e():"function"==typeof define&&define.amd?define(e):(t="undefined"!=typeof globalThis?globalThis:t||self).polygonClipping=e()}(this,(function(){"use strict";
-/**
-     * splaytree v3.1.2
-     * Fast Splay tree for Node and browser
-     *
-     * @author Alexander Milevski <info@w8r.name>
-     * @license MIT
-     * @preserve
-     */
-/*! *****************************************************************************
-    Copyright (c) Microsoft Corporation. All rights reserved.
-    Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-    this file except in compliance with the License. You may obtain a copy of the
-    License at http://www.apache.org/licenses/LICENSE-2.0
-
-    THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-    KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
-    WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
-    MERCHANTABLITY OR NON-INFRINGEMENT.
-
-    See the Apache Version 2.0 License for specific language governing permissions
-    and limitations under the License.
-    ***************************************************************************** */function t(t,e){var n,r,i,o,s={label:0,sent:function(){if(1&i[0])throw i[1];return i[1]},trys:[],ops:[]};return o={next:l(0),throw:l(1),return:l(2)},"function"==typeof Symbol&&(o[Symbol.iterator]=function(){return this}),o;function l(o){return function(l){return function(o){if(n)throw new TypeError("Generator is already executing.");for(;s;)try{if(n=1,r&&(i=2&o[0]?r.return:o[0]?r.throw||((i=r.return)&&i.call(r),0):r.next)&&!(i=i.call(r,o[1])).done)return i;switch(r=0,i&&(o=[2&o[0],i.value]),o[0]){case 0:case 1:i=o;break;case 4:return s.label++,{value:o[1],done:!1};case 5:s.label++,r=o[1],o=[0];continue;case 7:o=s.ops.pop(),s.trys.pop();continue;default:if(!(i=s.trys,(i=i.length>0&&i[i.length-1])||6!==o[0]&&2!==o[0])){s=0;continue}if(3===o[0]&&(!i||o[1]>i[0]&&o[1]<i[3])){s.label=o[1];break}if(6===o[0]&&s.label<i[1]){s.label=i[1],i=o;break}if(i&&s.label<i[2]){s.label=i[2],s.ops.push(o);break}i[2]&&s.ops.pop(),s.trys.pop();continue}o=e.call(t,s)}catch(t){o=[6,t],r=0}finally{n=i=0}if(5&o[0])throw o[1];return{value:o[0]?o[1]:void 0,done:!0}}([o,l])}}}var e=function(t,e){this.next=null,this.key=t,this.data=e,this.left=null,this.right=null};function n(t,e){return t>e?1:t<e?-1:0}function r(t,n,r){for(var i=new e(null,null),o=i,s=i;;){var l=r(t,n.key);if(l<0){if(null===n.left)break;if(r(t,n.left.key)<0){var h=n.left;if(n.left=h.right,h.right=n,null===(n=h).left)break}s.left=n,s=n,n=n.left}else{if(!(l>0))break;if(null===n.right)break;if(r(t,n.right.key)>0){h=n.right;if(n.right=h.left,h.left=n,null===(n=h).right)break}o.right=n,o=n,n=n.right}}return o.right=n.left,s.left=n.right,n.left=i.right,n.right=i.left,n}function i(t,n,i,o){var s=new e(t,n);if(null===i)return s.left=s.right=null,s;var l=o(t,(i=r(t,i,o)).key);return l<0?(s.left=i.left,s.right=i,i.left=null):l>=0&&(s.right=i.right,s.left=i,i.right=null),s}function o(t,e,n){var i=null,o=null;if(e){var s=n((e=r(t,e,n)).key,t);0===s?(i=e.left,o=e.right):s<0?(o=e.right,e.right=null,i=e):(i=e.left,e.left=null,o=e)}return{left:i,right:o}}function s(t,e,n,r,i){if(t){r(e+(n?"└── ":"├── ")+i(t)+"\n");var o=e+(n?"    ":"│   ");t.left&&s(t.left,o,!1,r,i),t.right&&s(t.right,o,!0,r,i)}}var l=function(){function l(t){void 0===t&&(t=n),this._root=null,this._size=0,this._comparator=t}return l.prototype.insert=function(t,e){return this._size++,this._root=i(t,e,this._root,this._comparator)},l.prototype.add=function(t,n){var i=new e(t,n);null===this._root&&(i.left=i.right=null,this._size++,this._root=i);var o=this._comparator,s=r(t,this._root,o),l=o(t,s.key);return 0===l?this._root=s:(l<0?(i.left=s.left,i.right=s,s.left=null):l>0&&(i.right=s.right,i.left=s,s.right=null),this._size++,this._root=i),this._root},l.prototype.remove=function(t){this._root=this._remove(t,this._root,this._comparator)},l.prototype._remove=function(t,e,n){var i;return null===e?null:0===n(t,(e=r(t,e,n)).key)?(null===e.left?i=e.right:(i=r(t,e.left,n)).right=e.right,this._size--,i):e},l.prototype.pop=function(){var t=this._root;if(t){for(;t.left;)t=t.left;return this._root=r(t.key,this._root,this._comparator),this._root=this._remove(t.key,this._root,this._comparator),{key:t.key,data:t.data}}return null},l.prototype.findStatic=function(t){for(var e=this._root,n=this._comparator;e;){var r=n(t,e.key);if(0===r)return e;e=r<0?e.left:e.right}return null},l.prototype.find=function(t){return this._root&&(this._root=r(t,this._root,this._comparator),0!==this._comparator(t,this._root.key))?null:this._root},l.prototype.contains=function(t){for(var e=this._root,n=this._comparator;e;){var r=n(t,e.key);if(0===r)return!0;e=r<0?e.left:e.right}return!1},l.prototype.forEach=function(t,e){for(var n=this._root,r=[],i=!1;!i;)null!==n?(r.push(n),n=n.left):0!==r.length?(n=r.pop(),t.call(e,n),n=n.right):i=!0;return this},l.prototype.range=function(t,e,n,r){for(var i=[],o=this._comparator,s=this._root;0!==i.length||s;)if(s)i.push(s),s=s.left;else{if(o((s=i.pop()).key,e)>0)break;if(o(s.key,t)>=0&&n.call(r,s))return this;s=s.right}return this},l.prototype.keys=function(){var t=[];return this.forEach((function(e){var n=e.key;return t.push(n)})),t},l.prototype.values=function(){var t=[];return this.forEach((function(e){var n=e.data;return t.push(n)})),t},l.prototype.min=function(){return this._root?this.minNode(this._root).key:null},l.prototype.max=function(){return this._root?this.maxNode(this._root).key:null},l.prototype.minNode=function(t){if(void 0===t&&(t=this._root),t)for(;t.left;)t=t.left;return t},l.prototype.maxNode=function(t){if(void 0===t&&(t=this._root),t)for(;t.right;)t=t.right;return t},l.prototype.at=function(t){for(var e=this._root,n=!1,r=0,i=[];!n;)if(e)i.push(e),e=e.left;else if(i.length>0){if(e=i.pop(),r===t)return e;r++,e=e.right}else n=!0;return null},l.prototype.next=function(t){var e=this._root,n=null;if(t.right){for(n=t.right;n.left;)n=n.left;return n}for(var r=this._comparator;e;){var i=r(t.key,e.key);if(0===i)break;i<0?(n=e,e=e.left):e=e.right}return n},l.prototype.prev=function(t){var e=this._root,n=null;if(null!==t.left){for(n=t.left;n.right;)n=n.right;return n}for(var r=this._comparator;e;){var i=r(t.key,e.key);if(0===i)break;i<0?e=e.left:(n=e,e=e.right)}return n},l.prototype.clear=function(){return this._root=null,this._size=0,this},l.prototype.toList=function(){return function(t){var n=t,r=[],i=!1,o=new e(null,null),s=o;for(;!i;)n?(r.push(n),n=n.left):r.length>0?n=(n=s=s.next=r.pop()).right:i=!0;return s.next=null,o.next}(this._root)},l.prototype.load=function(t,n,r){void 0===n&&(n=[]),void 0===r&&(r=!1);var i=t.length,o=this._comparator;if(r&&f(t,n,0,i-1,o),null===this._root)this._root=h(t,n,0,i),this._size=i;else{var s=function(t,n,r){var i=new e(null,null),o=i,s=t,l=n;for(;null!==s&&null!==l;)r(s.key,l.key)<0?(o.next=s,s=s.next):(o.next=l,l=l.next),o=o.next;null!==s?o.next=s:null!==l&&(o.next=l);return i.next}(this.toList(),function(t,n){for(var r=new e(null,null),i=r,o=0;o<t.length;o++)i=i.next=new e(t[o],n[o]);return i.next=null,r.next}(t,n),o);i=this._size+i,this._root=u({head:s},0,i)}return this},l.prototype.isEmpty=function(){return null===this._root},Object.defineProperty(l.prototype,"size",{get:function(){return this._size},enumerable:!0,configurable:!0}),Object.defineProperty(l.prototype,"root",{get:function(){return this._root},enumerable:!0,configurable:!0}),l.prototype.toString=function(t){void 0===t&&(t=function(t){return String(t.key)});var e=[];return s(this._root,"",!0,(function(t){return e.push(t)}),t),e.join("")},l.prototype.update=function(t,e,n){var s=this._comparator,l=o(t,this._root,s),h=l.left,u=l.right;s(t,e)<0?u=i(e,n,u,s):h=i(e,n,h,s),this._root=function(t,e,n){return null===e?t:(null===t||((e=r(t.key,e,n)).left=t),e)}(h,u,s)},l.prototype.split=function(t){return o(t,this._root,this._comparator)},l.prototype[Symbol.iterator]=function(){var e,n,r;return t(this,(function(t){switch(t.label){case 0:e=this._root,n=[],r=!1,t.label=1;case 1:return r?[3,6]:null===e?[3,2]:(n.push(e),e=e.left,[3,5]);case 2:return 0===n.length?[3,4]:[4,e=n.pop()];case 3:return t.sent(),e=e.right,[3,5];case 4:r=!0,t.label=5;case 5:return[3,1];case 6:return[2]}}))},l}();function h(t,n,r,i){var o=i-r;if(o>0){var s=r+Math.floor(o/2),l=t[s],u=n[s],f=new e(l,u);return f.left=h(t,n,r,s),f.right=h(t,n,s+1,i),f}return null}function u(t,e,n){var r=n-e;if(r>0){var i=e+Math.floor(r/2),o=u(t,e,i),s=t.head;return s.left=o,t.head=t.head.next,s.right=u(t,i+1,n),s}return null}function f(t,e,n,r,i){if(!(n>=r)){for(var o=t[n+r>>1],s=n-1,l=r+1;;){do{s++}while(i(t[s],o)<0);do{l--}while(i(t[l],o)>0);if(s>=l)break;var h=t[s];t[s]=t[l],t[l]=h,h=e[s],e[s]=e[l],e[l]=h}f(t,e,n,l,i),f(t,e,l+1,r,i)}}const c=(t,e)=>t.ll.x<=e.x&&e.x<=t.ur.x&&t.ll.y<=e.y&&e.y<=t.ur.y,p=(t,e)=>{if(e.ur.x<t.ll.x||t.ur.x<e.ll.x||e.ur.y<t.ll.y||t.ur.y<e.ll.y)return null;const n=t.ll.x<e.ll.x?e.ll.x:t.ll.x,r=t.ur.x<e.ur.x?t.ur.x:e.ur.x;return{ll:{x:n,y:t.ll.y<e.ll.y?e.ll.y:t.ll.y},ur:{x:r,y:t.ur.y<e.ur.y?t.ur.y:e.ur.y}}};let g=Number.EPSILON;void 0===g&&(g=Math.pow(2,-52));const a=g*g,y=(t,e)=>{if(-g<t&&t<g&&-g<e&&e<g)return 0;const n=t-e;return n*n<a*t*e?0:t<e?-1:1};class x{constructor(){this.tree=new l,this.round(0)}round(t){const e=this.tree.add(t),n=this.tree.prev(e);if(null!==n&&0===y(e.key,n.key))return this.tree.remove(t),n.key;const r=this.tree.next(e);return null!==r&&0===y(e.key,r.key)?(this.tree.remove(t),r.key):t}}const b=new class{constructor(){this.reset()}reset(){this.xRounder=new x,this.yRounder=new x}round(t,e){return{x:this.xRounder.round(t),y:this.yRounder.round(e)}}},v=11102230246251565e-32,d=134217729,m=(3+8*v)*v;function E(t,e,n,r,i){let o,s,l,h,u=e[0],f=r[0],c=0,p=0;f>u==f>-u?(o=u,u=e[++c]):(o=f,f=r[++p]);let g=0;if(c<t&&p<n)for(f>u==f>-u?(s=u+o,l=o-(s-u),u=e[++c]):(s=f+o,l=o-(s-f),f=r[++p]),o=s,0!==l&&(i[g++]=l);c<t&&p<n;)f>u==f>-u?(s=o+u,h=s-o,l=o-(s-h)+(u-h),u=e[++c]):(s=o+f,h=s-o,l=o-(s-h)+(f-h),f=r[++p]),o=s,0!==l&&(i[g++]=l);for(;c<t;)s=o+u,h=s-o,l=o-(s-h)+(u-h),u=e[++c],o=s,0!==l&&(i[g++]=l);for(;p<n;)s=o+f,h=s-o,l=o-(s-h)+(f-h),f=r[++p],o=s,0!==l&&(i[g++]=l);return 0===o&&0!==g||(i[g++]=o),g}function S(t){return new Float64Array(t)}const _=22204460492503146e-32,w=11093356479670487e-47,k=S(4),R=S(8),I=S(12),P=S(16),N=S(4);function A(t,e,n,r,i,o){const s=(e-o)*(n-i),l=(t-i)*(r-o),h=s-l,u=Math.abs(s+l);return Math.abs(h)>=33306690738754716e-32*u?h:-function(t,e,n,r,i,o,s){let l,h,u,f,c,p,g,a,y,x,b,v,S,A,O,L,$,M;const z=t-i,B=n-i,G=e-o,T=r-o;A=z*T,p=d*z,g=p-(p-z),a=z-g,p=d*T,y=p-(p-T),x=T-y,O=a*x-(A-g*y-a*y-g*x),L=G*B,p=d*G,g=p-(p-G),a=G-g,p=d*B,y=p-(p-B),x=B-y,$=a*x-(L-g*y-a*y-g*x),b=O-$,c=O-b,k[0]=O-(b+c)+(c-$),v=A+b,c=v-A,S=A-(v-c)+(b-c),b=S-L,c=S-b,k[1]=S-(b+c)+(c-L),M=v+b,c=M-v,k[2]=v-(M-c)+(b-c),k[3]=M;let q=function(t,e){let n=e[0];for(let r=1;r<t;r++)n+=e[r];return n}(4,k),C=_*s;if(q>=C||-q>=C)return q;if(c=t-z,l=t-(z+c)+(c-i),c=n-B,u=n-(B+c)+(c-i),c=e-G,h=e-(G+c)+(c-o),c=r-T,f=r-(T+c)+(c-o),0===l&&0===h&&0===u&&0===f)return q;if(C=w*s+m*Math.abs(q),q+=z*f+T*l-(G*u+B*h),q>=C||-q>=C)return q;A=l*T,p=d*l,g=p-(p-l),a=l-g,p=d*T,y=p-(p-T),x=T-y,O=a*x-(A-g*y-a*y-g*x),L=h*B,p=d*h,g=p-(p-h),a=h-g,p=d*B,y=p-(p-B),x=B-y,$=a*x-(L-g*y-a*y-g*x),b=O-$,c=O-b,N[0]=O-(b+c)+(c-$),v=A+b,c=v-A,S=A-(v-c)+(b-c),b=S-L,c=S-b,N[1]=S-(b+c)+(c-L),M=v+b,c=M-v,N[2]=v-(M-c)+(b-c),N[3]=M;const F=E(4,k,4,N,R);A=z*f,p=d*z,g=p-(p-z),a=z-g,p=d*f,y=p-(p-f),x=f-y,O=a*x-(A-g*y-a*y-g*x),L=G*u,p=d*G,g=p-(p-G),a=G-g,p=d*u,y=p-(p-u),x=u-y,$=a*x-(L-g*y-a*y-g*x),b=O-$,c=O-b,N[0]=O-(b+c)+(c-$),v=A+b,c=v-A,S=A-(v-c)+(b-c),b=S-L,c=S-b,N[1]=S-(b+c)+(c-L),M=v+b,c=M-v,N[2]=v-(M-c)+(b-c),N[3]=M;const j=E(F,R,4,N,I);A=l*f,p=d*l,g=p-(p-l),a=l-g,p=d*f,y=p-(p-f),x=f-y,O=a*x-(A-g*y-a*y-g*x),L=h*u,p=d*h,g=p-(p-h),a=h-g,p=d*u,y=p-(p-u),x=u-y,$=a*x-(L-g*y-a*y-g*x),b=O-$,c=O-b,N[0]=O-(b+c)+(c-$),v=A+b,c=v-A,S=A-(v-c)+(b-c),b=S-L,c=S-b,N[1]=S-(b+c)+(c-L),M=v+b,c=M-v,N[2]=v-(M-c)+(b-c),N[3]=M;const U=E(j,I,4,N,P);return P[U-1]}(t,e,n,r,i,o,u)}const O=(t,e)=>t.x*e.y-t.y*e.x,L=(t,e)=>t.x*e.x+t.y*e.y,$=(t,e,n)=>{const r=A(t.x,t.y,e.x,e.y,n.x,n.y);return r>0?-1:r<0?1:0},M=t=>Math.sqrt(L(t,t)),z=(t,e,n)=>{const r={x:e.x-t.x,y:e.y-t.y},i={x:n.x-t.x,y:n.y-t.y};return O(i,r)/M(i)/M(r)},B=(t,e,n)=>{const r={x:e.x-t.x,y:e.y-t.y},i={x:n.x-t.x,y:n.y-t.y};return L(i,r)/M(i)/M(r)},G=(t,e,n)=>0===e.y?null:{x:t.x+e.x/e.y*(n-t.y),y:n},T=(t,e,n)=>0===e.x?null:{x:n,y:t.y+e.y/e.x*(n-t.x)};class q{static compare(t,e){const n=q.comparePoints(t.point,e.point);return 0!==n?n:(t.point!==e.point&&t.link(e),t.isLeft!==e.isLeft?t.isLeft?1:-1:F.compare(t.segment,e.segment))}static comparePoints(t,e){return t.x<e.x?-1:t.x>e.x?1:t.y<e.y?-1:t.y>e.y?1:0}constructor(t,e){void 0===t.events?t.events=[this]:t.events.push(this),this.point=t,this.isLeft=e}link(t){if(t.point===this.point)throw new Error("Tried to link already linked events");const e=t.point.events;for(let t=0,n=e.length;t<n;t++){const n=e[t];this.point.events.push(n),n.point=this.point}this.checkForConsuming()}checkForConsuming(){const t=this.point.events.length;for(let e=0;e<t;e++){const n=this.point.events[e];if(void 0===n.segment.consumedBy)for(let r=e+1;r<t;r++){const t=this.point.events[r];void 0===t.consumedBy&&(n.otherSE.point.events===t.otherSE.point.events&&n.segment.consume(t.segment))}}}getAvailableLinkedEvents(){const t=[];for(let e=0,n=this.point.events.length;e<n;e++){const n=this.point.events[e];n!==this&&!n.segment.ringOut&&n.segment.isInResult()&&t.push(n)}return t}getLeftmostComparator(t){const e=new Map,n=n=>{const r=n.otherSE;e.set(n,{sine:z(this.point,t.point,r.point),cosine:B(this.point,t.point,r.point)})};return(t,r)=>{e.has(t)||n(t),e.has(r)||n(r);const{sine:i,cosine:o}=e.get(t),{sine:s,cosine:l}=e.get(r);return i>=0&&s>=0?o<l?1:o>l?-1:0:i<0&&s<0?o<l?-1:o>l?1:0:s<i?-1:s>i?1:0}}}let C=0;class F{static compare(t,e){const n=t.leftSE.point.x,r=e.leftSE.point.x,i=t.rightSE.point.x,o=e.rightSE.point.x;if(o<n)return 1;if(i<r)return-1;const s=t.leftSE.point.y,l=e.leftSE.point.y,h=t.rightSE.point.y,u=e.rightSE.point.y;if(n<r){if(l<s&&l<h)return 1;if(l>s&&l>h)return-1;const n=t.comparePoint(e.leftSE.point);if(n<0)return 1;if(n>0)return-1;const r=e.comparePoint(t.rightSE.point);return 0!==r?r:-1}if(n>r){if(s<l&&s<u)return-1;if(s>l&&s>u)return 1;const n=e.comparePoint(t.leftSE.point);if(0!==n)return n;const r=t.comparePoint(e.rightSE.point);return r<0?1:r>0?-1:1}if(s<l)return-1;if(s>l)return 1;if(i<o){const n=e.comparePoint(t.rightSE.point);if(0!==n)return n}if(i>o){const n=t.comparePoint(e.rightSE.point);if(n<0)return 1;if(n>0)return-1}if(i!==o){const t=h-s,e=i-n,f=u-l,c=o-r;if(t>e&&f<c)return 1;if(t<e&&f>c)return-1}return i>o?1:i<o||h<u?-1:h>u?1:t.id<e.id?-1:t.id>e.id?1:0}constructor(t,e,n,r){this.id=++C,this.leftSE=t,t.segment=this,t.otherSE=e,this.rightSE=e,e.segment=this,e.otherSE=t,this.rings=n,this.windings=r}static fromRing(t,e,n){let r,i,o;const s=q.comparePoints(t,e);if(s<0)r=t,i=e,o=1;else{if(!(s>0))throw new Error(`Tried to create degenerate segment at [${t.x}, ${t.y}]`);r=e,i=t,o=-1}const l=new q(r,!0),h=new q(i,!1);return new F(l,h,[n],[o])}replaceRightSE(t){this.rightSE=t,this.rightSE.segment=this,this.rightSE.otherSE=this.leftSE,this.leftSE.otherSE=this.rightSE}bbox(){const t=this.leftSE.point.y,e=this.rightSE.point.y;return{ll:{x:this.leftSE.point.x,y:t<e?t:e},ur:{x:this.rightSE.point.x,y:t>e?t:e}}}vector(){return{x:this.rightSE.point.x-this.leftSE.point.x,y:this.rightSE.point.y-this.leftSE.point.y}}isAnEndpoint(t){return t.x===this.leftSE.point.x&&t.y===this.leftSE.point.y||t.x===this.rightSE.point.x&&t.y===this.rightSE.point.y}comparePoint(t){if(this.isAnEndpoint(t))return 0;const e=this.leftSE.point,n=this.rightSE.point,r=this.vector();if(e.x===n.x)return t.x===e.x?0:t.x<e.x?1:-1;const i=(t.y-e.y)/r.y,o=e.x+i*r.x;if(t.x===o)return 0;const s=(t.x-e.x)/r.x,l=e.y+s*r.y;return t.y===l?0:t.y<l?-1:1}getIntersection(t){const e=this.bbox(),n=t.bbox(),r=p(e,n);if(null===r)return null;const i=this.leftSE.point,o=this.rightSE.point,s=t.leftSE.point,l=t.rightSE.point,h=c(e,s)&&0===this.comparePoint(s),u=c(n,i)&&0===t.comparePoint(i),f=c(e,l)&&0===this.comparePoint(l),g=c(n,o)&&0===t.comparePoint(o);if(u&&h)return g&&!f?o:!g&&f?l:null;if(u)return f&&i.x===l.x&&i.y===l.y?null:i;if(h)return g&&o.x===s.x&&o.y===s.y?null:s;if(g&&f)return null;if(g)return o;if(f)return l;const a=((t,e,n,r)=>{if(0===e.x)return T(n,r,t.x);if(0===r.x)return T(t,e,n.x);if(0===e.y)return G(n,r,t.y);if(0===r.y)return G(t,e,n.y);const i=O(e,r);if(0==i)return null;const o={x:n.x-t.x,y:n.y-t.y},s=O(o,e)/i,l=O(o,r)/i;return{x:(t.x+l*e.x+(n.x+s*r.x))/2,y:(t.y+l*e.y+(n.y+s*r.y))/2}})(i,this.vector(),s,t.vector());return null===a?null:c(r,a)?b.round(a.x,a.y):null}split(t){const e=[],n=void 0!==t.events,r=new q(t,!0),i=new q(t,!1),o=this.rightSE;this.replaceRightSE(i),e.push(i),e.push(r);const s=new F(r,o,this.rings.slice(),this.windings.slice());return q.comparePoints(s.leftSE.point,s.rightSE.point)>0&&s.swapEvents(),q.comparePoints(this.leftSE.point,this.rightSE.point)>0&&this.swapEvents(),n&&(r.checkForConsuming(),i.checkForConsuming()),e}swapEvents(){const t=this.rightSE;this.rightSE=this.leftSE,this.leftSE=t,this.leftSE.isLeft=!0,this.rightSE.isLeft=!1;for(let t=0,e=this.windings.length;t<e;t++)this.windings[t]*=-1}consume(t){let e=this,n=t;for(;e.consumedBy;)e=e.consumedBy;for(;n.consumedBy;)n=n.consumedBy;const r=F.compare(e,n);if(0!==r){if(r>0){const t=e;e=n,n=t}if(e.prev===n){const t=e;e=n,n=t}for(let t=0,r=n.rings.length;t<r;t++){const r=n.rings[t],i=n.windings[t],o=e.rings.indexOf(r);-1===o?(e.rings.push(r),e.windings.push(i)):e.windings[o]+=i}n.rings=null,n.windings=null,n.consumedBy=e,n.leftSE.consumedBy=e.leftSE,n.rightSE.consumedBy=e.rightSE}}prevInResult(){return void 0!==this._prevInResult||(this.prev?this.prev.isInResult()?this._prevInResult=this.prev:this._prevInResult=this.prev.prevInResult():this._prevInResult=null),this._prevInResult}beforeState(){if(void 0!==this._beforeState)return this._beforeState;if(this.prev){const t=this.prev.consumedBy||this.prev;this._beforeState=t.afterState()}else this._beforeState={rings:[],windings:[],multiPolys:[]};return this._beforeState}afterState(){if(void 0!==this._afterState)return this._afterState;const t=this.beforeState();this._afterState={rings:t.rings.slice(0),windings:t.windings.slice(0),multiPolys:[]};const e=this._afterState.rings,n=this._afterState.windings,r=this._afterState.multiPolys;for(let t=0,r=this.rings.length;t<r;t++){const r=this.rings[t],i=this.windings[t],o=e.indexOf(r);-1===o?(e.push(r),n.push(i)):n[o]+=i}const i=[],o=[];for(let t=0,r=e.length;t<r;t++){if(0===n[t])continue;const r=e[t],s=r.poly;if(-1===o.indexOf(s))if(r.isExterior)i.push(s);else{-1===o.indexOf(s)&&o.push(s);const t=i.indexOf(r.poly);-1!==t&&i.splice(t,1)}}for(let t=0,e=i.length;t<e;t++){const e=i[t].multiPoly;-1===r.indexOf(e)&&r.push(e)}return this._afterState}isInResult(){if(this.consumedBy)return!1;if(void 0!==this._isInResult)return this._isInResult;const t=this.beforeState().multiPolys,e=this.afterState().multiPolys;switch(H.type){case"union":{const n=0===t.length,r=0===e.length;this._isInResult=n!==r;break}case"intersection":{let n,r;t.length<e.length?(n=t.length,r=e.length):(n=e.length,r=t.length),this._isInResult=r===H.numMultiPolys&&n<r;break}case"xor":{const n=Math.abs(t.length-e.length);this._isInResult=n%2==1;break}case"difference":{const n=t=>1===t.length&&t[0].isSubject;this._isInResult=n(t)!==n(e);break}default:throw new Error(`Unrecognized operation type found ${H.type}`)}return this._isInResult}}class j{constructor(t,e,n){if(!Array.isArray(t)||0===t.length)throw new Error("Input geometry is not a valid Polygon or MultiPolygon");if(this.poly=e,this.isExterior=n,this.segments=[],"number"!=typeof t[0][0]||"number"!=typeof t[0][1])throw new Error("Input geometry is not a valid Polygon or MultiPolygon");const r=b.round(t[0][0],t[0][1]);this.bbox={ll:{x:r.x,y:r.y},ur:{x:r.x,y:r.y}};let i=r;for(let e=1,n=t.length;e<n;e++){if("number"!=typeof t[e][0]||"number"!=typeof t[e][1])throw new Error("Input geometry is not a valid Polygon or MultiPolygon");let n=b.round(t[e][0],t[e][1]);n.x===i.x&&n.y===i.y||(this.segments.push(F.fromRing(i,n,this)),n.x<this.bbox.ll.x&&(this.bbox.ll.x=n.x),n.y<this.bbox.ll.y&&(this.bbox.ll.y=n.y),n.x>this.bbox.ur.x&&(this.bbox.ur.x=n.x),n.y>this.bbox.ur.y&&(this.bbox.ur.y=n.y),i=n)}r.x===i.x&&r.y===i.y||this.segments.push(F.fromRing(i,r,this))}getSweepEvents(){const t=[];for(let e=0,n=this.segments.length;e<n;e++){const n=this.segments[e];t.push(n.leftSE),t.push(n.rightSE)}return t}}class U{constructor(t,e){if(!Array.isArray(t))throw new Error("Input geometry is not a valid Polygon or MultiPolygon");this.exteriorRing=new j(t[0],this,!0),this.bbox={ll:{x:this.exteriorRing.bbox.ll.x,y:this.exteriorRing.bbox.ll.y},ur:{x:this.exteriorRing.bbox.ur.x,y:this.exteriorRing.bbox.ur.y}},this.interiorRings=[];for(let e=1,n=t.length;e<n;e++){const n=new j(t[e],this,!1);n.bbox.ll.x<this.bbox.ll.x&&(this.bbox.ll.x=n.bbox.ll.x),n.bbox.ll.y<this.bbox.ll.y&&(this.bbox.ll.y=n.bbox.ll.y),n.bbox.ur.x>this.bbox.ur.x&&(this.bbox.ur.x=n.bbox.ur.x),n.bbox.ur.y>this.bbox.ur.y&&(this.bbox.ur.y=n.bbox.ur.y),this.interiorRings.push(n)}this.multiPoly=e}getSweepEvents(){const t=this.exteriorRing.getSweepEvents();for(let e=0,n=this.interiorRings.length;e<n;e++){const n=this.interiorRings[e].getSweepEvents();for(let e=0,r=n.length;e<r;e++)t.push(n[e])}return t}}class Y{constructor(t,e){if(!Array.isArray(t))throw new Error("Input geometry is not a valid Polygon or MultiPolygon");try{"number"==typeof t[0][0][0]&&(t=[t])}catch(t){}this.polys=[],this.bbox={ll:{x:Number.POSITIVE_INFINITY,y:Number.POSITIVE_INFINITY},ur:{x:Number.NEGATIVE_INFINITY,y:Number.NEGATIVE_INFINITY}};for(let e=0,n=t.length;e<n;e++){const n=new U(t[e],this);n.bbox.ll.x<this.bbox.ll.x&&(this.bbox.ll.x=n.bbox.ll.x),n.bbox.ll.y<this.bbox.ll.y&&(this.bbox.ll.y=n.bbox.ll.y),n.bbox.ur.x>this.bbox.ur.x&&(this.bbox.ur.x=n.bbox.ur.x),n.bbox.ur.y>this.bbox.ur.y&&(this.bbox.ur.y=n.bbox.ur.y),this.polys.push(n)}this.isSubject=e}getSweepEvents(){const t=[];for(let e=0,n=this.polys.length;e<n;e++){const n=this.polys[e].getSweepEvents();for(let e=0,r=n.length;e<r;e++)t.push(n[e])}return t}}class V{static factory(t){const e=[];for(let n=0,r=t.length;n<r;n++){const r=t[n];if(!r.isInResult()||r.ringOut)continue;let i=null,o=r.leftSE,s=r.rightSE;const l=[o],h=o.point,u=[];for(;i=o,o=s,l.push(o),o.point!==h;)for(;;){const t=o.getAvailableLinkedEvents();if(0===t.length){const t=l[0].point,e=l[l.length-1].point;throw new Error(`Unable to complete output ring starting at [${t.x}, ${t.y}]. Last matching segment found ends at [${e.x}, ${e.y}].`)}if(1===t.length){s=t[0].otherSE;break}let n=null;for(let t=0,e=u.length;t<e;t++)if(u[t].point===o.point){n=t;break}if(null!==n){const t=u.splice(n)[0],r=l.splice(t.index);r.unshift(r[0].otherSE),e.push(new V(r.reverse()));continue}u.push({index:l.length,point:o.point});const r=o.getLeftmostComparator(i);s=t.sort(r)[0].otherSE;break}e.push(new V(l))}return e}constructor(t){this.events=t;for(let e=0,n=t.length;e<n;e++)t[e].segment.ringOut=this;this.poly=null}getGeom(){let t=this.events[0].point;const e=[t];for(let n=1,r=this.events.length-1;n<r;n++){const r=this.events[n].point,i=this.events[n+1].point;0!==$(r,t,i)&&(e.push(r),t=r)}if(1===e.length)return null;const n=e[0],r=e[1];0===$(n,t,r)&&e.shift(),e.push(e[0]);const i=this.isExteriorRing()?1:-1,o=this.isExteriorRing()?0:e.length-1,s=this.isExteriorRing()?e.length:-1,l=[];for(let t=o;t!=s;t+=i)l.push([e[t].x,e[t].y]);return l}isExteriorRing(){if(void 0===this._isExteriorRing){const t=this.enclosingRing();this._isExteriorRing=!t||!t.isExteriorRing()}return this._isExteriorRing}enclosingRing(){return void 0===this._enclosingRing&&(this._enclosingRing=this._calcEnclosingRing()),this._enclosingRing}_calcEnclosingRing(){let t=this.events[0];for(let e=1,n=this.events.length;e<n;e++){const n=this.events[e];q.compare(t,n)>0&&(t=n)}let e=t.segment.prevInResult(),n=e?e.prevInResult():null;for(;;){if(!e)return null;if(!n)return e.ringOut;if(n.ringOut!==e.ringOut)return n.ringOut.enclosingRing()!==e.ringOut?e.ringOut:e.ringOut.enclosingRing();e=n.prevInResult(),n=e?e.prevInResult():null}}}class X{constructor(t){this.exteriorRing=t,t.poly=this,this.interiorRings=[]}addInterior(t){this.interiorRings.push(t),t.poly=this}getGeom(){const t=[this.exteriorRing.getGeom()];if(null===t[0])return null;for(let e=0,n=this.interiorRings.length;e<n;e++){const n=this.interiorRings[e].getGeom();null!==n&&t.push(n)}return t}}class Q{constructor(t){this.rings=t,this.polys=this._composePolys(t)}getGeom(){const t=[];for(let e=0,n=this.polys.length;e<n;e++){const n=this.polys[e].getGeom();null!==n&&t.push(n)}return t}_composePolys(t){const e=[];for(let n=0,r=t.length;n<r;n++){const r=t[n];if(!r.poly)if(r.isExteriorRing())e.push(new X(r));else{const t=r.enclosingRing();t.poly||e.push(new X(t)),t.poly.addInterior(r)}}return e}}class W{constructor(t){let e=arguments.length>1&&void 0!==arguments[1]?arguments[1]:F.compare;this.queue=t,this.tree=new l(e),this.segments=[]}process(t){const e=t.segment,n=[];if(t.consumedBy)return t.isLeft?this.queue.remove(t.otherSE):this.tree.remove(e),n;const r=t.isLeft?this.tree.add(e):this.tree.find(e);if(!r)throw new Error(`Unable to find segment #${e.id} [${e.leftSE.point.x}, ${e.leftSE.point.y}] -> [${e.rightSE.point.x}, ${e.rightSE.point.y}] in SweepLine tree.`);let i,o,s=r,l=r;for(;void 0===i;)s=this.tree.prev(s),null===s?i=null:void 0===s.key.consumedBy&&(i=s.key);for(;void 0===o;)l=this.tree.next(l),null===l?o=null:void 0===l.key.consumedBy&&(o=l.key);if(t.isLeft){let r=null;if(i){const t=i.getIntersection(e);if(null!==t&&(e.isAnEndpoint(t)||(r=t),!i.isAnEndpoint(t))){const e=this._splitSafely(i,t);for(let t=0,r=e.length;t<r;t++)n.push(e[t])}}let s=null;if(o){const t=o.getIntersection(e);if(null!==t&&(e.isAnEndpoint(t)||(s=t),!o.isAnEndpoint(t))){const e=this._splitSafely(o,t);for(let t=0,r=e.length;t<r;t++)n.push(e[t])}}if(null!==r||null!==s){let t=null;if(null===r)t=s;else if(null===s)t=r;else{t=q.comparePoints(r,s)<=0?r:s}this.queue.remove(e.rightSE),n.push(e.rightSE);const i=e.split(t);for(let t=0,e=i.length;t<e;t++)n.push(i[t])}n.length>0?(this.tree.remove(e),n.push(t)):(this.segments.push(e),e.prev=i)}else{if(i&&o){const t=i.getIntersection(o);if(null!==t){if(!i.isAnEndpoint(t)){const e=this._splitSafely(i,t);for(let t=0,r=e.length;t<r;t++)n.push(e[t])}if(!o.isAnEndpoint(t)){const e=this._splitSafely(o,t);for(let t=0,r=e.length;t<r;t++)n.push(e[t])}}}this.tree.remove(e)}return n}_splitSafely(t,e){this.tree.remove(t);const n=t.rightSE;this.queue.remove(n);const r=t.split(e);return r.push(n),void 0===t.consumedBy&&this.tree.add(t),r}}const Z="undefined"!=typeof process&&process.env.POLYGON_CLIPPING_MAX_QUEUE_SIZE||1e6,D="undefined"!=typeof process&&process.env.POLYGON_CLIPPING_MAX_SWEEPLINE_SEGMENTS||1e6;const H=new class{run(t,e,n){H.type=t,b.reset();const r=[new Y(e,!0)];for(let t=0,e=n.length;t<e;t++)r.push(new Y(n[t],!1));if(H.numMultiPolys=r.length,"difference"===H.type){const t=r[0];let e=1;for(;e<r.length;)null!==p(r[e].bbox,t.bbox)?e++:r.splice(e,1)}if("intersection"===H.type)for(let t=0,e=r.length;t<e;t++){const e=r[t];for(let n=t+1,i=r.length;n<i;n++)if(null===p(e.bbox,r[n].bbox))return[]}const i=new l(q.compare);for(let t=0,e=r.length;t<e;t++){const e=r[t].getSweepEvents();for(let t=0,n=e.length;t<n;t++)if(i.insert(e[t]),i.size>Z)throw new Error("Infinite loop when putting segment endpoints in a priority queue (queue size too big).")}const o=new W(i);let s=i.size,h=i.pop();for(;h;){const t=h.key;if(i.size===s){const e=t.segment;throw new Error(`Unable to pop() ${t.isLeft?"left":"right"} SweepEvent [${t.point.x}, ${t.point.y}] from segment #${e.id} [${e.leftSE.point.x}, ${e.leftSE.point.y}] -> [${e.rightSE.point.x}, ${e.rightSE.point.y}] from queue.`)}if(i.size>Z)throw new Error("Infinite loop when passing sweep line over endpoints (queue size too big).");if(o.segments.length>D)throw new Error("Infinite loop when passing sweep line over endpoints (too many sweep line segments).");const e=o.process(t);for(let t=0,n=e.length;t<n;t++){const n=e[t];void 0===n.consumedBy&&i.insert(n)}s=i.size,h=i.pop()}b.reset();const u=V.factory(o.segments);return new Q(u).getGeom()}};var J={union:function(t){for(var e=arguments.length,n=new Array(e>1?e-1:0),r=1;r<e;r++)n[r-1]=arguments[r];return H.run("union",t,n)},intersection:function(t){for(var e=arguments.length,n=new Array(e>1?e-1:0),r=1;r<e;r++)n[r-1]=arguments[r];return H.run("intersection",t,n)},xor:function(t){for(var e=arguments.length,n=new Array(e>1?e-1:0),r=1;r<e;r++)n[r-1]=arguments[r];return H.run("xor",t,n)},difference:function(t){for(var e=arguments.length,n=new Array(e>1?e-1:0),r=1;r<e;r++)n[r-1]=arguments[r];return H.run("difference",t,n)}};return J}));
-  return Object.freeze(module.exports);
-})();
-
-return {polygonClipping};
-})();
-const {polygonDifference,polygonUnion,polygonIntersection,normalizePolygonParts} = (() => {
-// Polygon parts use the renderer's native representation:
-// [polygon [outerRing, ...holeRings]], with closed {x,y} coordinate rings.
-// All operations return independent geometry and preserve coordinate precision.
-const pgMaxCoordinate = 1e9, pgMaxPoints = 1000000;
-const pgEqual = (a, b) => a.x === b.x && a.y === b.y;
-const pgCompare = (a, b) => a.x - b.x || a.y - b.y;
-const pgArea = ring => {
-  if (ring.length < 4) return 0;
-  const origin = ring[0];
-  let sum = 0;
-  for (let i = 1; i < ring.length - 1; i++) sum += (ring[i].x - origin.x) * (ring[i + 1].y - origin.y) - (ring[i + 1].x - origin.x) * (ring[i].y - origin.y);
-  return sum / 2;
-};
-function pgRing(input, hole, budget) {
-  if (!Array.isArray(input)) throw new TypeError('Polygon ring must be an array of coordinate points.');
-  const ring = [];
-  for (const point of input) {
-    if (++budget.points > pgMaxPoints) throw new RangeError('Polygon operation exceeds the coordinate-count limit.');
-    if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y) || Math.abs(point.x) > pgMaxCoordinate || Math.abs(point.y) > pgMaxCoordinate) throw new TypeError('Polygon coordinates must be finite and bounded.');
-    const next = { x: point.x === 0 ? 0 : point.x, y: point.y === 0 ? 0 : point.y };
-    if (!ring.length || !pgEqual(ring.at(-1), next)) ring.push(next);
-  }
-  if (ring.length > 1 && pgEqual(ring[0], ring.at(-1))) ring.pop();
-  if (ring.length < 3) return null;
-  ring.push({ ...ring[0] });
-  const area = pgArea(ring);
-  if (area === 0) {
-    // Collinear rings have no area. A self-crossing ring can have zero signed
-    // area yet a real filled interior; the clipping engine resolves that case.
-    const origin = ring[0], edge = ring.find(point => !pgEqual(point, origin));
-    if (!edge || !ring.some(point => (edge.x - origin.x) * (point.y - origin.y) - (edge.y - origin.y) * (point.x - origin.x) !== 0)) return null;
-  }
-  if (area !== 0 && (area > 0) === hole) ring.reverse();
-  // Stable first vertex and ordering make regenerated maps reproducible.
-  ring.pop();
-  let first = 0;
-  for (let i = 1; i < ring.length; i++) if (pgCompare(ring[i], ring[first]) < 0) first = i;
-  const result = [...ring.slice(first), ...ring.slice(0, first)];
-  result.push({ ...result[0] });
-  return result;
-}
-const pgRingKey = ring => ring.map(point => `${point.x},${point.y}`).join(';');
-const pgSort = (a, b) => pgCompare(a[0], b[0]) || pgRingKey(a).localeCompare(pgRingKey(b));
-
-function normalizePolygonParts(parts = []) {
-  if (!Array.isArray(parts)) throw new TypeError('Polygon parts must be an array.');
-  const budget = { points: 0 }, result = [];
-  for (const polygon of parts) {
-    if (!Array.isArray(polygon)) throw new TypeError('Each polygon must contain an outer ring and optional holes.');
-    if (!polygon.length) continue;
-    const outer = pgRing(polygon[0], false, budget);
-    if (!outer) continue;
-    const holes = polygon.slice(1).map(ring => pgRing(ring, true, budget)).filter(Boolean).sort(pgSort);
-    result.push([outer, ...holes]);
-  }
-  return result.sort((a, b) => pgSort(a[0], b[0]) || a.length - b.length);
-}
-const pgCoordinates = parts => parts.map(polygon => polygon.map(ring => ring.map(point => [point.x, point.y])));
-const pgPoints = coordinates => normalizePolygonParts(coordinates.map(polygon => polygon.map(ring => ring.map(([x, y]) => ({ x, y })))));
-const pgBounds = polygon => polygon[0].reduce((bounds, point) => ({ minX: Math.min(bounds.minX, point.x), minY: Math.min(bounds.minY, point.y), maxX: Math.max(bounds.maxX, point.x), maxY: Math.max(bounds.maxY, point.y) }), { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity });
-const pgOverlap = (a, b) => a.minX <= b.maxX && a.maxX >= b.minX && a.minY <= b.maxY && a.maxY >= b.minY;
-function pgRelevantMasks(subject, masks) {
-  const bounds = subject.map(pgBounds);
-  return masks.filter(mask => { const maskBounds = pgBounds(mask); return bounds.some(box => pgOverlap(box, maskBounds)); });
-}
-
-// Overlapping source/fusion edges can differ by a final floating-point bit.
-// Martinez's sweep ordering then occasionally cannot find a coincident segment.
-// Retry only that numerical failure in a local integer frame. Normal operation
-// keeps every input bit; the retry resolves at most 1e-9 units (1e-8 on a second
-// attempt), far below source accuracy. It still performs the full boolean and
-// never returns an uncut shape or silently discards a mask.
-function pgRun(operation, ...geometries) {
-  try { return polygonClipping[operation](...geometries); }
-  catch (error) {
-    if (!/Unable to find segment|Unable to complete output ring|SweepLine/.test(String(error))) throw error;
-    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-    for (const geometry of geometries) for (const polygon of geometry) for (const ring of polygon) for (const [x, y] of ring) {
-      minX = Math.min(minX, x); minY = Math.min(minY, y); maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
-    }
-    const originX = Math.floor(minX), originY = Math.floor(minY);
-    const extent = Math.max(maxX - originX, maxY - originY, 1);
-    let lastError = error;
-    for (const scale of [1e9, 1e8]) {
-      // Integer coordinates remain exactly representable, including for offsets
-      // far from world origin. Oversized generic inputs fail instead of losing
-      // meaningful precision; game maps are limited to a much smaller extent.
-      if (extent * scale > 2 ** 45) continue;
-      const translated = geometries.map(geometry => geometry.map(polygon => polygon.map(ring => ring.map(([x, y]) => [Math.round((x - originX) * scale), Math.round((y - originY) * scale)]))));
-      try {
-        const result = polygonClipping[operation](...translated);
-        return result.map(polygon => polygon.map(ring => ring.map(([x, y]) => [x / scale + originX, y / scale + originY])));
-      } catch (retryError) {
-        if (!/Unable to find segment|Unable to complete output ring|SweepLine/.test(String(retryError))) throw retryError;
-        lastError = retryError;
-      }
-    }
-    throw lastError;
-  }
-}
-
-function polygonUnion(parts = []) {
-  const normalized = normalizePolygonParts(parts);
-  return normalized.length ? pgPoints(pgRun('union', pgCoordinates(normalized))) : [];
-}
-
-function polygonDifference(parts = [], masks = []) {
-  const subject = normalizePolygonParts(parts);
-  if (!subject.length) return [];
-  const clips = pgRelevantMasks(subject, normalizePolygonParts(masks));
-  return clips.length ? pgPoints(pgRun('difference', pgCoordinates(subject), pgCoordinates(clips))) : subject;
-}
-
-function polygonIntersection(parts = [], clips = []) {
-  const subject = normalizePolygonParts(parts);
-  if (!subject.length) return [];
-  const masks = pgRelevantMasks(subject, normalizePolygonParts(clips));
-  return masks.length ? pgPoints(pgRun('intersection', pgCoordinates(subject), pgCoordinates(masks))) : [];
-}
-
-return {polygonDifference,polygonUnion,polygonIntersection,normalizePolygonParts};
-})();
 const {BUILDING_TYPES,BIOME_TYPES,RESOURCE_PROFILES,RESOURCE_KINDS,classifyBuilding,classifyBiome,collectResourceProfiles,collectResourceCandidates} = (() => {
 /**
  * Gameplay taxonomy and resource-table configuration, independent of OSM tags.
@@ -1994,7 +1605,7 @@ function collectResourceProfiles(...inputs) {
   const visit = input => {
     if (input === null || input === undefined) return;
     if (Array.isArray(input)) { input.forEach(visit); return; }
-    if (typeof input === 'object') { visit(input.resourceProfileIds || input.gameplayType?.resourceProfileIds || []); return; }
+    if (typeof input === 'object') { visit(input.gameplayAssignment?.resourceProfileIds || input.resourceProfileIds || input.gameplayType?.resourceProfileIds || []); return; }
     if (typeof input !== 'string') throw new Error('Expected a gameplay type or resource profile ID.');
     if (RESOURCE_PROFILES[input]) { profiles.add(input); return; }
     const definition = BUILDING_TYPES[input] || BIOME_TYPES[input];
@@ -2013,366 +1624,201 @@ function collectResourceCandidates(...inputs) {
 
 return {BUILDING_TYPES,BIOME_TYPES,RESOURCE_PROFILES,RESOURCE_KINDS,classifyBuilding,classifyBiome,collectResourceProfiles,collectResourceCandidates};
 })();
-const {buildGameplayBiomes,groupNearbyZones} = (() => {
-// Gameplay geography derived from mapped geometry. No source feature is edited.
-const bzClone = value => Array.isArray(value) ? value.map(bzClone) : value && typeof value === 'object' ? Object.fromEntries(Object.entries(value).map(([key, entry]) => [key, bzClone(entry)])) : value;
-const bzSourceId = feature => feature.sourceId || feature.id?.match(/^(?:node|way|relation)-\d+/)?.[0] || feature.id;
-const bzPoint = (x, y) => ({ x: Math.round(x * 1000) / 1000, y: Math.round(y * 1000) / 1000 });
-const bzParts = feature => feature.parts || (feature.rings?.length ? [feature.rings] : feature.points?.length >= 3 ? [[feature.points]] : []);
-const bzArea = ring => ring.reduce((sum, p, i) => { const q = ring[(i + 1) % ring.length]; return sum + p.x * q.y - q.x * p.y; }, 0) / 2;
-function bzInRing(point, ring) {
+const {BUILDING_CATEGORIES,BUILDING_ROLES,createBuildingAssignments} = (() => {
+// Gameplay roles are separate from measured OSM facts. Unknown mapped purpose
+// remains unknown in sourceFactType even when the game assigns a usable role.
+const brFreeze = value => { if (value && typeof value === 'object' && !Object.isFrozen(value)) { Object.values(value).forEach(brFreeze); Object.freeze(value); } return value; };
+const brClone = value => Array.isArray(value) ? value.map(brClone) : value && typeof value === 'object' ? Object.fromEntries(Object.entries(value).map(([key, item]) => [key, brClone(item)])) : value;
+const BUILDING_CATEGORIES = brFreeze(Object.fromEntries([
+  ['housing', 'Жильё', '#c3b88e', '#d8ceaa', '#786d49', 'house'],
+  ['retail', 'Магазины', '#c4a66a', '#dfc58c', '#796038', 'shop'],
+  ['food', 'Еда и заведения', '#c88e6f', '#e0b092', '#80513e', 'food'],
+  ['medical', 'Медицина', '#80b6ae', '#b1d3c8', '#3f746b', 'medical'],
+  ['education', 'Образование', '#88a9c7', '#b1cbe0', '#486b8a', 'school'],
+  ['industry', 'Производство', '#8c9da7', '#b7c4ca', '#4f626c', 'industry'],
+  ['storage', 'Склады', '#afa18d', '#d0c4af', '#716351', 'storage'],
+  ['transport', 'Транспорт', '#b09cc1', '#cebedb', '#6c567e', 'plane'],
+  ['civic', 'Общественные здания', '#a09fc5', '#c5c4df', '#5e5d85', 'civic'],
+  ['service', 'Службы и мастерские', '#a6b77d', '#c9d5a5', '#647647', 'wrench'],
+  ['lodging', 'Гостиницы', '#bea2b2', '#dbc2cd', '#805e72', 'bed'],
+  ['ruin', 'Руины', '#8f8c7e', '#b4b0a0', '#57594d', 'ruin'],
+].map(([key, name, fill, roof, stroke, icon]) => { const id = `category.${key}`; return [id, { id, name, color: fill, fill, roof, stroke, icon }]; })));
+const brRoleRows = [
+  ['house', 'Жилой дом', 'housing', 'house', ['household', 'salvage']],
+  ['apartment', 'Многоквартирный дом', 'housing', 'apartment', ['household', 'salvage']],
+  ['residential', 'Жилой корпус', 'housing', 'residential', ['household', 'salvage']],
+  ['mixed_use', 'Многофункциональное здание', 'retail', 'commercial', ['household', 'salvage']],
+  ['shop_general', 'Универсальный магазин', 'retail', 'retail', ['household', 'salvage']],
+  ['shop_food', 'Продуктовый магазин', 'retail', 'retail', ['food', 'household']],
+  ['shop_hardware', 'Хозяйственный магазин', 'retail', 'retail', ['industrial', 'salvage']],
+  ['shop_clothing', 'Магазин одежды', 'retail', 'retail', ['household']],
+  ['shop_electronics', 'Магазин электроники', 'retail', 'retail', ['electrical']],
+  ['shop_auto', 'Магазин автотоваров', 'retail', 'retail', ['vehicles']],
+  ['shop_outdoor', 'Магазин снаряжения', 'retail', 'retail', ['household', 'outdoors']],
+  ['shop_furniture', 'Магазин мебели', 'retail', 'retail', ['household', 'salvage']],
+  ['pharmacy', 'Аптека', 'medical', 'medical', ['medical']],
+  ['restaurant', 'Ресторан', 'food', 'food', ['food', 'household']],
+  ['cafe', 'Кафе', 'food', 'food', ['food', 'household']],
+  ['bar', 'Бар', 'food', 'food', ['food', 'household']],
+  ['hospital', 'Больница', 'medical', 'medical', ['medical', 'salvage']],
+  ['clinic', 'Медпункт', 'medical', 'medical', ['medical', 'salvage']],
+  ['school', 'Школа / учебный корпус', 'education', 'education', ['education', 'salvage']],
+  ['library', 'Библиотека', 'education', 'education', ['education']],
+  ['warehouse', 'Склад', 'storage', 'storage', ['industrial', 'salvage']],
+  ['factory', 'Завод / цех', 'industry', 'industrial', ['industrial', 'salvage']],
+  ['workshop', 'Мастерская', 'service', 'service', ['industrial', 'salvage']],
+  ['airport', 'Аэропорт / аэровокзал', 'transport', 'transport', ['vehicles', 'electrical']],
+  ['hangar', 'Авиационный ангар', 'transport', 'transport', ['vehicles', 'salvage']],
+  ['station', 'Станция / вокзал', 'transport', 'transport', ['vehicles', 'salvage']],
+  ['garage', 'Гараж', 'transport', 'garage', ['vehicles', 'salvage']],
+  ['hotel', 'Гостиница', 'lodging', 'lodging', ['household', 'salvage']],
+  ['church', 'Храм', 'civic', 'religious', ['salvage']],
+  ['civic', 'Общественное здание', 'civic', 'civic', ['education', 'salvage']],
+  ['police', 'Полицейский участок', 'civic', 'emergency', ['industrial', 'salvage']],
+  ['fire_station', 'Пожарная часть', 'service', 'emergency', ['industrial', 'vehicles']],
+  ['office', 'Офис', 'civic', 'office', ['education', 'salvage']],
+  ['utility', 'Техническая постройка', 'service', 'utility', ['electrical', 'salvage']],
+  ['farm', 'Хозяйственная постройка', 'service', 'agricultural', ['agriculture', 'salvage']],
+  ['shelter', 'Навес / укрытие', 'storage', 'shelter', ['salvage']],
+  ['ruins', 'Руины', 'ruin', 'ruin', ['salvage']],
+  ['leisure', 'Спортивное здание', 'civic', 'leisure', ['household', 'salvage']],
+  ['service', 'Сервисное здание', 'service', 'service', ['industrial', 'salvage']],
+  ['fuel', 'Заправочная станция', 'service', 'service', ['vehicles', 'industrial']],
+];
+const BUILDING_ROLES = brFreeze(Object.fromEntries(brRoleRows.map(([key, name, category, type, profiles]) => {
+  const id = `role.${key}`, definition = BUILDING_CATEGORIES[`category.${category}`];
+  return [id, { id, name, categoryId: definition.id, typeId: `building.${type}`, icon: definition.icon, resourceProfileIds: profiles.map(profile => `profile.${profile}`) }];
+})));
+const brHash = text => { let hash = 2166136261; for (const char of String(text)) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619) >>> 0; return hash; };
+const brSourceId = feature => String(feature.sourceId || feature.id?.match(/^(?:node|way|relation)-\d+/)?.[0] || feature.id || '');
+const brParts = feature => feature.parts?.length ? feature.parts : feature.rings?.length ? [feature.rings] : feature.points?.length >= 3 ? [[feature.points]] : [];
+const brBounds = points => points.reduce((b, p) => ({ minX: Math.min(b.minX, p.x), minY: Math.min(b.minY, p.y), maxX: Math.max(b.maxX, p.x), maxY: Math.max(b.maxY, p.y) }), { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity });
+const brRingArea = ring => Math.abs(ring.reduce((sum, p, i) => { const q = ring[(i + 1) % ring.length]; return sum + p.x * q.y - q.x * p.y; }, 0)) / 2;
+const brArea = parts => parts.reduce((total, rings) => total + brRingArea(rings[0]) - rings.slice(1).reduce((sum, ring) => sum + brRingArea(ring), 0), 0);
+function brInRing(point, ring) {
   let inside = false;
-  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-    const a = ring[i], b = ring[j];
-    if ((a.y > point.y) !== (b.y > point.y) && point.x < (b.x - a.x) * (point.y - a.y) / (b.y - a.y) + a.x) inside = !inside;
-  }
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) { const a = ring[i], b = ring[j]; if ((a.y > point.y) !== (b.y > point.y) && point.x < (b.x - a.x) * (point.y - a.y) / (b.y - a.y) + a.x) inside = !inside; }
   return inside;
 }
-function bzInParts(point, parts) { return parts.some(rings => bzInRing(point, rings[0]) && !rings.slice(1).some(ring => bzInRing(point, ring))); }
-const bzBounds = points => points.reduce((b, p) => ({ minX: Math.min(b.minX, p.x), minY: Math.min(b.minY, p.y), maxX: Math.max(b.maxX, p.x), maxY: Math.max(b.maxY, p.y) }), { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity });
-const bzOverlap = (a, b, padding = 0) => a.minX <= b.maxX + padding && a.maxX >= b.minX - padding && a.minY <= b.maxY + padding && a.maxY >= b.minY - padding;
-function bzNearest(point, a, b) {
-  const dx = b.x - a.x, dy = b.y - a.y, denominator = dx * dx + dy * dy;
-  const t = denominator ? Math.max(0, Math.min(1, ((point.x - a.x) * dx + (point.y - a.y) * dy) / denominator)) : 0;
-  const nearest = { x: a.x + dx * t, y: a.y + dy * t };
-  return { point: nearest, distance: Math.hypot(point.x - nearest.x, point.y - nearest.y) };
-}
-function bzSegmentsCross(a, b, c, d) {
-  const cross = (p, q, r) => (q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x);
-  const first = cross(a, b, c), second = cross(a, b, d), third = cross(c, d, a), fourth = cross(c, d, b);
-  return first * second <= 0 && third * fourth <= 0 && bzOverlap(bzBounds([a, b]), bzBounds([c, d]));
-}
-function bzRectTouchesParts(rect, parts) {
-  const corners = [{ x: rect.minX, y: rect.minY }, { x: rect.maxX, y: rect.minY }, { x: rect.maxX, y: rect.maxY }, { x: rect.minX, y: rect.maxY }];
-  if (corners.some(point => bzInParts(point, parts))) return true;
-  for (const rings of parts) for (const ring of rings) {
-    if (ring.some(point => point.x >= rect.minX && point.x <= rect.maxX && point.y >= rect.minY && point.y <= rect.maxY)) return true;
-    for (let i = 1; i < ring.length; i++) for (let j = 0; j < 4; j++) if (bzSegmentsCross(ring[i - 1], ring[i], corners[j], corners[(j + 1) % 4])) return true;
+const brContains = (record, point) => point.x >= record.bounds.minX && point.x <= record.bounds.maxX && point.y >= record.bounds.minY && point.y <= record.bounds.maxY && record.parts.some(rings => brInRing(point, rings[0]) && !rings.slice(1).some(hole => brInRing(point, hole)));
+const brPhysical = { house: 'house', apartment: 'apartment', residential: 'residential', industrial: 'factory', storage: 'warehouse', medical: 'clinic', religious: 'church', education: 'school', retail: 'shop_general', commercial: 'office', office: 'office', food: 'restaurant', lodging: 'hotel', civic: 'civic', emergency: 'fire_station', service: 'service', garage: 'garage', agricultural: 'farm', utility: 'utility', transport: 'station', leisure: 'leisure', shelter: 'shelter', ruin: 'ruins' };
+function brFunctionRole(feature = {}) {
+  const tags = feature.tags || {}, amenity = tags.amenity, shop = tags.shop;
+  const primaryInstitutions = { hospital: 'hospital', clinic: 'clinic', doctors: 'clinic', dentist: 'clinic', pharmacy: 'pharmacy', school: 'school', college: 'school', university: 'school', kindergarten: 'school', library: 'library', police: 'police', fire_station: 'fire_station', place_of_worship: 'church', townhall: 'civic', courthouse: 'civic' };
+  if (primaryInstitutions[amenity]) return primaryInstitutions[amenity];
+  if (shop && !['no', 'vacant', 'yes'].includes(shop)) {
+    if (['supermarket', 'convenience', 'greengrocer', 'bakery', 'butcher', 'confectionery', 'deli', 'seafood', 'beverages', 'alcohol', 'farm'].includes(shop)) return 'shop_food';
+    if (['hardware', 'doityourself', 'trade', 'building_materials', 'paint', 'garden_centre'].includes(shop)) return 'shop_hardware';
+    if (['clothes', 'shoes', 'fashion', 'second_hand', 'tailor', 'laundry'].includes(shop)) return 'shop_clothing';
+    if (['electronics', 'computer', 'mobile_phone', 'electrical', 'appliance', 'hifi'].includes(shop)) return 'shop_electronics';
+    if (['car', 'car_parts', 'tyres', 'motorcycle', 'motorcycle_parts'].includes(shop)) return 'shop_auto';
+    if (['outdoor', 'sports', 'hunting', 'fishing', 'bicycle'].includes(shop)) return 'shop_outdoor';
+    if (['furniture', 'interior_decoration', 'bed', 'carpet'].includes(shop)) return 'shop_furniture';
+    if (shop === 'chemist') return 'pharmacy';
+    if (['car_repair', 'vehicle_inspection'].includes(shop)) return 'workshop';
+    return 'shop_general';
   }
-  return false;
+  const amenities = { pharmacy: 'pharmacy', hospital: 'hospital', clinic: 'clinic', doctors: 'clinic', dentist: 'clinic', nursing_home: 'clinic', veterinary: 'clinic', school: 'school', college: 'school', university: 'school', kindergarten: 'school', music_school: 'school', library: 'library', restaurant: 'restaurant', fast_food: 'cafe', cafe: 'cafe', food_court: 'restaurant', pub: 'bar', bar: 'bar', biergarten: 'bar', ice_cream: 'cafe', police: 'police', fire_station: 'fire_station', ambulance_station: 'clinic', rescue_station: 'service', place_of_worship: 'church', monastery: 'church', townhall: 'civic', courthouse: 'civic', post_office: 'civic', community_centre: 'civic', social_centre: 'civic', social_facility: 'civic', embassy: 'civic', prison: 'civic', marketplace: 'shop_general', fuel: 'fuel', car_wash: 'workshop', car_rental: 'service', bank: 'office', bus_station: 'station', ferry_terminal: 'station', shelter: 'shelter', toilets: 'service' };
+  if (amenities[amenity]) return amenities[amenity];
+  if (tags.healthcare && tags.healthcare !== 'no') return 'clinic';
+  if (tags.aeroway === 'hangar') return 'hangar';
+  if (['terminal', 'aerodrome'].includes(tags.aeroway)) return 'airport';
+  if (tags.railway === 'station') return 'station';
+  if (['hotel', 'motel', 'hostel', 'guest_house', 'apartment', 'resort', 'chalet', 'wilderness_hut'].includes(tags.tourism)) return 'hotel';
+  if (tags.tourism === 'museum') return 'civic';
+  if (tags.office) return ['government', 'diplomatic'].includes(tags.office) ? 'civic' : 'office';
+  if (tags.man_made === 'works' || tags.industrial || tags.manufacture) return 'factory';
+  if (['plant', 'substation'].includes(tags.power) || ['water_works', 'wastewater_plant'].includes(tags.man_made)) return 'utility';
+  return null;
 }
-function bzDry(feature) { const tags = feature.tags || {}; return [feature.intermittent, feature.seasonal, tags.intermittent, tags.seasonal].some(value => value === true || value === 'yes'); }
-function bzWaterLines(world) {
-  return ['rivers', 'details'].flatMap(collection => (world[collection] || []).flatMap(feature => {
-    if (bzDry(feature) || !feature.points?.length || feature.geometry === 'polygon' || mapFeatureLayer(feature, collection === 'rivers' ? 'river' : 'detail') !== 'water') return [];
-    return [{ feature, bounds: bzBounds(feature.points), radius: Math.max(.1, Number(feature.width) || 1) / 2 }];
-  }));
+function brPhysicalRole(feature, fact) {
+  const type = feature.tags?.building || feature.type;
+  if (type === 'hangar') return 'hangar';
+  if (type === 'terminal') return 'airport';
+  return brPhysical[fact.typeId.replace(/^building\./, '')] || null;
 }
-function bzRectTouchesLine(rect, record) {
-  const expanded = { minX: rect.minX - record.radius, minY: rect.minY - record.radius, maxX: rect.maxX + record.radius, maxY: rect.maxY + record.radius };
-  if (!bzOverlap(expanded, record.bounds)) return false;
-  const corners = [{ x: expanded.minX, y: expanded.minY }, { x: expanded.maxX, y: expanded.minY }, { x: expanded.maxX, y: expanded.maxY }, { x: expanded.minX, y: expanded.maxY }];
-  const points = record.feature.points;
-  if (points.some(point => point.x >= expanded.minX && point.x <= expanded.maxX && point.y >= expanded.minY && point.y <= expanded.maxY)) return true;
-  return points.slice(1).some((point, index) => corners.some((corner, side) => bzSegmentsCross(points[index], point, corner, corners[(side + 1) % 4])));
+function brPoint(feature) {
+  if (feature.geometry === 'point' && feature.points?.length) return feature.points[0];
+  if (feature.points?.length === 1) return feature.points[0];
+  if (Number.isFinite(feature.x) && Number.isFinite(feature.y) && !/^(way|relation)-/.test(feature.id || '')) return { x: feature.x, y: feature.y };
+  return null;
 }
-function bzPolygonRecords(world) {
-  return ['areas', 'details', 'lakes'].flatMap(collection => (world[collection] || []).flatMap(feature => {
-    if (feature.geometry && feature.geometry !== 'polygon') return [];
-    const parts = bzParts(feature);
-    if (!parts.length) return [];
-    const group = { areas: 'area', details: 'detail', lakes: 'lake' }[collection];
-    return [{ feature, parts, biome: mapBiome(feature), layer: mapFeatureLayer(feature, group), bounds: bzBounds(parts.flat(2)) }];
-  }));
-}
-function bzSmoothRing(ring, iterations = 2) {
-  let points = ring.slice(0, -1);
-  for (let pass = 0; pass < iterations; pass++) {
-    const rounded = [];
-    for (let i = 0; i < points.length; i++) {
-      const a = points[i], b = points[(i + 1) % points.length];
-      rounded.push({ x: a.x * .75 + b.x * .25, y: a.y * .75 + b.y * .25 }, { x: a.x * .25 + b.x * .75, y: a.y * .25 + b.y * .75 });
-    }
-    points = rounded;
+function brDistanceToRoad(record, roads, metersPerUnit) {
+  let distance = Infinity;
+  for (const road of roads) {
+    if (!['primary', 'secondary', 'tertiary', 'trunk', 'unclassified', 'residential', 'service'].includes(road.tags?.highway || road.type || road.sourceType)) continue;
+    for (let i = 1; i < (road.points?.length || 0); i++) { const a = road.points[i - 1], b = road.points[i], dx = b.x - a.x, dy = b.y - a.y, denominator = dx * dx + dy * dy; const t = denominator ? Math.max(0, Math.min(1, ((record.center.x - a.x) * dx + (record.center.y - a.y) * dy) / denominator)) : 0; distance = Math.min(distance, Math.hypot(record.center.x - a.x - dx * t, record.center.y - a.y - dy * t)); }
   }
-  return [...points, { ...points[0] }];
+  return distance * metersPerUnit;
 }
-function bzSimplifyLine(points, tolerance) {
-  if (points.length <= 2) return points;
-  const a = points[0], b = points.at(-1);
-  let selected = -1, maximum = tolerance;
-  for (let i = 1; i < points.length - 1; i++) {
-    const distance = bzNearest(points[i], a, b).distance;
-    if (distance > maximum) { maximum = distance; selected = i; }
+function brGameRole(record, sites, roads, metersPerUnit) {
+  const contextual = sites.filter(site => brContains(site, record.center)).sort((a, b) => a.area - b.area || a.sourceId.localeCompare(b.sourceId));
+  const landuse = contextual.find(site => ['industrial', 'commercial', 'retail', 'residential', 'garages', 'farmyard'].includes(site.feature.tags?.landuse));
+  const hash = brHash(record.feature.id || record.sourceId), area = record.area * metersPerUnit * metersPerUnit;
+  if (landuse?.feature.tags.landuse === 'industrial') return { role: area >= 450 && hash % 3 === 0 ? 'factory' : area >= 120 ? 'warehouse' : 'workshop', evidenceIds: [landuse.sourceId], reason: 'industrial-plot-layout' };
+  if (landuse?.feature.tags.landuse === 'garages') return { role: 'garage', evidenceIds: [landuse.sourceId], reason: 'garage-plot-layout' };
+  if (landuse?.feature.tags.landuse === 'farmyard') return { role: 'farm', evidenceIds: [landuse.sourceId], reason: 'farm-plot-layout' };
+  if (['commercial', 'retail'].includes(landuse?.feature.tags.landuse) && area >= 55) {
+    const choices = ['shop_food', 'shop_general', 'shop_hardware', 'shop_clothing', 'shop_electronics', 'shop_auto', 'cafe', 'office'];
+    return { role: choices[hash % choices.length], evidenceIds: [landuse.sourceId], reason: 'commercial-plot-layout' };
   }
-  return selected < 0 ? [a, b] : [...bzSimplifyLine(points.slice(0, selected + 1), tolerance).slice(0, -1), ...bzSimplifyLine(points.slice(selected), tolerance)];
-}
-function bzSmoothParts(parts, metersPerUnit) {
-  return parts.map(rings => rings.map(ring => {
-    const rounded = bzSmoothRing(ring), half = Math.floor((rounded.length - 1) / 2);
-    return [...bzSimplifyLine(rounded.slice(0, half + 1), .35 / metersPerUnit).slice(0, -1), ...bzSimplifyLine(rounded.slice(half), .35 / metersPerUnit)];
-  }));
+  if (area < 28) return { role: hash % 4 === 0 ? 'garage' : 'warehouse', evidenceIds: landuse ? [landuse.sourceId] : [], reason: 'small-outbuilding-layout' };
+  if (area >= 600 && landuse?.feature.tags.landuse === 'residential') return { role: 'apartment', evidenceIds: [landuse.sourceId], reason: 'residential-footprint-layout' };
+  if (area >= 800) return { role: hash % 3 === 0 ? 'factory' : 'warehouse', evidenceIds: landuse ? [landuse.sourceId] : [], reason: 'large-footprint-layout' };
+  if (!landuse && area >= 100 && hash % 11 === 0 && brDistanceToRoad(record, roads, metersPerUnit) < 45) return { role: ['shop_general', 'shop_food', 'workshop'][hash % 3], evidenceIds: [], reason: 'roadside-gameplay-layout' };
+  return { role: 'house', evidenceIds: landuse ? [landuse.sourceId] : [], reason: 'residential-gameplay-default' };
 }
 
-// Trace level-set segments, rather than exposed square cell edges. Shared edge
-// identities join neighboring samples exactly; interpolation makes the contour
-// continuous even though the density calculation uses a bounded sample lattice.
-function bzDensityContours(field, activeCells, cols, rows, cellSize, threshold) {
-  const stride = cols + 1, nodes = new Map(), edges = new Map();
-  const pointFor = (index) => ({ x: (index % stride - 1) * cellSize, y: (Math.floor(index / stride) - 1) * cellSize });
-  const intersection = (first, second) => {
-    const av = field[first], bv = field[second];
-    const key = Math.abs(av - threshold) < 1e-10 ? `n${first}` : Math.abs(bv - threshold) < 1e-10 ? `n${second}` : first < second ? `${first}:${second}` : `${second}:${first}`;
-    if (!nodes.has(key)) {
-      const a = pointFor(first), b = pointFor(second), ratio = (threshold - av) / (bv - av);
-      nodes.set(key, { x: a.x + (b.x - a.x) * ratio, y: a.y + (b.y - a.y) * ratio });
-    }
-    return key;
-  };
-  const add = (a, b) => {
-    if (a === b) return;
-    if (!edges.has(a)) edges.set(a, new Set()); if (!edges.has(b)) edges.set(b, new Set());
-    edges.get(a).add(b); edges.get(b).add(a);
-  };
-  for (const cell of activeCells) {
-    const x = cell % cols, y = Math.floor(cell / cols);
-    if (x < 0 || x >= cols || y < 0 || y >= rows) continue;
-    const corners = [y * stride + x, y * stride + x + 1, (y + 1) * stride + x + 1, (y + 1) * stride + x];
-    const crossings = [];
-    for (let edge = 0; edge < 4; edge++) {
-      const a = corners[edge], b = corners[(edge + 1) % 4];
-      if ((field[a] >= threshold) !== (field[b] >= threshold)) crossings.push({ edge, key: intersection(a, b) });
-    }
-    if (crossings.length === 2) add(crossings[0].key, crossings[1].key);
-    else if (crossings.length === 4) {
-      const centerInside = corners.reduce((sum, index) => sum + field[index], 0) / 4 >= threshold;
-      const diagonalFirst = field[corners[0]] >= threshold;
-      const pairs = centerInside === diagonalFirst ? [[0, 1], [2, 3]] : [[0, 3], [1, 2]];
-      for (const [a, b] of pairs) add(crossings[a].key, crossings[b].key);
-    }
-  }
-  const rings = [];
-  while (edges.size) {
-    const start = edges.keys().next().value, ring = [nodes.get(start)];
-    let current = start, iterations = 0;
-    do {
-      const choices = edges.get(current);
-      if (!choices?.size || iterations++ > activeCells.size * 2 + 4) throw new Error('Invalid gameplay density contour.');
-      const next = choices.values().next().value;
-      choices.delete(next); if (!choices.size) edges.delete(current);
-      const reverse = edges.get(next); reverse.delete(current); if (!reverse.size) edges.delete(next);
-      ring.push(nodes.get(next)); current = next;
-    } while (current !== start);
-    if (ring.length >= 4 && Math.abs(bzArea(ring)) > 1e-9) rings.push(ring);
-  }
-  // The interpolated graph has arbitrary winding. Nesting, not trace direction,
-  // distinguishes holes and islands before the boolean geometry normalizes it.
-  rings.sort((a, b) => Math.abs(bzArea(b)) - Math.abs(bzArea(a)));
-  const entries = [];
-  for (const ring of rings) {
-    let parent = -1;
-    for (let i = entries.length - 1; i >= 0; i--) if (bzInRing(ring[0], entries[i].ring)) { parent = i; break; }
-    entries.push({ ring, parent, depth: parent < 0 ? 0 : entries[parent].depth + 1 });
-  }
-  return entries.flatMap((entry, index) => entry.depth % 2 ? [] : [[entry.ring, ...entries.filter(other => other.parent === index && other.depth % 2).map(other => other.ring)]]);
-}
-
-function bzLineMask(record) {
-  const masks = [], radius = record.radius, points = record.feature.points;
-  for (let i = 1; i < points.length; i++) {
-    const a = points[i - 1], b = points[i], length = Math.hypot(b.x - a.x, b.y - a.y);
-    if (!length) continue;
-    const nx = (b.y - a.y) / length * radius, ny = -(b.x - a.x) / length * radius;
-    masks.push([[{ x: a.x + nx, y: a.y + ny }, { x: b.x + nx, y: b.y + ny }, { x: b.x - nx, y: b.y - ny }, { x: a.x - nx, y: a.y - ny }, { x: a.x + nx, y: a.y + ny }]]);
-  }
-  for (const point of points) {
-    const ring = Array.from({ length: 12 }, (_, index) => ({ x: point.x + Math.cos(index / 12 * Math.PI * 2) * radius, y: point.y + Math.sin(index / 12 * Math.PI * 2) * radius }));
-    masks.push([[...ring, { ...ring[0] }]]);
-  }
-  return masks;
-}
-function bzGeneratedFeature(id, biome, parts, provenance, extra = {}) {
-  return { id, sourceId: id, name: { wasteland: 'Пустошь', suburb: 'Пригород', urban: 'Городская застройка', dense: 'Плотная застройка', aircraft_parking: 'Стоянка самолётов' }[biome] || '', type: biome, kind: biome, biome, geometry: 'polygon', points: parts[0][0], rings: parts[0], parts, derived: true, sourceIds: [...(provenance.sourceIds || [])], provenance, ...extra };
-}
-
-/** Smooth density inference over unzoned ground, built once per geographic map. */
-function buildGameplayBiomes(world = {}, { deferOccupiedCuts = false } = {}) {
-  if (!(world.geographic || Array.isArray(world.bbox)) || !(world.width > 0 && world.height > 0)) return { features: [], report: { enabled: false, generatedZones: 0 } };
-  const metersPerUnit = Number(world.metersPerUnit) || 5;
-  const cellSize = Math.max(15 / metersPerUnit, world.width / 800, world.height / 800);
-  const cols = Math.ceil(world.width / cellSize) + 2, rows = Math.ceil(world.height / cellSize) + 2, stride = cols + 1;
-  const polygons = bzPolygonRecords(world);
-  const radius = 120 / metersPerUnit;
-  const buildings = (world.buildings || []).filter(feature => feature.points?.length >= 3).map(feature => {
-    const bounds = bzBounds(feature.points);
-    return { point: { x: (bounds.minX + bounds.maxX) / 2, y: (bounds.minY + bounds.maxY) / 2 }, sourceId: bzSourceId(feature) };
-  }).sort((a, b) => String(a.sourceId).localeCompare(String(b.sourceId)));
-  const bins = new Map(), activeNodes = new Set(), activeCells = new Set(), binSize = radius;
-  for (const building of buildings) {
-    const bx = Math.floor(building.point.x / binSize), by = Math.floor(building.point.y / binSize), key = `${bx},${by}`;
-    if (!bins.has(key)) bins.set(key, []); bins.get(key).push(building);
-    const minX = Math.max(1, Math.floor((building.point.x - radius) / cellSize) + 1), maxX = Math.min(cols - 1, Math.ceil((building.point.x + radius) / cellSize) + 1);
-    const minY = Math.max(1, Math.floor((building.point.y - radius) / cellSize) + 1), maxY = Math.min(rows - 1, Math.ceil((building.point.y + radius) / cellSize) + 1);
-    for (let y = minY; y <= maxY; y++) for (let x = minX; x <= maxX; x++) activeNodes.add(y * stride + x);
-  }
-  const field = new Float64Array((cols + 1) * (rows + 1));
-  for (const index of activeNodes) {
-    const x = index % stride, y = Math.floor(index / stride), point = { x: (x - 1) * cellSize, y: (y - 1) * cellSize };
-    const bx = Math.floor(point.x / binSize), by = Math.floor(point.y / binSize);
-    let density = 0;
-    for (let yy = by - 1; yy <= by + 1; yy++) for (let xx = bx - 1; xx <= bx + 1; xx++) {
-      for (const building of bins.get(`${xx},${yy}`) || []) {
-        const squared = ((building.point.x - point.x) ** 2 + (building.point.y - point.y) ** 2) / radius ** 2;
-        if (squared < 1) density += (1 - squared) ** 2;
-      }
-    }
-    field[index] = density;
-    for (const [cx, cy] of [[x - 1, y - 1], [x, y - 1], [x - 1, y], [x, y]]) if (cx >= 0 && cx < cols && cy >= 0 && cy < rows) activeCells.add(cy * cols + cx);
-  }
-  const fallbackRing = [{ x: 0, y: 0 }, { x: world.width, y: 0 }, { x: world.width, y: world.height }, { x: 0, y: world.height }, { x: 0, y: 0 }];
-  const features = [bzGeneratedFeature('game-biome-wasteland', 'wasteland', [[fallbackRing]], { method: 'unmapped-ground-fallback', sourceIds: [], notes: 'Gameplay fallback, not a claim about mapped grass or soil.' }, { fallback: true })];
-  const aircraft = buildAircraftParkingZones(world, polygons, metersPerUnit);
-  const thresholds = { suburb: (1 - (40 / 120) ** 2) ** 2, urban: 4, dense: 10 };
-  const envelopes = {};
-  for (const biome of ['suburb', 'urban', 'dense']) {
-    const contours = bzDensityContours(field, activeCells, cols, rows, cellSize, thresholds[biome]);
-    envelopes[biome] = contours.length ? polygonIntersection(polygonUnion(bzSmoothParts(contours, metersPerUnit)), [[fallbackRing]]) : [];
-  }
-  // Higher-density envelopes take priority, leaving exclusive smooth bands.
-  const dense = polygonIntersection(envelopes.dense, envelopes.suburb);
-  const urban = polygonDifference(polygonIntersection(envelopes.urban, envelopes.suburb), dense);
-  const suburb = polygonDifference(envelopes.suburb, [...dense, ...urban]);
-  const sourceMasks = deferOccupiedCuts ? [] : polygons.filter(record => {
-    const group = record.layer === 'water' ? 'lake' : 'detail';
-    return shouldRenderFeature(record.feature, group) && ['landscape', 'water', 'power'].includes(record.layer);
-  }).map(record => ({ parts: record.parts, bounds: record.bounds }));
-  if (!deferOccupiedCuts) for (const building of world.buildings || []) if (mapZoneBiome(building)) {
-    const parts = bzParts(building); if (parts.length) sourceMasks.push({ parts, bounds: bzBounds(parts.flat(2)) });
-  }
-  if (!deferOccupiedCuts) for (const feature of aircraft) sourceMasks.push({ parts: feature.parts, bounds: bzBounds(feature.parts.flat(2)) });
-  if (!deferOccupiedCuts) for (const record of bzWaterLines(world)) sourceMasks.push({ parts: bzLineMask(record), bounds: { minX: record.bounds.minX - record.radius, minY: record.bounds.minY - record.radius, maxX: record.bounds.maxX + record.radius, maxY: record.bounds.maxY + record.radius } });
-  let urbanVertices = 0;
-  for (const [biome, parts] of Object.entries({ suburb, urban, dense })) {
-    let region = 0;
-    for (const part of parts) {
-      const bounds = bzBounds(part.flat());
-      const masks = sourceMasks.filter(mask => bzOverlap(bounds, mask.bounds)).flatMap(mask => mask.parts);
-      const clipped = masks.length ? polygonDifference([part], masks) : [part];
-      for (const rings of clipped) {
-        if (Math.abs(bzArea(rings[0])) * metersPerUnit ** 2 < 4) continue;
-        const extent = bzBounds(rings.flat());
-        const sourceIds = buildings.filter(building => building.point.x >= extent.minX - radius && building.point.x <= extent.maxX + radius && building.point.y >= extent.minY - radius && building.point.y <= extent.maxY + radius).map(building => building.sourceId).filter(Boolean);
-        urbanVertices += rings.flat().length;
-        features.push(bzGeneratedFeature(`game-biome-${biome}-${region++}`, biome, [rings], { method: 'building-density-contours', sampleSpacingMeters: cellSize * metersPerUnit, radiusMeters: 120, kernel: 'compact-biweight', thresholds: { ...thresholds }, smoothingIterations: 2, sourceZoneExclusion: !deferOccupiedCuts, buildingCount: sourceIds.length, sourceIds }, { urbanFiller: true }));
-      }
-    }
-  }
-  features.push(...aircraft);
-  return { features, report: { enabled: true, method: 'building-density-contours', occupiedCutsDeferred: deferOccupiedCuts, sampleSpacingMeters: cellSize * metersPerUnit, grid: { cols, rows }, sourceBuildings: buildings.length, sampledNodes: activeNodes.size, urbanVertices, generatedZones: features.length, byBiome: Object.fromEntries(['wasteland', 'suburb', 'urban', 'dense', 'aircraft_parking'].map(biome => [biome, features.filter(feature => feature.biome === biome).length])) } };
-}
-
-function bzHull(points) {
-  const unique = [...new Map(points.map(point => [`${point.x},${point.y}`, point])).values()].sort((a, b) => a.x - b.x || a.y - b.y);
-  if (unique.length < 3) return unique;
-  const cross = (a, b, c) => (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x);
-  const half = list => { const result = []; for (const point of list) { while (result.length > 1 && cross(result.at(-2), result.at(-1), point) <= 0) result.pop(); result.push(point); } return result.slice(0, -1); };
-  const hull = [...half(unique), ...half([...unique].reverse())]; return [...hull, { ...hull[0] }];
-}
-/** Source parking marks become a small derived parking surface, never the whole airport. */
-function buildAircraftParkingZones(world, polygons = bzPolygonRecords(world), metersPerUnit = Number(world.metersPerUnit) || 5) {
-  const apron = polygons.filter(record => record.feature.tags?.aeroway === 'apron' || record.biome === 'aircraft_parking');
-  const marks = (world.details || []).filter(feature => feature.tags?.aeroway === 'parking_position' || feature.kind === 'parking_position').flatMap(feature => {
-    const points = feature.points?.length ? feature.points : Number.isFinite(feature.x) && Number.isFinite(feature.y) ? [{ x: feature.x, y: feature.y }] : [];
-    return points.length && !points.every(point => apron.some(record => bzInParts(point, record.parts))) ? [{ feature, points, center: { x: points.reduce((sum, point) => sum + point.x, 0) / points.length, y: points.reduce((sum, point) => sum + point.y, 0) / points.length } }] : [];
+/** Every original footprint gets a game role. Its original tags remain facts. */
+function createBuildingAssignments(world = {}) {
+  const buildings = world.buildings || [], metersPerUnit = Number(world.metersPerUnit) || 5;
+  const records = buildings.map(feature => {
+    const parts = brParts(feature), bounds = brBounds(parts.flat(2));
+    return { feature, parts, bounds, center: { x: (bounds.minX + bounds.maxX) / 2, y: (bounds.minY + bounds.maxY) / 2 }, area: brArea(parts), sourceId: brSourceId(feature) || feature.id || '' };
   });
-  const visited = new Set(), zones = [], distance = 50 / metersPerUnit, padding = 5 / metersPerUnit;
-  for (let start = 0; start < marks.length; start++) {
-    if (visited.has(start)) continue;
-    const queue = [start], cluster = []; visited.add(start);
-    for (let position = 0; position < queue.length; position++) {
-      const index = queue[position]; cluster.push(marks[index]);
-      for (let i = 0; i < marks.length; i++) if (!visited.has(i) && Math.hypot(marks[i].center.x - marks[index].center.x, marks[i].center.y - marks[index].center.y) <= distance) { visited.add(i); queue.push(i); }
-    }
-    const padded = cluster.flatMap(mark => mark.points.flatMap(point => [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([dx, dy]) => bzPoint(Math.max(0, Math.min(world.width, point.x + dx * padding)), Math.max(0, Math.min(world.height, point.y + dy * padding))))));
-    const hull = bzHull(padded);
-    if (hull.length >= 4) zones.push(bzGeneratedFeature(`game-aircraft-parking-${cluster.map(mark => mark.feature.id).sort().join('-')}`, 'aircraft_parking', [[hull]], { method: 'aircraft-parking-mark-buffer', paddingMeters: 5, sourceIds: cluster.map(mark => bzSourceId(mark.feature)).filter(Boolean).sort() }));
+  const candidates = [...(world.details || []), ...(world.areas || []), ...(world.pois || [])], seenPoints = new Set(), seenSites = new Set(), points = [], sites = [];
+  for (const feature of candidates) {
+    const sourceId = brSourceId(feature) || feature.id || '', role = brFunctionRole(feature), point = brPoint(feature), parts = brParts(feature);
+    if (point && role && !seenPoints.has(sourceId)) { seenPoints.add(sourceId); points.push({ feature, sourceId, role, point }); }
+    if (parts.length && !seenSites.has(feature.id || sourceId)) { seenSites.add(feature.id || sourceId); sites.push({ feature, sourceId, role, parts, bounds: brBounds(parts.flat(2)), area: brArea(parts) }); }
   }
-  return zones;
-}
-
-const bzFusionBiomes = new Set(['residential', 'industrial', 'commercial', 'retail', 'parking', 'religious', 'healthcare', 'education', 'civic', 'emergency', 'accommodation', 'camping', 'food_service', 'service', 'utilities', 'construction', 'brownfield', 'aircraft_parking', 'suburb', 'urban', 'dense']);
-function bzClosestParts(first, second) {
-  let best = { distance: Infinity };
-  for (const partA of first) for (const partB of second) {
-    if (bzInParts(partA[0][0], [partB]) || bzInParts(partB[0][0], [partA])) return { distance: 0, a: partA[0][0], b: partA[0][0] };
-    for (const ringA of partA) for (const ringB of partB) for (let i = 1; i < ringA.length; i++) for (let j = 1; j < ringB.length; j++) {
-      const a = ringA[i - 1], b = ringA[i], c = ringB[j - 1], d = ringB[j];
-      if (bzSegmentsCross(a, b, c, d)) return { distance: 0, a, b: a };
-      for (const [point, s, t, reverse] of [[a, c, d, false], [b, c, d, false], [c, a, b, true], [d, a, b, true]]) {
-        const nearest = bzNearest(point, s, t);
-        if (nearest.distance < best.distance) best = { distance: nearest.distance, a: reverse ? nearest.point : point, b: reverse ? point : nearest.point };
-      }
-    }
+  points.sort((a, b) => a.sourceId.localeCompare(b.sourceId)); sites.sort((a, b) => a.area - b.area || a.sourceId.localeCompare(b.sourceId) || String(a.feature.id).localeCompare(String(b.feature.id)));
+  for (const site of sites.filter(site => site.role === 'airport')) {
+    site.mainBuildingId = records.filter(record => record.sourceId !== site.sourceId && brContains(site, record.center) && !brFunctionRole(record.feature) && !brPhysicalRole(record.feature, classifyBuilding(record.feature)))
+      .sort((a, b) => b.area - a.area || a.sourceId.localeCompare(b.sourceId))[0]?.feature.id;
   }
-  return best;
-}
-function bzParallelGap(first, second, maxDistance) {
-  let best = null, bestSpan = 0;
-  for (const partA of first) for (const partB of second) for (const ringA of partA) for (const ringB of partB) {
-    for (let i = 1; i < ringA.length; i++) for (let j = 1; j < ringB.length; j++) {
-      const a = ringA[i - 1], b = ringA[i], c = ringB[j - 1], d = ringB[j];
-      const length = Math.hypot(b.x - a.x, b.y - a.y), otherLength = Math.hypot(d.x - c.x, d.y - c.y);
-      if (!length || !otherLength) continue;
-      const ux = (b.x - a.x) / length, uy = (b.y - a.y) / length;
-      if (Math.abs(((d.x - c.x) * ux + (d.y - c.y) * uy) / otherLength) < .98) continue;
-      const pc = (c.x - a.x) * ux + (c.y - a.y) * uy, pd = (d.x - a.x) * ux + (d.y - a.y) * uy;
-      const low = Math.max(0, Math.min(pc, pd)), high = Math.min(length, Math.max(pc, pd));
-      if (high - low <= bestSpan + .001) continue;
-      const firstA = { x: a.x + low * ux, y: a.y + low * uy }, firstB = { x: a.x + high * ux, y: a.y + high * uy };
-      const nearA = bzNearest(firstA, c, d), nearB = bzNearest(firstB, c, d);
-      if (Math.max(nearA.distance, nearB.distance) > maxDistance || Math.max(nearA.distance, nearB.distance) < .001) continue;
-      const ring = [bzPoint(firstA.x, firstA.y), bzPoint(firstB.x, firstB.y), bzPoint(nearB.point.x, nearB.point.y), bzPoint(nearA.point.x, nearA.point.y), bzPoint(firstA.x, firstA.y)];
-      if (Math.abs(bzArea(ring)) < .001) continue;
-      best = ring; bestSpan = high - low;
+  const counts = {}, categoryCounts = {}, originCounts = { mapped: 0, context: 0, gameplay: 0 };
+  const features = records.map(record => {
+    const feature = record.feature, fact = classifyBuilding(feature), own = brFunctionRole(feature), physical = brPhysicalRole(feature, fact);
+    const contained = points.filter(point => point.sourceId !== record.sourceId && brContains(record, point.point));
+    let key, origin, evidenceIds = [], confidence, reason, occupants = [];
+    if (own) { key = own; origin = 'mapped'; evidenceIds = [record.sourceId]; confidence = 1; reason = 'building-function-tags'; }
+    else if (contained.length) {
+      const roles = [...new Set(contained.map(point => point.role))]; key = roles.length === 1 ? roles[0] : 'mixed_use'; origin = 'mapped'; confidence = .95; reason = 'contained-mapped-points'; evidenceIds = contained.map(point => point.sourceId);
+      occupants = contained.map(point => ({ sourceId: point.sourceId, roleId: `role.${point.role}`, roleName: BUILDING_ROLES[`role.${point.role}`].name, name: point.feature.name || point.feature.tags?.name || '' }));
+    } else if (physical) { key = physical; origin = 'mapped'; evidenceIds = [record.sourceId]; confidence = 1; reason = 'building-type-tag'; }
+    else {
+      const contexts = sites.filter(site => site.role && site.sourceId !== record.sourceId && brContains(site, record.center) && record.parts[0]?.[0].slice(0, -1).every(point => brContains(site, { x: point.x + (record.center.x - point.x) * 1e-7, y: point.y + (record.center.y - point.y) * 1e-7 })));
+      const site = contexts[0];
+      if (site) { key = site.role === 'airport' && site.mainBuildingId !== feature.id ? 'hangar' : site.role; origin = 'context'; confidence = .8; reason = 'contained-functional-site'; evidenceIds = [site.sourceId]; }
+      else { const generated = brGameRole(record, sites, world.roads || [], metersPerUnit); key = generated.role; origin = 'gameplay'; confidence = .35; reason = generated.reason; evidenceIds = generated.evidenceIds; }
     }
-  }
-  return best;
-}
-function bzCorridor(a, b, halfWidth) {
-  const distance = Math.hypot(b.x - a.x, b.y - a.y), nx = -(b.y - a.y) / distance * halfWidth, ny = (b.x - a.x) / distance * halfWidth;
-  const ring = [bzPoint(a.x + nx, a.y + ny), bzPoint(b.x + nx, b.y + ny), bzPoint(b.x - nx, b.y - ny), bzPoint(a.x - nx, a.y - ny)]; return [...ring, { ...ring[0] }];
-}
-/** Join nearby functional plots; retain exact source parts and identify added corridors. */
-function groupNearbyZones(features = [], { metersPerUnit = 5, maxDistanceMeters = 35, blockers = [] } = {}) {
-  const records = features.map((feature, index) => ({ feature, index, biome: feature.biome || mapBiome(feature), parts: bzParts(feature) })).filter(record => record.parts.length && bzFusionBiomes.has(record.biome) && !record.feature.fallback);
-  records.forEach(record => { record.bounds = bzBounds(record.parts.flat(2)); });
-  const parent = records.map((_, index) => index), root = index => parent[index] === index ? index : parent[index] = root(parent[index]);
-  const joins = [], maxDistance = maxDistanceMeters / metersPerUnit;
-  const blocked = blockers.filter(feature => !bzDry(feature)).flatMap(feature => {
-    const isLine = feature.geometry === 'line' || feature.tags?.waterway && !feature.rings;
-    if (isLine) return (feature.paths || [feature.points || []]).filter(points => points.length > 1).map(points => ({ parts: [], bounds: bzBounds(points), line: { feature: { ...feature, points }, bounds: bzBounds(points), radius: Math.max(.1, Number(feature.width) || 1) / 2 } }));
-    const parts = bzParts(feature); return parts.length ? [{ parts, bounds: bzBounds(parts.flat(2)) }] : [];
+    const definition = BUILDING_ROLES[`role.${key}`], category = BUILDING_CATEGORIES[definition.categoryId];
+    const profiles = [...new Set([...definition.resourceProfileIds, ...occupants.flatMap(item => BUILDING_ROLES[item.roleId].resourceProfileIds)])].sort();
+    const assignment = {
+      roleId: definition.id, roleName: definition.name, typeId: definition.typeId, typeName: definition.name,
+      categoryId: category.id, categoryName: category.name, color: category.color, fill: category.fill, roof: category.roof, stroke: category.stroke, icon: definition.icon,
+      resourceProfileIds: profiles, roleOrigin: origin, derived: origin !== 'mapped', evidenceIds: [...new Set(evidenceIds)].sort(), confidence, sourceFactType: brClone(fact), condition: fact.condition,
+      displayName: feature.name || feature.tags?.name || (occupants.length === 1 ? occupants[0].name : '') || definition.name, occupants,
+      provenance: { method: reason, fictional: origin === 'gameplay', inferred: origin === 'context', sourceFactTypeId: fact.typeId, sourceEvidenceIds: [...new Set(evidenceIds)].sort() },
+    };
+    counts[assignment.roleId] = (counts[assignment.roleId] || 0) + 1; categoryCounts[category.id] = (categoryCounts[category.id] || 0) + 1; originCounts[origin]++;
+    return { ...brClone(feature), gameplayAssignment: assignment };
   });
-  for (let i = 0; i < records.length; i++) for (let j = i + 1; j < records.length; j++) {
-    const a = records[i], b = records[j];
-    if (a.biome !== b.biome || !bzOverlap(a.bounds, b.bounds, maxDistance)) continue;
-    const nearest = bzClosestParts(a.parts, b.parts);
-    if (nearest.distance > maxDistance) continue;
-    const corridor = nearest.distance > .001 ? bzParallelGap(a.parts, b.parts, maxDistance) || bzCorridor(nearest.a, nearest.b, Math.min(5 / metersPerUnit, Math.max(1 / metersPerUnit, nearest.distance / 3))) : null;
-    if (corridor && blocked.some(record => record.line ? bzRectTouchesLine(bzBounds(corridor), record.line) : bzOverlap(bzBounds(corridor), record.bounds) && (corridor.some(point => bzInParts(point, record.parts)) || record.parts.flat(2).some(point => bzInRing(point, corridor)) || corridor.slice(1).some((point, position) => record.parts.some(rings => rings.some(ring => ring.slice(1).some((target, targetIndex) => bzSegmentsCross(corridor[position], point, ring[targetIndex], target)))))))) continue;
-    const ra = root(i), rb = root(j);
-    if (ra === rb) continue;
-    parent[rb] = ra; joins.push({ first: i, second: j, corridor });
-  }
-  const groups = new Map();
-  records.forEach((record, index) => { const key = root(index); if (!groups.has(key)) groups.set(key, []); groups.get(key).push(record); });
-  const replacements = new Map(), removed = new Set();
-  for (const [groupRoot, group] of groups) {
-    if (group.length < 2) continue;
-    const members = group.map(record => bzClone(record.feature)), memberIds = members.map(feature => feature.id).sort();
-    const sourceIds = [...new Set(members.flatMap(feature => feature.sourceIds || [bzSourceId(feature)]).filter(Boolean))].sort();
-    const corridors = joins.filter(join => root(join.first) === groupRoot && join.corridor).map(join => [join.corridor]);
-    const parts = [...group.flatMap(record => bzClone(record.parts)), ...corridors];
-    const biome = group[0].biome;
-    let hash = 2166136261; for (const char of memberIds.join('|')) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619) >>> 0;
-    const id = `game-zone-${biome}-${hash.toString(36)}`;
-    const feature = { ...bzClone(group[0].feature), id, sourceId: id, geometry: 'polygon', points: parts[0][0], rings: parts[0], parts, biome, type: biome, footprintOnly: corridors.length === 0 && members.every(member => member.footprintOnly === true), derived: true, zoneFusion: true, merged: true, members, memberIds, sourceIds, names: [...new Set(members.flatMap(feature => feature.names || [feature.name].filter(Boolean)))], provenance: { method: 'nearby-zone-fusion', maxDistanceMeters, corridorCount: corridors.length, sourceIds } };
-    replacements.set(group[0].index, feature); group.slice(1).forEach(record => removed.add(record.index));
-  }
-  return { features: features.flatMap((feature, index) => removed.has(index) ? [] : [replacements.get(index) || bzClone(feature)]), report: { inputFeatures: features.length, displayFeatures: features.length - removed.size, mergedGroups: replacements.size, joinedFeatures: removed.size, addedCorridors: joins.filter(join => join.corridor).length, maxDistanceMeters } };
+  return { features, report: { total: features.length, assigned: features.length, unassigned: 0, sourceKnown: records.filter(record => classifyBuilding(record.feature).typeId !== 'building.unknown').length, sourceUnknown: records.filter(record => classifyBuilding(record.feature).typeId === 'building.unknown').length, origins: originCounts, byRole: Object.fromEntries(Object.entries(counts).sort()), byCategory: Object.fromEntries(Object.entries(categoryCounts).sort()) } };
 }
 
-return {buildGameplayBiomes,groupNearbyZones};
+return {BUILDING_CATEGORIES,BUILDING_ROLES,createBuildingAssignments};
 })();
 const {createDetailRenderer} = (() => {
 /** Sharp, scale-aware cartography over the original mapped footprints and paths. */
@@ -2487,13 +1933,41 @@ const drBiomeNames = {
   administrative: 'Административная территория', wasteland: 'Пустошь', suburb: 'Пригород', urban: 'Городская застройка', dense: 'Плотная застройка', aircraft_parking: 'Стоянка самолётов',
 };
 const drSourceId = feature => feature.sourceId || String(feature.id || '').match(/^(?:node|way|relation)-\d+/)?.[0] || feature.id;
-const drSameFootprint = (a, b) => a.rings.length === b.rings.length && a.rings.every(ring => b.rings.some(other => ring.length === other.length
-  && ring.every(point => other.some(candidate => candidate.x === point.x && candidate.y === point.y))));
 const drTypeMetadata = record => {
   const type = record.gameplayType;
   if (!type) return { typeId: null, typeName: null, resourceProfileIds: [], gameplayType: null };
   return { typeId: type.typeId, typeName: type.typeName, resourceProfileIds: [...type.resourceProfileIds], gameplayType: { ...type, resourceProfileIds: [...type.resourceProfileIds] } };
 };
+
+const drRoleMetadata = record => {
+  const assignment = record.feature.gameplayAssignment;
+  if (!assignment) return { gameplayAssignment: null, roleId: null, roleName: null, categoryId: null, categoryName: null, color: null, stroke: null, icon: null, roleOrigin: null };
+  return { gameplayAssignment: structuredClone(assignment), roleId: assignment.roleId, roleName: assignment.roleName,
+    categoryId: assignment.categoryId, categoryName: assignment.categoryName, color: assignment.color || assignment.fill,
+    stroke: assignment.stroke, icon: assignment.icon, roleOrigin: assignment.roleOrigin };
+};
+const drPhysicalAirSurface = feature => ['aerodrome', 'apron', 'helipad'].includes(feature.tags?.aeroway || feature.kind)
+  && (feature.geometry === 'polygon' || feature.rings?.length || feature.points?.length > 2);
+const drLayer = (feature, group) => {
+  const layer = mapFeatureLayer(feature, group);
+  return layer === 'landscape' && drPhysicalAirSurface(feature) ? 'details' : layer;
+};
+const drPresentFeature = (feature, group) => shouldRenderFeature(feature, group)
+  && (drLayer(feature, group) !== 'landscape' || shouldRenderLandscapeFeature(feature, group));
+
+function drInteriorPoint(parts, bounds) {
+  const contains = point => parts.some(rings => drInPolygon(point.x, point.y, rings));
+  const center = { x: (bounds.minX + bounds.maxX) / 2, y: (bounds.minY + bounds.maxY) / 2 };
+  if (contains(center)) return center;
+  let best = center, distance = -1;
+  for (let row = 0; row < 7; row++) for (let column = 0; column < 7; column++) {
+    const candidate = { x: bounds.minX + (column + .5) / 7 * (bounds.maxX - bounds.minX), y: bounds.minY + (row + .5) / 7 * (bounds.maxY - bounds.minY) };
+    if (!contains(candidate)) continue;
+    const clearance = drNearestOnRings(candidate.x, candidate.y, parts.flat(), true).distance;
+    if (clearance > distance) { best = candidate; distance = clearance; }
+  }
+  return best;
+}
 
 function drFeatureLabel(feature, group) {
   if (feature.name) return feature.name;
@@ -2502,7 +1976,7 @@ function drFeatureLabel(feature, group) {
     const names = { pole: 'Столб электросети', tower: 'Опора ЛЭП', line: 'Линия электропередачи', minor_line: 'Линия местной электросети', cable: 'Электрический кабель', transformer: 'Трансформатор', substation: 'Подстанция', plant: 'Электростанция', switch: 'Выключатель электросети' };
     return feature.tags?.man_made === 'utility_pole' ? 'Коммунальный столб' : names[feature.tags?.power] || 'Объект электросети';
   }
-  if (group === 'building') return drNames[feature.ruins ? 'ruins' : feature.type] || drNames.building;
+  if (group === 'building') return feature.gameplayAssignment?.roleName || drNames[feature.ruins ? 'ruins' : feature.type] || drNames.building;
   if (group === 'road' && feature.names?.length > 4) return `${ROAD_CLASSES[roadClass(feature)]?.pluralName || 'Дороги'} · сеть`;
   if (group === 'road') return feature.roadClassName || ROAD_CLASSES[roadClass(feature)]?.name || 'Дорога';
   if (group === 'river') return drDry(feature) ? 'Сезонное русло' : drNames.river;
@@ -2558,9 +2032,9 @@ function drCache(original, group, layer, metersPerUnit, index) {
     if (!longest || length > longest.length) longest = { a, b, length, angle: Math.atan2(b.y - a.y, b.x - a.x) };
   }
   const actualWidth = Number(feature.widthMeters ?? feature.tags?.width) / metersPerUnit;
-  const biome = layer === 'landscape' && !outlineOnly ? feature.biome || mapBiome(feature) : null;
+  const biome = layer === 'landscape' && !outlineOnly ? mapLandscapeBiome(feature, group) : null;
   const gameplayType = group === 'building' ? classifyBuilding(feature) : layer === 'landscape' && !outlineOnly ? classifyBiome(biome) : layer === 'water' ? classifyBiome(drDry(feature) ? 'dry_riverbed' : 'water') : null;
-  return { feature, group, layer, sourceOrder: index, biome, gameplayType, outlineOnly, fallback: feature.fallback === true, footprintOnly: feature.footprintOnly === true && feature.zoneFusion !== true, roadClass: layer === 'roads' ? roadClass(feature) : null, geometry, ellipse, key: `${layer}:${group}:${feature.id}`, parts, rings, points, path, fillRule: 'nonzero', bounds, center, longest, hash: drHash(feature.id), width: Number.isFinite(actualWidth) && actualWidth > 0 ? actualWidth : Number(feature.width) || 1 };
+  return { feature, group, layer, labelPoint: group === 'building' ? drInteriorPoint(parts, bounds) : center, sourceOrder: index, biome, gameplayType, outlineOnly, fallback: feature.fallback === true, footprintOnly: feature.footprintOnly === true && feature.zoneFusion !== true, roadClass: layer === 'roads' ? roadClass(feature) : null, geometry, ellipse, key: `${layer}:${group}:${feature.id}`, parts, rings, points, path, fillRule: 'nonzero', bounds, center, longest, hash: drHash(feature.id), width: Number.isFinite(actualWidth) && actualWidth > 0 ? actualWidth : Number(feature.width) || 1 };
 }
 
 function drWaterKey(record) {
@@ -2599,65 +2073,19 @@ function drMergeWaterPolygons(records) {
   });
 }
 
-const drUrbanBiomes = new Set(['suburb', 'urban', 'dense']);
-const drUrbanFiller = record => record.feature.urbanFiller === true || record.feature.derived === true && drUrbanBiomes.has(record.biome);
-const drBoundsOverlap = (a, b) => a.minX <= b.maxX && a.maxX >= b.minX && a.minY <= b.maxY && a.maxY >= b.minY;
-const drPartsArea = parts => parts.reduce((total, rings) => total + Math.abs(drSignedArea(rings[0])) - rings.slice(1).reduce((sum, ring) => sum + Math.abs(drSignedArea(ring)), 0), 0);
-const drMaskSourceIds = record => record.feature.sourceIds || [drSourceId(record.feature)];
-
-function drWaterLineMask(record) {
-  const radius = Math.max(.1, record.width) / 2, parts = [];
-  // These masks use physical source width. Their construction happens once per
-  // map, and does not change with zoom, visible layers or the selection halo.
-  for (const path of record.rings) {
-    for (let index = 1; index < path.length; index++) {
-      const a = path[index - 1], b = path[index], length = Math.hypot(b.x - a.x, b.y - a.y);
-      if (!length) continue;
-      const nx = -(b.y - a.y) / length * radius, ny = (b.x - a.x) / length * radius;
-      const ring = [{ x: a.x + nx, y: a.y + ny }, { x: b.x + nx, y: b.y + ny }, { x: b.x - nx, y: b.y - ny }, { x: a.x - nx, y: a.y - ny }];
-      ring.push({ ...ring[0] }); parts.push([ring]);
-    }
-    for (const point of path) {
-      const ring = Array.from({ length: 16 }, (_, index) => ({ x: point.x + Math.cos(index / 16 * Math.PI * 2) * radius, y: point.y + Math.sin(index / 16 * Math.PI * 2) * radius }));
-      ring.push({ ...ring[0] }); parts.push([ring]);
-    }
-  }
-  return parts.length ? { feature: record.feature, parts, bounds: drBounds(parts.flat(2)) } : null;
-}
-
-function drCutUrbanFillers(records, masks, metersPerUnit) {
-  const priority = { dense: 0, urban: 1, suburb: 2 };
-  const ordered = [...records].sort((a, b) => priority[a.biome] - priority[b.biome] || String(a.feature.id).localeCompare(String(b.feature.id)));
-  const clipped = [], previous = [];
-  const report = { inputFeatures: records.length, outputFeatures: 0, removedFeatures: 0, sourceMaskCount: masks.length, beforeArea: records.reduce((sum, record) => sum + drPartsArea(record.parts), 0), afterArea: 0 };
-  for (const record of ordered) {
-    const relevant = masks.filter(mask => drBoundsOverlap(record.bounds, mask.bounds));
-    const occupied = previous.filter(mask => drBoundsOverlap(record.bounds, mask.bounds));
-    const parts = polygonDifference(record.parts, [...relevant, ...occupied].flatMap(mask => mask.parts));
-    if (!parts.length) continue;
-    const feature = { ...record.feature, geometry: 'polygon', urbanFiller: true, parts, rings: parts[0], points: parts[0][0],
-      provenance: { ...record.feature.provenance, sourceZoneExclusion: true, fillOnlyUnzoned: true, exclusionStage: 'after-zone-fusion',
-        maskSourceIds: [...new Set(relevant.flatMap(drMaskSourceIds).filter(Boolean))].sort() } };
-    const cached = drCache(feature, record.group, 'landscape', metersPerUnit, clipped.length);
-    if (!cached) continue;
-    clipped.push(cached); previous.push(cached); report.afterArea += drPartsArea(parts);
-  }
-  report.outputFeatures = clipped.length; report.removedFeatures = records.length - clipped.length;
-  return { records: clipped, report };
-}
-
 /** Call draw inside a world transform; view dimensions are CSS screen pixels. */
 function createDetailRenderer(world) {
   const metersPerUnit = world.metersPerUnit || 5;
   const groups = [['roads', 'road'], ['buildings', 'building'], ['areas', 'area'], ['rivers', 'river'], ['lakes', 'lake'], ['details', 'detail']];
   const inputFeatures = groups.reduce((sum, [key]) => sum + (world[key]?.length || 0), 0);
-  const filteredFeatures = groups.reduce((sum, [key, group]) => sum + (world[key] || []).filter(feature => !shouldRenderFeature(feature, group)).length, 0);
-  const cache = (features, group) => (features || []).filter(feature => shouldRenderFeature(feature, group)).map((feature, index) => drCache(feature, group, mapFeatureLayer(feature, group), metersPerUnit, index)).filter(Boolean);
+  const filteredFeatures = groups.reduce((sum, [key, group]) => sum + (world[key] || []).filter(feature => !drPresentFeature(feature, group)).length, 0);
+  const cache = (features, group) => (features || []).filter(feature => drPresentFeature(feature, group)).map((feature, index) => drCache(feature, group, drLayer(feature, group), metersPerUnit, index)).filter(Boolean);
   const nativeRoads = new Map((world.roads || []).filter(feature => shouldRenderFeature(feature, 'road')).map((feature, index) => {
     const road = feature.id ? feature : { ...feature, id: `road-${index}` };
     return [road.id, road];
   }));
-  const buildings = cache(world.buildings, 'building');
+  const buildingAssignments = createBuildingAssignments(world);
+  const buildings = cache(buildingAssignments.features, 'building');
   const detailSources = cache(world.details, 'detail');
   const coalescedDetails = detailSources.filter(record => {
     const road = record.layer === 'roads' && nativeRoads.get(record.feature.id);
@@ -2678,30 +2106,17 @@ function createDetailRenderer(world) {
   const waterAreas = drMergeWaterPolygons(waterPolygons).map((feature, index) => drCache({ ...feature, geometry: 'polygon', kind: feature.kind || feature.type || 'water' }, 'detail', 'water', metersPerUnit, index));
   const details = [...coalescedDetails.filter(record => !(record.layer === 'power' && record.geometry === 'line') && !(record.layer === 'roads' && record.geometry === 'line') && !(record.layer === 'water' && record.geometry !== 'point')), ...cache(powerNetwork.features, 'detail')];
   const areas = sourceAreas.filter(record => record.layer !== 'water');
-  const mappedZones = [...areas, ...details].filter(record => record.layer === 'landscape' && record.geometry === 'polygon' && !record.outlineOnly);
-  const footprintZones = buildings.flatMap((building, index) => {
-    const biome = mapZoneBiome(building.feature);
-    if (!biome) return [];
-    if (mappedZones.some(zone => zone.biome === biome && (drSameFootprint(zone, building)
-      || building.parts[0][0].every(point => drPartContains(zone, point.x, point.y))))) return [];
-    const record = drCache({ ...building.feature, footprintOnly: true }, 'zone', 'landscape', metersPerUnit, index);
-    return [record];
-  });
-  const generated = world.geographic === true || Array.isArray(world.bbox) ? buildGameplayBiomes(world, { deferOccupiedCuts: true }) : { features: [], report: {} };
-  const derivedZones = generated.features.map((feature, index) => drCache(feature, 'zone', 'landscape', metersPerUnit, index)).filter(Boolean);
-  const allZones = [...mappedZones, ...footprintZones, ...derivedZones];
-  const urbanFillers = allZones.filter(drUrbanFiller);
-  // Existing use/site zones keep their overlaps. City-density areas fill only
-  // what remains after those actual zones and their gameplay unions are final.
-  const groupedZones = groupNearbyZones(allZones.filter(record => !drUrbanFiller(record)).map(record => ({ ...record.feature, biome: record.biome, presentationGroup: record.group, footprintOnly: record.footprintOnly })), {
-    metersPerUnit, maxDistanceMeters: 35, blockers: waterSources.filter(record => record.geometry !== 'point' && !drDry(record.feature)).map(record => ({ ...record.feature, geometry: record.geometry, parts: record.parts, width: record.width })),
-  });
-  const existingZones = groupedZones.features.map((feature, index) => drCache(feature, feature.presentationGroup || 'zone', 'landscape', metersPerUnit, index)).filter(Boolean);
-  const physicalSites = [...details, ...sourceAreas].filter(record => record.geometry === 'polygon' && ['power', 'roads'].includes(record.layer));
-  const waterLineMasks = waterLines.filter(record => !drDry(record.feature)).map(drWaterLineMask).filter(Boolean);
-  const masks = [...existingZones.filter(record => !record.fallback), ...waterPolygons, ...physicalSites, ...waterLineMasks];
-  const clippedUrban = drCutUrbanFillers(urbanFillers, masks, metersPerUnit);
-  const landscapePolygons = [...existingZones, ...clippedUrban.records];
+  // Building purpose now carries the city information. Source urban/service
+  // polygons stay available to assignment inference but have no registry facet.
+  // Natural geometry is retained exactly; no density filler or plot fusion runs.
+  const landscapePolygons = [...areas, ...details].filter(record => record.layer === 'landscape' && record.geometry === 'polygon');
+  let fallbackCount = 0;
+  if ((world.geographic === true || Array.isArray(world.bbox)) && world.width > 0 && world.height > 0) {
+    const ring = [{ x: 0, y: 0 }, { x: world.width, y: 0 }, { x: world.width, y: world.height }, { x: 0, y: world.height }, { x: 0, y: 0 }];
+    const feature = { id: 'game-biome-wasteland', type: 'wasteland', biome: 'wasteland', geometry: 'polygon', points: ring, rings: [ring], derived: true, fallback: true,
+      sourceIds: [], provenance: { method: 'unmapped-ground-fallback', sourceIds: [] } };
+    landscapePolygons.push(drCache(feature, 'zone', 'landscape', metersPerUnit, 0)); fallbackCount = 1;
+  }
   const nonZoneAreas = areas.filter(record => record.layer !== 'landscape' || record.geometry !== 'polygon');
   const nonZoneDetails = details.filter(record => record.layer !== 'landscape' || record.geometry !== 'polygon');
   const roadPriority = { trail: 0, track: 1, street: 2, road: 3, highway: 4, railway: 5 };
@@ -2728,7 +2143,7 @@ function createDetailRenderer(world) {
   const roadClasses = Object.fromEntries(Object.keys(ROAD_CLASSES).map(key => [key, true]));
   const isEnabled = record => layers[record.layer] && (record.layer !== 'roads' || roadClasses[record.roadClass] !== false);
   const stats = { features: registry.length, inputFeatures, filteredFeatures, coalescedFeatures: detailSources.length - coalescedDetails.length,
-    sourceRoads: nativeRoads.size, sourceRailwayLines: roadSources.length - nativeRoads.size, displayRoads: roads.length, sourcePowerLines: powerSources.length, displayPowerLines: powerNetwork.features.length, sourceWaterLines: waterLines.length, displayWaterLines: rivers.length, sourceWaterAreas: waterPolygons.length, displayWaterAreas: waterAreas.length, generatedBiomes: generated.features.length, biomeGeneration: generated.report, zoneMerging: groupedZones.report, urbanFillerClipping: clippedUrban.report,
+    sourceRoads: nativeRoads.size, sourceRailwayLines: roadSources.length - nativeRoads.size, displayRoads: roads.length, sourcePowerLines: powerSources.length, displayPowerLines: powerNetwork.features.length, sourceWaterLines: waterLines.length, displayWaterLines: rivers.length, sourceWaterAreas: waterPolygons.length, displayWaterAreas: waterAreas.length, generatedBiomes: fallbackCount, biomeGeneration: { method: 'natural-landscape-only', generatedZones: fallbackCount }, zoneMerging: { inputFeatures: landscapePolygons.length, displayFeatures: landscapePolygons.length, mergedGroups: 0, joinedFeatures: 0, addedCorridors: 0 }, urbanFillerClipping: { inputFeatures: 0, outputFeatures: 0, removedFeatures: 0, sourceMaskCount: 0, beforeArea: 0, afterArea: 0 }, buildingAssignments: buildingAssignments.report,
     drawCount: 0, highlightDrawCount: 0, viewCandidates: 0, pickCandidates: 0, zoneCandidates: 0 };
   for (const layer of Object.keys(layers)) {
     stats[layer] = registry.filter(record => record.layer === layer).length;
@@ -2826,21 +2241,80 @@ function createDetailRenderer(world) {
     ctx.setLineDash([10 / zoom, 5 / zoom]); ctx.stroke(record.path); ctx.setLineDash([]);
   }
 
+  function paintBuildingIcon(ctx, record, zoom) {
+    const assignment = record.feature.gameplayAssignment, b = record.bounds;
+    if (!assignment || zoom < 3.5 || Math.min(b.maxX - b.minX, b.maxY - b.minY) * zoom < 17) return;
+    ctx.save(); ctx.clip(record.path, record.fillRule);
+    ctx.translate(record.labelPoint.x, record.labelPoint.y); ctx.scale(1 / zoom, 1 / zoom);
+    const icon = assignment.icon || 'house';
+    ctx.strokeStyle = '#25352c'; ctx.fillStyle = '#25352c'; ctx.lineWidth = 1.4; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    ctx.beginPath();
+    if (icon === 'house') {
+      ctx.moveTo(-5, 0); ctx.lineTo(0, -4); ctx.lineTo(5, 0); ctx.moveTo(-3.5, -1); ctx.lineTo(-3.5, 4); ctx.lineTo(3.5, 4); ctx.lineTo(3.5, -1); ctx.moveTo(0, 4); ctx.lineTo(0, 1);
+    } else if (icon === 'shop') {
+      ctx.rect(-4, -1, 8, 5); ctx.moveTo(-5, -1); ctx.lineTo(-3.5, -4); ctx.lineTo(3.5, -4); ctx.lineTo(5, -1); ctx.moveTo(1, 4); ctx.lineTo(1, 1);
+    } else if (icon === 'medical') {
+      ctx.moveTo(-4, 0); ctx.lineTo(4, 0); ctx.moveTo(0, -4); ctx.lineTo(0, 4); ctx.lineWidth = 2.7;
+    } else if (icon === 'school') {
+      ctx.rect(-4, -1.5, 8, 5.5); ctx.moveTo(-5, -1.5); ctx.lineTo(0, -4); ctx.lineTo(5, -1.5); ctx.moveTo(-1.5, 4); ctx.lineTo(-1.5, 1); ctx.lineTo(1.5, 1); ctx.lineTo(1.5, 4);
+    } else if (icon === 'industry') {
+      ctx.moveTo(-5, 4); ctx.lineTo(-5, -1); ctx.lineTo(-1.5, 1); ctx.lineTo(-1.5, -1); ctx.lineTo(2, 1); ctx.lineTo(2, -4); ctx.lineTo(4, -4); ctx.lineTo(4, 4); ctx.closePath();
+    } else if (icon === 'storage') {
+      ctx.rect(-4.5, -4, 9, 8); ctx.moveTo(-4.5, -1); ctx.lineTo(4.5, -1); ctx.moveTo(0, -1); ctx.lineTo(0, 4);
+    } else if (icon === 'plane') {
+      ctx.moveTo(0, -5); ctx.lineTo(0, 5); ctx.moveTo(-5, 0); ctx.lineTo(0, -2); ctx.lineTo(5, 0); ctx.moveTo(-2.5, 4); ctx.lineTo(0, 2.5); ctx.lineTo(2.5, 4);
+    } else if (icon === 'food') {
+      ctx.moveTo(-3, -4); ctx.lineTo(-3, 4); ctx.moveTo(-5, -4); ctx.lineTo(-5, -1); ctx.lineTo(-1, -1); ctx.lineTo(-1, -4); ctx.moveTo(3, -4); ctx.lineTo(3, 4);
+    } else if (icon === 'bed') {
+      ctx.moveTo(-5, -2); ctx.lineTo(-5, 4); ctx.moveTo(5, 0); ctx.lineTo(5, 4); ctx.moveTo(-5, 2); ctx.lineTo(5, 2); ctx.rect(-4, -1, 3, 3); ctx.moveTo(-1, 0); ctx.lineTo(4, 0);
+    } else if (icon === 'civic') {
+      ctx.moveTo(-5, -2); ctx.lineTo(0, -5); ctx.lineTo(5, -2); ctx.moveTo(-5, 4); ctx.lineTo(5, 4); for (const x of [-3, 0, 3]) { ctx.moveTo(x, -1); ctx.lineTo(x, 3); }
+    } else if (icon === 'ruin') {
+      ctx.moveTo(-5, 4); ctx.lineTo(-4, -3); ctx.lineTo(-1, -1); ctx.lineTo(1, -4); ctx.lineTo(4, -2); ctx.lineTo(5, 4); ctx.moveTo(-1, -1); ctx.lineTo(1, 1); ctx.lineTo(-1, 4);
+    } else {
+      ctx.moveTo(-4, 4); ctx.lineTo(2, -2); ctx.moveTo(1, -4); ctx.lineTo(1, -1); ctx.lineTo(4, -1); ctx.moveTo(-4, 4); ctx.lineTo(-2, 4);
+    }
+    ctx.stroke(); ctx.restore();
+  }
+
+  function paintBuildingLabels(ctx, visible, view) {
+    if (view.zoom < 4 || typeof ctx.fillText !== 'function') return;
+    const boxes = [], candidates = visible.filter(record => record.group === 'building' && record.feature.gameplayAssignment
+      && !['category.housing', 'category.ruin'].includes(record.feature.gameplayAssignment.categoryId));
+    const priority = record => record.feature.gameplayAssignment.roleOrigin === 'mapped' ? 0 : record.feature.gameplayAssignment.roleOrigin === 'context' ? 1 : 2;
+    candidates.sort((a, b) => priority(a) - priority(b) || a.hash - b.hash);
+    for (const record of candidates) {
+      if (boxes.length >= 12) break;
+      const { feature, bounds, labelPoint } = record, assignment = feature.gameplayAssignment;
+      if (Math.max(bounds.maxX - bounds.minX, bounds.maxY - bounds.minY) * view.zoom < 26) continue;
+      const text = assignment.roleName.length > 30 ? assignment.roleName.slice(0, 29) + '…' : assignment.roleName;
+      const x = labelPoint.x, y = bounds.maxY + 8 / view.zoom;
+      const screenX = (x - view.cameraX) * view.zoom + view.width / 2, screenY = (y - view.cameraY) * view.zoom + view.height / 2;
+      if (screenX < 25 || screenX > view.width - 25 || screenY < 20 || screenY > view.height - 20) continue;
+      const width = text.length * 5.2, box = { x: screenX - width / 2 - 4, y: screenY - 4, width: width + 8, height: 15 };
+      if (boxes.some(other => box.x < other.x + other.width && box.x + box.width > other.x && box.y < other.y + other.height && box.y + box.height > other.y)) continue;
+      ctx.save(); ctx.translate(x, y); ctx.scale(1 / view.zoom, 1 / view.zoom);
+      ctx.font = '600 9px "Segoe UI", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      ctx.strokeStyle = 'rgba(191,181,147,.94)'; ctx.lineWidth = 3; ctx.strokeText(text, 0, 0); ctx.fillStyle = '#263b30'; ctx.fillText(text, 0, 0); ctx.restore();
+      boxes.push(box);
+    }
+  }
+
   function paintBuilding(ctx, record, zoom, hoveredId) {
     const { feature, path, bounds: b, center, longest } = record;
+    const assignment = feature.gameplayAssignment;
     const high = zoom >= 2.5, hovered = hoveredId === feature.id;
-    const ruin = feature.ruins === true || feature.type === 'ruins';
-    const colors = ['#a39f7c', '#b4a583', '#8b9675', '#b7b18d', '#9b9b7c'];
-    const roof = ruin ? '#9a9476' : colors[record.hash % colors.length];
+    const ruin = assignment?.condition === 'ruined' || feature.ruins === true || feature.type === 'ruins';
+    const roof = assignment?.roof || assignment?.color || assignment?.fill || '#ad9f79';
     if (high) {
       ctx.save(); ctx.translate(.55, .8);
       ctx.fillStyle = 'rgba(39,47,32,.3)'; ctx.fill(path, record.fillRule); ctx.restore();
       const gradient = ctx.createLinearGradient(b.minX, b.minY, b.maxX, b.maxY);
-      gradient.addColorStop(0, roof); gradient.addColorStop(.5, roof); gradient.addColorStop(1, '#74785b');
+      gradient.addColorStop(0, roof); gradient.addColorStop(.58, assignment?.color || roof); gradient.addColorStop(1, assignment?.stroke || '#59614c');
       ctx.fillStyle = gradient;
-    } else ctx.fillStyle = '#80876a';
+    } else ctx.fillStyle = assignment?.color || assignment?.fill || roof;
     ctx.fill(path, record.fillRule);
-    ctx.strokeStyle = hovered ? '#eff0be' : '#3f503c'; ctx.lineWidth = high ? Math.max(.26, .9 / zoom) : .8 / zoom;
+    ctx.strokeStyle = hovered ? '#eff0be' : assignment?.stroke || '#3f503c'; ctx.lineWidth = high ? Math.max(.26, .9 / zoom) : .8 / zoom;
     if (ruin) ctx.setLineDash([.7, .4]);
     ctx.stroke(path); ctx.setLineDash([]);
     if (!high) return;
@@ -2871,6 +2345,7 @@ function createDetailRenderer(world) {
       ctx.strokeRect(-diagonal * .28, -diagonal * .22, diagonal * .56, diagonal * .44);
     }
     ctx.restore();
+    paintBuildingIcon(ctx, record, zoom);
   }
 
   function paintDetail(ctx, record, zoom, hoveredId) {
@@ -3058,6 +2533,7 @@ function createDetailRenderer(world) {
       else paintDetail(ctx, record, view.zoom, view.hoveredId);
     }
     paintRoadLabels(ctx, visibleRoads, view);
+    paintBuildingLabels(ctx, visible, view);
     ctx.restore();
   }
 
@@ -3094,14 +2570,14 @@ function createDetailRenderer(world) {
     const zone = !record.outlineOnly && record.layer === 'landscape' && record.geometry === 'polygon' && (mapZoneBiome(feature) || ['residential', 'industrial', 'commercial', 'retail'].includes(record.biome));
     const kind = record.outlineOnly ? 'settlement_boundary' : zone ? `${record.biome}_area` : record.group === 'building' ? feature.ruins ? 'ruins' : 'building' : record.group === 'road' ? 'road' : record.group === 'area' ? feature.type : record.group === 'river' ? 'river' : record.group === 'lake' ? 'lake' : feature.kind;
     const roadDescription = (ROAD_CLASSES[record.roadClass]?.name || 'Дорога') + ((feature.members || [feature]).some(member => member.tags?.railway === 'abandoned') ? ' · По бывшей железной дороге' : '');
-    return { id: feature.id, key: record.key, sourceId: drSourceId(feature), layer: record.layer, kind, biome: record.biome, ...drTypeMetadata(record),
+    return { id: feature.id, key: record.key, sourceId: drSourceId(feature), layer: record.layer, kind, biome: record.biome, ...drTypeMetadata(record), ...drRoleMetadata(record),
       biomeName: record.biome ? drBiomeNames[record.biome] || drFeatureLabel(feature, record.group) : null,
       geometry: record.geometry, footprintOnly: record.footprintOnly === true, outlineOnly: record.outlineOnly, derived: feature.derived === true, urbanFiller: feature.urbanFiller === true, fallback: record.fallback, provenance: feature.provenance ? structuredClone(feature.provenance) : null,
       roadClass: record.roadClass, roadClassName: ROAD_CLASSES[record.roadClass]?.name || null,
       sourceIds: [...(feature.sourceIds || [drSourceId(feature)])], memberIds: [...(feature.memberIds || [feature.id])],
-      name: drFeatureLabel(feature, record.group), x: point.x, y: point.y, source: feature, members: (feature.members || []).map(member => structuredClone(member)),
+      name: drFeatureLabel(feature, record.group), x: point.x, y: point.y, source: record.group === 'building' ? structuredClone(feature) : feature, members: (feature.members || []).map(member => structuredClone(member)),
       paths: record.geometry === 'line' ? record.rings.map(path => path.map(point => ({ ...point }))) : undefined, parts: record.geometry === 'polygon' ? record.parts.map(part => part.map(ring => ring.map(point => ({ ...point })))) : undefined,
-      description: feature.derived ? `${drBiomeNames[record.biome] || 'Игровая зона'} · Игровая разметка местности` : record.outlineOnly ? 'Граница населённого пункта' : record.group === 'building' ? [feature.address, drNames[feature.type], feature.levels ? `${feature.levels} эт.` : ''].filter(Boolean).join(' · ') : record.group === 'road' ? roadDescription : record.footprintOnly ? `${drBiomeNames[record.biome]} · По контуру здания` : feature.tags?.railway === 'abandoned' ? 'Заброшенная железная дорога' : record.layer === 'water' && drDry(feature) ? 'Сезонное русло' : drNames[kind] || drFeatureLabel(feature, record.group) };
+      description: feature.derived ? `${drBiomeNames[record.biome] || 'Игровая зона'} · Игровая разметка местности` : record.outlineOnly ? 'Граница населённого пункта' : record.group === 'building' ? [feature.gameplayAssignment?.roleName, feature.address, feature.levels ? `${feature.levels} эт.` : ''].filter(Boolean).join(' · ') : record.group === 'road' ? roadDescription : record.footprintOnly ? `${drBiomeNames[record.biome]} · По контуру здания` : feature.tags?.railway === 'abandoned' ? 'Заброшенная железная дорога' : record.layer === 'water' && drDry(feature) ? 'Сезонное русло' : drNames[kind] || drFeatureLabel(feature, record.group) };
   }
 
   /** All physical zone memberships coexist, including zones hidden from view. */
@@ -3219,7 +2695,7 @@ function createDetailRenderer(world) {
       sourceIds: [...(record.feature.sourceIds || [drSourceId(record.feature)])], memberIds: [...(record.feature.memberIds || [record.feature.id])],
       sourceTypes: [...(record.feature.sourceTypes || [record.feature.type || record.feature.kind].filter(Boolean))], names: [...(record.feature.names || [record.feature.name].filter(Boolean))], merged: record.feature.merged === true,
       roadClass: record.roadClass, roadClassName: ROAD_CLASSES[record.roadClass]?.name || null,
-      ...drTypeMetadata(record),
+      ...drTypeMetadata(record), ...drRoleMetadata(record),
       kind: describe(record).kind, name: drFeatureLabel(record.feature, record.group), geometry: record.geometry,
       points: record.points.map(point => ({ ...point })), rings: record.geometry === 'polygon' ? record.parts[0].map(ring => ring.map(point => ({ ...point }))) : undefined,
       parts: record.geometry === 'polygon' ? record.parts.map(part => part.map(ring => ring.map(point => ({ ...point })))) : undefined,
@@ -3850,6 +3326,7 @@ let overviewMarkers = createOverviewMarkers(world);
 const layers = { terrain: true, landscape: true, water: true, roads: true, power: true, buildings: true, details: true };
 const roadClasses = Object.fromEntries(Object.keys(ROAD_CLASSES).map(key => [key, true]));
 let detailRenderer = createDetailRenderer(world);
+let typedBuildingSources = new Set();
 let hoveredObject = null;
 const maximumZoom = () => 24;
 const greenPalette = { plain: '#a7ac8d', forest: '#6e8163', water: '#354d49', swamp: '#7f927c', hill: '#a8a38a', road: '#aaa88e', bridge: '#b7b39b' };
@@ -3914,7 +3391,7 @@ function toast(message) {
 
 function displayedPois() {
   if (world.geographic && camera.zoom <= OVERVIEW_MAX_ZOOM) return overviewMarkers;
-  return world.pois.filter(p => !world.geographic || !overviewMarkers.some(marker => marker.sourceId === (p.sourceId || p.id)));
+  return world.pois.filter(p => !typedBuildingSources.has(p.sourceId || p.id) && (!world.geographic || !overviewMarkers.some(marker => marker.sourceId === (p.sourceId || p.id))));
 }
 function poiEnabled(poi) { return shouldRenderFeature(poi, 'poi') && (poi.overview ? layers.landscape : layers[mapFeatureLayer(poi, 'poi')]); }
 function pickPoi(position, radius = 35) {
@@ -4017,8 +3494,29 @@ function syncLayerUI() {
   $('road-classes').classList.toggle('is-disabled', !layers.roads);
   if (!world.geographic && landscapeBackdrop) $('count-landscape').textContent = 'биомы';
   terrainCanvas.hidden = !layers.terrain;
+  syncBuildingLegend(features);
 }
 
+function syncBuildingLegend(features = detailRenderer.getFeatures()) {
+  const counts = new Map();
+  typedBuildingSources = new Set(features.filter(feature => feature.gameplayAssignment).flatMap(feature => [feature.sourceId || feature.id, ...(feature.gameplayAssignment.evidenceIds || [])]));
+  for (const feature of features) if (feature.gameplayAssignment) counts.set(feature.gameplayAssignment.categoryId, (counts.get(feature.gameplayAssignment.categoryId) || 0) + 1);
+  const rows = Object.values(BUILDING_CATEGORIES).map(category => {
+    const row = document.createElement('div'); row.className = 'building-type-row'; row.setAttribute('role', 'listitem'); row.dataset.categoryId = category.id;
+    const swatch = document.createElement('span'); swatch.className = 'building-type-swatch'; swatch.style.backgroundColor = category.color || category.fill; swatch.setAttribute('aria-hidden', 'true');
+    const name = document.createElement('span'); name.className = 'building-type-name'; name.textContent = category.name;
+    const count = document.createElement('span'); count.className = 'building-type-count'; count.textContent = counts.get(category.id) || 0;
+    row.append(swatch, name, count); return row;
+  });
+  $('building-type-legend').replaceChildren(...rows);
+}
+function closeBuildingTypes() { $('building-types-panel').hidden = true; $('building-types-button').setAttribute('aria-expanded', 'false'); }
+$('building-types-button').addEventListener('click', () => {
+  const open = $('building-types-panel').hidden;
+  closeLayers(); $('maps-close').click(); $('help-close').click(); hideObjectCard();
+  $('building-types-panel').hidden = !open; $('building-types-button').setAttribute('aria-expanded', String(open));
+});
+$('building-types-close').addEventListener('click', closeBuildingTypes);
 function closeLayers() { $('layers-panel').hidden = true; $('layers-button').setAttribute('aria-expanded', 'false'); }
 for (const key of Object.keys(layers)) $('layer-' + key).addEventListener('change', e => {
   layers[key] = e.target.checked; detailRenderer.setLayers(layers);
@@ -4031,7 +3529,7 @@ for (const key of Object.keys(roadClasses)) $('road-class-' + key).addEventListe
 });
 $('layers-button').addEventListener('click', () => {
   const open = $('layers-panel').hidden;
-  $('maps-close').click(); $('help-close').click(); hideObjectCard();
+  closeBuildingTypes(); $('maps-close').click(); $('help-close').click(); hideObjectCard();
   $('layers-panel').hidden = !open; $('layers-button').setAttribute('aria-expanded', String(open));
 });
 $('layers-close').addEventListener('click', closeLayers);
@@ -4039,6 +3537,7 @@ $('layers-close').addEventListener('click', closeLayers);
 function switchMap(map) {
   const next = map ? createRealWorld(map) : createWorld();
   world = next; currentMap = map;
+  closeBuildingTypes();
   overviewMarkers = createOverviewMarkers(world);
   detailRenderer = createDetailRenderer(world);
   objectCacheState = null; objectRevision++;
@@ -4059,24 +3558,30 @@ function hideObjectCard() {
   $('object-card').hidden = true;
 }
 
-function inspectObject(point, screenX, screenY, touch = false) {
-  const feature = detailRenderer.pick(point.x, point.y, 5 / camera.zoom);
+function inspectObject(point, screenX, screenY, touch = false, pickedFeature = null) {
+  const feature = pickedFeature || detailRenderer.pick(point.x, point.y, 5 / camera.zoom);
   if (!feature) { hideObjectCard(); return; }
   hoveredObject = feature;
   hoveredPoi = null;
   const names = { settlement_boundary: 'ГРАНИЦА ПОСЕЛЕНИЯ', building: 'ЗДАНИЕ', road: 'ДОРОГА', fence: 'ОГРАДА', wall: 'СТЕНА', gate: 'ВОРОТА', railway: 'ЖЕЛЕЗНАЯ ДОРОГА', parking: 'ПАРКОВКА', pitch: 'СПОРТПЛОЩАДКА', garden: 'САД', pool: 'БАССЕЙН', tree: 'ДЕРЕВО', bench: 'СКАМЕЙКА', picnic_table: 'МЕСТО ДЛЯ ПРИВАЛА', fountain: 'ФОНТАН', well: 'КОЛОДЕЦ', ruins: 'РУИНЫ', shelter: 'УКРЫТИЕ', cemetery: 'КЛАДБИЩЕ', park: 'ПАРК', spring: 'РОДНИК', quarry: 'КАРЬЕР', playground: 'ДЕТСКАЯ ПЛОЩАДКА', cattle_grid: 'РЕШЁТКА НА ДОРОГЕ', runway: 'ВЗЛЁТНАЯ ПОЛОСА', taxiway: 'РУЛЁЖНАЯ ДОРОЖКА', apron: 'ПЕРРОН АЭРОДРОМА', aerodrome: 'АЭРОДРОМ', river: 'ВОДОТОК', lake: 'ОЗЕРО', water: 'ВОДОЁМ', forest: 'ЛЕС', swamp: 'БОЛОТО', plain: 'УЧАСТОК МЕСТНОСТИ', boundary: 'ГРАНИЦА' };
   const zoneNames = { residential: 'ЖИЛАЯ ЗОНА', industrial: 'ПРОМЫШЛЕННАЯ ЗОНА', commercial: 'КОММЕРЧЕСКАЯ ЗОНА', retail: 'ТОРГОВАЯ ЗОНА', farmland: 'ПОЛЯ', sand: 'ПЕСКИ', rock: 'СКАЛЫ', scrub: 'КУСТАРНИК', wetland: 'БОЛОТО' };
   const layerNames = { landscape: 'ЛАНДШАФТ', water: 'ВОДА', roads: 'ДОРОГА', power: 'ЭЛЕКТРОСЕТЬ', buildings: 'ЗДАНИЕ' };
-  $('object-kind').textContent = (feature.roadClassName && feature.roadClassName.toUpperCase()) || names[feature.kind] || (feature.layer === 'landscape' && feature.biomeName ? feature.biomeName.toUpperCase() : zoneNames[feature.biome || feature.kind]) || layerNames[feature.layer] || 'ОБЪЕКТ';
-  $('object-name').textContent = feature.name || (feature.kind === 'building' ? 'Безымянное здание' : 'Объект на карте');
+  const assignment = feature.gameplayAssignment;
+  const card = $('object-card');
+  card.classList.toggle('is-building', !!assignment);
+  card.style.setProperty('--object-type-color', assignment?.color || assignment?.category?.color || '#bccca4');
+  card.dataset.roleId = assignment?.roleId || '';
+  $('object-kind').textContent = assignment?.categoryName?.toUpperCase() || (feature.roadClassName && feature.roadClassName.toUpperCase()) || names[feature.kind] || (feature.layer === 'landscape' && feature.biomeName ? feature.biomeName.toUpperCase() : zoneNames[feature.biome || feature.kind]) || layerNames[feature.layer] || 'ОБЪЕКТ';
+  $('object-name').textContent = assignment?.roleName || feature.name || (feature.kind === 'building' ? 'Безымянное здание' : 'Объект на карте');
   const source = feature.source || {};
   const address = typeof source.address === 'string' ? source.address : source.address ? Object.values(source.address).join(', ') : '';
-  const extra = [feature.description, address, source.levels ? `${source.levels} эт.` : '', source.surface ? `Покрытие: ${source.surface}` : ''].filter(Boolean).flatMap(text => String(text).split(' · '));
-  $('object-meta').textContent = [...new Set(extra)].filter(text => text !== feature.name).join(' · ') || (feature.derived ? 'Игровая зона' : world.geographic ? 'Нанесён на карту OpenStreetMap' : 'Объект игровой карты');
+  const buildingDescription = assignment ? [source.name, assignment.condition === 'ruined' ? 'Руины' : assignment.condition === 'abandoned' ? 'Заброшено' : '', assignment.roleOrigin === 'gameplay' ? 'Игровое назначение' : assignment.roleOrigin === 'context' ? 'Назначение по окружению' : 'Назначение по меткам карты'].filter(Boolean).join(' · ') : feature.description;
+  const extra = [buildingDescription, address, source.levels ? `${source.levels} эт.` : '', source.surface ? `Покрытие: ${source.surface}` : ''].filter(Boolean).flatMap(text => String(text).split(' · '));
+  $('object-meta').textContent = [...new Set(extra)].filter(text => text !== (assignment?.roleName || feature.name)).join(' · ') || (feature.derived ? 'Игровая зона' : world.geographic ? 'Нанесён на карту OpenStreetMap' : 'Объект игровой карты');
   const zones = detailRenderer.zonesAt(point.x, point.y);
   if (zones.length) $('object-meta').textContent += `\nБиомы: ${[...new Set(zones.map(zone => zone.biomeName || zone.name))].join(' + ')}`;
-  if (feature.typeName) $('object-meta').textContent += `\nИгровой тип: ${feature.typeName}`;
-  const profiles = collectResourceProfiles(feature, zones);
+  if (feature.typeName && !assignment) $('object-meta').textContent += `\nИгровой тип: ${feature.typeName}`;
+  const profiles = collectResourceProfiles(assignment || feature, zones);
   if (profiles.length) $('object-meta').textContent += `\nПрофили ресурсов: ${profiles.map(id => RESOURCE_PROFILES[id]?.name || id).join(', ')}`;
   if (feature.derived && feature.provenance?.method?.startsWith('building-density-')) $('object-meta').textContent += '\nСвободная территория среди застройки.';
   if (feature.footprintOnly) $('object-meta').textContent += '\nЗона в пределах нанесённого контура здания.';
@@ -4104,6 +3609,7 @@ function downloadJSON(map) {
   a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 $('maps-button').addEventListener('click', () => {
+  closeBuildingTypes();
   hideObjectCard();
   closeLayers();
   $('maps-panel').hidden = !$('maps-panel').hidden;
@@ -4158,7 +3664,7 @@ $('cancel-button').addEventListener('click', cancelRoute);
 $('center-button').addEventListener('click', () => { hideObjectCard(); following = true; camera.x = player.x; camera.y = player.y; updateUI(); });
 $('reset-button').addEventListener('click', reset);
 $('speed-button').addEventListener('click', () => { speed = speed === 1 ? 3 : 1; $('speed-button').textContent = `${speed}×`; toast(`Скорость путешествия: ${speed}×`); });
-$('help-button').addEventListener('click', () => { closeLayers(); hideObjectCard(); $('help-panel').hidden = !$('help-panel').hidden; $('help-button').setAttribute('aria-expanded', String(!$('help-panel').hidden)); $('maps-close').click(); });
+$('help-button').addEventListener('click', () => { closeLayers(); closeBuildingTypes(); hideObjectCard(); $('help-panel').hidden = !$('help-panel').hidden; $('help-button').setAttribute('aria-expanded', String(!$('help-panel').hidden)); $('maps-close').click(); });
 $('help-close').addEventListener('click', () => { $('help-panel').hidden = true; $('help-button').setAttribute('aria-expanded', 'false'); });
 function zoomBy(factor, point = { x: vw / 2, y: vh / 2 }) {
   const before = screenToWorld(point.x, point.y);
@@ -4187,9 +3693,11 @@ canvas.addEventListener('pointerdown', e => {
   canvas.classList.add('is-grabbing');
 });
 canvas.addEventListener('pointermove', e => {
-  hover = screenToWorld(e.clientX, e.clientY); hoveredPoi = pickPoi(hover);
+  hover = screenToWorld(e.clientX, e.clientY);
+  const pickedFeature = !pointer && !pinch && camera.zoom >= 2.5 ? detailRenderer.pick(hover.x, hover.y, 5 / camera.zoom) : null;
+  hoveredPoi = pickedFeature?.gameplayAssignment ? null : pickPoi(hover);
   if (!pointer && !pinch) {
-    if (hoveredPoi) hideObjectCard(); else inspectObject(hover, e.clientX, e.clientY);
+    if (hoveredPoi) hideObjectCard(); else inspectObject(hover, e.clientX, e.clientY, false, pickedFeature);
   }
   canvas.style.cursor = pointer?.moved ? 'grabbing' : hoveredPoi || hoveredObject ? 'pointer' : 'crosshair';
   if (touches.has(e.pointerId)) touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
@@ -4226,7 +3734,7 @@ addEventListener('keydown', e => {
   if ([' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) e.preventDefault();
   if (e.repeat && [' ', 'f', 'F', 'r', 'R', 'b', 'B'].includes(e.key)) return;
   if (e.key === ' ') togglePause();
-  if (e.key === 'Escape') { if (!$('help-panel').hidden) $('help-close').click(); else if (!$('maps-panel').hidden) $('maps-close').click(); else if (!$('layers-panel').hidden) closeLayers(); else cancelRoute(); }
+  if (e.key === 'Escape') { if (!$('help-panel').hidden) $('help-close').click(); else if (!$('maps-panel').hidden) $('maps-close').click(); else if (!$('layers-panel').hidden) closeLayers(); else if (!$('building-types-panel').hidden) closeBuildingTypes(); else cancelRoute(); }
   if (e.key.toLowerCase() === 'f') $('center-button').click();
   if (e.key.toLowerCase() === 'r') reset();
   if (e.key.toLowerCase() === 'b') focusBuildings();
@@ -4476,8 +3984,8 @@ window.__DAY_NEXT__ = {
   getOverviewMarkers: () => overviewMarkers.map(marker => ({ ...structuredClone(marker), visible: world.geographic && camera.zoom <= OVERVIEW_MAX_ZOOM && poiEnabled(marker) })),
   getFeatures: () => detailRenderer.getFeatures(),
   getRenderStats: () => ({ ...renderStats, meanFrameMs: renderStats.totalFrameMs / Math.max(1, renderStats.frames), cachePixels: objectCache.width * objectCache.height, cacheBytes: objectCache.width * objectCache.height * 4, renderer: detailRenderer.getStats() }),
-  getTypeCatalogs: () => structuredClone({ buildingTypes: BUILDING_TYPES, biomeTypes: BIOME_TYPES, resourceProfiles: RESOURCE_PROFILES, resourceKinds: RESOURCE_KINDS }),
-  getResourceCandidatesAt: (x, y) => collectResourceCandidates(detailRenderer.pick(x, y, 1), detailRenderer.zonesAt(x, y)),
+  getTypeCatalogs: () => structuredClone({ buildingTypes: BUILDING_TYPES, buildingRoles: BUILDING_ROLES, buildingCategories: BUILDING_CATEGORIES, biomeTypes: BIOME_TYPES, resourceProfiles: RESOURCE_PROFILES, resourceKinds: RESOURCE_KINDS }),
+  getResourceCandidatesAt: (x, y) => { const feature = detailRenderer.pick(x, y, 1); return collectResourceCandidates(feature?.gameplayAssignment || feature, detailRenderer.zonesAt(x, y)); },
 };
 log('Невада. На карте — следы прежней жизни.', true); updateMapDetails(); updateUI();
 function frame(now) {

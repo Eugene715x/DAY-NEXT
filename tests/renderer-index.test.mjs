@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createDetailRenderer } from '../detail-renderer.js';
-import { polygonIntersection } from '../polygon-geometry.js';
 
 globalThis.Path2D = class { moveTo() {} lineTo() {} closePath() {} ellipse() {} };
 const ring = (x1, y1, x2, y2) => [{ x: x1, y: y1 }, { x: x2, y: y1 }, { x: x2, y: y2 }, { x: x1, y: y2 }, { x: x1, y: y1 }];
@@ -11,15 +10,15 @@ test('spatial candidates include wide road strokes and giant zone holes outside 
   const outer = ring(0, 0, 10000, 10000), hole = ring(5000, 5000, 7000, 7000);
   const renderer = createDetailRenderer(world({
     roads: [{ id: 'wide-road', points: [{ x: 20, y: 50 }, { x: 350, y: 50 }], width: 800 }],
-    details: [{ id: 'whole-region', geometry: 'polygon', points: outer, rings: [outer, hole], tags: { landuse: 'residential' } }],
+    details: [{ id: 'whole-region', geometry: 'polygon', points: outer, rings: [outer, hole], tags: { natural: 'wood' } }],
   }));
   assert.equal(renderer.pick(100, 400, 0).id, 'wide-road', 'A wide stroke must be indexed across its painted width');
   assert.equal(renderer.pick(9000, 9000, 0).id, 'whole-region');
   assert.deepEqual(renderer.zonesAt(6000, 6000), [], 'A large indexed polygon must retain its hole');
-  assert.deepEqual(renderer.zonesAt(9000, 9000).map(zone => zone.biome), ['residential']);
+  assert.deepEqual(renderer.zonesAt(9000, 9000).map(zone => zone.biome), ['forest']);
   renderer.setLayers({ landscape: false });
   assert.equal(renderer.pick(9000, 9000), null);
-  assert.deepEqual(renderer.zonesAt(9000, 9000).map(zone => zone.biome), ['residential']);
+  assert.deepEqual(renderer.zonesAt(9000, 9000).map(zone => zone.biome), ['forest']);
 });
 
 test('power line visibility is independent while utility support markers are omitted', () => {
@@ -59,17 +58,24 @@ test('cached building and biome types remain distinct and cannot be mutated thro
   const renderer = createDetailRenderer(world({ buildings: [
     { id: 'unknown', points: ring(20, 20, 60, 60), tags: { building: 'yes' }, type: 'yes' },
     { id: 'clinic', points: ring(100, 100, 200, 200), tags: { building: 'yes', amenity: 'clinic' }, type: 'yes' },
-  ], details: [{ id: 'residential', geometry: 'polygon', points: ring(0, 0, 400, 400), tags: { landuse: 'residential' } }] }));
+  ], details: [{ id: 'forest', geometry: 'polygon', points: ring(0, 0, 400, 400), tags: { natural: 'wood' } }] }));
   const unknown = renderer.pick(40, 40);
   assert.equal(unknown.typeId, 'building.unknown');
   assert.deepEqual(unknown.resourceProfileIds, []);
+  assert(unknown.gameplayAssignment.roleId, 'Unknown facts still receive a separate game role');
+  assert.equal(unknown.gameplayAssignment.roleOrigin, 'gameplay');
+  assert.equal(unknown.gameplayAssignment.sourceFactType.typeId, 'building.unknown');
+  const initialRole = unknown.roleId;
+  unknown.gameplayAssignment.roleId = 'tampered'; unknown.source.gameplayAssignment.roleName = 'tampered';
+  assert.equal(renderer.pick(40, 40).roleId, initialRole);
+  assert.notEqual(renderer.pick(40, 40).roleName, 'tampered');
   const clinic = renderer.pick(150, 150);
   assert.equal(clinic.typeId, 'building.medical');
   assert(clinic.resourceProfileIds.includes('profile.medical'));
   clinic.resourceProfileIds.push('tampered'); clinic.gameplayType.resourceProfileIds.push('tampered');
   assert(!renderer.pick(150, 150).resourceProfileIds.includes('tampered'));
   const zones = renderer.zonesAt(150, 150);
-  assert.deepEqual(zones.map(zone => zone.typeId).sort(), ['biome.healthcare', 'biome.residential']);
+  assert.deepEqual(zones.map(zone => zone.typeId), ['biome.forest']);
   zones[0].resourceProfileIds.push('tampered');
   assert(renderer.zonesAt(150, 150).every(zone => !zone.resourceProfileIds.includes('tampered')));
 });
@@ -180,25 +186,48 @@ test('overlapping polygon components use union filling for both scene and select
   assert.equal(renderer.pick(250, 120, 0).key, selected.key);
 });
 
-test('the saved Nevada map clips smooth city fillers after real native-zone fusion without altering source geometry', async () => {
+test('every Nevada footprint receives a colored game role while urban zones retire and natural geometry stays exact', async () => {
   const { default: map } = await import('../maps/usa.js');
-  const before = JSON.stringify(map), renderer = createDetailRenderer(map), stats = renderer.getStats();
+  const before = JSON.stringify(map), renderer = createDetailRenderer(map), stats = renderer.getStats(), features = renderer.getFeatures();
   assert.equal(stats.buildings, map.buildings.length);
   assert.equal(stats.sourceRoads, map.roads.length);
+  assert.equal(stats.roads, 83);
+  assert.equal(stats.water, 53);
+  assert.equal(stats.power, 6);
   assert.equal(JSON.stringify(map), before);
-  const fillers = renderer.getFeatures().filter(feature => feature.urbanFiller);
-  assert(fillers.length > 0, 'Unzoned city spaces still have a useful filler');
-  assert(fillers.every(feature => feature.provenance.fillOnlyUnzoned && feature.provenance.exclusionStage === 'after-zone-fusion'));
-  assert(stats.urbanFillerClipping.beforeArea > stats.urbanFillerClipping.afterArea, 'Native and newly fused plots reserve their actual geometry');
-  assert.equal(stats.urbanFillerClipping.outputFeatures, fillers.length);
-  assert(fillers.every(feature => feature.parts.flat(2).every(point => Number.isFinite(point.x) && Number.isFinite(point.y))));
-  const occupied = renderer.getFeatures().filter(feature => feature.geometry === 'polygon' && !feature.urbanFiller && !feature.fallback && ['landscape', 'power', 'water'].includes(feature.layer));
-  const intersection = polygonIntersection(fillers.flatMap(feature => feature.parts), occupied.flatMap(feature => feature.parts));
-  const ringArea = ring => {
-    const origin = ring[0]; let sum = 0;
-    for (let index = 1; index < ring.length - 1; index++) sum += (ring[index].x - origin.x) * (ring[index + 1].y - origin.y) - (ring[index + 1].x - origin.x) * (ring[index].y - origin.y);
-    return Math.abs(sum) / 2;
-  };
-  const overlapArea = intersection.reduce((total, rings) => total + ringArea(rings[0]) - rings.slice(1).reduce((sum, hole) => sum + ringArea(hole), 0), 0);
-  assert(overlapArea < 1e-6, `Only sub-nanounit floating-point boundary slivers are tolerated, got ${overlapArea}`);
+  const buildings = features.filter(feature => feature.layer === 'buildings');
+  assert.equal(buildings.length, 893);
+  assert(buildings.every(feature => feature.gameplayAssignment && feature.roleId && feature.roleName && /^#[a-f0-9]{6}$/i.test(feature.color)));
+  assert.equal(new Set(buildings.map(feature => feature.id)).size, map.buildings.length);
+  assert(new Set(buildings.map(feature => feature.categoryId)).size >= 8, 'Distinct gameplay uses, not one generic building color');
+  assert.equal(stats.buildingAssignments.assigned, 893);
+  assert.equal(stats.buildingAssignments.unassigned, 0);
+  assert(!features.some(feature => feature.urbanFiller || ['residential', 'commercial', 'retail', 'industrial', 'healthcare', 'education', 'suburb', 'urban', 'dense'].includes(feature.biome)));
+  for (const source of map.buildings) {
+    const displayed = buildings.find(feature => feature.id === source.id);
+    assert.deepEqual(displayed.rings, source.rings?.length ? source.rings : [source.points]);
+  }
+  const sand = features.find(feature => feature.sourceId === 'relation-15569711');
+  assert.equal(sand.biome, 'sand');
+  assert.equal(sand.rings.length, 14, 'The complete mapped sand biome and its 13 holes remain');
+});
+
+test('building fills use functional category colors at overview as well as detail scales', () => {
+  const renderer = createDetailRenderer(world({ width: 400, height: 300, buildings: [
+    { id: 'house', points: ring(20, 20, 60, 60), tags: { building: 'house' } },
+    { id: 'shop', points: ring(80, 20, 120, 60), tags: { building: 'retail', shop: 'supermarket' } },
+    { id: 'school', points: ring(140, 20, 180, 60), tags: { building: 'school', amenity: 'school' } },
+    { id: 'clinic', points: ring(200, 20, 240, 60), tags: { building: 'hospital', amenity: 'clinic' } },
+    { id: 'warehouse', points: ring(260, 20, 300, 60), tags: { building: 'warehouse' } },
+  ] }));
+  const colors = [], context = recordingContext();
+  context.fill = function() { colors.push(this.fillStyle); };
+  renderer.draw(context, fullView);
+  const assigned = renderer.getFeatures().filter(feature => feature.layer === 'buildings');
+  assert.deepEqual(colors, assigned.map(feature => feature.color));
+  assert.equal(new Set(colors).size, 5, 'Home, shop, school, clinic and warehouse are immediately distinguishable');
+  renderer.setLayers({ buildings: false });
+  const hidden = recordingContext(); renderer.draw(hidden, fullView);
+  assert.equal(hidden.fills.length, 0);
+  assert.equal(renderer.pick(40, 40), null);
 });

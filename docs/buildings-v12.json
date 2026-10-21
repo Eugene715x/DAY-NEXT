@@ -1,0 +1,171 @@
+{
+  "version": "0.12.0",
+  "environment": "Chromium headless /usr/bin/chromium, 1440×960, deviceScaleFactor=1",
+  "tests": {
+    "passed": 159,
+    "failed": 0
+  },
+  "javascriptErrors": [],
+  "networkRequests": 0,
+  "rawGeometry": {
+    "roads": 658,
+    "buildings": 893
+  },
+  "layerCounts": {
+    "landscape": 261,
+    "water": 53,
+    "roads": 83,
+    "power": 6,
+    "buildings": 893,
+    "details": 90
+  },
+  "assignments": {
+    "total": 893,
+    "assigned": 893,
+    "unassigned": 0,
+    "sourceKnown": 69,
+    "sourceUnknown": 824,
+    "origins": {
+      "mapped": 78,
+      "context": 23,
+      "gameplay": 792
+    },
+    "byRole": {
+      "role.airport": 1,
+      "role.apartment": 12,
+      "role.bar": 2,
+      "role.cafe": 9,
+      "role.church": 2,
+      "role.civic": 5,
+      "role.clinic": 1,
+      "role.factory": 2,
+      "role.fire_station": 3,
+      "role.fuel": 1,
+      "role.garage": 19,
+      "role.hangar": 3,
+      "role.hospital": 3,
+      "role.hotel": 15,
+      "role.house": 669,
+      "role.mixed_use": 2,
+      "role.office": 7,
+      "role.residential": 2,
+      "role.restaurant": 4,
+      "role.ruins": 9,
+      "role.school": 17,
+      "role.service": 2,
+      "role.shelter": 7,
+      "role.shop_auto": 5,
+      "role.shop_clothing": 4,
+      "role.shop_electronics": 5,
+      "role.shop_food": 7,
+      "role.shop_general": 7,
+      "role.shop_hardware": 6,
+      "role.utility": 1,
+      "role.warehouse": 52,
+      "role.workshop": 9
+    },
+    "byCategory": {
+      "category.civic": 14,
+      "category.education": 17,
+      "category.food": 15,
+      "category.housing": 683,
+      "category.industry": 2,
+      "category.lodging": 15,
+      "category.medical": 4,
+      "category.retail": 36,
+      "category.ruin": 9,
+      "category.service": 16,
+      "category.storage": 59,
+      "category.transport": 23
+    }
+  },
+  "naturalSourceRecords": 265,
+  "sandInnerRings": 13,
+  "noUrbanZones": true,
+  "legend": [
+    {
+      "categoryId": "category.housing",
+      "name": "Жильё",
+      "count": 683,
+      "color": "rgb(195, 184, 142)"
+    },
+    {
+      "categoryId": "category.retail",
+      "name": "Магазины",
+      "count": 36,
+      "color": "rgb(196, 166, 106)"
+    },
+    {
+      "categoryId": "category.food",
+      "name": "Еда и заведения",
+      "count": 15,
+      "color": "rgb(200, 142, 111)"
+    },
+    {
+      "categoryId": "category.medical",
+      "name": "Медицина",
+      "count": 4,
+      "color": "rgb(128, 182, 174)"
+    },
+    {
+      "categoryId": "category.education",
+      "name": "Образование",
+      "count": 17,
+      "color": "rgb(136, 169, 199)"
+    },
+    {
+      "categoryId": "category.industry",
+      "name": "Производство",
+      "count": 2,
+      "color": "rgb(140, 157, 167)"
+    },
+    {
+      "categoryId": "category.storage",
+      "name": "Склады",
+      "count": 59,
+      "color": "rgb(175, 161, 141)"
+    },
+    {
+      "categoryId": "category.transport",
+      "name": "Транспорт",
+      "count": 23,
+      "color": "rgb(176, 156, 193)"
+    },
+    {
+      "categoryId": "category.civic",
+      "name": "Общественные здания",
+      "count": 14,
+      "color": "rgb(160, 159, 197)"
+    },
+    {
+      "categoryId": "category.service",
+      "name": "Службы и мастерские",
+      "count": 16,
+      "color": "rgb(166, 183, 125)"
+    },
+    {
+      "categoryId": "category.lodging",
+      "name": "Гостиницы",
+      "count": 15,
+      "color": "rgb(190, 162, 178)"
+    },
+    {
+      "categoryId": "category.ruin",
+      "name": "Руины",
+      "count": 9,
+      "color": "rgb(143, 140, 126)"
+    }
+  ],
+  "idlePerformance": {
+    "frames": 120,
+    "fps": 60.003000150007495,
+    "meanMs": 16.665833333333335
+  },
+  "hoverPerformance": {
+    "frames": 120,
+    "fps": 60.00300015000751,
+    "meanMs": 16.66583333333333
+  },
+  "staticCacheReused": true,
+  "sourceSha256": "44f3641860c1e3966edf259c5487b89f1997699aec77cff783360f8c66414d99"
+}

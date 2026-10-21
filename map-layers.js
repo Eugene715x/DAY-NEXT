@@ -110,6 +110,41 @@ export function shouldRenderFeature(feature = {}, group = '') {
   return true;
 }
 
+// Presentation is separate from source semantics: city/site tags remain usable
+// as evidence for building roles even after their blanket ground fill is retired.
+const mlLandscapeLanduse = new Set(['forest', 'wood', 'farmland', 'farm', 'meadow', 'grass', 'grassland', 'village_green', 'orchard', 'vineyard', 'allotments', 'plant_nursery', 'greenhouse_horticulture', 'flowerbed', 'conservation', 'nature_reserve', 'cemetery', 'quarry', 'recreation_ground']);
+const mlLandscapeLeisure = new Set(['park', 'garden', 'pitch', 'playground', 'recreation_ground', 'nature_reserve', 'golf_course', 'dog_park', 'common']);
+const mlLandscapeBiomes = new Set(['landscape', 'plain', 'wasteland', 'forest', 'wood', 'swamp', 'wetland', 'grassland', 'grass', 'meadow', 'scrub', 'heath', 'park', 'garden', 'recreation', 'farmland', 'orchard', 'vineyard', 'cemetery', 'sand', 'desert', 'valley', 'gully', 'rock', 'quarry', 'glacier']);
+
+/**
+ * The visible landscape contains nature and outdoor landscaped ground, not
+ * residential/service territory inferred or mapped around buildings. Preserve
+ * an explicit natural facet when the same feature also names an institution.
+ * This does not rewrite mapBiome/mapFeatureLayer or the source tags.
+ */
+export function mapLandscapeBiome(feature = {}, group = '') {
+  if (!shouldRenderFeature(feature, group)) return null;
+  const layer = mapFeatureLayer(feature, group);
+  if (['buildings', 'roads', 'water', 'power'].includes(layer)) return null;
+  if (layer !== 'landscape' && group !== 'zone' && feature.derived !== true) return null;
+  const tags = feature.tags || {}, nature = {};
+  if (mlPresent(tags.natural)) nature.natural = tags.natural;
+  if (mlPresent(tags.wetland)) nature.wetland = tags.wetland;
+  if (mlLandscapeLanduse.has(tags.landuse)) nature.landuse = tags.landuse;
+  if (mlLandscapeLeisure.has(tags.leisure)) nature.leisure = tags.leisure;
+  if (tags.amenity === 'grave_yard') nature.amenity = tags.amenity;
+  if (Object.keys(nature).length) return mapBiome({ tags: nature, kind: feature.kind, type: feature.type });
+  if (mlNaturalKinds.has(feature.kind)) return mapBiome({ kind: feature.kind });
+  if (mapZoneBiome(feature)) return null;
+  const biome = mapBiome(feature);
+  return mlLandscapeBiomes.has(biome) ? biome : null;
+}
+
+/** Only use for a landscape facet; physical buildings, roads and sites keep theirs. */
+export function shouldRenderLandscapeFeature(feature = {}, group = '') {
+  return mapLandscapeBiome(feature, group) !== null;
+}
+
 /** Rendering categories never change or replace original OSM tags and geometry. */
 export function mapBiome(feature = {}) {
   if (feature.derived === true && feature.biome) return feature.biome;

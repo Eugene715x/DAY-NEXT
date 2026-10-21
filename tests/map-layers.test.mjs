@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mapFeatureLayer, mapBiome, mapZoneBiome, shouldRenderFeature } from '../map-layers.js';
+import { mapFeatureLayer, mapBiome, mapZoneBiome, shouldRenderFeature, mapLandscapeBiome, shouldRenderLandscapeFeature } from '../map-layers.js';
 import nevadaMap from '../maps/usa.js';
 
 const feature = (tags, geometry = 'polygon', extra = {}) => ({ tags, geometry, ...extra });
@@ -325,4 +325,72 @@ test('physical railway alignments belong to roads and explicit derived biomes ke
   assert.equal(mapFeatureLayer(feature({ railway: 'station' }, 'point'), 'detail'), 'details');
   assert.equal(mapBiome({ derived: true, biome: 'suburb', tags: { landuse: 'residential' } }), 'suburb');
   assert.equal(mapBiome({ biome: 'suburb', tags: { landuse: 'residential' } }), 'residential', 'Raw OSM facts retain precedence over unsupported additive metadata');
+});
+
+
+test('building-focused presentation retires every mapped or generated urban zone while keeping source classifications', () => {
+  const urban = [
+    ...['residential', 'industrial', 'commercial', 'retail', 'garages', 'depot', 'port', 'construction', 'brownfield', 'landfill'].map(landuse => feature({ landuse })),
+    ...['parking', 'school', 'hospital', 'place_of_worship', 'police', 'townhall', 'restaurant', 'fuel'].map(amenity => feature({ amenity })),
+    feature({ tourism: 'motel' }), feature({ tourism: 'camp_site' }), feature({ shop: 'supermarket' }),
+    ...['suburb', 'urban', 'dense', 'aircraft_parking'].map(biome => ({ derived: true, biome, type: biome, geometry: 'polygon' })),
+  ];
+  for (const item of urban) {
+    const before = structuredClone(item), semantic = mapBiome(item), ownership = mapFeatureLayer(item, 'area');
+    assert.equal(shouldRenderLandscapeFeature(item, 'area'), false, JSON.stringify(item));
+    assert.equal(mapLandscapeBiome(item, 'area'), null);
+    assert.equal(mapBiome(item), semantic, 'Building inference can still read original zone function');
+    assert.equal(mapFeatureLayer(item, 'area'), ownership);
+    assert.equal(shouldRenderFeature(item, 'area'), true, 'Only the urban ground facet is retired');
+    assert.deepEqual(item, before);
+  }
+});
+
+test('all natural ground, outdoor landscaped plots and sand holes retain their original geometry', () => {
+  const natural = [
+    ...['wood', 'forest', 'wetland', 'grassland', 'scrub', 'sand', 'desert', 'bare_rock', 'glacier', 'valley', 'gully', 'future_natural_type'].map(value => feature({ natural: value })),
+    ...['forest', 'farmland', 'orchard', 'vineyard', 'meadow', 'allotments', 'cemetery', 'quarry'].map(landuse => feature({ landuse })),
+    ...['park', 'garden', 'nature_reserve', 'pitch', 'playground'].map(leisure => feature({ leisure })),
+    feature({ amenity: 'grave_yard' }),
+    ...['forest', 'plain', 'swamp'].map(type => ({ type })),
+    { derived: true, biome: 'wasteland', fallback: true },
+  ];
+  for (const item of natural) {
+    const before = structuredClone(item);
+    assert.equal(shouldRenderLandscapeFeature(item, 'area'), true, JSON.stringify(item));
+    assert.equal(typeof mapLandscapeBiome(item, 'area'), 'string');
+    assert.deepEqual(item, before);
+  }
+  const sand = nevadaMap.details.find(item => item.sourceId === 'relation-15569711' && item.geometry === 'polygon');
+  assert(sand && sand.rings.length > 1);
+  const before = structuredClone(sand);
+  assert.equal(shouldRenderLandscapeFeature(sand, 'detail'), true);
+  assert.equal(mapLandscapeBiome(sand, 'detail'), 'sand');
+  assert.deepEqual(sand, before, 'Retiring urban overlays cannot flatten the sand biome or fill its holes');
+});
+
+test('natural facets win over institutional ground tags without hiding physical buildings, water or airport surfaces', () => {
+  const woods = feature({ natural: 'wood', amenity: 'school' });
+  assert.equal(mapBiome(woods), 'education', 'Source function remains available for the school building');
+  assert.equal(mapLandscapeBiome(woods, 'detail'), 'forest', 'The retained landscape facet is woods, not an educational ground fill');
+  const garden = feature({ leisure: 'garden', amenity: 'hospital' });
+  assert.equal(mapLandscapeBiome(garden, 'detail'), 'garden');
+  const grass = feature({ natural: 'grassland', landuse: 'residential' });
+  assert.equal(mapLandscapeBiome(grass, 'detail'), 'grassland');
+  const building = feature({ building: 'school', amenity: 'school', natural: 'wood' });
+  assert.equal(shouldRenderLandscapeFeature(building, 'building'), false);
+  assert.equal(shouldRenderFeature(building, 'building'), true);
+  const clinicPoi = feature({ amenity: 'clinic' }, 'point', { x: 10, y: 20 });
+  assert.equal(shouldRenderLandscapeFeature(clinicPoi, 'poi'), false);
+  assert.equal(shouldRenderFeature(clinicPoi, 'poi'), true, 'The label/role evidence remains available independently of a biome fill');
+  for (const aeroway of ['aerodrome', 'apron', 'runway', 'taxiway']) {
+    const surface = feature({ aeroway });
+    assert.equal(shouldRenderLandscapeFeature(surface, 'detail'), false);
+    assert.equal(shouldRenderFeature(surface, 'detail'), true, 'Physical airport surfaces can be presented as objects');
+  }
+  for (const tags of [{ natural: 'water' }, { waterway: 'river' }, { power: 'substation' }, { highway: 'service' }]) {
+    const physical = feature(tags);
+    assert.equal(shouldRenderLandscapeFeature(physical, 'detail'), false);
+    assert.equal(shouldRenderFeature(physical, 'detail'), true);
+  }
 });

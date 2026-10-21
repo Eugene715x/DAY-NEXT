@@ -187,7 +187,7 @@ export function collectResourceProfiles(...inputs) {
   const visit = input => {
     if (input === null || input === undefined) return;
     if (Array.isArray(input)) { input.forEach(visit); return; }
-    if (typeof input === 'object') { visit(input.resourceProfileIds || input.gameplayType?.resourceProfileIds || []); return; }
+    if (typeof input === 'object') { visit(input.gameplayAssignment?.resourceProfileIds || input.resourceProfileIds || input.gameplayType?.resourceProfileIds || []); return; }
     if (typeof input !== 'string') throw new Error('Expected a gameplay type or resource profile ID.');
     if (RESOURCE_PROFILES[input]) { profiles.add(input); return; }
     const definition = BUILDING_TYPES[input] || BIOME_TYPES[input];
