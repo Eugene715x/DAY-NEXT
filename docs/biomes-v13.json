@@ -1,0 +1,290 @@
+{
+  "version": "0.13.0",
+  "checkedAt": "2026-10-21T18:12:03.626215+00:00",
+  "environment": {
+    "browser": "Chromium",
+    "viewport": {
+      "width": 1440,
+      "height": 960
+    },
+    "deviceScaleFactor": 1,
+    "platform": "desktop"
+  },
+  "tests": {
+    "total": 177,
+    "passed": 177,
+    "failed": 0
+  },
+  "offline": {
+    "errors": [],
+    "requests": 0
+  },
+  "preservation": {
+    "buildings": 893,
+    "all893RolesColorsMatchV12": true,
+    "sourceGeometryTagsUnchanged": true,
+    "rawRoads": 658,
+    "roadNetworks": 83,
+    "powerNetworks": 6
+  },
+  "layers": {
+    "biomes": true,
+    "roads": true,
+    "power": true,
+    "buildings": true,
+    "details": true
+  },
+  "geometry": {
+    "constructionMs": 1369.0277130000002,
+    "features": 277,
+    "polygonArea": 6974999.999999992,
+    "expectedArea": 6975000,
+    "areaDifference": -8.381903171539307e-09,
+    "intersectionChecks": 738,
+    "totalNumericalOverlap": 8.17462711496249e-15,
+    "overlaps": [],
+    "probes": 713,
+    "membershipFailures": [],
+    "byBiome": {
+      "water": 11,
+      "river": 1,
+      "seasonal_river": 28,
+      "rock": 204,
+      "recreation": 8,
+      "forest": 5,
+      "scrub": 6,
+      "grassland": 1,
+      "park": 2,
+      "cemetery": 2,
+      "quarry": 3,
+      "sand": 1,
+      "city": 3,
+      "desert": 1,
+      "wasteland": 1
+    }
+  },
+  "partition": {
+    "enabled": true,
+    "exclusive": true,
+    "method": "exclusive-ground-priority",
+    "featureCount": 277,
+    "sourceCandidates": 276,
+    "sourceElements": 1247,
+    "representedSourceElements": 1247,
+    "obscuredFeatures": 0,
+    "modifiedFeatures": 32,
+    "mapArea": 6975000,
+    "coveredArea": 6974999.999999992,
+    "coverageError": 8.381903171539307e-09,
+    "overlapArea": 0,
+    "uncoveredArea": 8.381903171539307e-09,
+    "fallbackArea": 4607416.6236451985,
+    "waterLineFeatures": 29,
+    "waterAreaFeatures": 11,
+    "cityFeatures": 3,
+    "priority": [
+      "water areas",
+      "permanent rivers",
+      "seasonal rivers",
+      "specific nature",
+      "city",
+      "regional nature",
+      "unmapped ground"
+    ]
+  },
+  "city": {
+    "method": "coherent-development-envelope",
+    "cities": 3,
+    "sourceBuildings": 893,
+    "eligibleBuildings": 889,
+    "excludedAirportBuildings": 4,
+    "selectedBuildings": 850,
+    "sourcePlots": 86,
+    "sourceClusters": 3,
+    "sampleSpacingMeters": 15,
+    "vertices": 751,
+    "byCity": [
+      {
+        "id": "game-city-dukocc",
+        "name": "Rhyolite",
+        "buildingCount": 10
+      },
+      {
+        "id": "game-city-bgqbjq",
+        "name": "Beatty",
+        "buildingCount": 835
+      },
+      {
+        "id": "game-city-hue75x",
+        "name": "Gold Center",
+        "buildingCount": 5
+      }
+    ]
+  },
+  "canvas": {
+    "alphaFailures": [],
+    "overlaps": [],
+    "membershipFailures": [],
+    "blueRows": {
+      "dryBlue": 408,
+      "dryGaps": 272,
+      "wetBlue": 680,
+      "wetGaps": 0
+    },
+    "citySamples": [
+      {
+        "x": 148,
+        "y": 77,
+        "rgba": [
+          150,
+          155,
+          153,
+          255
+        ]
+      },
+      {
+        "x": 165,
+        "y": 77,
+        "rgba": [
+          150,
+          155,
+          153,
+          255
+        ]
+      },
+      {
+        "x": 182,
+        "y": 77,
+        "rgba": [
+          150,
+          155,
+          153,
+          255
+        ]
+      }
+    ],
+    "widthSameAsV12": true,
+    "widthZoom1": [
+      {
+        "color": "#85abc4",
+        "width": 7.5,
+        "dash": [
+          6,
+          4
+        ]
+      },
+      {
+        "color": "#4c91bd",
+        "width": 6,
+        "dash": [
+          6,
+          4
+        ]
+      }
+    ],
+    "widthZoom6": [
+      {
+        "color": "#85abc4",
+        "width": 6.25,
+        "dash": [
+          1,
+          0.6666666865348816
+        ]
+      },
+      {
+        "color": "#4c91bd",
+        "width": 6,
+        "dash": [
+          1,
+          0.6666666865348816
+        ]
+      }
+    ],
+    "lakeIslandBiome": "desert",
+    "hiddenWaterPixelAlpha": 0,
+    "hiddenSpringPixelAlpha": 0,
+    "hiddenSpringPick": null,
+    "inkPickZoom05": {
+      "dry": "seasonal_river",
+      "dryGround": [
+        "city"
+      ],
+      "gap": "city",
+      "wet": "river",
+      "wetGround": [
+        "city"
+      ]
+    }
+  },
+  "cityHover": {
+    "point": {
+      "x": 2243.7245849056626,
+      "y": 916.4575481132078
+    },
+    "feature": {
+      "id": "biome-city-game-city-bgqbjq",
+      "biome": "city",
+      "name": "Beatty"
+    },
+    "card": "ГОРОД\n\nBeatty\n\nГород · Игровая разметка местности\nБиом: Город\nИгровой тип: Город\nПрофили ресурсов: Бытовые припасы, Строительные материалы"
+  },
+  "performance": {
+    "frames": 120,
+    "fps": 59.99999999999999,
+    "meanMs": 16.666666666666668
+  },
+  "hoverPerformance": {
+    "frames": 120,
+    "fps": 60.00300015000745,
+    "meanMs": 16.665833333333346
+  },
+  "staticCacheReused": true,
+  "finalBuildStartup": {
+    "status": "PASS",
+    "offline": {
+      "errors": [],
+      "requests": 0
+    },
+    "buildings": 893,
+    "biomes": 277,
+    "roads": 83,
+    "power": 6,
+    "layers": {
+      "biomes": true,
+      "roads": true,
+      "power": true,
+      "buildings": true,
+      "details": true
+    },
+    "sourceSand": {
+      "id": "biome-sand-relation-15569711-0",
+      "biome": "sand",
+      "members": [
+        {
+          "id": "relation-15569711-0",
+          "sourceId": "relation-15569711",
+          "rings": 14,
+          "parts": 1,
+          "geometry": "polygon"
+        }
+      ]
+    },
+    "desert": [
+      {
+        "biomeName": "Пустыня",
+        "typeName": "Пустыня"
+      }
+    ],
+    "stats": {
+      "frames": 4,
+      "staticRebuilds": 1
+    }
+  },
+  "archive": {
+    "bytes": 522146,
+    "sha256": "545d2cfd100cd55528a17ba7791d69cb6210475ec7de9f1af8940615d0fbe3a2",
+    "crcValid": true,
+    "htmlSha256": "f68a614852f39290ea6d04ebf4c5713d4711a47abd813bd6254f568b443c6cab",
+    "htmlMatchesDist": true
+  }
+}

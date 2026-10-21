@@ -30,7 +30,7 @@
 @media(max-width:620px){.map-detail-label{font-size:6px;letter-spacing:1px;margin:-6px 0 9px}.detail-button{margin-top:12px}.detail-button .icon{width:20px;height:20px}.object-card{max-width:220px;padding:11px 13px}.object-card h2{font-size:12px}.object-card .object-meta{font-size:9px}}
 @media(max-height:660px) and (max-width:620px){.map-detail-label{margin-bottom:7px}.detail-button{margin-top:9px}}
 
-#terrain-map{position:absolute;inset:0;display:block;width:100%;height:100%;pointer-events:none}#map{background:transparent}.map-controls{align-items:flex-end}.map-navigation{display:flex;flex-direction:column;align-items:center;min-width:44px}.map-tool-cluster{display:flex;align-items:flex-start;justify-content:flex-end;gap:8px;margin-top:18px}.map-tool{display:flex;flex-direction:column;align-items:center;min-width:44px}.map-tool-cluster .maps-button,.map-tool-cluster .detail-button,.layers-button{width:44px;height:44px;min-width:44px;min-height:44px;margin-top:0}.map-tool .control-caption{font-size:6px;letter-spacing:.8px;margin-top:8px}.layers-button[aria-expanded="true"]{color:var(--accent);border-color:rgba(209,223,135,.55)}.coverage-summary{margin:-6px 0 18px;padding:8px 10px;border-left:1px solid rgba(190,213,142,.4);background:rgba(164,187,128,.035);font-size:9px;line-height:1.75;color:#a4b68f;white-space:pre-line;overflow-wrap:anywhere}.layers-panel{width:322px;padding:0;display:flex;flex-direction:column;overflow:hidden;z-index:2}.layers-heading{padding:19px 20px 16px;border-bottom:1px solid var(--line);flex-shrink:0;background:rgba(20,29,24,.96)}.layers-heading h2{font-size:19px;margin-top:8px}.layers-heading .icon-button{width:27px;height:27px;margin:-2px -5px 0 0}.layers-content{padding:7px 20px 17px;overflow-y:auto;overscroll-behavior:contain;min-height:0;scrollbar-width:thin;scrollbar-color:#536348 transparent}.layer-options{display:flex;flex-direction:column}.layer-option{display:flex;align-items:center;gap:11px;min-height:46px;padding:10px 0;border-bottom:1px solid var(--line);cursor:pointer;color:#bcccad;font-size:11px;line-height:1.5}.layer-option input{appearance:auto;-webkit-appearance:checkbox;width:14px;height:14px;min-width:14px;margin:0;accent-color:var(--accent);cursor:pointer}.layer-option input:focus-visible{outline:2px solid var(--accent);outline-offset:4px}.layer-option:hover{color:#e0e9cc}.layer-count{margin-left:auto;min-width:18px;text-align:right;font-family:monospace;font-size:9px;color:#81976d;font-weight:400}.layers-note{font-size:9px;line-height:1.8;color:#8fa27d;margin:13px 0 0}
+.map-controls{align-items:flex-end}.map-navigation{display:flex;flex-direction:column;align-items:center;min-width:44px}.map-tool-cluster{display:flex;align-items:flex-start;justify-content:flex-end;gap:8px;margin-top:18px}.map-tool{display:flex;flex-direction:column;align-items:center;min-width:44px}.map-tool-cluster .maps-button,.map-tool-cluster .detail-button,.layers-button{width:44px;height:44px;min-width:44px;min-height:44px;margin-top:0}.map-tool .control-caption{font-size:6px;letter-spacing:.8px;margin-top:8px}.layers-button[aria-expanded="true"]{color:var(--accent);border-color:rgba(209,223,135,.55)}.coverage-summary{margin:-6px 0 18px;padding:8px 10px;border-left:1px solid rgba(190,213,142,.4);background:rgba(164,187,128,.035);font-size:9px;line-height:1.75;color:#a4b68f;white-space:pre-line;overflow-wrap:anywhere}.layers-panel{width:322px;padding:0;display:flex;flex-direction:column;overflow:hidden;z-index:2}.layers-heading{padding:19px 20px 16px;border-bottom:1px solid var(--line);flex-shrink:0;background:rgba(20,29,24,.96)}.layers-heading h2{font-size:19px;margin-top:8px}.layers-heading .icon-button{width:27px;height:27px;margin:-2px -5px 0 0}.layers-content{padding:7px 20px 17px;overflow-y:auto;overscroll-behavior:contain;min-height:0;scrollbar-width:thin;scrollbar-color:#536348 transparent}.layer-options{display:flex;flex-direction:column}.layer-option{display:flex;align-items:center;gap:11px;min-height:46px;padding:10px 0;border-bottom:1px solid var(--line);cursor:pointer;color:#bcccad;font-size:11px;line-height:1.5}.layer-option input{appearance:auto;-webkit-appearance:checkbox;width:14px;height:14px;min-width:14px;margin:0;accent-color:var(--accent);cursor:pointer}.layer-option input:focus-visible{outline:2px solid var(--accent);outline-offset:4px}.layer-option:hover{color:#e0e9cc}.layer-count{margin-left:auto;min-width:18px;text-align:right;font-family:monospace;font-size:9px;color:#81976d;font-weight:400}.layers-note{font-size:9px;line-height:1.8;color:#8fa27d;margin:13px 0 0}
 @media(max-width:1050px){.layers-panel{right:24px}}
 @media(max-width:620px){.map-tool-cluster{gap:5px;margin-top:12px}.map-tool-cluster .maps-button .icon,.layers-button .icon{width:19px;height:19px}.map-tool-cluster .detail-button .icon{width:20px;height:20px}.map-navigation .center-button{width:44px;height:44px}.layers-panel{right:16px;left:auto;top:85px;width:min(322px,calc(100% - 32px));padding:0;max-height:calc(100dvh - 110px)}.layers-heading{padding:17px 18px 15px}.layers-content{padding:6px 18px 16px}.layer-option{min-height:47px;font-size:11px}.coverage-summary{margin-bottom:15px}}
 @media(max-height:640px) and (min-width:621px){.layers-panel{top:91px;max-height:calc(100dvh - 111px)}}
@@ -45,6 +45,8 @@
 
 /* Building purposes: a dedicated key keeps the map readable at close zoom. */
 .building-types-button{width:44px;height:44px;min-width:44px;min-height:44px}.building-types-button[aria-expanded="true"]{color:var(--accent);border-color:rgba(209,223,135,.55)}.building-types-panel{width:366px;padding:0;display:flex;flex-direction:column;overflow:hidden;z-index:3;max-height:calc(100dvh - 145px)}.building-types-content{padding:8px 20px 18px;overflow-y:auto;scrollbar-width:thin;min-height:0}.building-type-legend{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:16px}.building-type-row{display:flex;align-items:center;gap:8px;min-height:51px;padding:8px 0;border-bottom:1px solid var(--line);font-size:10px;line-height:1.5;color:#c5d1b8}.building-type-swatch{width:18px;height:18px;flex-shrink:0;border:1px solid rgba(227,231,198,.55);box-shadow:0 2px 3px rgba(0,0,0,.22);border-radius:2px}.building-type-name{flex:1;overflow-wrap:break-word}.building-type-count{font:9px monospace;color:#8fa47e;min-width:17px;text-align:right}.object-card.is-building{border-left:3px solid var(--object-type-color,var(--accent))}.object-card.is-building #object-kind{color:var(--object-type-color,var(--accent))}
+
+#map{background:#18251f}.biome-key{display:flex;flex-wrap:wrap;gap:8px 13px;padding:9px 0 12px;border-bottom:1px solid var(--line);color:#aab99b;font-size:9px;line-height:1.5}.biome-key>span{display:flex;align-items:center;gap:6px}.biome-swatch{display:inline-block;width:22px;flex-shrink:0}.city-swatch{height:10px;background:#969b99;border:1px solid #bdc2bc}.seasonal-river-swatch{height:0;border-top:3px dashed #4c91bd}.water-swatch{height:0;border-top:3px solid #3f7eaa}.biome-key.is-disabled{opacity:.4}
 </style>
   </head>
   <body>
@@ -68,13 +70,12 @@
     </svg>
 
     <main class="expedition" aria-label="Карта одиночной экспедиции">
-      <canvas id="terrain-map" aria-hidden="true"></canvas>
       <canvas id="map" aria-label="Карта. Нажмите на сушу, чтобы проложить маршрут. Потяните, чтобы сдвинуть карту." tabindex="0"></canvas>
       <div class="map-vignette" aria-hidden="true"></div>
       <div class="hud">
         <header class="top-bar">
           <div class="brand-block">
-            <div class="brand" aria-label="DAY NEXT"><span>DAY</span><span class="brand-divider">/</span><span class="brand-next">NEXT</span><span class="prototype">ПРОТОТИП <b>12</b></span></div>
+            <div class="brand" aria-label="DAY NEXT"><span>DAY</span><span class="brand-divider">/</span><span class="brand-next">NEXT</span><span class="prototype">ПРОТОТИП <b>13</b></span></div>
             <div class="brand-caption"><span class="live-dot"></span> ОДИНОЧНАЯ ЭКСПЕДИЦИЯ</div>
           </div>
           <div class="world-status glass">
@@ -193,9 +194,8 @@
           <div class="layers-heading help-heading"><div><p class="eyebrow">ВИД КАРТЫ</p><h2>Слои карты</h2></div><button id="layers-close" class="icon-button" type="button" aria-label="Закрыть слои карты">×</button></div>
           <div class="layers-content">
             <div class="layer-options">
-              <label class="layer-option" for="layer-terrain"><input id="layer-terrain" type="checkbox" checked /><span>Подложка</span></label>
-              <label class="layer-option" for="layer-landscape"><input id="layer-landscape" type="checkbox" checked /><span>Природа и ландшафт</span><span id="count-landscape" class="layer-count">—</span></label>
-              <label class="layer-option" for="layer-water"><input id="layer-water" type="checkbox" checked /><span>Водоёмы и русла</span><span id="count-water" class="layer-count">—</span></label>
+              <label class="layer-option" for="layer-biomes"><input id="layer-biomes" type="checkbox" checked /><span>Биомы</span><span id="count-biomes" class="layer-count">—</span></label>
+              <div id="biome-key" class="biome-key" aria-label="Обозначения биомов"><span><i class="biome-swatch city-swatch" aria-hidden="true"></i>Город</span><span><i class="biome-swatch seasonal-river-swatch" aria-hidden="true"></i>Сезонное русло</span><span><i class="biome-swatch water-swatch" aria-hidden="true"></i>Постоянная вода</span></div>
               <label class="layer-option" for="layer-roads"><input id="layer-roads" type="checkbox" checked /><span>Дороги и тропы</span><span id="count-roads" class="layer-count">—</span></label>
               <fieldset id="road-classes" class="road-classes"><legend>Типы дорог</legend>
                 <label class="road-class-option" for="road-class-highway"><input id="road-class-highway" type="checkbox" checked /><span class="road-swatch road-swatch-highway" aria-hidden="true"></span><span>Магистрали</span><span id="count-road-class-highway" class="layer-count">—</span></label>
@@ -209,7 +209,7 @@
               <label class="layer-option" for="layer-buildings"><input id="layer-buildings" type="checkbox" checked /><span>Здания</span><span id="count-buildings" class="layer-count">—</span></label>
               <label class="layer-option" for="layer-details"><input id="layer-details" type="checkbox" checked /><span>Остальные объекты</span><span id="count-details" class="layer-count">—</span></label>
             </div>
-            <p class="layers-note" id="layers-note">Цвет здания показывает его назначение. Легенда — кнопка «Типы». Природные биомы сохраняются отдельно; городская зональная заливка убрана.</p>
+            <p class="layers-note" id="layers-note">Биомы образуют фон карты и не пересекаются. Город — серый, сезонные русла — синий пунктир. Цвет здания показывает его назначение; легенда — кнопка «Типы».</p>
           </div>
         </section>
       </div>
@@ -703,148 +703,716 @@ function createRealWorld(map) {
 
 return {createRealWorld};
 })();
-const {createTerrainBackdrop,createLandscapeBackdrop} = (() => {
-/** Neutral paper and independently cached procedural landscape. */
+const {polygonClipping} = (() => {
+// polygon-clipping 0.15.7. Vendored UMD bundle, unchanged apart from the local
+// ESM wrapper and removal of its unavailable source-map URL. Sources and hashes
+// are recorded in polygon-clipping.provenance.json. Full distribution notices:
+// THIRD_PARTY_NOTICES.txt.
+/*
+DAY / NEXT vendored geometry notices
 
-function trRandom(seed) {
-  let value = Number(seed) >>> 0 || 715;
-  return () => {
-    value = (Math.imul(value, 1664525) + 1013904223) >>> 0;
-    return value / 4294967296;
-  };
+polygon-clipping 0.15.7
+Source: https://registry.npmjs.org/polygon-clipping/-/polygon-clipping-0.15.7.tgz
+Original tarball SHA-256: 23bdea671a65011107d91536881f527c8e2e6820f59e4bc1408a94d7cc11d5b7
+
+The MIT License (MIT)
+
+Copyright (c) 2018 Mike Fogel <mike@fogel.ca> - covers everything not specially attributed to others below.
+
+Copyright (c) 2016 Alexander Milevski <info@w8r.name> - covers all portions originally part of github:w8r/martinez, from which this project was forked on Febuary 2, 2018.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+splaytree 3.1.2
+Source: https://registry.npmjs.org/splaytree/-/splaytree-3.1.2.tgz
+
+The MIT License (MIT)
+
+Copyright (c) 2019 Alexander Milevski <info@w8r.name>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+robust-predicates 3.0.2
+Source: https://registry.npmjs.org/robust-predicates/-/robust-predicates-3.0.2.tgz
+
+This is free and unencumbered software released into the public domain.
+
+Anyone is free to copy, modify, publish, use, compile, sell, or
+distribute this software, either in source code form or as a compiled
+binary, for any purpose, commercial or non-commercial, and by any
+means.
+
+In jurisdictions that recognize copyright laws, the author or authors
+of this software dedicate any and all copyright interest in the
+software to the public domain. We make this dedication for the benefit
+of the public at large and to the detriment of our heirs and
+successors. We intend this dedication to be an overt act of
+relinquishment in perpetuity of all present and future rights to this
+software under copyright law.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
+OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
+ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+OTHER DEALINGS IN THE SOFTWARE.
+
+For more information, please refer to <http://unlicense.org>
+
+TypeScript emitted helpers; Microsoft copyright and Apache-2.0 notice remain in upstream bundle.
+
+Apache License
+                           Version 2.0, January 2004
+                        http://www.apache.org/licenses/
+
+   TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION
+
+   1. Definitions.
+
+      "License" shall mean the terms and conditions for use, reproduction,
+      and distribution as defined by Sections 1 through 9 of this document.
+
+      "Licensor" shall mean the copyright owner or entity authorized by
+      the copyright owner that is granting the License.
+
+      "Legal Entity" shall mean the union of the acting entity and all
+      other entities that control, are controlled by, or are under common
+      control with that entity. For the purposes of this definition,
+      "control" means (i) the power, direct or indirect, to cause the
+      direction or management of such entity, whether by contract or
+      otherwise, or (ii) ownership of fifty percent (50%) or more of the
+      outstanding shares, or (iii) beneficial ownership of such entity.
+
+      "You" (or "Your") shall mean an individual or Legal Entity
+      exercising permissions granted by this License.
+
+      "Source" form shall mean the preferred form for making modifications,
+      including but not limited to software source code, documentation
+      source, and configuration files.
+
+      "Object" form shall mean any form resulting from mechanical
+      transformation or translation of a Source form, including but
+      not limited to compiled object code, generated documentation,
+      and conversions to other media types.
+
+      "Work" shall mean the work of authorship, whether in Source or
+      Object form, made available under the License, as indicated by a
+      copyright notice that is included in or attached to the work
+      (an example is provided in the Appendix below).
+
+      "Derivative Works" shall mean any work, whether in Source or Object
+      form, that is based on (or derived from) the Work and for which the
+      editorial revisions, annotations, elaborations, or other modifications
+      represent, as a whole, an original work of authorship. For the purposes
+      of this License, Derivative Works shall not include works that remain
+      separable from, or merely link (or bind by name) to the interfaces of,
+      the Work and Derivative Works thereof.
+
+      "Contribution" shall mean any work of authorship, including
+      the original version of the Work and any modifications or additions
+      to that Work or Derivative Works thereof, that is intentionally
+      submitted to Licensor for inclusion in the Work by the copyright owner
+      or by an individual or Legal Entity authorized to submit on behalf of
+      the copyright owner. For the purposes of this definition, "submitted"
+      means any form of electronic, verbal, or written communication sent
+      to the Licensor or its representatives, including but not limited to
+      communication on electronic mailing lists, source code control systems,
+      and issue tracking systems that are managed by, or on behalf of, the
+      Licensor for the purpose of discussing and improving the Work, but
+      excluding communication that is conspicuously marked or otherwise
+      designated in writing by the copyright owner as "Not a Contribution."
+
+      "Contributor" shall mean Licensor and any individual or Legal Entity
+      on behalf of whom a Contribution has been received by Licensor and
+      subsequently incorporated within the Work.
+
+   2. Grant of Copyright License. Subject to the terms and conditions of
+      this License, each Contributor hereby grants to You a perpetual,
+      worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+      copyright license to reproduce, prepare Derivative Works of,
+      publicly display, publicly perform, sublicense, and distribute the
+      Work and such Derivative Works in Source or Object form.
+
+   3. Grant of Patent License. Subject to the terms and conditions of
+      this License, each Contributor hereby grants to You a perpetual,
+      worldwide, non-exclusive, no-charge, royalty-free, irrevocable
+      (except as stated in this section) patent license to make, have made,
+      use, offer to sell, sell, import, and otherwise transfer the Work,
+      where such license applies only to those patent claims licensable
+      by such Contributor that are necessarily infringed by their
+      Contribution(s) alone or by combination of their Contribution(s)
+      with the Work to which such Contribution(s) was submitted. If You
+      institute patent litigation against any entity (including a
+      cross-claim or counterclaim in a lawsuit) alleging that the Work
+      or a Contribution incorporated within the Work constitutes direct
+      or contributory patent infringement, then any patent licenses
+      granted to You under this License for that Work shall terminate
+      as of the date such litigation is filed.
+
+   4. Redistribution. You may reproduce and distribute copies of the
+      Work or Derivative Works thereof in any medium, with or without
+      modifications, and in Source or Object form, provided that You
+      meet the following conditions:
+
+      (a) You must give any other recipients of the Work or
+          Derivative Works a copy of this License; and
+
+      (b) You must cause any modified files to carry prominent notices
+          stating that You changed the files; and
+
+      (c) You must retain, in the Source form of any Derivative Works
+          that You distribute, all copyright, patent, trademark, and
+          attribution notices from the Source form of the Work,
+          excluding those notices that do not pertain to any part of
+          the Derivative Works; and
+
+      (d) If the Work includes a "NOTICE" text file as part of its
+          distribution, then any Derivative Works that You distribute must
+          include a readable copy of the attribution notices contained
+          within such NOTICE file, excluding those notices that do not
+          pertain to any part of the Derivative Works, in at least one
+          of the following places: within a NOTICE text file distributed
+          as part of the Derivative Works; within the Source form or
+          documentation, if provided along with the Derivative Works; or,
+          within a display generated by the Derivative Works, if and
+          wherever such third-party notices normally appear. The contents
+          of the NOTICE file are for informational purposes only and
+          do not modify the License. You may add Your own attribution
+          notices within Derivative Works that You distribute, alongside
+          or as an addendum to the NOTICE text from the Work, provided
+          that such additional attribution notices cannot be construed
+          as modifying the License.
+
+      You may add Your own copyright statement to Your modifications and
+      may provide additional or different license terms and conditions
+      for use, reproduction, or distribution of Your modifications, or
+      for any such Derivative Works as a whole, provided Your use,
+      reproduction, and distribution of the Work otherwise complies with
+      the conditions stated in this License.
+
+   5. Submission of Contributions. Unless You explicitly state otherwise,
+      any Contribution intentionally submitted for inclusion in the Work
+      by You to the Licensor shall be under the terms and conditions of
+      this License, without any additional terms or conditions.
+      Notwithstanding the above, nothing herein shall supersede or modify
+      the terms of any separate license agreement you may have executed
+      with Licensor regarding such Contributions.
+
+   6. Trademarks. This License does not grant permission to use the trade
+      names, trademarks, service marks, or product names of the Licensor,
+      except as required for reasonable and customary use in describing the
+      origin of the Work and reproducing the content of the NOTICE file.
+
+   7. Disclaimer of Warranty. Unless required by applicable law or
+      agreed to in writing, Licensor provides the Work (and each
+      Contributor provides its Contributions) on an "AS IS" BASIS,
+      WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+      implied, including, without limitation, any warranties or conditions
+      of TITLE, NON-INFRINGEMENT, MERCHANTABILITY, or FITNESS FOR A
+      PARTICULAR PURPOSE. You are solely responsible for determining the
+      appropriateness of using or redistributing the Work and assume any
+      risks associated with Your exercise of permissions under this License.
+
+   8. Limitation of Liability. In no event and under no legal theory,
+      whether in tort (including negligence), contract, or otherwise,
+      unless required by applicable law (such as deliberate and grossly
+      negligent acts) or agreed to in writing, shall any Contributor be
+      liable to You for damages, including any direct, indirect, special,
+      incidental, or consequential damages of any character arising as a
+      result of this License or out of the use or inability to use the
+      Work (including but not limited to damages for loss of goodwill,
+      work stoppage, computer failure or malfunction, or any and all
+      other commercial damages or losses), even if such Contributor
+      has been advised of the possibility of such damages.
+
+   9. Accepting Warranty or Additional Liability. While redistributing
+      the Work or Derivative Works thereof, You may choose to offer,
+      and charge a fee for, acceptance of support, warranty, indemnity,
+      or other liability obligations and/or rights consistent with this
+      License. However, in accepting such obligations, You may act only
+      on Your own behalf and on Your sole responsibility, not on behalf
+      of any other Contributor, and only if You agree to indemnify,
+      defend, and hold each Contributor harmless for any liability
+      incurred by, or claims asserted against, such Contributor by reason
+      of your accepting any such warranty or additional liability.
+
+   END OF TERMS AND CONDITIONS
+
+   APPENDIX: How to apply the Apache License to your work.
+
+      To apply the Apache License to your work, attach the following
+      boilerplate notice, with the fields enclosed by brackets "[]"
+      replaced with your own identifying information. (Don't include
+      the brackets!)  The text should be enclosed in the appropriate
+      comment syntax for the file format. We also recommend that a
+      file or class name and description of purpose be included on the
+      same "printed page" as the copyright notice for easier
+      identification within third-party archives.
+
+   Copyright [yyyy] [name of copyright owner]
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+*/
+const polygonClipping = (() => {
+  const module = { exports: {} };
+  const exports = module.exports;
+!function(t,e){"object"==typeof exports&&"undefined"!=typeof module?module.exports=e():"function"==typeof define&&define.amd?define(e):(t="undefined"!=typeof globalThis?globalThis:t||self).polygonClipping=e()}(this,(function(){"use strict";
+/**
+     * splaytree v3.1.2
+     * Fast Splay tree for Node and browser
+     *
+     * @author Alexander Milevski <info@w8r.name>
+     * @license MIT
+     * @preserve
+     */
+/*! *****************************************************************************
+    Copyright (c) Microsoft Corporation. All rights reserved.
+    Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+    this file except in compliance with the License. You may obtain a copy of the
+    License at http://www.apache.org/licenses/LICENSE-2.0
+
+    THIS CODE IS PROVIDED ON AN *AS IS* BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, EITHER EXPRESS OR IMPLIED, INCLUDING WITHOUT LIMITATION ANY IMPLIED
+    WARRANTIES OR CONDITIONS OF TITLE, FITNESS FOR A PARTICULAR PURPOSE,
+    MERCHANTABLITY OR NON-INFRINGEMENT.
+
+    See the Apache Version 2.0 License for specific language governing permissions
+    and limitations under the License.
+    ***************************************************************************** */function t(t,e){var n,r,i,o,s={label:0,sent:function(){if(1&i[0])throw i[1];return i[1]},trys:[],ops:[]};return o={next:l(0),throw:l(1),return:l(2)},"function"==typeof Symbol&&(o[Symbol.iterator]=function(){return this}),o;function l(o){return function(l){return function(o){if(n)throw new TypeError("Generator is already executing.");for(;s;)try{if(n=1,r&&(i=2&o[0]?r.return:o[0]?r.throw||((i=r.return)&&i.call(r),0):r.next)&&!(i=i.call(r,o[1])).done)return i;switch(r=0,i&&(o=[2&o[0],i.value]),o[0]){case 0:case 1:i=o;break;case 4:return s.label++,{value:o[1],done:!1};case 5:s.label++,r=o[1],o=[0];continue;case 7:o=s.ops.pop(),s.trys.pop();continue;default:if(!(i=s.trys,(i=i.length>0&&i[i.length-1])||6!==o[0]&&2!==o[0])){s=0;continue}if(3===o[0]&&(!i||o[1]>i[0]&&o[1]<i[3])){s.label=o[1];break}if(6===o[0]&&s.label<i[1]){s.label=i[1],i=o;break}if(i&&s.label<i[2]){s.label=i[2],s.ops.push(o);break}i[2]&&s.ops.pop(),s.trys.pop();continue}o=e.call(t,s)}catch(t){o=[6,t],r=0}finally{n=i=0}if(5&o[0])throw o[1];return{value:o[0]?o[1]:void 0,done:!0}}([o,l])}}}var e=function(t,e){this.next=null,this.key=t,this.data=e,this.left=null,this.right=null};function n(t,e){return t>e?1:t<e?-1:0}function r(t,n,r){for(var i=new e(null,null),o=i,s=i;;){var l=r(t,n.key);if(l<0){if(null===n.left)break;if(r(t,n.left.key)<0){var h=n.left;if(n.left=h.right,h.right=n,null===(n=h).left)break}s.left=n,s=n,n=n.left}else{if(!(l>0))break;if(null===n.right)break;if(r(t,n.right.key)>0){h=n.right;if(n.right=h.left,h.left=n,null===(n=h).right)break}o.right=n,o=n,n=n.right}}return o.right=n.left,s.left=n.right,n.left=i.right,n.right=i.left,n}function i(t,n,i,o){var s=new e(t,n);if(null===i)return s.left=s.right=null,s;var l=o(t,(i=r(t,i,o)).key);return l<0?(s.left=i.left,s.right=i,i.left=null):l>=0&&(s.right=i.right,s.left=i,i.right=null),s}function o(t,e,n){var i=null,o=null;if(e){var s=n((e=r(t,e,n)).key,t);0===s?(i=e.left,o=e.right):s<0?(o=e.right,e.right=null,i=e):(i=e.left,e.left=null,o=e)}return{left:i,right:o}}function s(t,e,n,r,i){if(t){r(e+(n?"└── ":"├── ")+i(t)+"\n");var o=e+(n?"    ":"│   ");t.left&&s(t.left,o,!1,r,i),t.right&&s(t.right,o,!0,r,i)}}var l=function(){function l(t){void 0===t&&(t=n),this._root=null,this._size=0,this._comparator=t}return l.prototype.insert=function(t,e){return this._size++,this._root=i(t,e,this._root,this._comparator)},l.prototype.add=function(t,n){var i=new e(t,n);null===this._root&&(i.left=i.right=null,this._size++,this._root=i);var o=this._comparator,s=r(t,this._root,o),l=o(t,s.key);return 0===l?this._root=s:(l<0?(i.left=s.left,i.right=s,s.left=null):l>0&&(i.right=s.right,i.left=s,s.right=null),this._size++,this._root=i),this._root},l.prototype.remove=function(t){this._root=this._remove(t,this._root,this._comparator)},l.prototype._remove=function(t,e,n){var i;return null===e?null:0===n(t,(e=r(t,e,n)).key)?(null===e.left?i=e.right:(i=r(t,e.left,n)).right=e.right,this._size--,i):e},l.prototype.pop=function(){var t=this._root;if(t){for(;t.left;)t=t.left;return this._root=r(t.key,this._root,this._comparator),this._root=this._remove(t.key,this._root,this._comparator),{key:t.key,data:t.data}}return null},l.prototype.findStatic=function(t){for(var e=this._root,n=this._comparator;e;){var r=n(t,e.key);if(0===r)return e;e=r<0?e.left:e.right}return null},l.prototype.find=function(t){return this._root&&(this._root=r(t,this._root,this._comparator),0!==this._comparator(t,this._root.key))?null:this._root},l.prototype.contains=function(t){for(var e=this._root,n=this._comparator;e;){var r=n(t,e.key);if(0===r)return!0;e=r<0?e.left:e.right}return!1},l.prototype.forEach=function(t,e){for(var n=this._root,r=[],i=!1;!i;)null!==n?(r.push(n),n=n.left):0!==r.length?(n=r.pop(),t.call(e,n),n=n.right):i=!0;return this},l.prototype.range=function(t,e,n,r){for(var i=[],o=this._comparator,s=this._root;0!==i.length||s;)if(s)i.push(s),s=s.left;else{if(o((s=i.pop()).key,e)>0)break;if(o(s.key,t)>=0&&n.call(r,s))return this;s=s.right}return this},l.prototype.keys=function(){var t=[];return this.forEach((function(e){var n=e.key;return t.push(n)})),t},l.prototype.values=function(){var t=[];return this.forEach((function(e){var n=e.data;return t.push(n)})),t},l.prototype.min=function(){return this._root?this.minNode(this._root).key:null},l.prototype.max=function(){return this._root?this.maxNode(this._root).key:null},l.prototype.minNode=function(t){if(void 0===t&&(t=this._root),t)for(;t.left;)t=t.left;return t},l.prototype.maxNode=function(t){if(void 0===t&&(t=this._root),t)for(;t.right;)t=t.right;return t},l.prototype.at=function(t){for(var e=this._root,n=!1,r=0,i=[];!n;)if(e)i.push(e),e=e.left;else if(i.length>0){if(e=i.pop(),r===t)return e;r++,e=e.right}else n=!0;return null},l.prototype.next=function(t){var e=this._root,n=null;if(t.right){for(n=t.right;n.left;)n=n.left;return n}for(var r=this._comparator;e;){var i=r(t.key,e.key);if(0===i)break;i<0?(n=e,e=e.left):e=e.right}return n},l.prototype.prev=function(t){var e=this._root,n=null;if(null!==t.left){for(n=t.left;n.right;)n=n.right;return n}for(var r=this._comparator;e;){var i=r(t.key,e.key);if(0===i)break;i<0?e=e.left:(n=e,e=e.right)}return n},l.prototype.clear=function(){return this._root=null,this._size=0,this},l.prototype.toList=function(){return function(t){var n=t,r=[],i=!1,o=new e(null,null),s=o;for(;!i;)n?(r.push(n),n=n.left):r.length>0?n=(n=s=s.next=r.pop()).right:i=!0;return s.next=null,o.next}(this._root)},l.prototype.load=function(t,n,r){void 0===n&&(n=[]),void 0===r&&(r=!1);var i=t.length,o=this._comparator;if(r&&f(t,n,0,i-1,o),null===this._root)this._root=h(t,n,0,i),this._size=i;else{var s=function(t,n,r){var i=new e(null,null),o=i,s=t,l=n;for(;null!==s&&null!==l;)r(s.key,l.key)<0?(o.next=s,s=s.next):(o.next=l,l=l.next),o=o.next;null!==s?o.next=s:null!==l&&(o.next=l);return i.next}(this.toList(),function(t,n){for(var r=new e(null,null),i=r,o=0;o<t.length;o++)i=i.next=new e(t[o],n[o]);return i.next=null,r.next}(t,n),o);i=this._size+i,this._root=u({head:s},0,i)}return this},l.prototype.isEmpty=function(){return null===this._root},Object.defineProperty(l.prototype,"size",{get:function(){return this._size},enumerable:!0,configurable:!0}),Object.defineProperty(l.prototype,"root",{get:function(){return this._root},enumerable:!0,configurable:!0}),l.prototype.toString=function(t){void 0===t&&(t=function(t){return String(t.key)});var e=[];return s(this._root,"",!0,(function(t){return e.push(t)}),t),e.join("")},l.prototype.update=function(t,e,n){var s=this._comparator,l=o(t,this._root,s),h=l.left,u=l.right;s(t,e)<0?u=i(e,n,u,s):h=i(e,n,h,s),this._root=function(t,e,n){return null===e?t:(null===t||((e=r(t.key,e,n)).left=t),e)}(h,u,s)},l.prototype.split=function(t){return o(t,this._root,this._comparator)},l.prototype[Symbol.iterator]=function(){var e,n,r;return t(this,(function(t){switch(t.label){case 0:e=this._root,n=[],r=!1,t.label=1;case 1:return r?[3,6]:null===e?[3,2]:(n.push(e),e=e.left,[3,5]);case 2:return 0===n.length?[3,4]:[4,e=n.pop()];case 3:return t.sent(),e=e.right,[3,5];case 4:r=!0,t.label=5;case 5:return[3,1];case 6:return[2]}}))},l}();function h(t,n,r,i){var o=i-r;if(o>0){var s=r+Math.floor(o/2),l=t[s],u=n[s],f=new e(l,u);return f.left=h(t,n,r,s),f.right=h(t,n,s+1,i),f}return null}function u(t,e,n){var r=n-e;if(r>0){var i=e+Math.floor(r/2),o=u(t,e,i),s=t.head;return s.left=o,t.head=t.head.next,s.right=u(t,i+1,n),s}return null}function f(t,e,n,r,i){if(!(n>=r)){for(var o=t[n+r>>1],s=n-1,l=r+1;;){do{s++}while(i(t[s],o)<0);do{l--}while(i(t[l],o)>0);if(s>=l)break;var h=t[s];t[s]=t[l],t[l]=h,h=e[s],e[s]=e[l],e[l]=h}f(t,e,n,l,i),f(t,e,l+1,r,i)}}const c=(t,e)=>t.ll.x<=e.x&&e.x<=t.ur.x&&t.ll.y<=e.y&&e.y<=t.ur.y,p=(t,e)=>{if(e.ur.x<t.ll.x||t.ur.x<e.ll.x||e.ur.y<t.ll.y||t.ur.y<e.ll.y)return null;const n=t.ll.x<e.ll.x?e.ll.x:t.ll.x,r=t.ur.x<e.ur.x?t.ur.x:e.ur.x;return{ll:{x:n,y:t.ll.y<e.ll.y?e.ll.y:t.ll.y},ur:{x:r,y:t.ur.y<e.ur.y?t.ur.y:e.ur.y}}};let g=Number.EPSILON;void 0===g&&(g=Math.pow(2,-52));const a=g*g,y=(t,e)=>{if(-g<t&&t<g&&-g<e&&e<g)return 0;const n=t-e;return n*n<a*t*e?0:t<e?-1:1};class x{constructor(){this.tree=new l,this.round(0)}round(t){const e=this.tree.add(t),n=this.tree.prev(e);if(null!==n&&0===y(e.key,n.key))return this.tree.remove(t),n.key;const r=this.tree.next(e);return null!==r&&0===y(e.key,r.key)?(this.tree.remove(t),r.key):t}}const b=new class{constructor(){this.reset()}reset(){this.xRounder=new x,this.yRounder=new x}round(t,e){return{x:this.xRounder.round(t),y:this.yRounder.round(e)}}},v=11102230246251565e-32,d=134217729,m=(3+8*v)*v;function E(t,e,n,r,i){let o,s,l,h,u=e[0],f=r[0],c=0,p=0;f>u==f>-u?(o=u,u=e[++c]):(o=f,f=r[++p]);let g=0;if(c<t&&p<n)for(f>u==f>-u?(s=u+o,l=o-(s-u),u=e[++c]):(s=f+o,l=o-(s-f),f=r[++p]),o=s,0!==l&&(i[g++]=l);c<t&&p<n;)f>u==f>-u?(s=o+u,h=s-o,l=o-(s-h)+(u-h),u=e[++c]):(s=o+f,h=s-o,l=o-(s-h)+(f-h),f=r[++p]),o=s,0!==l&&(i[g++]=l);for(;c<t;)s=o+u,h=s-o,l=o-(s-h)+(u-h),u=e[++c],o=s,0!==l&&(i[g++]=l);for(;p<n;)s=o+f,h=s-o,l=o-(s-h)+(f-h),f=r[++p],o=s,0!==l&&(i[g++]=l);return 0===o&&0!==g||(i[g++]=o),g}function S(t){return new Float64Array(t)}const _=22204460492503146e-32,w=11093356479670487e-47,k=S(4),R=S(8),I=S(12),P=S(16),N=S(4);function A(t,e,n,r,i,o){const s=(e-o)*(n-i),l=(t-i)*(r-o),h=s-l,u=Math.abs(s+l);return Math.abs(h)>=33306690738754716e-32*u?h:-function(t,e,n,r,i,o,s){let l,h,u,f,c,p,g,a,y,x,b,v,S,A,O,L,$,M;const z=t-i,B=n-i,G=e-o,T=r-o;A=z*T,p=d*z,g=p-(p-z),a=z-g,p=d*T,y=p-(p-T),x=T-y,O=a*x-(A-g*y-a*y-g*x),L=G*B,p=d*G,g=p-(p-G),a=G-g,p=d*B,y=p-(p-B),x=B-y,$=a*x-(L-g*y-a*y-g*x),b=O-$,c=O-b,k[0]=O-(b+c)+(c-$),v=A+b,c=v-A,S=A-(v-c)+(b-c),b=S-L,c=S-b,k[1]=S-(b+c)+(c-L),M=v+b,c=M-v,k[2]=v-(M-c)+(b-c),k[3]=M;let q=function(t,e){let n=e[0];for(let r=1;r<t;r++)n+=e[r];return n}(4,k),C=_*s;if(q>=C||-q>=C)return q;if(c=t-z,l=t-(z+c)+(c-i),c=n-B,u=n-(B+c)+(c-i),c=e-G,h=e-(G+c)+(c-o),c=r-T,f=r-(T+c)+(c-o),0===l&&0===h&&0===u&&0===f)return q;if(C=w*s+m*Math.abs(q),q+=z*f+T*l-(G*u+B*h),q>=C||-q>=C)return q;A=l*T,p=d*l,g=p-(p-l),a=l-g,p=d*T,y=p-(p-T),x=T-y,O=a*x-(A-g*y-a*y-g*x),L=h*B,p=d*h,g=p-(p-h),a=h-g,p=d*B,y=p-(p-B),x=B-y,$=a*x-(L-g*y-a*y-g*x),b=O-$,c=O-b,N[0]=O-(b+c)+(c-$),v=A+b,c=v-A,S=A-(v-c)+(b-c),b=S-L,c=S-b,N[1]=S-(b+c)+(c-L),M=v+b,c=M-v,N[2]=v-(M-c)+(b-c),N[3]=M;const F=E(4,k,4,N,R);A=z*f,p=d*z,g=p-(p-z),a=z-g,p=d*f,y=p-(p-f),x=f-y,O=a*x-(A-g*y-a*y-g*x),L=G*u,p=d*G,g=p-(p-G),a=G-g,p=d*u,y=p-(p-u),x=u-y,$=a*x-(L-g*y-a*y-g*x),b=O-$,c=O-b,N[0]=O-(b+c)+(c-$),v=A+b,c=v-A,S=A-(v-c)+(b-c),b=S-L,c=S-b,N[1]=S-(b+c)+(c-L),M=v+b,c=M-v,N[2]=v-(M-c)+(b-c),N[3]=M;const j=E(F,R,4,N,I);A=l*f,p=d*l,g=p-(p-l),a=l-g,p=d*f,y=p-(p-f),x=f-y,O=a*x-(A-g*y-a*y-g*x),L=h*u,p=d*h,g=p-(p-h),a=h-g,p=d*u,y=p-(p-u),x=u-y,$=a*x-(L-g*y-a*y-g*x),b=O-$,c=O-b,N[0]=O-(b+c)+(c-$),v=A+b,c=v-A,S=A-(v-c)+(b-c),b=S-L,c=S-b,N[1]=S-(b+c)+(c-L),M=v+b,c=M-v,N[2]=v-(M-c)+(b-c),N[3]=M;const U=E(j,I,4,N,P);return P[U-1]}(t,e,n,r,i,o,u)}const O=(t,e)=>t.x*e.y-t.y*e.x,L=(t,e)=>t.x*e.x+t.y*e.y,$=(t,e,n)=>{const r=A(t.x,t.y,e.x,e.y,n.x,n.y);return r>0?-1:r<0?1:0},M=t=>Math.sqrt(L(t,t)),z=(t,e,n)=>{const r={x:e.x-t.x,y:e.y-t.y},i={x:n.x-t.x,y:n.y-t.y};return O(i,r)/M(i)/M(r)},B=(t,e,n)=>{const r={x:e.x-t.x,y:e.y-t.y},i={x:n.x-t.x,y:n.y-t.y};return L(i,r)/M(i)/M(r)},G=(t,e,n)=>0===e.y?null:{x:t.x+e.x/e.y*(n-t.y),y:n},T=(t,e,n)=>0===e.x?null:{x:n,y:t.y+e.y/e.x*(n-t.x)};class q{static compare(t,e){const n=q.comparePoints(t.point,e.point);return 0!==n?n:(t.point!==e.point&&t.link(e),t.isLeft!==e.isLeft?t.isLeft?1:-1:F.compare(t.segment,e.segment))}static comparePoints(t,e){return t.x<e.x?-1:t.x>e.x?1:t.y<e.y?-1:t.y>e.y?1:0}constructor(t,e){void 0===t.events?t.events=[this]:t.events.push(this),this.point=t,this.isLeft=e}link(t){if(t.point===this.point)throw new Error("Tried to link already linked events");const e=t.point.events;for(let t=0,n=e.length;t<n;t++){const n=e[t];this.point.events.push(n),n.point=this.point}this.checkForConsuming()}checkForConsuming(){const t=this.point.events.length;for(let e=0;e<t;e++){const n=this.point.events[e];if(void 0===n.segment.consumedBy)for(let r=e+1;r<t;r++){const t=this.point.events[r];void 0===t.consumedBy&&(n.otherSE.point.events===t.otherSE.point.events&&n.segment.consume(t.segment))}}}getAvailableLinkedEvents(){const t=[];for(let e=0,n=this.point.events.length;e<n;e++){const n=this.point.events[e];n!==this&&!n.segment.ringOut&&n.segment.isInResult()&&t.push(n)}return t}getLeftmostComparator(t){const e=new Map,n=n=>{const r=n.otherSE;e.set(n,{sine:z(this.point,t.point,r.point),cosine:B(this.point,t.point,r.point)})};return(t,r)=>{e.has(t)||n(t),e.has(r)||n(r);const{sine:i,cosine:o}=e.get(t),{sine:s,cosine:l}=e.get(r);return i>=0&&s>=0?o<l?1:o>l?-1:0:i<0&&s<0?o<l?-1:o>l?1:0:s<i?-1:s>i?1:0}}}let C=0;class F{static compare(t,e){const n=t.leftSE.point.x,r=e.leftSE.point.x,i=t.rightSE.point.x,o=e.rightSE.point.x;if(o<n)return 1;if(i<r)return-1;const s=t.leftSE.point.y,l=e.leftSE.point.y,h=t.rightSE.point.y,u=e.rightSE.point.y;if(n<r){if(l<s&&l<h)return 1;if(l>s&&l>h)return-1;const n=t.comparePoint(e.leftSE.point);if(n<0)return 1;if(n>0)return-1;const r=e.comparePoint(t.rightSE.point);return 0!==r?r:-1}if(n>r){if(s<l&&s<u)return-1;if(s>l&&s>u)return 1;const n=e.comparePoint(t.leftSE.point);if(0!==n)return n;const r=t.comparePoint(e.rightSE.point);return r<0?1:r>0?-1:1}if(s<l)return-1;if(s>l)return 1;if(i<o){const n=e.comparePoint(t.rightSE.point);if(0!==n)return n}if(i>o){const n=t.comparePoint(e.rightSE.point);if(n<0)return 1;if(n>0)return-1}if(i!==o){const t=h-s,e=i-n,f=u-l,c=o-r;if(t>e&&f<c)return 1;if(t<e&&f>c)return-1}return i>o?1:i<o||h<u?-1:h>u?1:t.id<e.id?-1:t.id>e.id?1:0}constructor(t,e,n,r){this.id=++C,this.leftSE=t,t.segment=this,t.otherSE=e,this.rightSE=e,e.segment=this,e.otherSE=t,this.rings=n,this.windings=r}static fromRing(t,e,n){let r,i,o;const s=q.comparePoints(t,e);if(s<0)r=t,i=e,o=1;else{if(!(s>0))throw new Error(`Tried to create degenerate segment at [${t.x}, ${t.y}]`);r=e,i=t,o=-1}const l=new q(r,!0),h=new q(i,!1);return new F(l,h,[n],[o])}replaceRightSE(t){this.rightSE=t,this.rightSE.segment=this,this.rightSE.otherSE=this.leftSE,this.leftSE.otherSE=this.rightSE}bbox(){const t=this.leftSE.point.y,e=this.rightSE.point.y;return{ll:{x:this.leftSE.point.x,y:t<e?t:e},ur:{x:this.rightSE.point.x,y:t>e?t:e}}}vector(){return{x:this.rightSE.point.x-this.leftSE.point.x,y:this.rightSE.point.y-this.leftSE.point.y}}isAnEndpoint(t){return t.x===this.leftSE.point.x&&t.y===this.leftSE.point.y||t.x===this.rightSE.point.x&&t.y===this.rightSE.point.y}comparePoint(t){if(this.isAnEndpoint(t))return 0;const e=this.leftSE.point,n=this.rightSE.point,r=this.vector();if(e.x===n.x)return t.x===e.x?0:t.x<e.x?1:-1;const i=(t.y-e.y)/r.y,o=e.x+i*r.x;if(t.x===o)return 0;const s=(t.x-e.x)/r.x,l=e.y+s*r.y;return t.y===l?0:t.y<l?-1:1}getIntersection(t){const e=this.bbox(),n=t.bbox(),r=p(e,n);if(null===r)return null;const i=this.leftSE.point,o=this.rightSE.point,s=t.leftSE.point,l=t.rightSE.point,h=c(e,s)&&0===this.comparePoint(s),u=c(n,i)&&0===t.comparePoint(i),f=c(e,l)&&0===this.comparePoint(l),g=c(n,o)&&0===t.comparePoint(o);if(u&&h)return g&&!f?o:!g&&f?l:null;if(u)return f&&i.x===l.x&&i.y===l.y?null:i;if(h)return g&&o.x===s.x&&o.y===s.y?null:s;if(g&&f)return null;if(g)return o;if(f)return l;const a=((t,e,n,r)=>{if(0===e.x)return T(n,r,t.x);if(0===r.x)return T(t,e,n.x);if(0===e.y)return G(n,r,t.y);if(0===r.y)return G(t,e,n.y);const i=O(e,r);if(0==i)return null;const o={x:n.x-t.x,y:n.y-t.y},s=O(o,e)/i,l=O(o,r)/i;return{x:(t.x+l*e.x+(n.x+s*r.x))/2,y:(t.y+l*e.y+(n.y+s*r.y))/2}})(i,this.vector(),s,t.vector());return null===a?null:c(r,a)?b.round(a.x,a.y):null}split(t){const e=[],n=void 0!==t.events,r=new q(t,!0),i=new q(t,!1),o=this.rightSE;this.replaceRightSE(i),e.push(i),e.push(r);const s=new F(r,o,this.rings.slice(),this.windings.slice());return q.comparePoints(s.leftSE.point,s.rightSE.point)>0&&s.swapEvents(),q.comparePoints(this.leftSE.point,this.rightSE.point)>0&&this.swapEvents(),n&&(r.checkForConsuming(),i.checkForConsuming()),e}swapEvents(){const t=this.rightSE;this.rightSE=this.leftSE,this.leftSE=t,this.leftSE.isLeft=!0,this.rightSE.isLeft=!1;for(let t=0,e=this.windings.length;t<e;t++)this.windings[t]*=-1}consume(t){let e=this,n=t;for(;e.consumedBy;)e=e.consumedBy;for(;n.consumedBy;)n=n.consumedBy;const r=F.compare(e,n);if(0!==r){if(r>0){const t=e;e=n,n=t}if(e.prev===n){const t=e;e=n,n=t}for(let t=0,r=n.rings.length;t<r;t++){const r=n.rings[t],i=n.windings[t],o=e.rings.indexOf(r);-1===o?(e.rings.push(r),e.windings.push(i)):e.windings[o]+=i}n.rings=null,n.windings=null,n.consumedBy=e,n.leftSE.consumedBy=e.leftSE,n.rightSE.consumedBy=e.rightSE}}prevInResult(){return void 0!==this._prevInResult||(this.prev?this.prev.isInResult()?this._prevInResult=this.prev:this._prevInResult=this.prev.prevInResult():this._prevInResult=null),this._prevInResult}beforeState(){if(void 0!==this._beforeState)return this._beforeState;if(this.prev){const t=this.prev.consumedBy||this.prev;this._beforeState=t.afterState()}else this._beforeState={rings:[],windings:[],multiPolys:[]};return this._beforeState}afterState(){if(void 0!==this._afterState)return this._afterState;const t=this.beforeState();this._afterState={rings:t.rings.slice(0),windings:t.windings.slice(0),multiPolys:[]};const e=this._afterState.rings,n=this._afterState.windings,r=this._afterState.multiPolys;for(let t=0,r=this.rings.length;t<r;t++){const r=this.rings[t],i=this.windings[t],o=e.indexOf(r);-1===o?(e.push(r),n.push(i)):n[o]+=i}const i=[],o=[];for(let t=0,r=e.length;t<r;t++){if(0===n[t])continue;const r=e[t],s=r.poly;if(-1===o.indexOf(s))if(r.isExterior)i.push(s);else{-1===o.indexOf(s)&&o.push(s);const t=i.indexOf(r.poly);-1!==t&&i.splice(t,1)}}for(let t=0,e=i.length;t<e;t++){const e=i[t].multiPoly;-1===r.indexOf(e)&&r.push(e)}return this._afterState}isInResult(){if(this.consumedBy)return!1;if(void 0!==this._isInResult)return this._isInResult;const t=this.beforeState().multiPolys,e=this.afterState().multiPolys;switch(H.type){case"union":{const n=0===t.length,r=0===e.length;this._isInResult=n!==r;break}case"intersection":{let n,r;t.length<e.length?(n=t.length,r=e.length):(n=e.length,r=t.length),this._isInResult=r===H.numMultiPolys&&n<r;break}case"xor":{const n=Math.abs(t.length-e.length);this._isInResult=n%2==1;break}case"difference":{const n=t=>1===t.length&&t[0].isSubject;this._isInResult=n(t)!==n(e);break}default:throw new Error(`Unrecognized operation type found ${H.type}`)}return this._isInResult}}class j{constructor(t,e,n){if(!Array.isArray(t)||0===t.length)throw new Error("Input geometry is not a valid Polygon or MultiPolygon");if(this.poly=e,this.isExterior=n,this.segments=[],"number"!=typeof t[0][0]||"number"!=typeof t[0][1])throw new Error("Input geometry is not a valid Polygon or MultiPolygon");const r=b.round(t[0][0],t[0][1]);this.bbox={ll:{x:r.x,y:r.y},ur:{x:r.x,y:r.y}};let i=r;for(let e=1,n=t.length;e<n;e++){if("number"!=typeof t[e][0]||"number"!=typeof t[e][1])throw new Error("Input geometry is not a valid Polygon or MultiPolygon");let n=b.round(t[e][0],t[e][1]);n.x===i.x&&n.y===i.y||(this.segments.push(F.fromRing(i,n,this)),n.x<this.bbox.ll.x&&(this.bbox.ll.x=n.x),n.y<this.bbox.ll.y&&(this.bbox.ll.y=n.y),n.x>this.bbox.ur.x&&(this.bbox.ur.x=n.x),n.y>this.bbox.ur.y&&(this.bbox.ur.y=n.y),i=n)}r.x===i.x&&r.y===i.y||this.segments.push(F.fromRing(i,r,this))}getSweepEvents(){const t=[];for(let e=0,n=this.segments.length;e<n;e++){const n=this.segments[e];t.push(n.leftSE),t.push(n.rightSE)}return t}}class U{constructor(t,e){if(!Array.isArray(t))throw new Error("Input geometry is not a valid Polygon or MultiPolygon");this.exteriorRing=new j(t[0],this,!0),this.bbox={ll:{x:this.exteriorRing.bbox.ll.x,y:this.exteriorRing.bbox.ll.y},ur:{x:this.exteriorRing.bbox.ur.x,y:this.exteriorRing.bbox.ur.y}},this.interiorRings=[];for(let e=1,n=t.length;e<n;e++){const n=new j(t[e],this,!1);n.bbox.ll.x<this.bbox.ll.x&&(this.bbox.ll.x=n.bbox.ll.x),n.bbox.ll.y<this.bbox.ll.y&&(this.bbox.ll.y=n.bbox.ll.y),n.bbox.ur.x>this.bbox.ur.x&&(this.bbox.ur.x=n.bbox.ur.x),n.bbox.ur.y>this.bbox.ur.y&&(this.bbox.ur.y=n.bbox.ur.y),this.interiorRings.push(n)}this.multiPoly=e}getSweepEvents(){const t=this.exteriorRing.getSweepEvents();for(let e=0,n=this.interiorRings.length;e<n;e++){const n=this.interiorRings[e].getSweepEvents();for(let e=0,r=n.length;e<r;e++)t.push(n[e])}return t}}class Y{constructor(t,e){if(!Array.isArray(t))throw new Error("Input geometry is not a valid Polygon or MultiPolygon");try{"number"==typeof t[0][0][0]&&(t=[t])}catch(t){}this.polys=[],this.bbox={ll:{x:Number.POSITIVE_INFINITY,y:Number.POSITIVE_INFINITY},ur:{x:Number.NEGATIVE_INFINITY,y:Number.NEGATIVE_INFINITY}};for(let e=0,n=t.length;e<n;e++){const n=new U(t[e],this);n.bbox.ll.x<this.bbox.ll.x&&(this.bbox.ll.x=n.bbox.ll.x),n.bbox.ll.y<this.bbox.ll.y&&(this.bbox.ll.y=n.bbox.ll.y),n.bbox.ur.x>this.bbox.ur.x&&(this.bbox.ur.x=n.bbox.ur.x),n.bbox.ur.y>this.bbox.ur.y&&(this.bbox.ur.y=n.bbox.ur.y),this.polys.push(n)}this.isSubject=e}getSweepEvents(){const t=[];for(let e=0,n=this.polys.length;e<n;e++){const n=this.polys[e].getSweepEvents();for(let e=0,r=n.length;e<r;e++)t.push(n[e])}return t}}class V{static factory(t){const e=[];for(let n=0,r=t.length;n<r;n++){const r=t[n];if(!r.isInResult()||r.ringOut)continue;let i=null,o=r.leftSE,s=r.rightSE;const l=[o],h=o.point,u=[];for(;i=o,o=s,l.push(o),o.point!==h;)for(;;){const t=o.getAvailableLinkedEvents();if(0===t.length){const t=l[0].point,e=l[l.length-1].point;throw new Error(`Unable to complete output ring starting at [${t.x}, ${t.y}]. Last matching segment found ends at [${e.x}, ${e.y}].`)}if(1===t.length){s=t[0].otherSE;break}let n=null;for(let t=0,e=u.length;t<e;t++)if(u[t].point===o.point){n=t;break}if(null!==n){const t=u.splice(n)[0],r=l.splice(t.index);r.unshift(r[0].otherSE),e.push(new V(r.reverse()));continue}u.push({index:l.length,point:o.point});const r=o.getLeftmostComparator(i);s=t.sort(r)[0].otherSE;break}e.push(new V(l))}return e}constructor(t){this.events=t;for(let e=0,n=t.length;e<n;e++)t[e].segment.ringOut=this;this.poly=null}getGeom(){let t=this.events[0].point;const e=[t];for(let n=1,r=this.events.length-1;n<r;n++){const r=this.events[n].point,i=this.events[n+1].point;0!==$(r,t,i)&&(e.push(r),t=r)}if(1===e.length)return null;const n=e[0],r=e[1];0===$(n,t,r)&&e.shift(),e.push(e[0]);const i=this.isExteriorRing()?1:-1,o=this.isExteriorRing()?0:e.length-1,s=this.isExteriorRing()?e.length:-1,l=[];for(let t=o;t!=s;t+=i)l.push([e[t].x,e[t].y]);return l}isExteriorRing(){if(void 0===this._isExteriorRing){const t=this.enclosingRing();this._isExteriorRing=!t||!t.isExteriorRing()}return this._isExteriorRing}enclosingRing(){return void 0===this._enclosingRing&&(this._enclosingRing=this._calcEnclosingRing()),this._enclosingRing}_calcEnclosingRing(){let t=this.events[0];for(let e=1,n=this.events.length;e<n;e++){const n=this.events[e];q.compare(t,n)>0&&(t=n)}let e=t.segment.prevInResult(),n=e?e.prevInResult():null;for(;;){if(!e)return null;if(!n)return e.ringOut;if(n.ringOut!==e.ringOut)return n.ringOut.enclosingRing()!==e.ringOut?e.ringOut:e.ringOut.enclosingRing();e=n.prevInResult(),n=e?e.prevInResult():null}}}class X{constructor(t){this.exteriorRing=t,t.poly=this,this.interiorRings=[]}addInterior(t){this.interiorRings.push(t),t.poly=this}getGeom(){const t=[this.exteriorRing.getGeom()];if(null===t[0])return null;for(let e=0,n=this.interiorRings.length;e<n;e++){const n=this.interiorRings[e].getGeom();null!==n&&t.push(n)}return t}}class Q{constructor(t){this.rings=t,this.polys=this._composePolys(t)}getGeom(){const t=[];for(let e=0,n=this.polys.length;e<n;e++){const n=this.polys[e].getGeom();null!==n&&t.push(n)}return t}_composePolys(t){const e=[];for(let n=0,r=t.length;n<r;n++){const r=t[n];if(!r.poly)if(r.isExteriorRing())e.push(new X(r));else{const t=r.enclosingRing();t.poly||e.push(new X(t)),t.poly.addInterior(r)}}return e}}class W{constructor(t){let e=arguments.length>1&&void 0!==arguments[1]?arguments[1]:F.compare;this.queue=t,this.tree=new l(e),this.segments=[]}process(t){const e=t.segment,n=[];if(t.consumedBy)return t.isLeft?this.queue.remove(t.otherSE):this.tree.remove(e),n;const r=t.isLeft?this.tree.add(e):this.tree.find(e);if(!r)throw new Error(`Unable to find segment #${e.id} [${e.leftSE.point.x}, ${e.leftSE.point.y}] -> [${e.rightSE.point.x}, ${e.rightSE.point.y}] in SweepLine tree.`);let i,o,s=r,l=r;for(;void 0===i;)s=this.tree.prev(s),null===s?i=null:void 0===s.key.consumedBy&&(i=s.key);for(;void 0===o;)l=this.tree.next(l),null===l?o=null:void 0===l.key.consumedBy&&(o=l.key);if(t.isLeft){let r=null;if(i){const t=i.getIntersection(e);if(null!==t&&(e.isAnEndpoint(t)||(r=t),!i.isAnEndpoint(t))){const e=this._splitSafely(i,t);for(let t=0,r=e.length;t<r;t++)n.push(e[t])}}let s=null;if(o){const t=o.getIntersection(e);if(null!==t&&(e.isAnEndpoint(t)||(s=t),!o.isAnEndpoint(t))){const e=this._splitSafely(o,t);for(let t=0,r=e.length;t<r;t++)n.push(e[t])}}if(null!==r||null!==s){let t=null;if(null===r)t=s;else if(null===s)t=r;else{t=q.comparePoints(r,s)<=0?r:s}this.queue.remove(e.rightSE),n.push(e.rightSE);const i=e.split(t);for(let t=0,e=i.length;t<e;t++)n.push(i[t])}n.length>0?(this.tree.remove(e),n.push(t)):(this.segments.push(e),e.prev=i)}else{if(i&&o){const t=i.getIntersection(o);if(null!==t){if(!i.isAnEndpoint(t)){const e=this._splitSafely(i,t);for(let t=0,r=e.length;t<r;t++)n.push(e[t])}if(!o.isAnEndpoint(t)){const e=this._splitSafely(o,t);for(let t=0,r=e.length;t<r;t++)n.push(e[t])}}}this.tree.remove(e)}return n}_splitSafely(t,e){this.tree.remove(t);const n=t.rightSE;this.queue.remove(n);const r=t.split(e);return r.push(n),void 0===t.consumedBy&&this.tree.add(t),r}}const Z="undefined"!=typeof process&&process.env.POLYGON_CLIPPING_MAX_QUEUE_SIZE||1e6,D="undefined"!=typeof process&&process.env.POLYGON_CLIPPING_MAX_SWEEPLINE_SEGMENTS||1e6;const H=new class{run(t,e,n){H.type=t,b.reset();const r=[new Y(e,!0)];for(let t=0,e=n.length;t<e;t++)r.push(new Y(n[t],!1));if(H.numMultiPolys=r.length,"difference"===H.type){const t=r[0];let e=1;for(;e<r.length;)null!==p(r[e].bbox,t.bbox)?e++:r.splice(e,1)}if("intersection"===H.type)for(let t=0,e=r.length;t<e;t++){const e=r[t];for(let n=t+1,i=r.length;n<i;n++)if(null===p(e.bbox,r[n].bbox))return[]}const i=new l(q.compare);for(let t=0,e=r.length;t<e;t++){const e=r[t].getSweepEvents();for(let t=0,n=e.length;t<n;t++)if(i.insert(e[t]),i.size>Z)throw new Error("Infinite loop when putting segment endpoints in a priority queue (queue size too big).")}const o=new W(i);let s=i.size,h=i.pop();for(;h;){const t=h.key;if(i.size===s){const e=t.segment;throw new Error(`Unable to pop() ${t.isLeft?"left":"right"} SweepEvent [${t.point.x}, ${t.point.y}] from segment #${e.id} [${e.leftSE.point.x}, ${e.leftSE.point.y}] -> [${e.rightSE.point.x}, ${e.rightSE.point.y}] from queue.`)}if(i.size>Z)throw new Error("Infinite loop when passing sweep line over endpoints (queue size too big).");if(o.segments.length>D)throw new Error("Infinite loop when passing sweep line over endpoints (too many sweep line segments).");const e=o.process(t);for(let t=0,n=e.length;t<n;t++){const n=e[t];void 0===n.consumedBy&&i.insert(n)}s=i.size,h=i.pop()}b.reset();const u=V.factory(o.segments);return new Q(u).getGeom()}};var J={union:function(t){for(var e=arguments.length,n=new Array(e>1?e-1:0),r=1;r<e;r++)n[r-1]=arguments[r];return H.run("union",t,n)},intersection:function(t){for(var e=arguments.length,n=new Array(e>1?e-1:0),r=1;r<e;r++)n[r-1]=arguments[r];return H.run("intersection",t,n)},xor:function(t){for(var e=arguments.length,n=new Array(e>1?e-1:0),r=1;r<e;r++)n[r-1]=arguments[r];return H.run("xor",t,n)},difference:function(t){for(var e=arguments.length,n=new Array(e>1?e-1:0),r=1;r<e;r++)n[r-1]=arguments[r];return H.run("difference",t,n)}};return J}));
+  return Object.freeze(module.exports);
+})();
+
+return {polygonClipping};
+})();
+const {polygonDifference,polygonUnion,polygonIntersection,normalizePolygonParts} = (() => {
+// Polygon parts use the renderer's native representation:
+// [polygon [outerRing, ...holeRings]], with closed {x,y} coordinate rings.
+// All operations return independent geometry and preserve coordinate precision.
+const pgMaxCoordinate = 1e9, pgMaxPoints = 1000000;
+const pgEqual = (a, b) => a.x === b.x && a.y === b.y;
+const pgCompare = (a, b) => a.x - b.x || a.y - b.y;
+const pgArea = ring => {
+  if (ring.length < 4) return 0;
+  const origin = ring[0];
+  let sum = 0;
+  for (let i = 1; i < ring.length - 1; i++) sum += (ring[i].x - origin.x) * (ring[i + 1].y - origin.y) - (ring[i + 1].x - origin.x) * (ring[i].y - origin.y);
+  return sum / 2;
+};
+function pgRing(input, hole, budget) {
+  if (!Array.isArray(input)) throw new TypeError('Polygon ring must be an array of coordinate points.');
+  const ring = [];
+  for (const point of input) {
+    if (++budget.points > pgMaxPoints) throw new RangeError('Polygon operation exceeds the coordinate-count limit.');
+    if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y) || Math.abs(point.x) > pgMaxCoordinate || Math.abs(point.y) > pgMaxCoordinate) throw new TypeError('Polygon coordinates must be finite and bounded.');
+    const next = { x: point.x === 0 ? 0 : point.x, y: point.y === 0 ? 0 : point.y };
+    if (!ring.length || !pgEqual(ring.at(-1), next)) ring.push(next);
+  }
+  if (ring.length > 1 && pgEqual(ring[0], ring.at(-1))) ring.pop();
+  if (ring.length < 3) return null;
+  ring.push({ ...ring[0] });
+  const area = pgArea(ring);
+  if (area === 0) {
+    // Collinear rings have no area. A self-crossing ring can have zero signed
+    // area yet a real filled interior; the clipping engine resolves that case.
+    const origin = ring[0], edge = ring.find(point => !pgEqual(point, origin));
+    if (!edge || !ring.some(point => (edge.x - origin.x) * (point.y - origin.y) - (edge.y - origin.y) * (point.x - origin.x) !== 0)) return null;
+  }
+  if (area !== 0 && (area > 0) === hole) ring.reverse();
+  // Stable first vertex and ordering make regenerated maps reproducible.
+  ring.pop();
+  let first = 0;
+  for (let i = 1; i < ring.length; i++) if (pgCompare(ring[i], ring[first]) < 0) first = i;
+  const result = [...ring.slice(first), ...ring.slice(0, first)];
+  result.push({ ...result[0] });
+  return result;
+}
+const pgRingKey = ring => ring.map(point => `${point.x},${point.y}`).join(';');
+const pgSort = (a, b) => pgCompare(a[0], b[0]) || pgRingKey(a).localeCompare(pgRingKey(b));
+
+function normalizePolygonParts(parts = []) {
+  if (!Array.isArray(parts)) throw new TypeError('Polygon parts must be an array.');
+  const budget = { points: 0 }, result = [];
+  for (const polygon of parts) {
+    if (!Array.isArray(polygon)) throw new TypeError('Each polygon must contain an outer ring and optional holes.');
+    if (!polygon.length) continue;
+    const outer = pgRing(polygon[0], false, budget);
+    if (!outer) continue;
+    const holes = polygon.slice(1).map(ring => pgRing(ring, true, budget)).filter(Boolean).sort(pgSort);
+    result.push([outer, ...holes]);
+  }
+  return result.sort((a, b) => pgSort(a[0], b[0]) || a.length - b.length);
+}
+const pgCoordinates = parts => parts.map(polygon => polygon.map(ring => ring.map(point => [point.x, point.y])));
+const pgPoints = coordinates => normalizePolygonParts(coordinates.map(polygon => polygon.map(ring => ring.map(([x, y]) => ({ x, y })))));
+const pgBounds = polygon => polygon[0].reduce((bounds, point) => ({ minX: Math.min(bounds.minX, point.x), minY: Math.min(bounds.minY, point.y), maxX: Math.max(bounds.maxX, point.x), maxY: Math.max(bounds.maxY, point.y) }), { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity });
+const pgOverlap = (a, b) => a.minX <= b.maxX && a.maxX >= b.minX && a.minY <= b.maxY && a.maxY >= b.minY;
+function pgRelevantMasks(subject, masks) {
+  const bounds = subject.map(pgBounds);
+  return masks.filter(mask => { const maskBounds = pgBounds(mask); return bounds.some(box => pgOverlap(box, maskBounds)); });
 }
 
-function trDryGround(world, cells) {
-  const count = world.cols * world.rows;
-  const types = new Array(count);
-  const queue = new Int32Array(count);
-  let head = 0, tail = 0;
-  for (let i = 0; i < count; i++) {
-    const type = cells[i]?.type;
-    if (['plain', 'forest', 'hill', 'swamp'].includes(type)) {
-      types[i] = type;
-      queue[tail++] = i;
+// Overlapping source/fusion edges can differ by a final floating-point bit.
+// Martinez's sweep ordering then occasionally cannot find a coincident segment.
+// Retry only that numerical failure in a local integer frame. Normal operation
+// keeps every input bit; the retry resolves at most 1e-9 units (1e-8 on a second
+// attempt), far below source accuracy. It still performs the full boolean and
+// never returns an uncut shape or silently discards a mask.
+function pgRun(operation, ...geometries) {
+  try { return polygonClipping[operation](...geometries); }
+  catch (error) {
+    if (!/Unable to find segment|Unable to complete output ring|SweepLine/.test(String(error))) throw error;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const geometry of geometries) for (const polygon of geometry) for (const ring of polygon) for (const [x, y] of ring) {
+      minX = Math.min(minX, x); minY = Math.min(minY, y); maxX = Math.max(maxX, x); maxY = Math.max(maxY, y);
     }
-  }
-  // Flood beneath water and roads so hiding those layers leaves continuous ground.
-  if (!tail) return types.fill('plain');
-  while (head < tail) {
-    const index = queue[head++], x = index % world.cols, y = Math.floor(index / world.cols);
-    const visit = next => {
-      if (types[next] === undefined) { types[next] = types[index]; queue[tail++] = next; }
-    };
-    if (x > 0) visit(index - 1);
-    if (x + 1 < world.cols) visit(index + 1);
-    if (y > 0) visit(index - world.cols);
-    if (y + 1 < world.rows) visit(index + world.cols);
-  }
-  return types;
-}
-
-function trContours(context, world, cells) {
-  const size = world.cellSize;
-  for (let level = .2; level < .95; level += .085) {
-    context.beginPath();
-    for (let y = 0; y < world.rows - 1; y++) for (let x = 0; x < world.cols - 1; x++) {
-      const corners = [cells[y * world.cols + x], cells[y * world.cols + x + 1], cells[(y + 1) * world.cols + x + 1], cells[(y + 1) * world.cols + x]];
-      if (corners.some(cell => !Number.isFinite(cell?.height))) continue;
-      const positions = [[x + .5, y + .5], [x + 1.5, y + .5], [x + 1.5, y + 1.5], [x + .5, y + 1.5]];
-      const edges = [];
-      for (let i = 0; i < 4; i++) {
-        const next = (i + 1) % 4, a = corners[i].height, b = corners[next].height;
-        if ((a < level) === (b < level)) continue;
-        const fraction = (level - a) / (b - a);
-        edges.push({ x: (positions[i][0] + (positions[next][0] - positions[i][0]) * fraction) * size, y: (positions[i][1] + (positions[next][1] - positions[i][1]) * fraction) * size });
-      }
-      for (let i = 0; i + 1 < edges.length; i += 2) {
-        context.moveTo(edges[i].x, edges[i].y); context.lineTo(edges[i + 1].x, edges[i + 1].y);
+    const originX = Math.floor(minX), originY = Math.floor(minY);
+    const extent = Math.max(maxX - originX, maxY - originY, 1);
+    let lastError = error;
+    for (const scale of [1e9, 1e8]) {
+      // Integer coordinates remain exactly representable, including for offsets
+      // far from world origin. Oversized generic inputs fail instead of losing
+      // meaningful precision; game maps are limited to a much smaller extent.
+      if (extent * scale > 2 ** 45) continue;
+      const translated = geometries.map(geometry => geometry.map(polygon => polygon.map(ring => ring.map(([x, y]) => [Math.round((x - originX) * scale), Math.round((y - originY) * scale)]))));
+      try {
+        const result = polygonClipping[operation](...translated);
+        return result.map(polygon => polygon.map(ring => ring.map(([x, y]) => [x / scale + originX, y / scale + originY])));
+      } catch (retryError) {
+        if (!/Unable to find segment|Unable to complete output ring|SweepLine/.test(String(retryError))) throw retryError;
+        lastError = retryError;
       }
     }
-    context.strokeStyle = 'rgba(45,55,37,.19)'; context.lineWidth = .8; context.stroke();
+    throw lastError;
   }
 }
 
-function trCanvas(world, alpha) {
-  if (!world || !Number.isInteger(world.width) || !Number.isInteger(world.height)
-    || world.width < 1 || world.height < 1 || world.width > 10000 || world.height > 10000 || world.width * world.height > 20000000) {
-    throw new Error('Invalid terrain backdrop dimensions');
-  }
-  const canvas = document.createElement('canvas');
-  canvas.width = world.width; canvas.height = world.height;
-  return { canvas, context: canvas.getContext('2d', { alpha }) };
+function polygonUnion(parts = []) {
+  const normalized = normalizePolygonParts(parts);
+  return normalized.length ? pgPoints(pgRun('union', pgCoordinates(normalized))) : [];
 }
 
-/** Paper is independent of every biome, mapped object and layer's visibility. */
-function createTerrainBackdrop(world, palette) {
-  const { canvas, context } = trCanvas(world, false);
-  const plain = palette?.plain || '#a7ac8d';
-  const random = trRandom(world.seed);
-  context.fillStyle = plain; context.fillRect(0, 0, canvas.width, canvas.height);
-
-  // Print stains are purely decorative: geographic backdrops contain no inferred relief.
-  for (let i = 0; i < 18; i++) {
-    const x = random() * world.width, y = random() * world.height, radius = 180 + random() * 500;
-    const stain = context.createRadialGradient(x, y, 0, x, y, radius);
-    stain.addColorStop(0, i % 2 ? 'rgba(56,65,40,.06)' : 'rgba(245,234,186,.06)');
-    stain.addColorStop(1, 'rgba(60,62,39,0)');
-    context.fillStyle = stain; context.fillRect(x - radius, y - radius, radius * 2, radius * 2);
-  }
-
-  const marks = Math.min(45000, Math.max(2000, Math.round(world.width * world.height / 190)));
-  for (let i = 0; i < marks; i++) {
-    const x = random() * world.width, y = random() * world.height;
-    context.fillStyle = random() > .4 ? 'rgba(27,40,25,.07)' : 'rgba(246,237,197,.09)';
-    context.fillRect(x, y, random() * 2 + .3, random() * 2 + .3);
-  }
-
-  context.strokeStyle = 'rgba(45,61,40,.1)'; context.lineWidth = .7; context.beginPath();
-  for (let x = 0; x <= world.width; x += 250) { context.moveTo(x, 0); context.lineTo(x, world.height); }
-  for (let y = 0; y <= world.height; y += 250) { context.moveTo(0, y); context.lineTo(world.width, y); }
-  context.stroke();
-  return canvas;
+function polygonDifference(parts = [], masks = []) {
+  const subject = normalizePolygonParts(parts);
+  if (!subject.length) return [];
+  const clips = pgRelevantMasks(subject, normalizePolygonParts(masks));
+  return clips.length ? pgPoints(pgRun('difference', pgCoordinates(subject), pgCoordinates(clips))) : subject;
 }
 
-/** Fictional biomes only; real areas and natural features use their source vectors. */
-function createLandscapeBackdrop(world, palette) {
-  if (world?.geographic) return null;
-  const { canvas, context } = trCanvas(world, true);
-  const cells = world.terrainCells || world.cells || [];
-  if (!cells.length || !(world.cols > 0) || !(world.rows > 0)) return canvas;
-  const types = trDryGround(world, cells);
-  const { canvas: ground, context: fill } = trCanvas(world, true);
-  const colors = { forest: '#6e8163', hill: '#a8a38a', swamp: '#7f927c' };
-  types.forEach((type, index) => {
-    if (!Object.hasOwn(colors, type)) return;
-    fill.fillStyle = palette?.[type] || colors[type];
-    fill.fillRect((index % world.cols) * world.cellSize, Math.floor(index / world.cols) * world.cellSize, world.cellSize + 1, world.cellSize + 1);
+function polygonIntersection(parts = [], clips = []) {
+  const subject = normalizePolygonParts(parts);
+  if (!subject.length) return [];
+  const masks = pgRelevantMasks(subject, normalizePolygonParts(clips));
+  return masks.length ? pgPoints(pgRun('intersection', pgCoordinates(subject), pgCoordinates(masks))) : [];
+}
+
+return {polygonDifference,polygonUnion,polygonIntersection,normalizePolygonParts};
+})();
+const {buildWaterRibbonParts} = (() => {
+// A semantic river footprint is the native-width stroke of its mapped paths.
+// Round joints/caps are approximated by inscribed 16-gons. No screen-zoom width
+// or invented links between independent paths enter this world-space geometry.
+const ribbonSides = 16;
+const ribbonCircle = (point, radius) => {
+  const ring = Array.from({ length: ribbonSides }, (_, index) => {
+    const angle = index / ribbonSides * Math.PI * 2;
+    return { x: point.x + Math.cos(angle) * radius, y: point.y + Math.sin(angle) * radius };
   });
-  // Translucent tint preserves the neutral paper's grain beneath biome zones.
-  context.globalAlpha = .82; context.filter = 'blur(12px)';
-  context.drawImage(ground, 0, 0); context.filter = 'none'; context.globalAlpha = 1;
-  trContours(context, world, cells);
+  ring.push({ ...ring[0] });
+  return [ring];
+};
+const ribbonPointKey = point => `${point.x},${point.y}`;
 
-  const random = trRandom(world.seed);
-  const marks = Math.min(45000, Math.max(2000, Math.round(world.width * world.height / 190)));
-  for (let i = 0; i < marks; i++) {
-    const x = random() * world.width, y = random() * world.height;
-    const index = Math.floor(y / world.cellSize) * world.cols + Math.floor(x / world.cellSize), type = types[index];
-    if (type === 'forest' && i % 3 === 0) {
-      const size = 2.8 + random() * 4;
-      context.beginPath(); context.moveTo(x, y - size); context.lineTo(x - size * .55, y + size * .5); context.lineTo(x + size * .55, y + size * .5); context.closePath();
-      context.fillStyle = 'rgba(34,60,37,.23)'; context.fill();
-      context.fillStyle = 'rgba(35,51,32,.25)'; context.fillRect(x - .4, y + size * .5, .8, 2);
-    } else if (type === 'hill' && i % 9 === 0) {
-      context.strokeStyle = 'rgba(66,60,39,.21)'; context.lineWidth = .8;
-      context.beginPath(); context.moveTo(x - 3, y + 1); context.lineTo(x, y - 3); context.lineTo(x + 3, y + 1); context.stroke();
-    } else if (type === 'swamp' && i % 5 === 0) {
-      context.strokeStyle = 'rgba(50,77,55,.2)'; context.lineWidth = .7;
-      context.beginPath(); context.moveTo(x - 2, y + 1); context.lineTo(x + 2, y + 1); context.moveTo(x, y + 1); context.lineTo(x - 1, y - 2); context.stroke();
+/** Return polygon parts for the union of separate native-width stroked paths. */
+function buildWaterRibbonParts(paths = [], width = 1) {
+  if (!Array.isArray(paths)) throw new TypeError('Water paths must be an array.');
+  if (!Number.isFinite(width) || width <= 0) throw new RangeError('Water ribbon width must be finite and positive.');
+  const radius = width / 2, shapes = [], joints = new Map();
+  for (const input of paths) {
+    if (!Array.isArray(input)) throw new TypeError('Each water path must be an array.');
+    const points = [];
+    for (const point of input) {
+      if (!point || !Number.isFinite(point.x) || !Number.isFinite(point.y)) throw new TypeError('Water path coordinates must be finite.');
+      if (!points.length || point.x !== points.at(-1).x || point.y !== points.at(-1).y) points.push(point);
+    }
+    if (!points.length) continue;
+    for (const point of points) joints.set(ribbonPointKey(point), point);
+    for (let index = 1; index < points.length; index++) {
+      const a = points[index - 1], b = points[index], dx = b.x - a.x, dy = b.y - a.y;
+      const scale = radius / Math.hypot(dx, dy), nx = -dy * scale, ny = dx * scale;
+      const ring = [{ x: a.x + nx, y: a.y + ny }, { x: b.x + nx, y: b.y + ny }, { x: b.x - nx, y: b.y - ny }, { x: a.x - nx, y: a.y - ny }];
+      ring.push({ ...ring[0] }); shapes.push([ring]);
     }
   }
-  return canvas;
+  // One sweep unions every segment and joint together; an incremental union per
+  // vertex would repeatedly rebuild the entire preceding stroke.
+  for (const point of joints.values()) shapes.push(ribbonCircle(point, radius));
+  return shapes.length ? polygonUnion(shapes) : [];
 }
 
-return {createTerrainBackdrop,createLandscapeBackdrop};
+return {buildWaterRibbonParts};
+})();
+const {buildCityBiomes} = (() => {
+// A city is a gameplay envelope of measured development, not an administrative
+// boundary. Source plots, building footprints and their roles remain untouched.
+const cbSourceId = feature => feature.sourceId || feature.id?.match(/^(?:node|way|relation)-\d+/)?.[0] || feature.id;
+const cbParts = feature => feature.parts || (feature.rings?.length ? [feature.rings] : feature.points?.length >= 3 ? [[feature.points]] : []);
+const cbBounds = points => points.reduce((b, p) => ({ minX: Math.min(b.minX, p.x), minY: Math.min(b.minY, p.y), maxX: Math.max(b.maxX, p.x), maxY: Math.max(b.maxY, p.y) }), { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity });
+const cbArea = ring => ring.reduce((sum, p, i) => { const q = ring[(i + 1) % ring.length]; return sum + p.x * q.y - q.x * p.y; }, 0) / 2;
+function cbInRing(point, ring) {
+  let inside = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const a = ring[i], b = ring[j];
+    if ((a.y > point.y) !== (b.y > point.y) && point.x < (b.x - a.x) * (point.y - a.y) / (b.y - a.y) + a.x) inside = !inside;
+  }
+  return inside;
+}
+const cbInParts = (point, parts) => parts.some(rings => cbInRing(point, rings[0]) && !rings.slice(1).some(ring => cbInRing(point, ring)));
+function cbNearest(point, a, b) {
+  const dx = b.x - a.x, dy = b.y - a.y, denominator = dx * dx + dy * dy;
+  const t = denominator ? Math.max(0, Math.min(1, ((point.x - a.x) * dx + (point.y - a.y) * dy) / denominator)) : 0;
+  const nearest = { x: a.x + dx * t, y: a.y + dy * t };
+  return { point: nearest, distance: Math.hypot(point.x - nearest.x, point.y - nearest.y) };
+}
+const cbBoxDistance = (point, bounds) => Math.hypot(Math.max(bounds.minX - point.x, 0, point.x - bounds.maxX), Math.max(bounds.minY - point.y, 0, point.y - bounds.maxY));
+const cbUrbanUses = new Set(['residential', 'commercial', 'retail', 'industrial']);
+const cbSettlements = new Set(['city', 'town', 'village', 'hamlet', 'isolated_dwelling']);
+function cbHash(text) { let hash = 2166136261; for (const char of text) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619) >>> 0; return hash.toString(36); }
+function cbSmoothRing(ring, iterations = 2) {
+  let points = ring.slice(0, -1);
+  for (let pass = 0; pass < iterations; pass++) {
+    const rounded = [];
+    for (let i = 0; i < points.length; i++) {
+      const a = points[i], b = points[(i + 1) % points.length];
+      rounded.push({ x: a.x * .75 + b.x * .25, y: a.y * .75 + b.y * .25 }, { x: a.x * .25 + b.x * .75, y: a.y * .25 + b.y * .75 });
+    }
+    points = rounded;
+  }
+  return [...points, { ...points[0] }];
+}
+function cbSimplifyLine(points, tolerance) {
+  if (points.length <= 2) return points;
+  const a = points[0], b = points.at(-1);
+  let selected = -1, maximum = tolerance;
+  for (let i = 1; i < points.length - 1; i++) {
+    const distance = cbNearest(points[i], a, b).distance;
+    if (distance > maximum) { maximum = distance; selected = i; }
+  }
+  return selected < 0 ? [a, b] : [...cbSimplifyLine(points.slice(0, selected + 1), tolerance).slice(0, -1), ...cbSimplifyLine(points.slice(selected), tolerance)];
+}
+function cbSmoothParts(parts, metersPerUnit) {
+  return parts.map(rings => rings.map(ring => {
+    const rounded = cbSmoothRing(ring), half = Math.floor((rounded.length - 1) / 2);
+    return [...cbSimplifyLine(rounded.slice(0, half + 1), .35 / metersPerUnit).slice(0, -1), ...cbSimplifyLine(rounded.slice(half), .35 / metersPerUnit)];
+  }));
+}
+
+// Trace level-set segments, rather than exposed square cell edges. Shared edge
+// identities join neighboring samples exactly; interpolation makes the contour
+// continuous even though the density calculation uses a bounded sample lattice.
+function cbDensityContours(field, activeCells, cols, rows, cellSize, threshold) {
+  const stride = cols + 1, nodes = new Map(), edges = new Map();
+  const pointFor = (index) => ({ x: (index % stride - 1) * cellSize, y: (Math.floor(index / stride) - 1) * cellSize });
+  const intersection = (first, second) => {
+    const av = field[first], bv = field[second];
+    const key = Math.abs(av - threshold) < 1e-10 ? `n${first}` : Math.abs(bv - threshold) < 1e-10 ? `n${second}` : first < second ? `${first}:${second}` : `${second}:${first}`;
+    if (!nodes.has(key)) {
+      const a = pointFor(first), b = pointFor(second), ratio = (threshold - av) / (bv - av);
+      nodes.set(key, { x: a.x + (b.x - a.x) * ratio, y: a.y + (b.y - a.y) * ratio });
+    }
+    return key;
+  };
+  const add = (a, b) => {
+    if (a === b) return;
+    if (!edges.has(a)) edges.set(a, new Set()); if (!edges.has(b)) edges.set(b, new Set());
+    edges.get(a).add(b); edges.get(b).add(a);
+  };
+  for (const cell of activeCells) {
+    const x = cell % cols, y = Math.floor(cell / cols);
+    if (x < 0 || x >= cols || y < 0 || y >= rows) continue;
+    const corners = [y * stride + x, y * stride + x + 1, (y + 1) * stride + x + 1, (y + 1) * stride + x];
+    const crossings = [];
+    for (let edge = 0; edge < 4; edge++) {
+      const a = corners[edge], b = corners[(edge + 1) % 4];
+      if ((field[a] >= threshold) !== (field[b] >= threshold)) crossings.push({ edge, key: intersection(a, b) });
+    }
+    if (crossings.length === 2) add(crossings[0].key, crossings[1].key);
+    else if (crossings.length === 4) {
+      const centerInside = corners.reduce((sum, index) => sum + field[index], 0) / 4 >= threshold;
+      const diagonalFirst = field[corners[0]] >= threshold;
+      const pairs = centerInside === diagonalFirst ? [[0, 1], [2, 3]] : [[0, 3], [1, 2]];
+      for (const [a, b] of pairs) add(crossings[a].key, crossings[b].key);
+    }
+  }
+  const rings = [];
+  while (edges.size) {
+    const start = edges.keys().next().value, ring = [nodes.get(start)];
+    let current = start, iterations = 0;
+    do {
+      const choices = edges.get(current);
+      if (!choices?.size || iterations++ > activeCells.size * 2 + 4) throw new Error('Invalid gameplay density contour.');
+      const next = choices.values().next().value;
+      choices.delete(next); if (!choices.size) edges.delete(current);
+      const reverse = edges.get(next); reverse.delete(current); if (!reverse.size) edges.delete(next);
+      ring.push(nodes.get(next)); current = next;
+    } while (current !== start);
+    if (ring.length >= 4 && Math.abs(cbArea(ring)) > 1e-9) rings.push(ring);
+  }
+  // The interpolated graph has arbitrary winding. Nesting, not trace direction,
+  // distinguishes holes and islands before the boolean geometry normalizes it.
+  rings.sort((a, b) => Math.abs(cbArea(b)) - Math.abs(cbArea(a)));
+  const entries = [];
+  for (const ring of rings) {
+    let parent = -1;
+    for (let i = entries.length - 1; i >= 0; i--) if (cbInRing(ring[0], entries[i].ring)) { parent = i; break; }
+    entries.push({ ring, parent, depth: parent < 0 ? 0 : entries[parent].depth + 1 });
+  }
+  return entries.flatMap((entry, index) => entry.depth % 2 ? [] : [[entry.ring, ...entries.filter(other => other.parent === index && other.depth % 2).map(other => other.ring)]]);
+}
+
+
+function cbBuildingClusters(buildings, places, metersPerUnit) {
+  const distance = 220 / metersPerUnit, bins = new Map();
+  buildings.forEach((building, index) => { const key = `${Math.floor(building.point.x / distance)},${Math.floor(building.point.y / distance)}`; if (!bins.has(key)) bins.set(key, []); bins.get(key).push(index); });
+  const visited = new Set(), clusters = [];
+  for (let start = 0; start < buildings.length; start++) {
+    if (visited.has(start)) continue;
+    const queue = [start]; visited.add(start);
+    for (let cursor = 0; cursor < queue.length; cursor++) {
+      const point = buildings[queue[cursor]].point, bx = Math.floor(point.x / distance), by = Math.floor(point.y / distance);
+      for (let y = by - 1; y <= by + 1; y++) for (let x = bx - 1; x <= bx + 1; x++) for (const index of bins.get(`${x},${y}`) || []) {
+        if (!visited.has(index) && Math.hypot(buildings[index].point.x - point.x, buildings[index].point.y - point.y) <= distance) { visited.add(index); queue.push(index); }
+      }
+    }
+    const group = queue.map(index => buildings[index]);
+    const anchors = places.filter(place => group.some(building => Math.hypot(building.point.x - place.point.x, building.point.y - place.point.y) * metersPerUnit <= (place.settlement ? 800 : 600)));
+    const significant = group.length >= 12 || group.length >= 5 && (!places.length || anchors.length) || group.length >= 2 && anchors.some(place => place.settlement && group.some(building => Math.hypot(building.point.x - place.point.x, building.point.y - place.point.y) * metersPerUnit <= 300));
+    if (significant) clusters.push({ buildings: group, anchors });
+  }
+  return clusters;
+}
+
+function cbClose(mask, cols, rows, radius) {
+  const stride = cols + 1, offsets = [];
+  for (let y = -radius; y <= radius; y++) for (let x = -radius; x <= radius; x++) if (x * x + y * y <= radius * radius) offsets.push([x, y]);
+  const expanded = new Set();
+  for (const index of mask) {
+    const px = index % stride, py = Math.floor(index / stride);
+    for (const [dx, dy] of offsets) { const x = px + dx, y = py + dy; if (x > 0 && y > 0 && x < cols && y < rows) expanded.add(y * stride + x); }
+  }
+  const closed = new Set();
+  for (const index of expanded) {
+    const px = index % stride, py = Math.floor(index / stride);
+    if (offsets.every(([dx, dy]) => { const x = px + dx, y = py + dy; return x <= 0 || y <= 0 || x >= cols || y >= rows || expanded.has(y * stride + x); })) closed.add(index);
+  }
+  return closed;
+}
+
+function cbFillHoles(mask, cols, rows) {
+  if (!mask.size) return mask;
+  const stride = cols + 1, bounds = cbBounds([...mask].map(index => ({ x: index % stride, y: Math.floor(index / stride) })));
+  const minX = Math.max(0, bounds.minX - 1), maxX = Math.min(cols, bounds.maxX + 1), minY = Math.max(0, bounds.minY - 1), maxY = Math.min(rows, bounds.maxY + 1);
+  const exterior = new Set(), queue = [];
+  const add = (x, y) => { const index = y * stride + x; if (!mask.has(index) && !exterior.has(index)) { exterior.add(index); queue.push(index); } };
+  for (let x = minX; x <= maxX; x++) { add(x, minY); add(x, maxY); }
+  for (let y = minY; y <= maxY; y++) { add(minX, y); add(maxX, y); }
+  for (let cursor = 0; cursor < queue.length; cursor++) { const index = queue[cursor], x = index % stride, y = Math.floor(index / stride); if (x > minX) add(x - 1, y); if (x < maxX) add(x + 1, y); if (y > minY) add(x, y - 1); if (y < maxY) add(x, y + 1); }
+  const result = new Set(mask);
+  for (let y = minY; y <= maxY; y++) for (let x = minX; x <= maxX; x++) { const index = y * stride + x; if (!exterior.has(index)) result.add(index); }
+  return result;
+}
+
+/** Build coherent city envelopes once; nature and water are cut by the partition. */
+function buildCityBiomes(world = {}) {
+  if (!(world.width > 0 && world.height > 0)) return { features: [], report: { method: 'coherent-development-envelope', cities: 0 } };
+  const metersPerUnit = Number(world.metersPerUnit) || 5, procedural = !world.geographic && !Array.isArray(world.bbox);
+  const polygonSources = ['areas', 'details'].flatMap(collection => (world[collection] || []).map(feature => ({ feature, parts: cbParts(feature) })).filter(record => record.parts.length && (!record.feature.geometry || record.feature.geometry === 'polygon')));
+  const airports = polygonSources.filter(record => record.feature.tags?.aeroway === 'aerodrome').flatMap(record => record.parts);
+  const placeById = new Map();
+  for (const feature of [...(world.details || []), ...(world.pois || [])]) {
+    const tags = feature.tags || {}, settlement = cbSettlements.has(tags.place) || cbSettlements.has(tags['abandoned:place']) || procedural && ['town', 'village', 'city', 'settlement'].includes(feature.kind);
+    if (!settlement && tags.place !== 'locality') continue;
+    const point = feature.points?.[0] || feature;
+    if (!Number.isFinite(point.x) || !Number.isFinite(point.y)) continue;
+    const id = cbSourceId(feature); if (!placeById.has(id)) placeById.set(id, { id, name: tags.name || feature.name || '', point: { x: point.x, y: point.y }, settlement });
+  }
+  const places = [...placeById.values()].sort((a, b) => String(a.id).localeCompare(String(b.id)));
+  const buildings = (world.buildings || []).filter(feature => feature.points?.length >= 3).map(feature => { const bounds = cbBounds(feature.points); return { id: cbSourceId(feature), point: { x: (bounds.minX + bounds.maxX) / 2, y: (bounds.minY + bounds.maxY) / 2 } }; }).filter(building => !cbInParts(building.point, airports)).sort((a, b) => String(a.id).localeCompare(String(b.id)));
+  const clusters = cbBuildingClusters(buildings, places, metersPerUnit), selected = clusters.flatMap(cluster => cluster.buildings);
+  const plots = polygonSources.filter(record => {
+    if (!cbUrbanUses.has(record.feature.tags?.landuse)) return false;
+    const bounds = cbBounds(record.parts.flat(2));
+    return selected.some(building => cbBoxDistance(building.point, bounds) * metersPerUnit <= 120)
+      || places.some(place => place.settlement && cbBoxDistance(place.point, bounds) * metersPerUnit <= 500);
+  });
+  if (!selected.length && !plots.length) return { features: [], report: { method: 'coherent-development-envelope', cities: 0, sourceBuildings: (world.buildings || []).length, eligibleBuildings: buildings.length, selectedBuildings: 0 } };
+  const cellSize = Math.max(15 / metersPerUnit, world.width / 800, world.height / 800), cols = Math.ceil(world.width / cellSize) + 2, rows = Math.ceil(world.height / cellSize) + 2, stride = cols + 1;
+  const mask = new Set(), radius = 110 / metersPerUnit;
+  for (const building of selected) {
+    const minX = Math.max(1, Math.floor((building.point.x - radius) / cellSize) + 1), maxX = Math.min(cols - 1, Math.ceil((building.point.x + radius) / cellSize) + 1), minY = Math.max(1, Math.floor((building.point.y - radius) / cellSize) + 1), maxY = Math.min(rows - 1, Math.ceil((building.point.y + radius) / cellSize) + 1);
+    for (let y = minY; y <= maxY; y++) for (let x = minX; x <= maxX; x++) if (Math.hypot((x - 1) * cellSize - building.point.x, (y - 1) * cellSize - building.point.y) <= radius) mask.add(y * stride + x);
+  }
+  for (const record of plots) {
+    const bounds = cbBounds(record.parts.flat(2)), minX = Math.max(1, Math.floor(bounds.minX / cellSize) + 1), maxX = Math.min(cols - 1, Math.ceil(bounds.maxX / cellSize) + 1), minY = Math.max(1, Math.floor(bounds.minY / cellSize) + 1), maxY = Math.min(rows - 1, Math.ceil(bounds.maxY / cellSize) + 1);
+    for (let y = minY; y <= maxY; y++) for (let x = minX; x <= maxX; x++) if (cbInParts({ x: (x - 1) * cellSize, y: (y - 1) * cellSize }, record.parts)) mask.add(y * stride + x);
+  }
+  const closed = cbFillHoles(cbClose(mask, cols, rows, Math.max(1, Math.round(60 / metersPerUnit / cellSize))), cols, rows);
+  let field = new Float64Array((cols + 1) * (rows + 1));
+  for (const index of closed) field[index] = 1;
+  const extent = cbBounds([...closed].map(index => ({ x: index % stride, y: Math.floor(index / stride) })));
+  const minX = Math.max(1, extent.minX - 3), maxX = Math.min(cols - 1, extent.maxX + 3), minY = Math.max(1, extent.minY - 3), maxY = Math.min(rows - 1, extent.maxY + 3);
+  for (let pass = 0; pass < 2; pass++) {
+    const horizontal = new Float64Array(field.length), vertical = new Float64Array(field.length);
+    for (let y = minY; y <= maxY; y++) for (let x = minX; x <= maxX; x++) { const index = y * stride + x; horizontal[index] = (field[index - 1] + field[index] * 2 + field[index + 1]) / 4; }
+    for (let y = minY; y <= maxY; y++) for (let x = minX; x <= maxX; x++) { const index = y * stride + x; vertical[index] = (horizontal[index - stride] + horizontal[index] * 2 + horizontal[index + stride]) / 4; }
+    field = vertical;
+  }
+  const activeCells = new Set();
+  for (let y = minY; y <= maxY; y++) for (let x = minX; x <= maxX; x++) if (field[y * stride + x]) for (const [cx, cy] of [[x - 1, y - 1], [x, y - 1], [x - 1, y], [x, y]]) activeCells.add(cy * cols + cx);
+  const contours = cbDensityContours(field, activeCells, cols, rows, cellSize, .48);
+  const rectangle = [[[{ x: 0, y: 0 }, { x: world.width, y: 0 }, { x: world.width, y: world.height }, { x: 0, y: world.height }, { x: 0, y: 0 }]]];
+  let parts = polygonIntersection(polygonUnion(cbSmoothParts(contours.map(part => [part[0]]), metersPerUnit)), rectangle);
+  if (airports.length) parts = polygonDifference(parts, airports);
+  const features = parts.filter(part => Math.abs(cbArea(part[0])) * metersPerUnit ** 2 >= 1500).map(part => {
+    const bounds = cbBounds(part[0]), related = selected.filter(building => cbBoxDistance(building.point, bounds) * metersPerUnit <= 110), center = { x: (bounds.minX + bounds.maxX) / 2, y: (bounds.minY + bounds.maxY) / 2 };
+    const nearbyPlaces = places.map(place => ({ ...place, distance: Math.hypot(place.point.x - center.x, place.point.y - center.y) * metersPerUnit })).filter(place => place.distance <= 1500).sort((a, b) => a.distance - b.distance || String(a.id).localeCompare(String(b.id)));
+    const sourceIds = [...new Set([...related.map(building => building.id), ...plots.filter(record => record.parts.flat(2).some(point => point.x >= bounds.minX && point.x <= bounds.maxX && point.y >= bounds.minY && point.y <= bounds.maxY)).map(record => cbSourceId(record.feature)), ...nearbyPlaces.slice(0, 1).map(place => place.id)])].filter(Boolean).sort();
+    const id = `game-city-${cbHash(sourceIds.join('|'))}`, name = nearbyPlaces[0]?.name || 'Городская местность';
+    return { id, sourceId: id, sourceIds, name, biome: 'city', type: 'city', kind: 'city', geometry: 'polygon', points: part[0], rings: part, parts: [part], derived: true, city: true, fill: '#939797', provenance: { method: 'coherent-development-envelope', sourceIds, buildingCount: related.length, sampleSpacingMeters: cellSize * metersPerUnit, buildingHaloMeters: 110, closeGapsMeters: 120, filledInteriorGaps: true, sourceBoundary: false } };
+  });
+  return { features, report: { method: 'coherent-development-envelope', cities: features.length, sourceBuildings: (world.buildings || []).length, eligibleBuildings: buildings.length, excludedAirportBuildings: (world.buildings || []).length - buildings.length, selectedBuildings: selected.length, sourcePlots: plots.length, sourceClusters: clusters.length, sampleSpacingMeters: cellSize * metersPerUnit, vertices: features.reduce((sum, feature) => sum + feature.parts.flat(2).length, 0), byCity: features.map(feature => ({ id: feature.id, name: feature.name, buildingCount: feature.provenance.buildingCount })) } };
+}
+
+return {buildCityBiomes};
 })();
 const {mapFeatureLayer,mapBiome,mapZoneBiome,shouldRenderFeature,shouldRenderLandscapeFeature,mapLandscapeBiome} = (() => {
 /** Shared semantic ownership for vector geometry, map markers and layer switches. */
@@ -1494,6 +2062,7 @@ const BIOME_TYPES = gtCatalog('biome', [
   ['administrative', 'Административная территория'],
   ['plain', 'Открытая местность', ['profile.outdoors']],
   ['wasteland', 'Пустошь', ['profile.outdoors']],
+  ['city', 'Город', ['profile.household', 'profile.salvage']],
   ['suburb', 'Пригород', ['profile.household', 'profile.salvage']],
   ['urban', 'Городская застройка', ['profile.household', 'profile.salvage']],
   ['dense', 'Плотная застройка', ['profile.household', 'profile.salvage']],
@@ -1538,6 +2107,7 @@ const BIOME_TYPES = gtCatalog('biome', [
   ['glacier', 'Ледник', ['profile.water']],
   ['water', 'Водоём или водоток', ['profile.water']],
   ['dry_riverbed', 'Сухое русло', ['profile.outdoors']],
+  ['seasonal_river', 'Сезонное русло', ['profile.outdoors']],
 ], 'resourceProfileIds');
 
 // These are explicit source semantics, not guesses from a name, address or zone.
@@ -1820,6 +2390,166 @@ function createBuildingAssignments(world = {}) {
 
 return {BUILDING_CATEGORIES,BUILDING_ROLES,createBuildingAssignments};
 })();
+const {buildBiomeMap} = (() => {
+// A ground partition, calculated once per map. Source features remain untouched.
+const bmClone = value => Array.isArray(value) ? value.map(bmClone) : value && typeof value === 'object' ? Object.fromEntries(Object.entries(value).map(([key, item]) => [key, bmClone(item)])) : value;
+const bmFlag = value => value !== undefined && value !== null && !['', 'no', 'false', '0'].includes(String(value));
+const bmDry = feature => [feature.intermittent, feature.seasonal, feature.tags?.intermittent, feature.tags?.seasonal].some(bmFlag);
+const bmSourceId = feature => feature.sourceId || feature.id?.match(/^(?:node|way|relation)-\d+/)?.[0] || feature.id;
+const bmAreaRing = ring => { let sum = 0; const origin = ring[0]; for (let i = 1; i < ring.length - 1; i++) sum += (ring[i].x - origin.x) * (ring[i + 1].y - origin.y) - (ring[i + 1].x - origin.x) * (ring[i].y - origin.y); return Math.abs(sum / 2); };
+const bmArea = parts => parts.reduce((sum, polygon) => sum + Math.max(0, bmAreaRing(polygon[0]) - polygon.slice(1).reduce((holes, ring) => holes + bmAreaRing(ring), 0)), 0);
+const bmBounds = parts => parts.flat(2).reduce((box, point) => ({ minX: Math.min(box.minX, point.x), minY: Math.min(box.minY, point.y), maxX: Math.max(box.maxX, point.x), maxY: Math.max(box.maxY, point.y) }), { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity });
+const bmOverlap = (a, b, pad = 0) => a.minX <= b.maxX + pad && a.maxX >= b.minX - pad && a.minY <= b.maxY + pad && a.maxY >= b.minY - pad;
+function bmParts(feature) {
+  if (feature.parts?.length) return feature.parts;
+  if (feature.rings?.length) return [feature.rings];
+  if (feature.geometry !== 'line' && feature.geometry !== 'point' && feature.points?.length >= 3) return [[feature.points]];
+  if ([feature.x, feature.y, feature.rx, feature.ry].every(Number.isFinite)) {
+    const ring = Array.from({ length: 49 }, (_, index) => ({ x: feature.x + Math.cos(index / 48 * Math.PI * 2) * feature.rx, y: feature.y + Math.sin(index / 48 * Math.PI * 2) * feature.ry }));
+    ring[ring.length - 1] = { ...ring[0] }; return [[ring]];
+  }
+  return [];
+}
+function bmWidth(feature, metersPerUnit) {
+  const physical = Number(feature.widthMeters ?? feature.tags?.width) / metersPerUnit;
+  return physical > 0 && Number.isFinite(physical) ? physical : Number(feature.width) > 0 ? Number(feature.width) : 1;
+}
+function bmSourceCollections(world) {
+  return [['areas', 'area'], ['details', 'detail'], ['rivers', 'river'], ['lakes', 'lake']].flatMap(([collection, group]) => (world[collection] || []).map((feature, index) => ({ feature: feature.id ? feature : { ...feature, id: `${collection}-${index}` }, group })));
+}
+function bmTerrainNature(world) {
+  if (world.geographic || !world.terrainCells?.length || !(world.cols > 0 && world.rows > 0 && world.cellSize > 0)) return [];
+  const groups = new Map();
+  for (let row = 0; row < world.rows; row++) {
+    let col = 0;
+    while (col < world.cols) {
+      const type = world.terrainCells[row * world.cols + col]?.type;
+      const biome = ({ forest: 'forest', hill: 'rock', swamp: 'wetland' })[type];
+      const start = col++;
+      while (col < world.cols && world.terrainCells[row * world.cols + col]?.type === type) col++;
+      if (!biome) continue;
+      const x = start * world.cellSize, y = row * world.cellSize, right = Math.min(world.width, col * world.cellSize), bottom = Math.min(world.height, (row + 1) * world.cellSize);
+      const ring = [{ x, y }, { x: right, y }, { x: right, y: bottom }, { x, y: bottom }, { x, y }];
+      if (!groups.has(biome)) groups.set(biome, []);
+      groups.get(biome).push([ring]);
+    }
+  }
+  return [...groups].map(([biome, parts]) => ({ id: `generated-terrain-${biome}`, biome, type: biome, geometry: 'polygon', parts: polygonUnion(parts), derived: true, provenance: { method: 'procedural-ground-cells', seed: world.seed ?? null } }));
+}
+function bmDefaultSources(world, metersPerUnit) {
+  const sources = bmSourceCollections(world).filter(({ feature, group }) => shouldRenderFeature(feature, group));
+  const natureSources = sources.flatMap(({ feature, group }) => {
+    const biome = mapLandscapeBiome(feature, group), parts = bmParts(feature);
+    return biome && parts.length ? [{ ...feature, biome, parts }] : [];
+  });
+  const water = sources.filter(({ feature, group }) => mapFeatureLayer(feature, group) === 'water');
+  const waterAreas = water.filter(({ feature, group }) => group === 'lake' || feature.geometry === 'polygon' || feature.rings?.length || feature.parts?.length).map(({ feature }) => ({ ...feature, parts: bmParts(feature) }));
+  const waterLines = water.filter(({ feature, group }) => group !== 'lake' && feature.geometry !== 'polygon' && !feature.rings?.length && !feature.parts?.length && feature.geometry !== 'point' && (feature.paths?.length || feature.points?.length > 1)).map(({ feature }) => ({ ...feature, width: bmWidth(feature, metersPerUnit) }));
+  return { natureSources, waterAreas, waterLines: mergeConnectedNetworks(waterLines, { kind: 'water' }).features };
+}
+const bmPriority = (biome, water, dry, line) => water ? line ? dry ? 90 : 100 : dry ? 105 : 110 : biome === 'city' ? 40 : ['desert', 'valley', 'gully', 'plain', 'wasteland', 'landscape'].includes(biome) ? 20 : 60;
+const bmNames = { wasteland: 'Пустошь', city: 'Город', seasonal_river: 'Сезонное русло', river: 'Река', water: 'Водоём', dry_riverbed: 'Сухое русло' };
+
+/**
+ * Complete, mutually exclusive polygon coverage of the map bounds.
+ * Prepared renderer sources may be supplied to preserve connected-network IDs.
+ * River ink keeps original paths/width; its polygon is the physical ground ribbon.
+ */
+function buildBiomeMap(world = {}, options = {}) {
+  const width = Number(world.width), height = Number(world.height);
+  if (!(width > 0 && height > 0) || !Number.isFinite(width + height)) return { features: [], report: { enabled: false, featureCount: 0 } };
+  const metersPerUnit = Number(world.metersPerUnit) || 5;
+  const defaults = (!options.natureSources || !options.waterLines || !options.waterAreas) ? bmDefaultSources(world, metersPerUnit) : {};
+  // Prepared OSM sources can be empty on the generated demo. Its measured
+  // pre-road ground cells still belong to this same ground partition.
+  const natureSources = [...(options.natureSources || defaults.natureSources), ...bmTerrainNature(world)];
+  const waterLines = options.waterLines || defaults.waterLines;
+  const waterAreas = options.waterAreas || defaults.waterAreas;
+  const cities = options.cityFeatures ? { features: options.cityFeatures, report: { supplied: true } } : buildCityBiomes(world);
+  const frame = [[[{ x: 0, y: 0 }, { x: width, y: 0 }, { x: width, y: height }, { x: 0, y: height }, { x: 0, y: 0 }]]];
+  const frameBounds = { minX: 0, minY: 0, maxX: width, maxY: height };
+  const candidates = [];
+  const add = (source, biome, water = false, line = false) => {
+    if (!source || !biome) return;
+    const feature = bmClone(source), dry = water && bmDry(feature);
+    const nativeWidth = line ? bmWidth(feature, metersPerUnit) : undefined;
+    const paths = line ? (feature.paths?.length ? feature.paths : [feature.points || []]).filter(path => path.length > 1) : undefined;
+    let parts = line ? buildWaterRibbonParts(paths, nativeWidth) : bmParts(feature);
+    if (!parts.length) return;
+    const originalBounds = bmBounds(parts);
+    if (!bmOverlap(frameBounds, originalBounds)) return;
+    parts = originalBounds.minX < 0 || originalBounds.minY < 0 || originalBounds.maxX > width || originalBounds.maxY > height ? polygonIntersection(parts, frame) : polygonUnion(parts);
+    if (!parts.length) return;
+    const sourceId = bmSourceId(feature) || feature.id || `source-${candidates.length}`;
+    const id = feature.id || sourceId;
+    candidates.push({
+      feature: { ...feature, id: `biome-${biome}-${id}`, sourceId,
+        sourceIds: [...new Set(feature.sourceIds || [sourceId])].sort(), memberIds: [...(feature.memberIds || [id])],
+        // Cutting a display region must not replace its inspectable source
+        // footprint. Networks already contain their individual source members.
+        members: feature.members?.length ? feature.members : [bmClone(source)],
+        sourceTypes: [...(feature.sourceTypes || [feature.tags?.waterway || feature.tags?.water || feature.kind || feature.type || biome])],
+        biome, sourceBiome: feature.sourceBiome || feature.biome || biome,
+        sourceKind: feature.sourceKind || feature.kind || feature.type || null, sourceGeometry: feature.sourceGeometry || feature.geometry || (line ? 'line' : 'polygon'),
+        name: feature.name || bmNames[biome] || '', kind: biome, geometry: 'polygon', semanticGeometry: line ? 'line' : 'polygon',
+        parts, rings: parts[0], points: parts[0][0], water, waterKind: water ? line ? dry ? 'seasonal_river' : 'river' : dry ? 'seasonal_water' : 'lake' : null,
+        ...(line ? { paths, width: nativeWidth, nativeWidth } : {}),
+        ...(water ? { intermittent: dry, seasonal: bmFlag(feature.seasonal) || bmFlag(feature.tags?.seasonal) } : {}),
+        biomePriority: bmPriority(biome, water, dry, line), biomePartition: true,
+        provenance: { ...(feature.provenance || {}), partitionMethod: 'exclusive-ground-priority', sourceIds: [...new Set(feature.sourceIds || [sourceId])].sort() },
+      }, bounds: bmBounds(parts), area: bmArea(parts),
+    });
+  };
+  for (const feature of natureSources) add(feature, feature.biome || mapLandscapeBiome(feature, 'area'));
+  for (const feature of cities.features || []) add(feature, 'city');
+  for (const feature of waterLines) add(feature, bmDry(feature) ? 'seasonal_river' : 'river', true, true);
+  for (const feature of waterAreas) add(feature, bmDry(feature) ? 'dry_riverbed' : 'water', true, false);
+  candidates.sort((a, b) => b.feature.biomePriority - a.feature.biomePriority || a.area - b.area || a.feature.biome.localeCompare(b.feature.biome) || a.feature.id.localeCompare(b.feature.id));
+  const finalized = [], features = [], allSourceIds = new Set(), representedSourceIds = new Set();
+  let obscuredFeatures = 0, modifiedFeatures = 0;
+  for (const candidate of candidates) {
+    for (const id of candidate.feature.sourceIds) allSourceIds.add(id);
+    const blockers = finalized.filter(record => bmOverlap(record.bounds, candidate.bounds));
+    const masks = blockers.flatMap(record => record.feature.parts);
+    const parts = masks.length ? polygonDifference(candidate.feature.parts, masks) : normalizePolygonParts(candidate.feature.parts);
+    if (!parts.length || bmArea(parts) <= 1e-12) { obscuredFeatures++; continue; }
+    const feature = { ...candidate.feature, parts, rings: parts[0], points: parts[0][0] };
+    if (Math.abs(bmArea(parts) - candidate.area) > 1e-7) modifiedFeatures++;
+    if (feature.water && feature.semanticGeometry === 'line') {
+      feature.inkExclusionParts = finalized.filter(record => record.feature.water && bmOverlap(record.bounds, candidate.bounds, 16)).flatMap(record => record.feature.parts).map(bmClone);
+    }
+    features.push(feature); finalized.push({ feature, bounds: bmBounds(parts) });
+    for (const id of feature.sourceIds) representedSourceIds.add(id);
+  }
+  const mappedArea = features.reduce((sum, feature) => sum + bmArea(feature.parts), 0);
+  const fallbackParts = polygonDifference(frame, features.flatMap(feature => feature.parts));
+  const fallbackArea = bmArea(fallbackParts);
+  if (fallbackParts.length) features.push({ id: 'biome-unmapped-ground', sourceId: 'game-unmapped-ground', sourceIds: [], memberIds: [], sourceTypes: ['unmapped-ground'],
+    name: 'Пустошь', kind: 'wasteland', type: 'wasteland', biome: 'wasteland', geometry: 'polygon', semanticGeometry: 'polygon', water: false,
+    parts: fallbackParts, rings: fallbackParts[0], points: fallbackParts[0][0], derived: true, fallback: true, biomePartition: true, biomePriority: 0,
+    provenance: { method: 'exclusive-ground-fallback', partitionMethod: 'exclusive-ground-priority', sourceIds: [] },
+  });
+  const coveredArea = features.reduce((sum, feature) => sum + bmArea(feature.parts), 0);
+  // The fallback difference measures the mapped union independently of the
+  // sum of individual regions, exposing even numerical overlap residue.
+  const overlapArea = Math.max(0, mappedArea - (width * height - fallbackArea));
+  return { features, report: {
+    enabled: true, exclusive: true, method: 'exclusive-ground-priority', featureCount: features.length, sourceCandidates: candidates.length,
+    sourceElements: allSourceIds.size, representedSourceElements: representedSourceIds.size, obscuredFeatures, modifiedFeatures,
+    sourceIds: [...allSourceIds].sort(), obscuredSourceIds: [...allSourceIds].filter(id => !representedSourceIds.has(id)).sort(),
+    mapArea: width * height, coveredArea, coverageError: Math.abs(width * height - coveredArea), overlapArea,
+    uncoveredArea: Math.max(0, width * height - (coveredArea - overlapArea)), fallbackArea,
+    waterLineFeatures: features.filter(feature => feature.water && feature.semanticGeometry === 'line').length,
+    waterAreaFeatures: features.filter(feature => feature.water && feature.semanticGeometry !== 'line').length,
+    cityFeatures: features.filter(feature => feature.biome === 'city').length,
+    byBiome: Object.fromEntries([...new Set(features.map(feature => feature.biome))].sort().map(biome => [biome, { features: features.filter(feature => feature.biome === biome).length, area: features.filter(feature => feature.biome === biome).reduce((sum, feature) => sum + bmArea(feature.parts), 0) }])),
+    city: cities.report,
+    priority: ['water areas', 'permanent rivers', 'seasonal rivers', 'specific nature', 'city', 'regional nature', 'unmapped ground'],
+  } };
+}
+
+return {buildBiomeMap};
+})();
 const {createDetailRenderer} = (() => {
 /** Sharp, scale-aware cartography over the original mapped footprints and paths. */
 const drClamp = (n, min, max) => Math.max(min, Math.min(max, n));
@@ -1931,6 +2661,8 @@ const drBiomeNames = {
   camping: 'Кемпинг', food_service: 'Зона питания', service: 'Зона обслуживания', utilities: 'Коммунальная зона', heritage: 'Историческая зона',
   forest: 'Лес', garden: 'Сад', landscape: 'Ландшафт', plain: 'Открытая местность',
   administrative: 'Административная территория', wasteland: 'Пустошь', suburb: 'Пригород', urban: 'Городская застройка', dense: 'Плотная застройка', aircraft_parking: 'Стоянка самолётов',
+  city: 'Город', seasonal_river: 'Сезонное русло', dry_riverbed: 'Сезонное русло', water: 'Водоём',
+  desert: 'Пустыня', valley: 'Долина', gully: 'Лощина', heath: 'Вересковая пустошь', beach: 'Пляж',
 };
 const drSourceId = feature => feature.sourceId || String(feature.id || '').match(/^(?:node|way|relation)-\d+/)?.[0] || feature.id;
 const drTypeMetadata = record => {
@@ -1971,6 +2703,7 @@ function drInteriorPoint(parts, bounds) {
 
 function drFeatureLabel(feature, group) {
   if (feature.name) return feature.name;
+  if ((feature.exclusive || feature.biomePartition) && feature.biome) return drBiomeNames[feature.biome] || feature.biome;
   if (['census', 'administrative'].includes(feature.tags?.boundary)) return 'Граница поселения';
   if (mapFeatureLayer(feature, group) === 'power') {
     const names = { pole: 'Столб электросети', tower: 'Опора ЛЭП', line: 'Линия электропередачи', minor_line: 'Линия местной электросети', cable: 'Электрический кабель', transformer: 'Трансформатор', substation: 'Подстанция', plant: 'Электростанция', switch: 'Выключатель электросети' };
@@ -2032,9 +2765,15 @@ function drCache(original, group, layer, metersPerUnit, index) {
     if (!longest || length > longest.length) longest = { a, b, length, angle: Math.atan2(b.y - a.y, b.x - a.x) };
   }
   const actualWidth = Number(feature.widthMeters ?? feature.tags?.width) / metersPerUnit;
-  const biome = layer === 'landscape' && !outlineOnly ? mapLandscapeBiome(feature, group) : null;
-  const gameplayType = group === 'building' ? classifyBuilding(feature) : layer === 'landscape' && !outlineOnly ? classifyBiome(biome) : layer === 'water' ? classifyBiome(drDry(feature) ? 'dry_riverbed' : 'water') : null;
-  return { feature, group, layer, labelPoint: group === 'building' ? drInteriorPoint(parts, bounds) : center, sourceOrder: index, biome, gameplayType, outlineOnly, fallback: feature.fallback === true, footprintOnly: feature.footprintOnly === true && feature.zoneFusion !== true, roadClass: layer === 'roads' ? roadClass(feature) : null, geometry, ellipse, key: `${layer}:${group}:${feature.id}`, parts, rings, points, path, fillRule: 'nonzero', bounds, center, longest, hash: drHash(feature.id), width: Number.isFinite(actualWidth) && actualWidth > 0 ? actualWidth : Number(feature.width) || 1 };
+  const biome = layer === 'biomes' ? feature.biome || mapLandscapeBiome(feature, group) : layer === 'landscape' && !outlineOnly ? mapLandscapeBiome(feature, group) : null;
+  const gameplayType = group === 'building' ? classifyBuilding(feature) : biome ? classifyBiome(biome) : layer === 'water' ? classifyBiome(drDry(feature) ? 'dry_riverbed' : 'water') : null;
+  const inkPaths = feature.semanticGeometry === 'line' && feature.paths?.length ? feature.paths : null;
+  let inkPath = null;
+  if (inkPaths) {
+    inkPath = new Path2D();
+    for (const ring of inkPaths) ring.forEach((point, i) => i ? inkPath.lineTo(point.x, point.y) : inkPath.moveTo(point.x, point.y));
+  }
+  return { feature, group, layer, labelPoint: group === 'building' ? drInteriorPoint(parts, bounds) : center, sourceOrder: index, biome, gameplayType, outlineOnly, fallback: feature.fallback === true, footprintOnly: feature.footprintOnly === true && feature.zoneFusion !== true, roadClass: layer === 'roads' ? roadClass(feature) : null, geometry, ellipse, key: `${layer}:${group}:${feature.id}`, parts, rings, points, path, inkPath, inkPaths, fillRule: 'nonzero', bounds, center, longest, hash: drHash(feature.id), width: Number.isFinite(actualWidth) && actualWidth > 0 ? actualWidth : Number(feature.nativeWidth ?? feature.width) || 1 };
 }
 
 function drWaterKey(record) {
@@ -2106,27 +2845,27 @@ function createDetailRenderer(world) {
   const waterAreas = drMergeWaterPolygons(waterPolygons).map((feature, index) => drCache({ ...feature, geometry: 'polygon', kind: feature.kind || feature.type || 'water' }, 'detail', 'water', metersPerUnit, index));
   const details = [...coalescedDetails.filter(record => !(record.layer === 'power' && record.geometry === 'line') && !(record.layer === 'roads' && record.geometry === 'line') && !(record.layer === 'water' && record.geometry !== 'point')), ...cache(powerNetwork.features, 'detail')];
   const areas = sourceAreas.filter(record => record.layer !== 'water');
-  // Building purpose now carries the city information. Source urban/service
-  // polygons stay available to assignment inference but have no registry facet.
-  // Natural geometry is retained exactly; no density filler or plot fusion runs.
-  const landscapePolygons = [...areas, ...details].filter(record => record.layer === 'landscape' && record.geometry === 'polygon');
-  let fallbackCount = 0;
-  if ((world.geographic === true || Array.isArray(world.bbox)) && world.width > 0 && world.height > 0) {
-    const ring = [{ x: 0, y: 0 }, { x: world.width, y: 0 }, { x: world.width, y: world.height }, { x: 0, y: world.height }, { x: 0, y: 0 }];
-    const feature = { id: 'game-biome-wasteland', type: 'wasteland', biome: 'wasteland', geometry: 'polygon', points: ring, rings: [ring], derived: true, fallback: true,
-      sourceIds: [], provenance: { method: 'unmapped-ground-fallback', sourceIds: [] } };
-    landscapePolygons.push(drCache(feature, 'zone', 'landscape', metersPerUnit, 0)); fallbackCount = 1;
-  }
-  const nonZoneAreas = areas.filter(record => record.layer !== 'landscape' || record.geometry !== 'polygon');
-  const nonZoneDetails = details.filter(record => record.layer !== 'landscape' || record.geometry !== 'polygon');
+  // The map is one exclusive ground partition. Original mapped footprints stay
+  // in members/provenance; only this display partition is cut around neighbours.
+  const naturePolygons = [...areas, ...details].filter(record => record.layer === 'landscape' && record.geometry === 'polygon');
+  const biomeMap = buildBiomeMap(world, {
+    natureSources: naturePolygons.map(record => ({ ...record.feature, biome: record.biome, geometry: 'polygon', parts: record.parts })),
+    waterLines: rivers.map(record => ({ ...record.feature, geometry: 'line', paths: record.rings, width: record.width, nativeWidth: record.width })),
+    waterAreas: waterAreas.map(record => ({ ...record.feature, geometry: 'polygon', parts: record.parts })),
+  });
+  const biomes = biomeMap.features.map((feature, index) => drCache(feature, 'biome', 'biomes', metersPerUnit, index)).filter(Boolean);
+  const displayObject = record => ['landscape', 'water'].includes(record.layer)
+    ? drCache(record.feature, record.group, 'biomes', metersPerUnit, record.sourceOrder) : record;
+  const nonZoneAreas = areas.filter(record => record.layer !== 'landscape' || record.geometry !== 'polygon').map(displayObject);
+  const nonZoneDetails = details.filter(record => record.layer !== 'landscape' || record.geometry !== 'polygon').map(displayObject);
   const roadPriority = { trail: 0, track: 1, street: 2, road: 3, highway: 4, railway: 5 };
   const roadTier = record => (Number(record.feature.layer ?? record.feature.tags?.layer) || 0) * 4
     + (drFlag(record.feature.bridge ?? record.feature.tags?.bridge) ? 1 : 0) - (drFlag(record.feature.tunnel ?? record.feature.tags?.tunnel) ? 1 : 0);
-  const rank = record => record.fallback ? -1 : record.group === 'building' ? 9
-    : record.geometry === 'polygon' ? record.layer === 'landscape' ? 0 : record.layer === 'water' ? 1 : record.layer === 'roads' ? 5 : 2
-    : record.geometry === 'point' ? 8 : record.layer === 'water' ? 3 : record.layer === 'landscape' ? 4 : record.group === 'road' ? 6 : 7;
+  const rank = record => record.layer === 'biomes' && record.geometry === 'polygon' ? 0 : record.group === 'building' ? 9
+    : record.geometry === 'polygon' ? record.layer === 'roads' ? 5 : 2
+    : record.geometry === 'point' ? 8 : record.layer === 'biomes' ? 4 : record.group === 'road' ? 6 : 7;
   const surfaceSize = record => (record.bounds.maxX - record.bounds.minX) * (record.bounds.maxY - record.bounds.minY);
-  const registry = [...nonZoneAreas, ...rivers, ...waterAreas, ...nonZoneDetails, ...landscapePolygons, ...roads, ...buildings]
+  const registry = [...biomes, ...nonZoneAreas, ...nonZoneDetails, ...roads, ...buildings]
     .sort((a, b) => rank(a) - rank(b) || (a.group === 'road' && b.group === 'road' ? roadTier(a) - roadTier(b) || roadPriority[a.roadClass] - roadPriority[b.roadClass]
       : a.geometry === 'polygon' && b.geometry === 'polygon' ? surfaceSize(b) - surfaceSize(a) : 0));
   registry.forEach((record, index) => { record.order = index; });
@@ -2137,13 +2876,17 @@ function createDetailRenderer(world) {
     recordsById.set(record.feature.id, record);
     for (const memberId of record.feature.memberIds || []) recordsById.set(memberId, record);
   }
-  const zonePolygons = registry.filter(record => record.layer === 'landscape' && record.geometry === 'polygon' && !record.outlineOnly);
+  const zonePolygons = biomes;
   const queryZones = drSpatialIndex(zonePolygons);
-  const layers = { landscape: true, water: true, roads: true, power: true, buildings: true, details: true };
+  const layers = { biomes: true, roads: true, power: true, buildings: true, details: true };
   const roadClasses = Object.fromEntries(Object.keys(ROAD_CLASSES).map(key => [key, true]));
   const isEnabled = record => layers[record.layer] && (record.layer !== 'roads' || roadClasses[record.roadClass] !== false);
   const stats = { features: registry.length, inputFeatures, filteredFeatures, coalescedFeatures: detailSources.length - coalescedDetails.length,
-    sourceRoads: nativeRoads.size, sourceRailwayLines: roadSources.length - nativeRoads.size, displayRoads: roads.length, sourcePowerLines: powerSources.length, displayPowerLines: powerNetwork.features.length, sourceWaterLines: waterLines.length, displayWaterLines: rivers.length, sourceWaterAreas: waterPolygons.length, displayWaterAreas: waterAreas.length, generatedBiomes: fallbackCount, biomeGeneration: { method: 'natural-landscape-only', generatedZones: fallbackCount }, zoneMerging: { inputFeatures: landscapePolygons.length, displayFeatures: landscapePolygons.length, mergedGroups: 0, joinedFeatures: 0, addedCorridors: 0 }, urbanFillerClipping: { inputFeatures: 0, outputFeatures: 0, removedFeatures: 0, sourceMaskCount: 0, beforeArea: 0, afterArea: 0 }, buildingAssignments: buildingAssignments.report,
+    sourceRoads: nativeRoads.size, sourceRailwayLines: roadSources.length - nativeRoads.size, displayRoads: roads.length,
+    sourcePowerLines: powerSources.length, displayPowerLines: powerNetwork.features.length,
+    sourceWaterLines: waterLines.length, displayWaterLines: rivers.length, sourceWaterAreas: waterPolygons.length, displayWaterAreas: waterAreas.length,
+    generatedBiomes: biomes.filter(record => record.feature.derived).length,
+    biomeGeneration: biomeMap.report, biomePartition: biomeMap.report, biomeMap: biomeMap.report, buildingAssignments: buildingAssignments.report,
     drawCount: 0, highlightDrawCount: 0, viewCandidates: 0, pickCandidates: 0, zoneCandidates: 0 };
   for (const layer of Object.keys(layers)) {
     stats[layer] = registry.filter(record => record.layer === layer).length;
@@ -2416,63 +3159,55 @@ function createDetailRenderer(world) {
     return Math.max(record.width, (dry ? 2 : 2.4) / zoom) + (dry ? 1.5 : 1) / zoom;
   }
 
-  function paintWater(ctx, record, zoom, hoveredId) {
-    const { feature, path } = record;
-    const hovered = hoveredId === feature.id;
-    const dry = drDry(feature);
-    if (record.geometry === 'point') { paintDetail(ctx, record, zoom, hoveredId); return; }
-    if (record.geometry === 'line') {
-      ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-      if (hovered) { ctx.strokeStyle = 'rgba(233,236,172,.55)'; ctx.lineWidth = waterWidth(record, zoom) + 3 / zoom; ctx.stroke(path); }
-      ctx.strokeStyle = dry ? '#978d6f' : '#859b90'; ctx.lineWidth = waterWidth(record, zoom); ctx.stroke(path);
-      ctx.strokeStyle = hovered ? '#e6e8b3' : dry ? '#c6ba97' : world.geographic ? '#435f5a' : '#354d49';
-      ctx.lineWidth = Math.max(record.width, 1.1 / zoom); ctx.stroke(path);
-      return;
+  function clipRiverInk(ctx, record) {
+    const masks = record.feature.inkExclusionParts;
+    if (!masks?.length) return;
+    if (!record.inkClipPath) {
+      const path = new Path2D();
+      const append = (ring, outer) => {
+        const ordered = (drSignedArea(ring) >= 0) === outer ? ring : [...ring].reverse();
+        ordered.forEach((point, i) => i ? path.lineTo(point.x, point.y) : path.moveTo(point.x, point.y));
+        path.closePath();
+      };
+      append([{ x: 0, y: 0 }, { x: world.width, y: 0 }, { x: world.width, y: world.height }, { x: 0, y: world.height }], true);
+      // Higher priority water regions are already exclusive, so opposite winding
+      // cuts their union while restoring their islands. The river's lateral
+      // ribbon is deliberately not a clip: screen readability retains v12 width.
+      for (const part of masks) part.forEach((ring, index) => append(ring, index !== 0));
+      record.inkClipPath = path;
     }
-    ctx.fillStyle = dry ? '#bdb393' : feature.kind === 'pool' ? '#6e968b' : world.geographic ? '#435f5a' : '#354d49';
-    ctx.fill(path, record.fillRule);
-    ctx.strokeStyle = hovered ? '#e8eab8' : dry ? '#a29472' : '#91a798';
-    ctx.lineWidth = (hovered ? 1.6 : .8) / zoom;
-    if (dry) ctx.setLineDash([3 / zoom, 2 / zoom]);
-    if (!(feature.merged && record.parts.length > 1)) ctx.stroke(path); ctx.setLineDash([]);
-    if (hovered) { ctx.fillStyle = 'rgba(224,228,161,.12)'; ctx.fill(path, record.fillRule); }
+    ctx.clip(record.inkClipPath, 'nonzero');
+  }
+
+  function paintWater(ctx, record, zoom, hoveredId) {
+    const { feature } = record;
+    if (!record.inkPath) return;
+    const hovered = hoveredId === feature.id, dry = drDry(feature);
+    ctx.save(); clipRiverInk(ctx, record);
+    ctx.lineJoin = 'round'; ctx.lineCap = 'butt';
+    ctx.setLineDash(dry ? [6 / zoom, 4 / zoom] : []);
+    if (hovered) { ctx.strokeStyle = 'rgba(233,236,172,.55)'; ctx.lineWidth = waterWidth(record, zoom) + 3 / zoom; ctx.stroke(record.inkPath); }
+    ctx.strokeStyle = '#85abc4'; ctx.lineWidth = waterWidth(record, zoom); ctx.stroke(record.inkPath);
+    ctx.strokeStyle = dry ? '#4c91bd' : '#3f7eaa'; ctx.lineWidth = Math.max(record.width, 1.1 / zoom); ctx.stroke(record.inkPath);
+    ctx.setLineDash([]); ctx.restore();
   }
 
   function paintBiome(ctx, record, zoom, hoveredId) {
-    if (record.outlineOnly) { paintBoundary(ctx, record, zoom, hoveredId); return; }
     if (record.geometry !== 'polygon') { paintDetail(ctx, record, zoom, hoveredId); return; }
-    const { feature, path, biome, bounds: b } = record;
-    const hovered = hoveredId === feature.id;
     const colors = {
-      residential: 'rgba(171,153,112,.48)', industrial: 'rgba(106,118,111,.50)', commercial: 'rgba(163,139,107,.46)', retail: 'rgba(167,146,106,.50)',
-      forest: 'rgba(99,125,81,.77)', wetland: 'rgba(116,143,112,.68)', grassland: 'rgba(150,166,104,.54)', scrub: 'rgba(142,148,100,.55)',
-      park: 'rgba(117,146,84,.62)', garden: 'rgba(134,160,94,.56)', recreation: 'rgba(145,157,105,.57)', cemetery: 'rgba(133,145,111,.58)',
-      farmland: 'rgba(161,153,96,.52)', orchard: 'rgba(139,158,94,.59)', vineyard: 'rgba(142,154,98,.57)',
-      sand: 'rgba(196,180,129,.58)', rock: 'rgba(145,137,113,.44)', quarry: 'rgba(149,132,104,.62)',
-      construction: 'rgba(172,148,108,.54)', brownfield: 'rgba(142,129,104,.50)', landfill: 'rgba(139,137,105,.55)',
-      transport: 'rgba(132,137,120,.47)', glacier: 'rgba(190,207,194,.72)', plain: 'rgba(164,168,126,.18)',
-      parking: 'rgba(145,148,125,.47)', religious: 'rgba(163,149,120,.48)', healthcare: 'rgba(133,157,145,.50)',
-      education: 'rgba(144,158,116,.49)', civic: 'rgba(143,151,132,.48)', emergency: 'rgba(165,140,119,.47)',
-      accommodation: 'rgba(166,155,126,.47)', camping: 'rgba(127,149,100,.53)', food_service: 'rgba(173,151,112,.48)',
-      wasteland: 'rgba(156,151,119,.28)', suburb: 'rgba(160,154,112,.40)', urban: 'rgba(153,140,103,.51)', dense: 'rgba(126,122,102,.63)', aircraft_parking: 'rgba(145,147,126,.62)',
-      service: 'rgba(150,145,121,.47)', utilities: 'rgba(132,142,128,.50)', heritage: 'rgba(162,145,113,.49)',
+      city: '#969b99', forest: '#748c5c', wetland: '#81987a', grassland: '#a4af79', scrub: '#9ba378',
+      park: '#829b61', garden: '#8fa76e', recreation: '#9ba67b', cemetery: '#949e7f',
+      farmland: '#b1aa76', orchard: '#96a773', vineyard: '#9ba476', sand: '#c5b583',
+      rock: '#a49b84', quarry: '#a49375', construction: '#b29d7b', brownfield: '#a09378',
+      desert: '#b7ac86', valley: '#aca781', gully: '#9a9877', heath: '#9ba378', beach: '#c5b583',
+      landfill: '#9c9b7e', glacier: '#c3d3ce', plain: '#a6ab85', wasteland: '#a7a17d',
+      seasonal_river: '#a7a17d', dry_riverbed: '#a7a17d', water: '#3f7eaa', river: '#3f7eaa', lake: '#3f7eaa',
     };
-    ctx.fillStyle = colors[biome] || 'rgba(145,153,113,.28)'; ctx.fill(path, record.fillRule);
-    // Sparse print hatching expresses a land-use category, not extra mapped geometry.
-    const hatch = ['industrial', 'quarry', 'construction', 'brownfield', 'landfill', 'transport', 'parking', 'utilities', 'aircraft_parking'].includes(biome);
-    const rows = ['farmland', 'orchard', 'vineyard'].includes(biome);
-    if (hatch || rows) {
-      const span = Math.max(b.maxX - b.minX, b.maxY - b.minY), spacing = Math.max(7 / zoom, span / 40);
-      ctx.save(); ctx.clip(path, record.fillRule);
-      ctx.strokeStyle = 'rgba(59,72,48,.12)'; ctx.lineWidth = .65 / zoom; ctx.beginPath();
-      for (let x = b.minX - (hatch ? span : 0); x <= b.maxX; x += spacing) {
-        ctx.moveTo(x, b.minY); ctx.lineTo(x + (hatch ? span : 0), b.maxY);
-      }
-      ctx.stroke(); ctx.restore();
+    ctx.fillStyle = record.feature.water && !record.inkPath ? '#3f7eaa' : colors[record.biome] || colors.wasteland;
+    ctx.fill(record.path, record.fillRule);
+    if (hoveredId === record.feature.id && !record.fallback) {
+      ctx.fillStyle = 'rgba(224,228,161,.12)'; ctx.fill(record.path, record.fillRule);
     }
-    ctx.strokeStyle = hovered ? '#e8eab8' : 'rgba(73,94,58,.28)'; ctx.lineWidth = (hovered ? 1.6 : .6) / zoom;
-    if (!record.fallback && !(feature.merged && record.parts.length > 1)) ctx.stroke(path); ctx.setLineDash([]);
-    if (hovered && !record.fallback) { ctx.fillStyle = 'rgba(224,228,161,.12)'; ctx.fill(path, record.fillRule); }
   }
 
   function paintRoadSurface(ctx, record, zoom, hoveredId) {
@@ -2516,10 +3251,17 @@ function createDetailRenderer(world) {
     for (const layer of Object.keys(layers)) stats['visible' + layer[0].toUpperCase() + layer.slice(1)] = visible.filter(record => record.layer === layer).length;
     ctx.save(); ctx.globalAlpha = 1;
     if (Number.isFinite(world.width) && Number.isFinite(world.height)) { ctx.beginPath(); ctx.rect(0, 0, world.width, world.height); ctx.clip(); }
+    // The fallback biome supplies an opaque matte for antialiased shared edges.
+    // Without it, adjacent exact polygons can leave a translucent pixel seam.
+    if (layers.biomes) { ctx.fillStyle = '#a7a17d'; ctx.fillRect(0, 0, world.width, world.height); }
+    // First complete the opaque ground plane, then ink its watercourses. This
+    // prevents a neighbouring land fill erasing a river's readable screen width.
+    for (const record of visible) if (record.layer === 'biomes' && record.geometry === 'polygon') paintBiome(ctx, record, view.zoom, view.hoveredId);
+    for (const record of visible) if (record.layer === 'biomes' && record.inkPath) paintWater(ctx, record, view.zoom, view.hoveredId);
     let roadsPainted = false, powerPainted = false;
     for (const record of visible) {
-      if (record.layer === 'landscape') paintBiome(ctx, record, view.zoom, view.hoveredId);
-      else if (record.layer === 'water') paintWater(ctx, record, view.zoom, view.hoveredId);
+      if (record.layer === 'biomes' && record.geometry === 'polygon') continue;
+      if (record.layer === 'biomes') paintDetail(ctx, record, view.zoom, view.hoveredId);
       else if (record.layer === 'roads' && record.geometry === 'polygon') paintRoadSurface(ctx, record, view.zoom, view.hoveredId);
       else if (record.group === 'road') {
         if (!roadsPainted) paintRoadBatch(ctx, visibleRoads, view.zoom, view.hoveredId);
@@ -2551,6 +3293,15 @@ function createDetailRenderer(world) {
     ctx.save(); ctx.globalAlpha = 1;
     if (Number.isFinite(world.width) && Number.isFinite(world.height)) { ctx.beginPath(); ctx.rect(0, 0, world.width, world.height); ctx.clip(); }
     if (record.geometry === 'point') paintDetail(ctx, record, view.zoom, record.feature.id);
+    else if (record.inkPath) {
+      clipRiverInk(ctx, record);
+      ctx.lineJoin = 'round'; ctx.lineCap = 'butt';
+      ctx.setLineDash(drDry(record.feature) ? [6 / view.zoom, 4 / view.zoom] : []);
+      const width = waterWidth(record, view.zoom);
+      ctx.strokeStyle = 'rgba(238,238,169,.65)'; ctx.lineWidth = width + 4 / view.zoom; ctx.stroke(record.inkPath);
+      ctx.strokeStyle = '#f2efb5'; ctx.lineWidth = Math.max(1.25 / view.zoom, width * .28); ctx.stroke(record.inkPath);
+      ctx.setLineDash([]);
+    }
     else if (record.geometry === 'polygon' && !record.outlineOnly) {
       ctx.fillStyle = 'rgba(224,228,161,.16)'; ctx.fill(record.path, record.fillRule);
       ctx.strokeStyle = '#eff0be'; ctx.lineWidth = Math.max(record.group === 'building' ? .26 : 0, 1.6 / view.zoom);
@@ -2567,42 +3318,36 @@ function createDetailRenderer(world) {
 
   function describe(record, point = record.center) {
     const feature = record.feature;
-    const zone = !record.outlineOnly && record.layer === 'landscape' && record.geometry === 'polygon' && (mapZoneBiome(feature) || ['residential', 'industrial', 'commercial', 'retail'].includes(record.biome));
-    const kind = record.outlineOnly ? 'settlement_boundary' : zone ? `${record.biome}_area` : record.group === 'building' ? feature.ruins ? 'ruins' : 'building' : record.group === 'road' ? 'road' : record.group === 'area' ? feature.type : record.group === 'river' ? 'river' : record.group === 'lake' ? 'lake' : feature.kind;
+    const zone = record.layer === 'biomes' && record.geometry === 'polygon';
+    const kind = record.outlineOnly ? 'settlement_boundary' : zone ? record.inkPath ? 'river' : feature.water ? 'lake' : `${record.biome}_area` : record.group === 'building' ? feature.ruins ? 'ruins' : 'building' : record.group === 'road' ? 'road' : record.group === 'area' ? feature.type : record.group === 'river' ? 'river' : record.group === 'lake' ? 'lake' : feature.kind;
     const roadDescription = (ROAD_CLASSES[record.roadClass]?.name || 'Дорога') + ((feature.members || [feature]).some(member => member.tags?.railway === 'abandoned') ? ' · По бывшей железной дороге' : '');
     return { id: feature.id, key: record.key, sourceId: drSourceId(feature), layer: record.layer, kind, biome: record.biome, ...drTypeMetadata(record), ...drRoleMetadata(record),
       biomeName: record.biome ? drBiomeNames[record.biome] || drFeatureLabel(feature, record.group) : null,
-      geometry: record.geometry, footprintOnly: record.footprintOnly === true, outlineOnly: record.outlineOnly, derived: feature.derived === true, urbanFiller: feature.urbanFiller === true, fallback: record.fallback, provenance: feature.provenance ? structuredClone(feature.provenance) : null,
+      geometry: record.geometry, semanticGeometry: feature.semanticGeometry || record.geometry, water: feature.water === true, waterKind: feature.waterKind || null, exclusive: record.layer === 'biomes' && record.geometry === 'polygon', footprintOnly: record.footprintOnly === true, outlineOnly: record.outlineOnly, derived: feature.derived === true, urbanFiller: feature.urbanFiller === true, fallback: record.fallback, provenance: feature.provenance ? structuredClone(feature.provenance) : null,
       roadClass: record.roadClass, roadClassName: ROAD_CLASSES[record.roadClass]?.name || null,
       sourceIds: [...(feature.sourceIds || [drSourceId(feature)])], memberIds: [...(feature.memberIds || [feature.id])],
-      name: drFeatureLabel(feature, record.group), x: point.x, y: point.y, source: record.group === 'building' ? structuredClone(feature) : feature, members: (feature.members || []).map(member => structuredClone(member)),
-      paths: record.geometry === 'line' ? record.rings.map(path => path.map(point => ({ ...point }))) : undefined, parts: record.geometry === 'polygon' ? record.parts.map(part => part.map(ring => ring.map(point => ({ ...point })))) : undefined,
-      description: feature.derived ? `${drBiomeNames[record.biome] || 'Игровая зона'} · Игровая разметка местности` : record.outlineOnly ? 'Граница населённого пункта' : record.group === 'building' ? [feature.gameplayAssignment?.roleName, feature.address, feature.levels ? `${feature.levels} эт.` : ''].filter(Boolean).join(' · ') : record.group === 'road' ? roadDescription : record.footprintOnly ? `${drBiomeNames[record.biome]} · По контуру здания` : feature.tags?.railway === 'abandoned' ? 'Заброшенная железная дорога' : record.layer === 'water' && drDry(feature) ? 'Сезонное русло' : drNames[kind] || drFeatureLabel(feature, record.group) };
+      name: drFeatureLabel(feature, record.group), x: point.x, y: point.y, source: structuredClone(feature), members: (feature.members || []).map(member => structuredClone(member)),
+      paths: (record.inkPaths || (record.geometry === 'line' ? record.rings : null))?.map(path => path.map(point => ({ ...point }))), parts: record.geometry === 'polygon' ? record.parts.map(part => part.map(ring => ring.map(point => ({ ...point })))) : undefined,
+      description: record.inkPath && drDry(feature) ? 'Сезонное русло · Вода бывает только в сезон' : feature.derived ? `${drBiomeNames[record.biome] || 'Игровая зона'} · Игровая разметка местности` : record.outlineOnly ? 'Граница населённого пункта' : record.group === 'building' ? [feature.gameplayAssignment?.roleName, feature.address, feature.levels ? `${feature.levels} эт.` : ''].filter(Boolean).join(' · ') : record.group === 'road' ? roadDescription : record.footprintOnly ? `${drBiomeNames[record.biome]} · По контуру здания` : feature.tags?.railway === 'abandoned' ? 'Заброшенная железная дорога' : record.layer === 'water' && drDry(feature) ? 'Сезонное русло' : drNames[kind] || drFeatureLabel(feature, record.group) };
   }
 
-  /** All physical zone memberships coexist, including zones hidden from view. */
+  /** One physical ground biome, independent of layer visibility and objects. */
   function zonesAt(x, y) {
     if (!Number.isFinite(x) || !Number.isFinite(y) || x < 0 || y < 0 || x > world.width || y > world.height) return [];
-    const result = [], seen = new Set(), fallbacks = [];
-    const candidates = queryZones({ minX: x, maxX: x, minY: y, maxY: y });
+    // Outer frame edges belong to their adjacent map region as well.
+    const px = Math.min(x, world.width - 1e-7), py = Math.min(y, world.height - 1e-7);
+    const candidates = queryZones({ minX: px, maxX: px, minY: py, maxY: py });
     stats.zoneCandidates = candidates.length;
-    const add = record => {
-      const item = describe(record, { x, y }), identity = `${item.sourceId}:${item.biome}`;
-      if (seen.has(identity)) return;
-      seen.add(identity);
-      result.push({ id: item.id, key: item.key, sourceId: item.sourceId, sourceIds: item.sourceIds, biome: item.biome, biomeName: item.biomeName, name: item.name, layer: item.layer, footprintOnly: item.footprintOnly, derived: item.derived, urbanFiller: item.urbanFiller, fallback: item.fallback, provenance: item.provenance, ...drTypeMetadata(record) });
-    };
-    for (const record of candidates) {
-      const b = record.bounds;
-      if (x < b.minX || x > b.maxX || y < b.minY || y > b.maxY || !drPartContains(record, x, y)) continue;
-      if (record.fallback) fallbacks.push(record); else add(record);
-    }
-    if (!result.length && fallbacks.length) {
-      const permanentWater = queryRecords({ minX: x, maxX: x, minY: y, maxY: y }).some(record => record.layer === 'water' && !drDry(record.feature)
-        && (record.geometry === 'polygon' ? drPartContains(record, x, y) : record.geometry === 'line' && drNearestOnRings(x, y, record.rings).distance <= Math.max(.5, record.width / 2)));
-      if (!permanentWater) fallbacks.forEach(add);
-    }
-    return result;
+    const record = candidates.find(record => px >= record.bounds.minX && px <= record.bounds.maxX && py >= record.bounds.minY && py <= record.bounds.maxY && drPartContains(record, px, py));
+    if (!record) return [];
+    // HUD and movement query membership frequently. Return only metadata here;
+    // cloning every vertex of a regional biome would make each step expensive.
+    const feature = record.feature;
+    return [{ id: feature.id, key: record.key, sourceId: drSourceId(feature), sourceIds: [...(feature.sourceIds || [drSourceId(feature)])],
+      biome: record.biome, biomeName: drBiomeNames[record.biome] || drFeatureLabel(feature, record.group), name: drFeatureLabel(feature, record.group), layer: record.layer,
+      water: feature.water === true, waterKind: feature.waterKind || null, exclusive: true, footprintOnly: false,
+      derived: feature.derived === true, urbanFiller: feature.urbanFiller === true, fallback: record.fallback,
+      provenance: feature.provenance ? structuredClone(feature.provenance) : null, ...drTypeMetadata(record) }];
   }
 
   function pointPaintDistance(record, x, y, zoom) {
@@ -2627,6 +3372,39 @@ function createDetailRenderer(world) {
     if (['well', 'fountain', 'spring', 'drinking_water'].includes(kind)) return Math.hypot(px, py) - size * .65 - halfStroke;
     // Generic OSM points are drawn as 1.4-world-unit squares, not size-radius discs.
     return rectangle(0, 0, .7, .7);
+  }
+
+  function riverInkHit(record, x, y, tolerance) {
+    if (!record.inkPaths || (record.feature.inkExclusionParts || []).some(rings => drInPolygon(x, y, rings))) return null;
+    let best = null, score = Infinity;
+    const halfWidth = (waterWidth(record, lastZoom) + (record.feature.id === lastHoveredId ? 4 / lastZoom : 0)) / 2;
+    const period = 10 / lastZoom, dashLength = 6 / lastZoom, dry = drDry(record.feature);
+    for (const path of record.inkPaths) {
+      let offset = 0;
+      for (let i = 1; i < path.length; i++) {
+        const a = path[i - 1], b = path[i], dx = b.x - a.x, dy = b.y - a.y, length = Math.hypot(dx, dy);
+        if (!length) continue;
+        const along = ((x - a.x) * dx + (y - a.y) * dy) / length;
+        const projection = offset + drClamp(along, 0, length);
+        const intervals = dry ? [-1, 0, 1].map(delta => {
+          const start = (Math.floor(projection / period) + delta) * period;
+          return [Math.max(offset, start), Math.min(offset + length, start + dashLength)];
+        }) : [[offset, offset + length]];
+        for (const [start, end] of intervals) {
+          if (end < start) continue;
+          const nearest = drClamp(offset + along, start, end) - offset;
+          const px = a.x + nearest / length * dx, py = a.y + nearest / length * dy;
+          // Butt caps leave real gaps. Distance along a cap counts towards the
+          // pointer tolerance rather than silently rounding away the dash gap.
+          const longitudinal = Math.abs(along - nearest);
+          const perpendicular = Math.abs((x - a.x) * dy - (y - a.y) * dx) / length;
+          const distance = Math.hypot(Math.max(0, perpendicular - halfWidth), longitudinal);
+          if (distance <= tolerance && distance < score) { score = distance; best = { x: px, y: py }; }
+        }
+        offset += length;
+      }
+    }
+    return best;
   }
 
   function pick(x, y, tolerance = 3) {
@@ -2668,16 +3446,32 @@ function createDetailRenderer(world) {
     }
     if (pointHit && pointScore < minimum) return pointHit;
     if (closest) return closest;
-    // Reverse paint order keeps streets and small territories above broad biomes.
+    // Physical surface objects paint above water ink and ground biomes.
     for (let i = candidates.length - 1; i >= 0; i--) {
       const record = candidates[i], feature = record.feature;
-      if (!isEnabled(record) || record.geometry !== 'polygon' || record.outlineOnly) continue;
+      if (!isEnabled(record) || record.layer === 'biomes' || record.geometry !== 'polygon' || record.outlineOnly) continue;
       if (record.ellipse ? ((x - feature.x) / feature.rx) ** 2 + ((y - feature.y) / feature.ry) ** 2 <= 1 : drPartContains(record, x, y)) return describe(record);
+    }
+    // Water's cartographic minimum width can exceed its physical ground ribbon.
+    // Select that visible ink too; area membership still uses the exact partition.
+    for (let i = candidates.length - 1; i >= 0; i--) {
+      const record = candidates[i];
+      if (!isEnabled(record) || !record.inkPath) continue;
+      const hit = riverInkHit(record, x, y, tolerance);
+      if (hit) return describe(record, hit);
+    }
+    for (let i = candidates.length - 1; i >= 0; i--) {
+      const record = candidates[i];
+      if (isEnabled(record) && record.layer === 'biomes' && record.geometry === 'polygon' && drPartContains(record, x, y)) return describe(record, { x, y });
     }
     return null;
   }
 
   function setLayers(changes = {}) {
+    if (!Object.hasOwn(changes, 'biomes')) {
+      if (Object.hasOwn(changes, 'landscape')) layers.biomes = changes.landscape !== false;
+      else if (Object.hasOwn(changes, 'water')) layers.biomes = changes.water !== false;
+    }
     for (const key of Object.keys(layers)) if (Object.hasOwn(changes, key)) layers[key] = changes[key] !== false;
     for (const layer of Object.keys(layers)) if (!layers[layer]) stats['visible' + layer[0].toUpperCase() + layer.slice(1)] = 0;
     return { ...layers };
@@ -2696,10 +3490,12 @@ function createDetailRenderer(world) {
       sourceTypes: [...(record.feature.sourceTypes || [record.feature.type || record.feature.kind].filter(Boolean))], names: [...(record.feature.names || [record.feature.name].filter(Boolean))], merged: record.feature.merged === true,
       roadClass: record.roadClass, roadClassName: ROAD_CLASSES[record.roadClass]?.name || null,
       ...drTypeMetadata(record), ...drRoleMetadata(record),
-      kind: describe(record).kind, name: drFeatureLabel(record.feature, record.group), geometry: record.geometry,
+      kind: describe(record).kind, name: drFeatureLabel(record.feature, record.group), geometry: record.geometry, semanticGeometry: record.feature.semanticGeometry || record.geometry,
+      water: record.feature.water === true, waterKind: record.feature.waterKind || null, exclusive: record.layer === 'biomes' && record.geometry === 'polygon',
+      members: (record.feature.members || []).map(member => structuredClone(member)),
       points: record.points.map(point => ({ ...point })), rings: record.geometry === 'polygon' ? record.parts[0].map(ring => ring.map(point => ({ ...point }))) : undefined,
       parts: record.geometry === 'polygon' ? record.parts.map(part => part.map(ring => ring.map(point => ({ ...point })))) : undefined,
-      paths: record.geometry === 'line' ? record.rings.map(path => path.map(point => ({ ...point }))) : undefined,
+      paths: (record.inkPaths || (record.geometry === 'line' ? record.rings : null))?.map(path => path.map(point => ({ ...point }))),
       bounds: { ...record.bounds }, biome: record.biome, biomeName: record.biome ? drBiomeNames[record.biome] || drFeatureLabel(record.feature, record.group) : null,
       derived: record.feature.derived === true, urbanFiller: record.feature.urbanFiller === true, fallback: record.fallback, provenance: record.feature.provenance ? structuredClone(record.feature.provenance) : null,
       footprintOnly: record.footprintOnly === true, outlineOnly: record.outlineOnly, width: record.width, enabled: isEnabled(record),
@@ -3316,22 +4112,17 @@ const usaMap = {"version":1,"id":"beatty-rhyolite","name":"Битти / Райо
 const $ = id => document.getElementById(id);
 const canvas = $('map');
 const ctx = canvas.getContext('2d');
-const terrainCanvas = $('terrain-map');
-const terrainCtx = terrainCanvas.getContext('2d', { alpha: false });
 const objectCache = document.createElement('canvas');
 const objectCacheCtx = objectCache.getContext('2d');
 let world = createRealWorld(usaMap);
 let currentMap = usaMap;
 let overviewMarkers = createOverviewMarkers(world);
-const layers = { terrain: true, landscape: true, water: true, roads: true, power: true, buildings: true, details: true };
+const layers = { biomes: true, roads: true, power: true, buildings: true, details: true };
 const roadClasses = Object.fromEntries(Object.keys(ROAD_CLASSES).map(key => [key, true]));
 let detailRenderer = createDetailRenderer(world);
 let typedBuildingSources = new Set();
 let hoveredObject = null;
 const maximumZoom = () => 24;
-const greenPalette = { plain: '#a7ac8d', forest: '#6e8163', water: '#354d49', swamp: '#7f927c', hill: '#a8a38a', road: '#aaa88e', bridge: '#b7b39b' };
-const desertPalette = { plain: '#b2aa89', forest: '#788367', water: '#435b54', swamp: '#929b7c', hill: '#a99b7a', road: '#b6ab87', bridge: '#c7bc95' };
-let palette = desertPalette;
 const metersPerUnit = () => world.metersPerUnit || 5;
 const terrainNames = { plain: 'Пустошь', forest: 'Хвойный лес', water: 'Вода', swamp: 'Заболоченная низина', hill: 'Каменистые холмы', road: 'Старая дорога', bridge: 'Мост' };
 const kindNames = { village: 'Поселение', town: 'Заброшенный город', city: 'Заброшенный город', settlement: 'Поселение', camp: 'Укрытие', shelter: 'Укрытие', station: 'Станция', factory: 'Промзона', ruins: 'Руины', ruin: 'Руины', danger: 'Опасная зона', bunker: 'Бункер', tower: 'Радиовышка', airport: 'Аэропорт', locality: 'Местность', bridge: 'Переправа', gas: 'Заправка', hospital: 'Медпункт' };
@@ -3356,10 +4147,6 @@ function line(context, points) {
   points.forEach((p, i) => i ? context.lineTo(p.x, p.y) : context.moveTo(p.x, p.y));
 }
 
-let terrainBackdrop = createTerrainBackdrop(world, palette);
-let landscapeBackdrop = createLandscapeBackdrop(world, palette);
-let terrainFrameKey = '';
-let terrainRevision = 0;
 let objectRevision = 0, objectCacheState = null;
 const renderStats = { frames: 0, staticRebuilds: 0, lastStaticMs: 0, lastFrameMs: 0, totalFrameMs: 0 };
 
@@ -3367,9 +4154,6 @@ function resize() {
   vw = innerWidth; vh = innerHeight; dpr = Math.min(devicePixelRatio || 1, 2);
   canvas.width = Math.round(vw * dpr); canvas.height = Math.round(vh * dpr);
   canvas.style.width = `${vw}px`; canvas.style.height = `${vh}px`;
-  terrainCanvas.width = canvas.width; terrainCanvas.height = canvas.height;
-  terrainCanvas.style.width = `${vw}px`; terrainCanvas.style.height = `${vh}px`;
-  terrainFrameKey = '';
   objectCacheState = null;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
@@ -3393,7 +4177,11 @@ function displayedPois() {
   if (world.geographic && camera.zoom <= OVERVIEW_MAX_ZOOM) return overviewMarkers;
   return world.pois.filter(p => !typedBuildingSources.has(p.sourceId || p.id) && (!world.geographic || !overviewMarkers.some(marker => marker.sourceId === (p.sourceId || p.id))));
 }
-function poiEnabled(poi) { return shouldRenderFeature(poi, 'poi') && (poi.overview ? layers.landscape : layers[mapFeatureLayer(poi, 'poi')]); }
+function poiEnabled(poi) {
+  const sourceLayer = mapFeatureLayer(poi, 'poi');
+  const layer = poi.overview || sourceLayer === 'landscape' || sourceLayer === 'water' ? 'biomes' : sourceLayer;
+  return shouldRenderFeature(poi, 'poi') && layers[layer];
+}
 function pickPoi(position, radius = 35) {
   return displayedPois().filter(p => poiEnabled(p) && p.reachable !== false).sort((a, b) => dist(a, position) - dist(b, position)).find(p => dist(p, position) < radius / Math.max(.65, camera.zoom)) || null;
 }
@@ -3485,15 +4273,14 @@ function formatCoverage(coverage) {
 function syncLayerUI() {
   const features = detailRenderer.getFeatures();
   for (const key of Object.keys(layers)) $('layer-' + key).checked = layers[key];
-  for (const key of ['landscape', 'water', 'roads', 'power', 'buildings', 'details']) $('count-' + key).textContent = features.filter(feature => feature.layer === key).length;
+  for (const key of ['biomes', 'roads', 'power', 'buildings', 'details']) $('count-' + key).textContent = features.filter(feature => feature.layer === key).length;
   for (const key of Object.keys(roadClasses)) {
     const input = $('road-class-' + key);
     input.checked = roadClasses[key]; input.disabled = !layers.roads;
     $('count-road-class-' + key).textContent = features.filter(feature => feature.layer === 'roads' && feature.roadClass === key).length;
   }
   $('road-classes').classList.toggle('is-disabled', !layers.roads);
-  if (!world.geographic && landscapeBackdrop) $('count-landscape').textContent = 'биомы';
-  terrainCanvas.hidden = !layers.terrain;
+  $('biome-key').classList.toggle('is-disabled', !layers.biomes);
   syncBuildingLegend(features);
 }
 
@@ -3541,9 +4328,6 @@ function switchMap(map) {
   overviewMarkers = createOverviewMarkers(world);
   detailRenderer = createDetailRenderer(world);
   objectCacheState = null; objectRevision++;
-  palette = map ? desertPalette : greenPalette;
-  terrainBackdrop = createTerrainBackdrop(world, palette); terrainRevision++; terrainFrameKey = '';
-  landscapeBackdrop = createLandscapeBackdrop(world, palette);
   detailRenderer.setLayers(layers);
   detailRenderer.setRoadClasses(roadClasses);
   camera.zoom = innerWidth < 640 ? .68 : .85;
@@ -3565,13 +4349,13 @@ function inspectObject(point, screenX, screenY, touch = false, pickedFeature = n
   hoveredPoi = null;
   const names = { settlement_boundary: 'ГРАНИЦА ПОСЕЛЕНИЯ', building: 'ЗДАНИЕ', road: 'ДОРОГА', fence: 'ОГРАДА', wall: 'СТЕНА', gate: 'ВОРОТА', railway: 'ЖЕЛЕЗНАЯ ДОРОГА', parking: 'ПАРКОВКА', pitch: 'СПОРТПЛОЩАДКА', garden: 'САД', pool: 'БАССЕЙН', tree: 'ДЕРЕВО', bench: 'СКАМЕЙКА', picnic_table: 'МЕСТО ДЛЯ ПРИВАЛА', fountain: 'ФОНТАН', well: 'КОЛОДЕЦ', ruins: 'РУИНЫ', shelter: 'УКРЫТИЕ', cemetery: 'КЛАДБИЩЕ', park: 'ПАРК', spring: 'РОДНИК', quarry: 'КАРЬЕР', playground: 'ДЕТСКАЯ ПЛОЩАДКА', cattle_grid: 'РЕШЁТКА НА ДОРОГЕ', runway: 'ВЗЛЁТНАЯ ПОЛОСА', taxiway: 'РУЛЁЖНАЯ ДОРОЖКА', apron: 'ПЕРРОН АЭРОДРОМА', aerodrome: 'АЭРОДРОМ', river: 'ВОДОТОК', lake: 'ОЗЕРО', water: 'ВОДОЁМ', forest: 'ЛЕС', swamp: 'БОЛОТО', plain: 'УЧАСТОК МЕСТНОСТИ', boundary: 'ГРАНИЦА' };
   const zoneNames = { residential: 'ЖИЛАЯ ЗОНА', industrial: 'ПРОМЫШЛЕННАЯ ЗОНА', commercial: 'КОММЕРЧЕСКАЯ ЗОНА', retail: 'ТОРГОВАЯ ЗОНА', farmland: 'ПОЛЯ', sand: 'ПЕСКИ', rock: 'СКАЛЫ', scrub: 'КУСТАРНИК', wetland: 'БОЛОТО' };
-  const layerNames = { landscape: 'ЛАНДШАФТ', water: 'ВОДА', roads: 'ДОРОГА', power: 'ЭЛЕКТРОСЕТЬ', buildings: 'ЗДАНИЕ' };
+  const layerNames = { biomes: 'БИОМ', roads: 'ДОРОГА', power: 'ЭЛЕКТРОСЕТЬ', buildings: 'ЗДАНИЕ' };
   const assignment = feature.gameplayAssignment;
   const card = $('object-card');
   card.classList.toggle('is-building', !!assignment);
   card.style.setProperty('--object-type-color', assignment?.color || assignment?.category?.color || '#bccca4');
   card.dataset.roleId = assignment?.roleId || '';
-  $('object-kind').textContent = assignment?.categoryName?.toUpperCase() || (feature.roadClassName && feature.roadClassName.toUpperCase()) || names[feature.kind] || (feature.layer === 'landscape' && feature.biomeName ? feature.biomeName.toUpperCase() : zoneNames[feature.biome || feature.kind]) || layerNames[feature.layer] || 'ОБЪЕКТ';
+  $('object-kind').textContent = assignment?.categoryName?.toUpperCase() || (feature.roadClassName && feature.roadClassName.toUpperCase()) || names[feature.kind] || (feature.layer === 'biomes' && feature.biomeName ? feature.biomeName.toUpperCase() : zoneNames[feature.biome || feature.kind]) || layerNames[feature.layer] || 'ОБЪЕКТ';
   $('object-name').textContent = assignment?.roleName || feature.name || (feature.kind === 'building' ? 'Безымянное здание' : 'Объект на карте');
   const source = feature.source || {};
   const address = typeof source.address === 'string' ? source.address : source.address ? Object.values(source.address).join(', ') : '';
@@ -3579,7 +4363,7 @@ function inspectObject(point, screenX, screenY, touch = false, pickedFeature = n
   const extra = [buildingDescription, address, source.levels ? `${source.levels} эт.` : '', source.surface ? `Покрытие: ${source.surface}` : ''].filter(Boolean).flatMap(text => String(text).split(' · '));
   $('object-meta').textContent = [...new Set(extra)].filter(text => text !== (assignment?.roleName || feature.name)).join(' · ') || (feature.derived ? 'Игровая зона' : world.geographic ? 'Нанесён на карту OpenStreetMap' : 'Объект игровой карты');
   const zones = detailRenderer.zonesAt(point.x, point.y);
-  if (zones.length) $('object-meta').textContent += `\nБиомы: ${[...new Set(zones.map(zone => zone.biomeName || zone.name))].join(' + ')}`;
+  if (zones.length) $('object-meta').textContent += `\nБиом: ${[...new Set(zones.map(zone => zone.biomeName || zone.name))].join(' + ')}`;
   if (feature.typeName && !assignment) $('object-meta').textContent += `\nИгровой тип: ${feature.typeName}`;
   const profiles = collectResourceProfiles(assignment || feature, zones);
   if (profiles.length) $('object-meta').textContent += `\nПрофили ресурсов: ${profiles.map(id => RESOURCE_PROFILES[id]?.name || id).join(', ')}`;
@@ -3830,7 +4614,7 @@ function drawPoi(poi, time) {
 }
 
 function drawStaticObjects(time) {
-  const key = `${camera.zoom},${vw},${vh},${dpr},${objectRevision},${terrainRevision}`;
+  const key = `${camera.zoom},${vw},${vh},${dpr},${objectRevision}`;
   const cached = objectCacheState;
   if (!cached || cached.key !== key || Math.abs(camera.x - cached.x) * camera.zoom > cached.margin || Math.abs(camera.y - cached.y) * camera.zoom > cached.margin) {
     const started = performance.now();
@@ -3845,7 +4629,6 @@ function drawStaticObjects(time) {
     objectCacheCtx.clearRect(0, 0, pixelWidth, pixelHeight);
     objectCacheCtx.setTransform(scale, 0, 0, scale, 0, 0);
     objectCacheCtx.save(); objectCacheCtx.translate(width / 2, height / 2); objectCacheCtx.scale(camera.zoom, camera.zoom); objectCacheCtx.translate(-camera.x, -camera.y);
-    if (layers.landscape && landscapeBackdrop) objectCacheCtx.drawImage(landscapeBackdrop, 0, 0);
     detailRenderer.draw(objectCacheCtx, { zoom: camera.zoom, cameraX: camera.x, cameraY: camera.y, width, height, time, hoveredId: null });
     objectCacheCtx.restore();
     objectCacheState = { key, x: camera.x, y: camera.y, margin, scale, width, height };
@@ -3859,15 +4642,8 @@ function drawStaticObjects(time) {
 
 function draw(time) {
   const started = performance.now();
-  const frameKey = `${camera.x.toFixed(4)},${camera.y.toFixed(4)},${camera.zoom},${canvas.width},${canvas.height},${terrainRevision}`;
-  if (layers.terrain && terrainFrameKey !== frameKey) {
-    terrainCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    terrainCtx.fillStyle = '#1b2721'; terrainCtx.fillRect(0, 0, vw, vh);
-    terrainCtx.save(); terrainCtx.translate(vw / 2, vh / 2); terrainCtx.scale(camera.zoom, camera.zoom); terrainCtx.translate(-camera.x, -camera.y);
-    terrainCtx.drawImage(terrainBackdrop, 0, 0); terrainCtx.restore(); terrainFrameKey = frameKey;
-  }
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.clearRect(0, 0, vw, vh);
+  ctx.fillStyle = '#18251f'; ctx.fillRect(0, 0, vw, vh);
   drawStaticObjects(time);
   ctx.save(); ctx.translate(vw / 2, vh / 2); ctx.scale(camera.zoom, camera.zoom); ctx.translate(-camera.x, -camera.y);
   detailRenderer.drawHighlight(ctx, { zoom: camera.zoom, cameraX: camera.x, cameraY: camera.y, width: vw, height: vh, time }, hoveredObject);
@@ -3949,7 +4725,7 @@ function updateUI() {
   $('terrain-label').textContent = `${terrainNames[terrain?.type] || 'Пустошь'}${route ? paused ? ' · привал' : ' · в пути' : ' · на привале'}`;
   const biomes = [...new Set(detailRenderer.zonesAt(player.x, player.y).map(zone => zone.biomeName || zone.name))];
   $('biome-label').hidden = !biomes.length;
-  $('biome-label').textContent = biomes.length ? `Биомы: ${biomes.join(' + ')}` : '';
+  $('biome-label').textContent = biomes.length ? `Биом: ${biomes.join(' + ')}` : '';
   $('biome-label').title = $('biome-label').textContent;
   if (world.geographic) {
     const [west, south, east, north] = world.bbox;

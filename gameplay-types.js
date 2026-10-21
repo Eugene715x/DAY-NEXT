@@ -76,6 +76,7 @@ export const BIOME_TYPES = gtCatalog('biome', [
   ['administrative', 'Административная территория'],
   ['plain', 'Открытая местность', ['profile.outdoors']],
   ['wasteland', 'Пустошь', ['profile.outdoors']],
+  ['city', 'Город', ['profile.household', 'profile.salvage']],
   ['suburb', 'Пригород', ['profile.household', 'profile.salvage']],
   ['urban', 'Городская застройка', ['profile.household', 'profile.salvage']],
   ['dense', 'Плотная застройка', ['profile.household', 'profile.salvage']],
@@ -120,6 +121,7 @@ export const BIOME_TYPES = gtCatalog('biome', [
   ['glacier', 'Ледник', ['profile.water']],
   ['water', 'Водоём или водоток', ['profile.water']],
   ['dry_riverbed', 'Сухое русло', ['profile.outdoors']],
+  ['seasonal_river', 'Сезонное русло', ['profile.outdoors']],
 ], 'resourceProfileIds');
 
 // These are explicit source semantics, not guesses from a name, address or zone.

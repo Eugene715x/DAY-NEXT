@@ -55,6 +55,9 @@ test('administrative territory has a stable type without implying urban resource
   for (const biome of ['desert', 'valley', 'gully']) assert.equal(classifyBiome(biome).typeId, `biome.${biome}`, 'The actual Nevada natural-feature vocabulary has explicit stable types');
   assert.equal(classifyBiome('dry_riverbed').typeId, 'biome.dry_riverbed');
   assert(!classifyBiome('dry_riverbed').resourceProfileIds.includes('profile.water'), 'A dry wash must not inherit a permanent-water resource profile');
+  assert.equal(classifyBiome('city').typeId, 'biome.city');
+  assert.equal(classifyBiome('seasonal_river').typeId, 'biome.seasonal_river');
+  assert(!classifyBiome('seasonal_river').resourceProfileIds.includes('profile.water'), 'Seasonal water is not a guaranteed permanent-water resource');
 });
 
 test('overlapping zones and a building merge profile references without multiplying candidates', () => {

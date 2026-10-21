@@ -5,19 +5,23 @@ import { BUILDING_TYPES, BIOME_TYPES, RESOURCE_PROFILES, RESOURCE_KINDS } from '
 import { BUILDING_CATEGORIES, BUILDING_ROLES } from '../building-roles.js';
 const root = new URL('../', import.meta.url);
 const read = path => readFile(new URL(path, root), 'utf8');
-const [html, css, world, realWorld, terrain, mapLayers, presentation, overview, types, roles, details, converter, map, game] = await Promise.all(['index.html', 'styles.css', 'world.js', 'real-world.js', 'terrain-renderer.js', 'map-layers.js', 'map-presentation.js', 'map-overview.js', 'gameplay-types.js', 'building-roles.js', 'detail-renderer.js', 'scripts/lib/osm-converter.mjs', 'maps/usa.js', 'game.js'].map(read));
+const [html, css, world, realWorld, polygonVendor, polygonGeometry, ribbons, cities, biomes, mapLayers, presentation, overview, types, roles, details, converter, map, game] = await Promise.all(['index.html', 'styles.css', 'world.js', 'real-world.js', 'vendor/polygon-clipping.js', 'polygon-geometry.js', 'biome-ribbons.js', 'city-biomes.js', 'biome-map.js', 'map-layers.js', 'map-presentation.js', 'map-overview.js', 'gameplay-types.js', 'building-roles.js', 'detail-renderer.js', 'scripts/lib/osm-converter.mjs', 'maps/usa.js', 'game.js'].map(read));
 const { version } = JSON.parse(await read('package.json'));
 const mapData = JSON.parse(map.replace(/^export default\s+/, '').trim().replace(/;$/, ''));
 const objectsReport = await writeMapObjectsReport(mapData, root);
 const wrap = (body, names) => `const {${names}} = (() => {\n${body.replace(/^export\s+/gm, '')}\nreturn {${names}};\n})();\n`;
 const source = wrap(world, 'createWorld,findPath,terrainAt,nearestWalkable')
   + wrap(realWorld, 'createRealWorld')
-  + wrap(terrain, 'createTerrainBackdrop,createLandscapeBackdrop')
+  + wrap(polygonVendor, 'polygonClipping')
+  + wrap(polygonGeometry.replace(/^import\s+[^;]+;\s*/gm, ''), 'polygonDifference,polygonUnion,polygonIntersection,normalizePolygonParts')
+  + wrap(ribbons.replace(/^import\s+[^;]+;\s*/gm, ''), 'buildWaterRibbonParts')
+  + wrap(cities.replace(/^import\s+[^;]+;\s*/gm, ''), 'buildCityBiomes')
   + wrap(mapLayers, 'mapFeatureLayer,mapBiome,mapZoneBiome,shouldRenderFeature,shouldRenderLandscapeFeature,mapLandscapeBiome')
   + wrap(presentation, 'ROAD_CLASSES,roadClass,mergeNetworkLines,mergeConnectedNetworks')
   + wrap(overview, 'OVERVIEW_MAX_ZOOM,createOverviewMarkers')
   + wrap(types.replace(/^import\s+[^;]+;\s*/gm, ''), 'BUILDING_TYPES,BIOME_TYPES,RESOURCE_PROFILES,RESOURCE_KINDS,classifyBuilding,classifyBiome,collectResourceProfiles,collectResourceCandidates')
   + wrap(roles.replace(/^import\s+[^;]+;\s*/gm, ''), 'BUILDING_CATEGORIES,BUILDING_ROLES,createBuildingAssignments')
+  + wrap(biomes.replace(/^import\s+[^;]+;\s*/gm, ''), 'buildBiomeMap')
   + wrap(details.replace(/^import\s+[^;]+;\s*/gm, ''), 'createDetailRenderer')
   + wrap(converter, 'convertOSM,validateBbox')
   + `const usaMap = ${map.replace(/^export default\s+/, '')}\n`
@@ -35,13 +39,14 @@ const instructions = `DAY / NEXT ${version} — одиночная экспед�
 Откройте day-next.html в браузере. Установка и интернет не нужны.
 Клик — идти, перетаскивание — карта, колесо — масштаб до 24x.
 B / кнопка дома — посмотреть застройку; наведение — сведения об отдельном доме или дороге. F / прицел — вернуться к путнику.
-Кнопка «Слои» — отдельное включение подложки, природы и ландшафта, водоёмов и русел, дорог, электросети, домов и прочих объектов. Выключенные объекты не рисуются и не выбираются.
+Кнопка «Слои» — отдельное включение биомов, дорог, электросети, домов и прочих объектов. Выключенные объекты не рисуются и не выбираются.
 Каждый дом получил игровое назначение и цвет категории: жильё, разные магазины, еда, медицина, образование, производство, склады, транспорт, общественные здания, службы, гостиницы и руины.
 Кнопка «Типы» показывает цветовую легенду. Наведи на дом: в заголовке карточки будет конкретная роль — например, продуктовый магазин, школа, склад или ангар.
 Назначения берутся из собственных тегов и меток карты; для неуточнённых зданий заданы устойчивые игровые роли с отдельной пометкой «Игровое назначение». Исходные факты OSM сохранены отдельно.
-Городская и служебная зональная заливка убрана. Природные биомы — леса, пески, скалы, пустыни, трава, парки, сады и вода — сохраняются. При отдалении появляются точки поселений и аэропорта.
-Соединённые однотипные дороги, водотоки и электролинии выбираются и подсвечиваются единым объектом со всеми ответвлениями. Типы дорог: магистрали, дороги, улицы и проезды, грунтовки, тропы и железнодорожные пути. Каждый тип можно скрыть отдельно. Электросеть — сплошные линии без отдельных столбов. Ограды, обозначения переходов и дорожные знаки скрыты. Подстанция залита сплошным цветом, места стоянки самолётов относятся к зонам.
-Список природных биомов виден в карточке путника и при осмотре объектов. Территории учреждений используются как сведения для игровых ролей зданий.
+Биомы образуют весь фон карты без отдельной подложки и без наложений. Город — сплошной серый биом с цельным контуром. Природные участки и вода вырезаны из соседних биомов. Сезонные русла обозначены синим пунктиром прежней ширины, постоянная вода — сплошным синим. При отдалении появляются точки поселений и аэропорта.
+Соединённые однотипные дороги, водотоки и электролинии выбираются и подсвечиваются единым объектом со всеми ответвлениями. Типы дорог: магистрали, дороги, улицы и проезды, грунтовки, тропы и железнодорожные пути. Каждый тип можно скрыть отдельно. Электросеть — сплошные линии без отдельных столбов. Ограды, обозначения переходов и дорожные знаки скрыты. Подстанция залита сплошным цветом; аэродром и перрон сохраняют свои контуры.
+Текущий биом виден в карточке путника и при осмотре объектов. Сезонные русла остаются проходимыми и не обещают питьевую воду. Территории учреждений используются как сведения для игровых ролей зданий.
+biomes.json содержит отчёт покрытия карты и происхождение биомов.
 building-roles.json содержит все назначенные роли зданий, категории, происхождение и профили возможных ресурсов.
 remaining-objects.md содержит полный список того, что осталось в слое остальных объектов.
 gameplay-types.json содержит типы зданий, биомов и общие профили ресурсов. Это настройки возможного поиска; механика добычи ещё не добавлена.
@@ -62,6 +67,7 @@ await writeFile(new URL('downloads/day-next.zip', root), createZip([
   { name: 'remaining-objects.md', data: objectsReport.markdown },
   { name: 'remaining-objects.json', data: JSON.stringify(objectsReport.report, null, 2) + '\n' },
   { name: 'THIRD_PARTY_NOTICES.txt', data: await read('vendor/THIRD_PARTY_NOTICES.txt') },
+  { name: 'biomes.json', data: JSON.stringify({ version: 1, source: objectsReport.report.source, ...objectsReport.report.biomes }, null, 2) + '\n' },
   { name: 'building-roles.json', data: JSON.stringify({ version: 1, source: objectsReport.report.source, categories: BUILDING_CATEGORIES, roles: BUILDING_ROLES, ...objectsReport.report.buildings }, null, 2) + '\n' },
   { name: 'gameplay-types.json', data: JSON.stringify({ buildingTypes: BUILDING_TYPES, biomeTypes: BIOME_TYPES, resourceProfiles: RESOURCE_PROFILES, resourceKinds: RESOURCE_KINDS }, null, 2) + '\n' },
 ]));

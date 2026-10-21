@@ -13,10 +13,10 @@ test('spatial candidates include wide road strokes and giant zone holes outside 
     details: [{ id: 'whole-region', geometry: 'polygon', points: outer, rings: [outer, hole], tags: { natural: 'wood' } }],
   }));
   assert.equal(renderer.pick(100, 400, 0).id, 'wide-road', 'A wide stroke must be indexed across its painted width');
-  assert.equal(renderer.pick(9000, 9000, 0).id, 'whole-region');
-  assert.deepEqual(renderer.zonesAt(6000, 6000), [], 'A large indexed polygon must retain its hole');
+  assert.equal(renderer.pick(9000, 9000, 0).sourceId, 'whole-region');
+  assert.deepEqual(renderer.zonesAt(6000, 6000).map(zone => zone.biome), ['wasteland'], 'A large indexed polygon exposes ground through its hole');
   assert.deepEqual(renderer.zonesAt(9000, 9000).map(zone => zone.biome), ['forest']);
-  renderer.setLayers({ landscape: false });
+  renderer.setLayers({ biomes: false });
   assert.equal(renderer.pick(9000, 9000), null);
   assert.deepEqual(renderer.zonesAt(9000, 9000).map(zone => zone.biome), ['forest']);
 });
@@ -26,6 +26,7 @@ test('power line visibility is independent while utility support markers are omi
     { id: 'pole', geometry: 'point', points: [{ x: 128, y: 128 }], kind: 'utility_pole', tags: { man_made: 'utility_pole' } },
     { id: 'line', geometry: 'line', points: [{ x: 20, y: 200 }, { x: 1000, y: 200 }], tags: { power: 'line' } },
   ] }));
+  renderer.setLayers({ biomes: false });
   assert.equal(renderer.pick(128, 128), null, 'Utility poles are retained in the source but do not clutter the map');
   assert.equal(renderer.pick(700, 200).layer, 'power');
   assert.equal(renderer.getStats().power, 1);
@@ -85,7 +86,7 @@ test('dry watercourses cannot inherit a water resource profile from their visual
     { id: 'dry', points: [{ x: 20, y: 50 }, { x: 500, y: 50 }], tags: { waterway: 'river', intermittent: 'yes' } },
     { id: 'wet', points: [{ x: 20, y: 100 }, { x: 500, y: 100 }], tags: { waterway: 'river' } },
   ] }));
-  assert.equal(renderer.pick(100, 50).typeId, 'biome.dry_riverbed');
+  assert.equal(renderer.pick(100, 50).typeId, 'biome.seasonal_river');
   assert(!renderer.pick(100, 50).resourceProfileIds.includes('profile.water'));
   assert.equal(renderer.pick(100, 100).typeId, 'biome.water');
   assert(renderer.pick(100, 100).resourceProfileIds.includes('profile.water'));
@@ -96,6 +97,7 @@ function recordingContext() {
   return {
     strokes, fills, dashes,
     save() {}, restore() {}, beginPath() {}, rect() {}, clip() {},
+    fillRect() { fills.push({ color: this.fillStyle, matte: true }); },
     setLineDash(value) { this.dash = [...value]; dashes.push([...value]); },
     stroke(path) { strokes.push({ path, color: this.strokeStyle, width: this.lineWidth, dash: [...(this.dash || [])] }); },
     fill(path) { fills.push(path); },
@@ -118,6 +120,7 @@ test('road junctions paint all casings before any core and class hiding also rem
   assert.equal(renderer.pick(300, 150, 0).key, selected.key);
   assert.equal(renderer.pick(200, 240, 0).key, selected.key);
   assert.equal(selected.paths.length, 3);
+  renderer.setLayers({ biomes: false });
   renderer.setRoadClasses({ street: false });
   assert.equal(renderer.pick(100, 150, 0), null);
   assert.equal(renderer.drawHighlight(context, fullView, selected), null);
@@ -150,10 +153,10 @@ test('removed town boundaries emit no scene or highlight ink', () => {
     { id: 'town', geometry: 'polygon', points: ring(20, 20, 380, 280), tags: { boundary: 'administrative', name: 'Town' } },
   ] }));
   const context = recordingContext(); renderer.draw(context, fullView);
-  assert.equal(context.fills.length, 0);
+  assert.equal(context.fills.length, 2, 'Only the opaque biome ground and its matte are painted');
   assert.equal(context.strokes.length, 0);
   assert.equal(renderer.drawHighlight(context, fullView, 'town'), null);
-  assert.equal(context.fills.length, 0);
+  assert.equal(context.fills.length, 2);
   assert.equal(context.strokes.length, 0);
 });
 
@@ -161,6 +164,7 @@ test('closed substations paint a solid footprint and use the same interior for s
   const renderer = createDetailRenderer(world({ width: 400, height: 300, details: [
     { id: 'substation', geometry: 'polygon', points: ring(100, 100, 250, 250), tags: { power: 'substation' } },
   ] }));
+  renderer.setLayers({ biomes: false });
   const context = recordingContext(); renderer.draw(context, fullView);
   assert.equal(context.fills.length, 1, 'The full measured footprint is painted');
   assert.equal(context.fillStyle, '#8f9770');
@@ -177,22 +181,26 @@ test('overlapping polygon components use union filling for both scene and select
   const rules = [], context = recordingContext();
   context.fill = (_path, rule) => rules.push(rule);
   renderer.draw(context, fullView);
-  assert.deepEqual(rules, ['nonzero']);
+  assert.deepEqual(rules, ['nonzero', 'nonzero'], 'Fallback ground and the united lake share nonzero filling');
   const selected = renderer.pick(150, 120, 0);
-  assert.equal(selected.parts.length, 2);
+  assert.equal(selected.parts.length, 1, 'Overlapping source pieces become one actual water surface');
   renderer.drawHighlight(context, fullView, selected);
-  assert.deepEqual(rules, ['nonzero', 'nonzero']);
+  assert.deepEqual(rules, ['nonzero', 'nonzero', 'nonzero']);
   assert.equal(renderer.pick(50, 120, 0).key, selected.key);
   assert.equal(renderer.pick(250, 120, 0).key, selected.key);
 });
 
-test('every Nevada footprint receives a colored game role while urban zones retire and natural geometry stays exact', async () => {
+test('every Nevada building keeps its colored role while nature and cities form an exclusive ground map', async () => {
   const { default: map } = await import('../maps/usa.js');
   const before = JSON.stringify(map), renderer = createDetailRenderer(map), stats = renderer.getStats(), features = renderer.getFeatures();
   assert.equal(stats.buildings, map.buildings.length);
   assert.equal(stats.sourceRoads, map.roads.length);
   assert.equal(stats.roads, 83);
-  assert.equal(stats.water, 53);
+  assert.equal(stats.displayWaterLines, 29);
+  assert.equal(stats.displayWaterAreas, 11);
+  assert(stats.biomes > 0);
+  assert(stats.biomePartition.coverageError < 1e-5);
+  assert(stats.biomePartition.cityFeatures > 0);
   assert.equal(stats.power, 6);
   assert.equal(JSON.stringify(map), before);
   const buildings = features.filter(feature => feature.layer === 'buildings');
@@ -209,7 +217,10 @@ test('every Nevada footprint receives a colored game role while urban zones reti
   }
   const sand = features.find(feature => feature.sourceId === 'relation-15569711');
   assert.equal(sand.biome, 'sand');
-  assert.equal(sand.rings.length, 14, 'The complete mapped sand biome and its 13 holes remain');
+  const originalSand = sand.members.find(member => member.sourceId === 'relation-15569711');
+  assert(originalSand, 'The cut display partition retains the source sand geometry');
+  assert.equal(originalSand.rings.length, 14);
+  for (let y = 50; y < map.height; y += 113) for (let x = 50; x < map.width; x += 137) assert.equal(renderer.zonesAt(x, y).length, 1);
 });
 
 test('building fills use functional category colors at overview as well as detail scales', () => {
@@ -220,6 +231,7 @@ test('building fills use functional category colors at overview as well as detai
     { id: 'clinic', points: ring(200, 20, 240, 60), tags: { building: 'hospital', amenity: 'clinic' } },
     { id: 'warehouse', points: ring(260, 20, 300, 60), tags: { building: 'warehouse' } },
   ] }));
+  renderer.setLayers({ biomes: false });
   const colors = [], context = recordingContext();
   context.fill = function() { colors.push(this.fillStyle); };
   renderer.draw(context, fullView);
@@ -230,4 +242,62 @@ test('building fills use functional category colors at overview as well as detai
   const hidden = recordingContext(); renderer.draw(hidden, fullView);
   assert.equal(hidden.fills.length, 0);
   assert.equal(renderer.pick(40, 40), null);
+});
+
+test('seasonal river ink is blue and dashed at the unchanged v12 width at both overview and detail scales', () => {
+  const renderer = createDetailRenderer(world({ width: 400, height: 300, rivers: [
+    { id: 'dry', width: .8, points: [{ x: 20, y: 50 }, { x: 380, y: 50 }], tags: { waterway: 'stream', intermittent: 'yes' } },
+    { id: 'wet', width: 2, points: [{ x: 20, y: 100 }, { x: 380, y: 100 }], tags: { waterway: 'stream' } },
+  ] }));
+  for (const zoom of [1, 6]) {
+    const context = recordingContext();
+    renderer.draw(context, { ...fullView, zoom, width: 400 * zoom, height: 300 * zoom });
+    const dry = context.strokes.filter(stroke => stroke.dash.length), wet = context.strokes.filter(stroke => !stroke.dash.length);
+    assert.equal(dry.length, 2); assert.equal(wet.length, 2);
+    assert(dry.every(stroke => stroke.dash[0] === 6 / zoom && stroke.dash[1] === 4 / zoom));
+    assert.equal(dry[1].color, '#4c91bd'); assert.equal(wet[1].color, '#3f7eaa');
+    assert(Math.abs(dry[0].width - (zoom === 1 ? 3.5 : 1.05)) < 1e-12);
+    assert(Math.abs(dry[1].width - (zoom === 1 ? 1.1 : .8)) < 1e-12);
+    assert(Math.abs(wet[0].width - (zoom === 1 ? 3.4 : 2 + 1 / 6)) < 1e-12);
+    assert.equal(wet[1].width, 2);
+  }
+});
+
+test('river selection follows visible dash ink outside the native ribbon and highlights the whole network with gaps', () => {
+  const renderer = createDetailRenderer(world({ width: 400, height: 300, rivers: [
+    { id: 'dry', width: .8, points: [{ x: 20, y: 50 }, { x: 200, y: 50 }], tags: { waterway: 'stream', intermittent: 'yes' } },
+    { id: 'branch', width: .8, points: [{ x: 200, y: 50 }, { x: 380, y: 50 }], tags: { waterway: 'stream', intermittent: 'yes' } },
+  ], details: [{ id: 'lake', geometry: 'polygon', points: ring(140, 40, 180, 60), tags: { natural: 'water' } }] }));
+  renderer.draw(recordingContext(), fullView);
+  assert.equal(renderer.zonesAt(22, 51)[0].biome, 'wasteland', 'Physical membership uses native width');
+  const selected = renderer.pick(22, 51, 0);
+  assert.equal(selected.waterKind, 'seasonal_river', 'The wider visible ink remains selectable');
+  assert.equal(renderer.pick(28, 51, 0).biome, 'wasteland', 'A visual dash gap adds no expanded hit footprint');
+  assert.equal(renderer.pick(152, 50, 0).biome, 'water', 'A higher priority lake clips river selection and ink');
+  assert.equal(selected.paths.length, 2);
+  const context = recordingContext(); renderer.drawHighlight(context, fullView, selected);
+  assert.equal(context.fills.length, 0);
+  assert.equal(context.strokes.length, 2);
+  assert(context.strokes.every(stroke => stroke.dash.join(',') === '6,4'));
+  assert.equal(context.strokes[0].path, context.strokes[1].path);
+  renderer.setLayers({ biomes: false });
+  assert.equal(renderer.drawHighlight(context, fullView, selected), null);
+  assert.equal(renderer.pick(22, 51, 0), null);
+});
+
+test('city ground is opaque gray with an opaque biome matte and the biome switch removes every ground fill', () => {
+  const renderer = createDetailRenderer(world({ width: 400, height: 300, buildings: Array.from({ length: 5 }, (_, index) => ({
+    id: `house-${index}`, points: ring(130 + index * 25, 130, 145 + index * 25, 145), tags: { building: 'house' },
+  })) }));
+  renderer.setLayers({ buildings: false });
+  const context = recordingContext(), colors = [];
+  context.fill = function() { colors.push({ color: this.fillStyle, alpha: this.globalAlpha }); };
+  renderer.draw(context, fullView);
+  assert(colors.some(fill => fill.color === '#969b99' && fill.alpha === 1));
+  assert(context.fills.some(fill => fill.matte && fill.color === '#a7a17d'));
+  assert.equal(renderer.zonesAt(190, 138)[0].biome, 'city');
+  renderer.setLayers({ biomes: false });
+  const hidden = recordingContext(); renderer.draw(hidden, fullView);
+  assert.equal(hidden.fills.length, 0); assert.equal(hidden.strokes.length, 0);
+  assert.equal(renderer.zonesAt(190, 138)[0].biome, 'city');
 });

@@ -30,13 +30,12 @@
     </svg>
 
     <main class="expedition" aria-label="Карта одиночной экспедиции">
-      <canvas id="terrain-map" aria-hidden="true"></canvas>
       <canvas id="map" aria-label="Карта. Нажмите на сушу, чтобы проложить маршрут. Потяните, чтобы сдвинуть карту." tabindex="0"></canvas>
       <div class="map-vignette" aria-hidden="true"></div>
       <div class="hud">
         <header class="top-bar">
           <div class="brand-block">
-            <div class="brand" aria-label="DAY NEXT"><span>DAY</span><span class="brand-divider">/</span><span class="brand-next">NEXT</span><span class="prototype">ПРОТОТИП <b>12</b></span></div>
+            <div class="brand" aria-label="DAY NEXT"><span>DAY</span><span class="brand-divider">/</span><span class="brand-next">NEXT</span><span class="prototype">ПРОТОТИП <b>13</b></span></div>
             <div class="brand-caption"><span class="live-dot"></span> ОДИНОЧНАЯ ЭКСПЕДИЦИЯ</div>
           </div>
           <div class="world-status glass">
@@ -155,9 +154,8 @@
           <div class="layers-heading help-heading"><div><p class="eyebrow">ВИД КАРТЫ</p><h2>Слои карты</h2></div><button id="layers-close" class="icon-button" type="button" aria-label="Закрыть слои карты">×</button></div>
           <div class="layers-content">
             <div class="layer-options">
-              <label class="layer-option" for="layer-terrain"><input id="layer-terrain" type="checkbox" checked /><span>Подложка</span></label>
-              <label class="layer-option" for="layer-landscape"><input id="layer-landscape" type="checkbox" checked /><span>Природа и ландшафт</span><span id="count-landscape" class="layer-count">—</span></label>
-              <label class="layer-option" for="layer-water"><input id="layer-water" type="checkbox" checked /><span>Водоёмы и русла</span><span id="count-water" class="layer-count">—</span></label>
+              <label class="layer-option" for="layer-biomes"><input id="layer-biomes" type="checkbox" checked /><span>Биомы</span><span id="count-biomes" class="layer-count">—</span></label>
+              <div id="biome-key" class="biome-key" aria-label="Обозначения биомов"><span><i class="biome-swatch city-swatch" aria-hidden="true"></i>Город</span><span><i class="biome-swatch seasonal-river-swatch" aria-hidden="true"></i>Сезонное русло</span><span><i class="biome-swatch water-swatch" aria-hidden="true"></i>Постоянная вода</span></div>
               <label class="layer-option" for="layer-roads"><input id="layer-roads" type="checkbox" checked /><span>Дороги и тропы</span><span id="count-roads" class="layer-count">—</span></label>
               <fieldset id="road-classes" class="road-classes"><legend>Типы дорог</legend>
                 <label class="road-class-option" for="road-class-highway"><input id="road-class-highway" type="checkbox" checked /><span class="road-swatch road-swatch-highway" aria-hidden="true"></span><span>Магистрали</span><span id="count-road-class-highway" class="layer-count">—</span></label>
@@ -171,7 +169,7 @@
               <label class="layer-option" for="layer-buildings"><input id="layer-buildings" type="checkbox" checked /><span>Здания</span><span id="count-buildings" class="layer-count">—</span></label>
               <label class="layer-option" for="layer-details"><input id="layer-details" type="checkbox" checked /><span>Остальные объекты</span><span id="count-details" class="layer-count">—</span></label>
             </div>
-            <p class="layers-note" id="layers-note">Цвет здания показывает его назначение. Легенда — кнопка «Типы». Природные биомы сохраняются отдельно; городская зональная заливка убрана.</p>
+            <p class="layers-note" id="layers-note">Биомы образуют фон карты и не пересекаются. Город — серый, сезонные русла — синий пунктир. Цвет здания показывает его назначение; легенда — кнопка «Типы».</p>
           </div>
         </section>
       </div>
