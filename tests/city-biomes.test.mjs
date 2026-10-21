@@ -26,7 +26,7 @@ test('one coherent gray city envelope fills connected development instead of ind
   const input = world({ buildings: cluster('house', 350, 350), details: [rect('left', 330, 320, 400, 430, { landuse: 'residential' }), rect('right', 430, 320, 505, 430, { landuse: 'commercial' }), rect('park', 400, 350, 440, 390, { leisure: 'park' })] });
   const before = structuredClone(input), { features, report } = buildCityBiomes(input);
   assert.equal(features.length, 1); assert.equal(report.sourceClusters, 1);
-  assert.equal(features[0].biome, 'city'); assert.equal(features[0].fill, '#939797');
+  assert.equal(features[0].biome, 'city'); assert.equal(features[0].fill, '#969b99');
   assert.equal(features[0].derived, true); assert.equal(features[0].provenance.sourceBoundary, false);
   assert(contains(features, 415, 365), 'The street/plot gap is part of the overall town');
   assert(contains(features, 420, 370), 'Specific nature is resolved later by the biome partition, not per-plot city holes');
@@ -34,11 +34,13 @@ test('one coherent gray city envelope fills connected development instead of ind
   assert(features[0].sourceIds.includes('left') && features[0].sourceIds.includes('right'));
 });
 
-test('a bounded internal development gap is filled and the smoothed contour is not a square cell stair', () => {
+test('an angular whole-town polygon fills internal development gaps without a square-cell stair', () => {
   const buildings = Array.from({ length: 10 }, (_, i) => house(`ring-${i}`, 600 + Math.cos(i / 10 * Math.PI * 2) * 180, 600 + Math.sin(i / 10 * Math.PI * 2) * 180));
   const { features } = buildCityBiomes(world({ buildings }));
   assert.equal(features.length, 1); assert(contains(features, 600, 600), 'The town does not have a spurious unzoned doughnut');
   assert.equal(features[0].rings.length, 1);
+  assert(features[0].points.length <= 20, 'A settlement uses deliberate polygon corners rather than many rounded contour samples');
+  assert.equal(features[0].provenance.contourStyle, 'angular');
   const edges = features[0].points.slice(1).map((p, i) => ({ dx: p.x - features[0].points[i].x, dy: p.y - features[0].points[i].y }));
   assert(edges.filter(e => Math.abs(e.dx) > 1e-6 && Math.abs(e.dy) > 1e-6).length / edges.length > .8);
 });
@@ -75,5 +77,5 @@ test('actual Nevada map produces compact whole-town contours without changing an
   assert(contains(features, 2341.664, 888.292)); assert(contains(features, 718.068, 1043.936));
   assert(!contains(features, 1665.382, 1935.753), 'The separate airfield is outside the city envelope');
   assert(features.every(f => f.rings.length === 1 && f.points.every(p => p.x >= 0 && p.y >= 0 && p.x <= map.width && p.y <= map.height)));
-  assert(report.vertices < 2000); assert(performance.now() - start < 3000);
+  assert(report.vertices < 100, 'Whole settlements have compact angular outlines, not densely rounded halos'); assert(performance.now() - start < 3000);
 });

@@ -1,0 +1,435 @@
+{
+  "version": "0.14.0",
+  "checkedAt": "2026-10-21T18:33:42.011728+00:00",
+  "environment": {
+    "browser": "Chromium",
+    "viewport": {
+      "width": 1440,
+      "height": 960
+    },
+    "deviceScaleFactor": 1,
+    "platform": "desktop"
+  },
+  "status": "PASS",
+  "offline": {
+    "mode": "offline",
+    "errors": [],
+    "requests": 0
+  },
+  "preservation": {
+    "buildings": 893,
+    "rolesColorsUnchanged": true,
+    "sourceBuildingGeometryTagsUnchanged": true,
+    "roadNetworks": 83,
+    "power": 6
+  },
+  "layers": {
+    "biomes": true,
+    "roads": true,
+    "power": true,
+    "buildings": true,
+    "details": true
+  },
+  "biomePolygons": 281,
+  "geometry": {
+    "status": "PASS",
+    "constructMs": 2016.6105989999999,
+    "counts": {
+      "buildings": 893,
+      "roads": 83,
+      "power": 6
+    },
+    "sourceUnchanged": true,
+    "partition": {
+      "regions": 281,
+      "area": 6974999.999999985,
+      "expected": 6975000,
+      "areaError": 1.4901161193847656e-08,
+      "pairChecks": 628,
+      "maxOverlap": 8.17462711496249e-15,
+      "totalNumericalOverlap": 8.17462711496249e-15,
+      "overlapFailures": [],
+      "ownershipProbes": 1254,
+      "ownershipFailures": [],
+      "fixtureCityOverSand": true,
+      "fixtureParkWaterOverCity": true
+    },
+    "city": {
+      "oldRegions": 3,
+      "newRegions": 3,
+      "oldVertices": 751,
+      "newVertices": 51,
+      "report": {
+        "method": "coherent-development-envelope",
+        "cities": 3,
+        "sourceBuildings": 893,
+        "eligibleBuildings": 889,
+        "excludedAirportBuildings": 4,
+        "selectedBuildings": 850,
+        "sourcePlots": 86,
+        "sourceClusters": 3,
+        "sampleSpacingMeters": 15,
+        "contourStyle": "angular",
+        "simplifyToleranceMeters": 45,
+        "vertices": 51,
+        "byCity": [
+          {
+            "id": "game-city-dukocc",
+            "name": "Rhyolite",
+            "buildingCount": 10
+          },
+          {
+            "id": "game-city-bgqbjq",
+            "name": "Beatty",
+            "buildingCount": 835
+          },
+          {
+            "id": "game-city-hue75x",
+            "name": "Gold Center",
+            "buildingCount": 5
+          }
+        ]
+      },
+      "sourceSandOverlapBeforePriority": 8064.092360046049,
+      "finalCitySandOverlap": 0
+    },
+    "byBiome": {
+      "cemetery": {
+        "features": 2,
+        "area": 1784.6680969999961
+      },
+      "city": {
+        "features": 3,
+        "area": 215361.96058837022
+      },
+      "desert": {
+        "features": 1,
+        "area": 58390.84916949997
+      },
+      "forest": {
+        "features": 5,
+        "area": 777.6088423380605
+      },
+      "grassland": {
+        "features": 1,
+        "area": 211.960123000001
+      },
+      "park": {
+        "features": 2,
+        "area": 1285.2373129999946
+      },
+      "quarry": {
+        "features": 3,
+        "area": 82309.1652955
+      },
+      "recreation": {
+        "features": 8,
+        "area": 5119.376014000002
+      },
+      "rock": {
+        "features": 204,
+        "area": 111564.11073673092
+      },
+      "sand": {
+        "features": 1,
+        "area": 1821914.534288308
+      },
+      "scrub": {
+        "features": 6,
+        "area": 19517.108923928303
+      },
+      "seasonal_river": {
+        "features": 33,
+        "area": 39465.43191970337
+      },
+      "wasteland": {
+        "features": 1,
+        "area": 4610353.93224161
+      },
+      "water": {
+        "features": 11,
+        "area": 6944.056446999999
+      }
+    },
+    "constructionPerformance": {
+      "cityMs": 185.50295700000004,
+      "rawPartitionMs": 805.0880240000001,
+      "rendererMs": 844.101414,
+      "pairIntersectionAndProbeCostExcluded": true
+    },
+    "rawRuntimePartitionParity": {
+      "rawRegions": 281,
+      "runtimeRegions": 281,
+      "rawWaterLines": 33,
+      "runtimeWaterLines": 33,
+      "byBiomeEqual": true
+    }
+  },
+  "hoverContract": [
+    {
+      "layer": "biomes",
+      "pickedLayer": "biomes",
+      "sameStaticPaint": true,
+      "overlayPixels": 0,
+      "returned": null
+    },
+    {
+      "layer": "roads",
+      "pickedLayer": "roads",
+      "sameStaticPaint": true,
+      "overlayPixels": 0,
+      "returned": null
+    },
+    {
+      "layer": "power",
+      "pickedLayer": "power",
+      "sameStaticPaint": true,
+      "overlayPixels": 0,
+      "returned": null
+    },
+    {
+      "layer": "buildings",
+      "pickedLayer": "buildings",
+      "sameStaticPaint": false,
+      "overlayPixels": 1764,
+      "returned": "buildings:building:house"
+    }
+  ],
+  "tooltips": [
+    {
+      "at": "overview",
+      "layer": "biomes",
+      "text": "Сезонное русло"
+    },
+    {
+      "at": "detail",
+      "layer": "biomes",
+      "text": "Город · Beatty"
+    },
+    {
+      "at": "detail",
+      "layer": "roads",
+      "text": "Тропа"
+    },
+    {
+      "at": "detail",
+      "layer": "power",
+      "text": "ЛЭП"
+    }
+  ],
+  "tooltipBehavior": {
+    "compactOnlyForQuietLayers": true,
+    "buildingRichCardPreserved": true,
+    "visibleAtOverviewAndDetail": true,
+    "hiddenWhileDragging": true,
+    "hiddenOffMap": true,
+    "hiddenWhenLayersDisabled": true,
+    "fitsViewportNearBottomRight": {
+      "x": 1329.625,
+      "y": 896.0625,
+      "width": 66.375,
+      "height": 31.9375
+    }
+  },
+  "water": {
+    "sourceUnchanged": true,
+    "nativeSourcePaths": 88,
+    "coalescedWaterRelationFragments": 26,
+    "waterNetworks": 33,
+    "amargosaNetworks": 12,
+    "blueStrokes": 66,
+    "solidRiverStrokes": 0,
+    "originalDuplicateMembersPreserved": true,
+    "genuinePermanentFixtureStaysSolid": true
+  },
+  "performance": {
+    "idle": {
+      "frames": 120,
+      "fps": 60.00300015000751,
+      "meanMs": 16.66583333333333
+    },
+    "buildingHover": {
+      "frames": 120,
+      "fps": 59.99999999999999,
+      "meanMs": 16.666666666666668
+    },
+    "cityCursorSweep": {
+      "frames": 120,
+      "fps": 60.00300015000751,
+      "maxFrameMs": 16.80000000000109,
+      "meanMs": 16.66583333333333
+    },
+    "overviewCursorSweep": {
+      "frames": 120,
+      "fps": 59.50314870828568,
+      "maxFrameMs": 33.30000000000291,
+      "meanMs": 16.80583333333337
+    },
+    "staticCacheReused": true
+  },
+  "finalBuildStartup": {
+    "buildings": 893,
+    "roads": 83,
+    "power": 6,
+    "biomes": 281,
+    "water": [
+      {
+        "biome": "seasonal_river",
+        "name": "Сезонное русло"
+      },
+      {
+        "biome": "seasonal_river",
+        "name": "Amargosa River / Upper Amargosa River"
+      },
+      {
+        "biome": "seasonal_river",
+        "name": "Сезонное русло"
+      },
+      {
+        "biome": "seasonal_river",
+        "name": "Amargosa River / Upper Amargosa River"
+      },
+      {
+        "biome": "seasonal_river",
+        "name": "Сезонное русло"
+      },
+      {
+        "biome": "seasonal_river",
+        "name": "Сезонное русло"
+      },
+      {
+        "biome": "seasonal_river",
+        "name": "Сезонное русло"
+      },
+      {
+        "biome": "seasonal_river",
+        "name": "Сезонное русло"
+      },
+      {
+        "biome": "seasonal_river",
+        "name": "Сезонное русло"
+      },
+      {
+        "biome": "seasonal_river",
+        "name": "Сезонное русло"
+      },
+      {
+        "biome": "seasonal_river",
+        "name": "Сезонное русло"
+      },
+      {
+        "biome": "seasonal_river",
+        "name": "Сезонное русло"
+      },
+      {
+        "biome": "seasonal_river",
+        "name": "Amargosa River / Upper Amargosa River"
+      },
+      {
+        "biome": "seasonal_river",
+        "name": "Сезонное русло"
+      },
+      {
+        "biome": "seasonal_river",
+        "name": "Amargosa River / Upper Amargosa River"
+      },
+      {
+        "biome": "seasonal_river",
+        "name": "Сезонное русло"
+      },
+      {
+        "biome": "seasonal_river",
+        "name": "Сезонное русло"
+      },
+      {
+        "biome": "seasonal_river",
+        "name": "Сезонное русло"
+      },
+      {
+        "biome": "seasonal_river",
+        "name": "Upper Amargosa River"
+      },
+      {
+        "biome": "seasonal_river",
+        "name": "Amargosa River / Upper Amargosa River"
+      },
+      {
+        "biome": "seasonal_river",
+        "name": "Сезонное русло"
+      },
+      {
+        "biome": "seasonal_river",
+        "name": "Сезонное русло"
+      },
+      {
+        "biome": "seasonal_river",
+        "name": "Сезонное русло"
+      },
+      {
+        "biome": "seasonal_river",
+        "name": "Сезонное русло"
+      },
+      {
+        "biome": "seasonal_river",
+        "name": "Amargosa River / Upper Amargosa River"
+      },
+      {
+        "biome": "seasonal_river",
+        "name": "Upper Amargosa River"
+      },
+      {
+        "biome": "seasonal_river",
+        "name": "Amargosa River / Upper Amargosa River"
+      },
+      {
+        "biome": "seasonal_river",
+        "name": "Upper Amargosa River"
+      },
+      {
+        "biome": "seasonal_river",
+        "name": "Amargosa River / Upper Amargosa River"
+      },
+      {
+        "biome": "seasonal_river",
+        "name": "Amargosa River / Upper Amargosa River"
+      },
+      {
+        "biome": "seasonal_river",
+        "name": "Сезонное русло"
+      },
+      {
+        "biome": "seasonal_river",
+        "name": "Сезонное русло"
+      },
+      {
+        "biome": "seasonal_river",
+        "name": "Сезонное русло"
+      }
+    ],
+    "layers": {
+      "biomes": true,
+      "roads": true,
+      "power": true,
+      "buildings": true,
+      "details": true
+    },
+    "offline": {
+      "errors": [],
+      "requests": 0
+    },
+    "htmlSha256": "6bfa9bd8b06e7ff170e04a933b9b88eb26aca3cbe779166261c29fccbdcfff6d",
+    "htmlBytes": 1969024
+  },
+  "tests": {
+    "total": 184,
+    "passed": 184,
+    "failed": 0
+  },
+  "archive": {
+    "bytes": 525525,
+    "sha256": "d990416b4c2bc871facd5e175756f67cbf4ac9446c72d198c36d31c72828128e",
+    "crcValid": true,
+    "htmlSha256": "6bfa9bd8b06e7ff170e04a933b9b88eb26aca3cbe779166261c29fccbdcfff6d",
+    "htmlMatchesDist": true
+  }
+}

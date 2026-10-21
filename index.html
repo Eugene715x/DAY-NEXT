@@ -35,7 +35,7 @@
       <div class="hud">
         <header class="top-bar">
           <div class="brand-block">
-            <div class="brand" aria-label="DAY NEXT"><span>DAY</span><span class="brand-divider">/</span><span class="brand-next">NEXT</span><span class="prototype">ПРОТОТИП <b>13</b></span></div>
+            <div class="brand" aria-label="DAY NEXT"><span>DAY</span><span class="brand-divider">/</span><span class="brand-next">NEXT</span><span class="prototype">ПРОТОТИП <b>14</b></span></div>
             <div class="brand-caption"><span class="live-dot"></span> ОДИНОЧНАЯ ЭКСПЕДИЦИЯ</div>
           </div>
           <div class="world-status glass">
@@ -108,6 +108,7 @@
 
         <div id="toast" class="toast glass" role="status" hidden></div>
 
+        <div id="map-tooltip" class="map-tooltip" role="tooltip" hidden></div>
         <aside id="object-card" class="object-card glass" aria-label="Объект на карте" hidden>
           <p id="object-kind" class="eyebrow">ОБЪЕКТ НА КАРТЕ</p>
           <h2 id="object-name"></h2>
@@ -169,7 +170,7 @@
               <label class="layer-option" for="layer-buildings"><input id="layer-buildings" type="checkbox" checked /><span>Здания</span><span id="count-buildings" class="layer-count">—</span></label>
               <label class="layer-option" for="layer-details"><input id="layer-details" type="checkbox" checked /><span>Остальные объекты</span><span id="count-details" class="layer-count">—</span></label>
             </div>
-            <p class="layers-note" id="layers-note">Биомы образуют фон карты и не пересекаются. Город — серый, сезонные русла — синий пунктир. Цвет здания показывает его назначение; легенда — кнопка «Типы».</p>
+            <p class="layers-note" id="layers-note">Биомы образуют фон карты и не пересекаются. Город — серый, сезонные русла — синий пунктир. Наведение даёт краткую подсказку без подсветки территории, дорог и ЛЭП. Цвет здания показывает его назначение; легенда — кнопка «Типы».</p>
           </div>
         </section>
       </div>

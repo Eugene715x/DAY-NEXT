@@ -38,21 +38,21 @@ test('power line visibility is independent while utility support markers are omi
   assert.equal(renderer.pick(700, 200), null);
 });
 
-test('selection overlay paints only the target without drawing the static scene again', () => {
-  const renderer = createDetailRenderer(world({ width: 400, height: 300, roads: [
-    { id: 'street', points: [{ x: 20, y: 100 }, { x: 350, y: 100 }], width: 6 },
-    { id: 'other', points: [{ x: 20, y: 200 }, { x: 350, y: 200 }], width: 6 },
+test('building selection overlay paints only the target without drawing the static scene again', () => {
+  const renderer = createDetailRenderer(world({ width: 400, height: 300, buildings: [
+    { id: 'house', points: ring(60, 60, 140, 140), tags: { building: 'house' } },
+    { id: 'other', points: ring(200, 60, 280, 140), tags: { building: 'house' } },
   ] }));
-  const strokes = [], context = { save() {}, restore() {}, beginPath() {}, rect() {}, clip() {}, stroke(path) { strokes.push(path); } };
+  const strokes = [], fills = [], context = { save() {}, restore() {}, beginPath() {}, rect() {}, clip() {}, stroke(path) { strokes.push(path); }, fill(path) { fills.push(path); } };
   const selected = renderer.pick(100, 100), view = { zoom: 1, cameraX: 200, cameraY: 150, width: 400, height: 300 };
   assert.equal(renderer.drawHighlight(context, view, selected), selected.key);
-  assert.equal(strokes.length, 2);
-  assert.equal(strokes[0], strokes[1], 'Only one cached path is used for halo and centre stroke');
+  assert.equal(strokes.length, 1); assert.equal(fills.length, 1);
+  assert.equal(strokes[0], fills[0], 'Only the selected cached building footprint is painted');
   assert.equal(renderer.getStats().drawCount, 0, 'Highlighting must not call the full scene draw');
   assert.equal(renderer.getStats().highlightDrawCount, 1);
-  renderer.setLayers({ roads: false });
+  renderer.setLayers({ buildings: false });
   assert.equal(renderer.drawHighlight(context, view, selected.key), null);
-  assert.equal(strokes.length, 2, 'A hidden selection must not leave overlay ink');
+  assert.equal(strokes.length, 1, 'A hidden selection must not leave overlay ink');
 });
 
 test('cached building and biome types remain distinct and cannot be mutated through descriptors', () => {
@@ -106,7 +106,7 @@ function recordingContext() {
 
 const fullView = { zoom: 1, cameraX: 200, cameraY: 150, width: 400, height: 300 };
 
-test('road junctions paint all casings before any core and class hiding also removes highlight ink', () => {
+test('road junctions paint all casings before any core and class hiding removes hit targets', () => {
   const renderer = createDetailRenderer(world({ width: 400, height: 300, roads: [
     { id: 'west', type: 'residential', width: 6, points: [{ x: 20, y: 150 }, { x: 200, y: 150 }] },
     { id: 'east', type: 'residential', width: 6, points: [{ x: 200, y: 150 }, { x: 380, y: 150 }] },
@@ -130,7 +130,7 @@ test('road junctions paint all casings before any core and class hiding also rem
   assert.equal(renderer.getStats().visibleRoads, 0);
 });
 
-test('power chains use continuous solid strips and highlights can resolve an original member id', () => {
+test('power chains use continuous solid strips and hovering an original member paints no overlay', () => {
   const tags = { power: 'line', voltage: '110000' };
   const renderer = createDetailRenderer(world({ width: 400, height: 300, details: [
     { id: 'way-100', geometry: 'line', points: [{ x: 20, y: 150 }, { x: 200, y: 150 }], tags },
@@ -144,8 +144,8 @@ test('power chains use continuous solid strips and highlights can resolve an ori
   const first = renderer.pick(50, 150, 0), last = renderer.pick(350, 150, 0);
   assert.equal(first.key, last.key);
   assert.deepEqual(first.sourceIds.sort(), ['way-100', 'way-200']);
-  assert.equal(renderer.drawHighlight(context, fullView, 'way-200'), first.key);
-  assert.equal(context.strokes.length, 4);
+  assert.equal(renderer.drawHighlight(context, fullView, 'way-200'), null);
+  assert.equal(context.strokes.length, 2);
 });
 
 test('removed town boundaries emit no scene or highlight ink', () => {
@@ -185,7 +185,7 @@ test('overlapping polygon components use union filling for both scene and select
   const selected = renderer.pick(150, 120, 0);
   assert.equal(selected.parts.length, 1, 'Overlapping source pieces become one actual water surface');
   renderer.drawHighlight(context, fullView, selected);
-  assert.deepEqual(rules, ['nonzero', 'nonzero', 'nonzero']);
+  assert.deepEqual(rules, ['nonzero', 'nonzero'], 'Water hover keeps the ground fill unchanged');
   assert.equal(renderer.pick(50, 120, 0).key, selected.key);
   assert.equal(renderer.pick(250, 120, 0).key, selected.key);
 });
@@ -196,7 +196,8 @@ test('every Nevada building keeps its colored role while nature and cities form 
   assert.equal(stats.buildings, map.buildings.length);
   assert.equal(stats.sourceRoads, map.roads.length);
   assert.equal(stats.roads, 83);
-  assert.equal(stats.displayWaterLines, 29);
+  assert.equal(stats.displayWaterLines, 33);
+  assert.equal(stats.coalescedWaterRelationFragments, 26);
   assert.equal(stats.displayWaterAreas, 11);
   assert(stats.biomes > 0);
   assert(stats.biomePartition.coverageError < 1e-5);
@@ -263,7 +264,7 @@ test('seasonal river ink is blue and dashed at the unchanged v12 width at both o
   }
 });
 
-test('river selection follows visible dash ink outside the native ribbon and highlights the whole network with gaps', () => {
+test('river information follows visible dash ink outside the native ribbon without adding a hover overlay', () => {
   const renderer = createDetailRenderer(world({ width: 400, height: 300, rivers: [
     { id: 'dry', width: .8, points: [{ x: 20, y: 50 }, { x: 200, y: 50 }], tags: { waterway: 'stream', intermittent: 'yes' } },
     { id: 'branch', width: .8, points: [{ x: 200, y: 50 }, { x: 380, y: 50 }], tags: { waterway: 'stream', intermittent: 'yes' } },
@@ -275,11 +276,10 @@ test('river selection follows visible dash ink outside the native ribbon and hig
   assert.equal(renderer.pick(28, 51, 0).biome, 'wasteland', 'A visual dash gap adds no expanded hit footprint');
   assert.equal(renderer.pick(152, 50, 0).biome, 'water', 'A higher priority lake clips river selection and ink');
   assert.equal(selected.paths.length, 2);
-  const context = recordingContext(); renderer.drawHighlight(context, fullView, selected);
+  const context = recordingContext();
+  assert.equal(renderer.drawHighlight(context, fullView, selected), null);
   assert.equal(context.fills.length, 0);
-  assert.equal(context.strokes.length, 2);
-  assert(context.strokes.every(stroke => stroke.dash.join(',') === '6,4'));
-  assert.equal(context.strokes[0].path, context.strokes[1].path);
+  assert.equal(context.strokes.length, 0);
   renderer.setLayers({ biomes: false });
   assert.equal(renderer.drawHighlight(context, fullView, selected), null);
   assert.equal(renderer.pick(22, 51, 0), null);
@@ -300,4 +300,101 @@ test('city ground is opaque gray with an opaque biome matte and the biome switch
   const hidden = recordingContext(); renderer.draw(hidden, fullView);
   assert.equal(hidden.fills.length, 0); assert.equal(hidden.strokes.length, 0);
   assert.equal(renderer.zonesAt(190, 138)[0].biome, 'city');
+});
+
+test('biomes, roads and electrical objects remain inspectable without changing scene or overlay ink on hover', () => {
+  const renderer = createDetailRenderer(world({ width: 400, height: 300, roads: [
+    { id: 'street', points: [{ x: 20, y: 120 }, { x: 380, y: 120 }], type: 'residential', width: 3 },
+  ], rivers: [{ id: 'wash', points: [{ x: 20, y: 60 }, { x: 380, y: 60 }], width: 3, tags: { waterway: 'stream', intermittent: 'yes' } }], details: [
+    { id: 'forest', geometry: 'polygon', points: ring(0, 0, 400, 300), tags: { natural: 'wood' } },
+    { id: 'line', geometry: 'line', points: [{ x: 20, y: 200 }, { x: 380, y: 200 }], tags: { power: 'line' } },
+    { id: 'station', geometry: 'polygon', points: ring(300, 225, 350, 275), tags: { power: 'substation' } },
+    { id: 'lake', geometry: 'polygon', points: ring(30, 225, 80, 275), tags: { natural: 'water' } },
+  ] }));
+  const capture = hover => {
+    const context = recordingContext();
+    context.fill = function(path, rule) { this.fills.push({ path, rule, color: this.fillStyle, alpha: this.globalAlpha }); };
+    renderer.draw(context, { ...fullView, hoveredId: hover });
+    return { fills: context.fills, strokes: context.strokes };
+  };
+  const baseline = capture(null);
+  for (const feature of renderer.getFeatures()) {
+    assert(['biomes', 'roads', 'power'].includes(feature.layer));
+    assert.deepEqual(capture(feature.id), baseline, `${feature.layer} cannot change the static scene on hover`);
+    const context = recordingContext();
+    assert.equal(renderer.drawHighlight(context, fullView, feature), null);
+    assert.equal(context.fills.length, 0); assert.equal(context.strokes.length, 0);
+  }
+  assert.equal(renderer.pick(120, 120, 0).layer, 'roads');
+  assert.equal(renderer.pick(120, 200, 0).layer, 'power');
+  assert.equal(renderer.pick(120, 250, 0).biome, 'forest');
+  assert.equal(renderer.getStats().highlightDrawCount, 0);
+});
+
+test('a building hover cannot light up roads or electrical objects sharing its original OSM id', () => {
+  const renderer = createDetailRenderer(world({ width: 400, height: 300, buildings: [
+    { id: 'way-1', points: ring(60, 60, 140, 140), tags: { building: 'house' } },
+  ], roads: [
+    { id: 'way-1', points: [{ x: 20, y: 150 }, { x: 380, y: 150 }], type: 'residential', width: 3 },
+  ], details: [
+    { id: 'way-1', geometry: 'polygon', points: ring(220, 60, 280, 120), tags: { power: 'substation' } },
+    { id: 'power-line', geometry: 'line', points: [{ x: 20, y: 200 }, { x: 380, y: 200 }], tags: { power: 'line' } },
+  ] }));
+  const building = renderer.getFeatures().find(feature => feature.layer === 'buildings');
+  const baseline = recordingContext(), hovered = recordingContext();
+  renderer.draw(baseline, fullView);
+  renderer.draw(hovered, { ...fullView, hoveredKey: building.key });
+  assert.equal(hovered.strokes.length, baseline.strokes.length, 'No extra road or power halo is drawn');
+  let highlightedBuilding = 0;
+  for (let index = 0; index < baseline.strokes.length; index++) {
+    const before = baseline.strokes[index], after = hovered.strokes[index];
+    if (after.color === '#eff0be') { highlightedBuilding++; assert.equal(before.path, after.path); }
+    else assert.deepEqual(after, before, 'All other object strokes stay unchanged');
+  }
+  assert.equal(highlightedBuilding, 1, 'The original building highlight still works');
+});
+
+test('exact waterway relation duplicates inherit native seasonal ink and keep original relation facts', () => {
+  const input = world({ width: 400, height: 300, rivers: [
+    { id: 'way-10', sourceId: 'way-10', name: 'Amargosa River', width: 3, points: [{ x: 20, y: 60 }, { x: 380, y: 60 }], tags: { waterway: 'river', intermittent: 'yes', layer: '-1', tunnel: 'culvert' } },
+    { id: 'way-20', sourceId: 'way-20', name: 'Permanent river', width: 2, points: [{ x: 20, y: 120 }, { x: 380, y: 120 }], tags: { waterway: 'river' } },
+  ], details: [
+    { id: 'relation-30-member-0', sourceId: 'relation-30', name: 'Amargosa River', geometry: 'line', points: [{ x: 380, y: 60 }, { x: 20, y: 60 }], tags: { type: 'waterway', waterway: 'river', name: 'Amargosa River' } },
+  ] });
+  const before = structuredClone(input), renderer = createDetailRenderer(input);
+  assert.deepEqual(input, before);
+  const seasonal = renderer.getFeatures().find(feature => feature.waterKind === 'seasonal_river');
+  assert(seasonal); assert.equal(seasonal.paths.length, 1); assert.equal(seasonal.width, 3);
+  assert.deepEqual(seasonal.sourceIds, ['relation-30', 'way-10']);
+  const relation = seasonal.members.find(member => member.sourceId === 'relation-30');
+  assert.deepEqual(relation.tags, before.details[0].tags, 'Missing relation-level intermittent tags stay missing as source facts');
+  assert.deepEqual(relation.points, before.details[0].points);
+  assert.equal(renderer.getStats().coalescedWaterRelationFragments, 1);
+  assert.equal(renderer.getStats().displayWaterLines, 2);
+  for (const zoom of [.5, 1, 6]) {
+    const context = recordingContext();
+    renderer.draw(context, { ...fullView, zoom, width: 400 * zoom, height: 300 * zoom });
+    const dashed = context.strokes.filter(stroke => stroke.dash.length);
+    const solid = context.strokes.filter(stroke => !stroke.dash.length);
+    assert.equal(dashed.length, 2, 'The duplicate relation cannot leave an extra continuous centerline');
+    assert.equal(solid.length, 2, 'A genuinely permanent river keeps its two continuous strokes');
+    assert.equal(dashed[1].color, '#4c91bd'); assert.equal(solid[1].color, '#3f7eaa');
+  }
+});
+
+test('an abstract valley axis is hidden while real valley polygons and unrelated natural lines survive', () => {
+  const renderer = createDetailRenderer(world({ width: 400, height: 300, details: [
+    { id: 'oasis-axis', geometry: 'line', name: 'Oasis Valley', points: [{ x: 20, y: 20 }, { x: 380, y: 280 }], tags: { natural: 'valley' } },
+    { id: 'implicit-axis', points: [{ x: 20, y: 30 }, { x: 380, y: 290 }], tags: { natural: 'valley' } },
+    { id: 'valley-area', geometry: 'polygon', points: ring(40, 40, 120, 120), tags: { natural: 'valley' } },
+    { id: 'gully-line', geometry: 'line', points: [{ x: 200, y: 20 }, { x: 200, y: 280 }], tags: { natural: 'gully' } },
+    { id: 'valley-water', geometry: 'line', points: [{ x: 250, y: 20 }, { x: 250, y: 280 }], tags: { natural: 'valley', waterway: 'stream', intermittent: 'yes' } },
+    { id: 'valley-road', geometry: 'line', points: [{ x: 300, y: 20 }, { x: 300, y: 280 }], tags: { natural: 'valley', highway: 'service' } },
+  ] }));
+  const features = renderer.getFeatures();
+  assert(!features.some(feature => ['oasis-axis', 'implicit-axis'].includes(feature.sourceId)));
+  assert(features.some(feature => feature.sourceId === 'valley-area' && feature.biome === 'valley'));
+  assert(features.some(feature => feature.sourceId === 'gully-line'));
+  assert(features.some(feature => feature.sourceId === 'valley-water' && feature.water));
+  assert(features.some(feature => feature.sourceId === 'valley-road' && feature.layer === 'roads'));
 });

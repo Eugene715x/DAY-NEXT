@@ -47,6 +47,8 @@
 .building-types-button{width:44px;height:44px;min-width:44px;min-height:44px}.building-types-button[aria-expanded="true"]{color:var(--accent);border-color:rgba(209,223,135,.55)}.building-types-panel{width:366px;padding:0;display:flex;flex-direction:column;overflow:hidden;z-index:3;max-height:calc(100dvh - 145px)}.building-types-content{padding:8px 20px 18px;overflow-y:auto;scrollbar-width:thin;min-height:0}.building-type-legend{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:16px}.building-type-row{display:flex;align-items:center;gap:8px;min-height:51px;padding:8px 0;border-bottom:1px solid var(--line);font-size:10px;line-height:1.5;color:#c5d1b8}.building-type-swatch{width:18px;height:18px;flex-shrink:0;border:1px solid rgba(227,231,198,.55);box-shadow:0 2px 3px rgba(0,0,0,.22);border-radius:2px}.building-type-name{flex:1;overflow-wrap:break-word}.building-type-count{font:9px monospace;color:#8fa47e;min-width:17px;text-align:right}.object-card.is-building{border-left:3px solid var(--object-type-color,var(--accent))}.object-card.is-building #object-kind{color:var(--object-type-color,var(--accent))}
 
 #map{background:#18251f}.biome-key{display:flex;flex-wrap:wrap;gap:8px 13px;padding:9px 0 12px;border-bottom:1px solid var(--line);color:#aab99b;font-size:9px;line-height:1.5}.biome-key>span{display:flex;align-items:center;gap:6px}.biome-swatch{display:inline-block;width:22px;flex-shrink:0}.city-swatch{height:10px;background:#969b99;border:1px solid #bdc2bc}.seasonal-river-swatch{height:0;border-top:3px dashed #4c91bd}.water-swatch{height:0;border-top:3px solid #3f7eaa}.biome-key.is-disabled{opacity:.4}
+
+.map-tooltip{position:absolute;z-index:4;max-width:min(340px,calc(100vw - 16px));padding:7px 10px;border:1px solid rgba(169,189,140,.32);border-radius:3px;background:rgba(18,27,22,.96);color:#d4dfc4;font:11px/1.45 "Segoe UI",sans-serif;box-shadow:0 3px 12px rgba(0,0,0,.2);pointer-events:none;overflow-wrap:anywhere}
 </style>
   </head>
   <body>
@@ -75,7 +77,7 @@
       <div class="hud">
         <header class="top-bar">
           <div class="brand-block">
-            <div class="brand" aria-label="DAY NEXT"><span>DAY</span><span class="brand-divider">/</span><span class="brand-next">NEXT</span><span class="prototype">ПРОТОТИП <b>13</b></span></div>
+            <div class="brand" aria-label="DAY NEXT"><span>DAY</span><span class="brand-divider">/</span><span class="brand-next">NEXT</span><span class="prototype">ПРОТОТИП <b>14</b></span></div>
             <div class="brand-caption"><span class="live-dot"></span> ОДИНОЧНАЯ ЭКСПЕДИЦИЯ</div>
           </div>
           <div class="world-status glass">
@@ -148,6 +150,7 @@
 
         <div id="toast" class="toast glass" role="status" hidden></div>
 
+        <div id="map-tooltip" class="map-tooltip" role="tooltip" hidden></div>
         <aside id="object-card" class="object-card glass" aria-label="Объект на карте" hidden>
           <p id="object-kind" class="eyebrow">ОБЪЕКТ НА КАРТЕ</p>
           <h2 id="object-name"></h2>
@@ -209,7 +212,7 @@
               <label class="layer-option" for="layer-buildings"><input id="layer-buildings" type="checkbox" checked /><span>Здания</span><span id="count-buildings" class="layer-count">—</span></label>
               <label class="layer-option" for="layer-details"><input id="layer-details" type="checkbox" checked /><span>Остальные объекты</span><span id="count-details" class="layer-count">—</span></label>
             </div>
-            <p class="layers-note" id="layers-note">Биомы образуют фон карты и не пересекаются. Город — серый, сезонные русла — синий пунктир. Цвет здания показывает его назначение; легенда — кнопка «Типы».</p>
+            <p class="layers-note" id="layers-note">Биомы образуют фон карты и не пересекаются. Город — серый, сезонные русла — синий пунктир. Наведение даёт краткую подсказку без подсветки территории, дорог и ЛЭП. Цвет здания показывает его назначение; легенда — кнопка «Типы».</p>
           </div>
         </section>
       </div>
@@ -1207,18 +1210,6 @@ const cbBoxDistance = (point, bounds) => Math.hypot(Math.max(bounds.minX - point
 const cbUrbanUses = new Set(['residential', 'commercial', 'retail', 'industrial']);
 const cbSettlements = new Set(['city', 'town', 'village', 'hamlet', 'isolated_dwelling']);
 function cbHash(text) { let hash = 2166136261; for (const char of text) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619) >>> 0; return hash.toString(36); }
-function cbSmoothRing(ring, iterations = 2) {
-  let points = ring.slice(0, -1);
-  for (let pass = 0; pass < iterations; pass++) {
-    const rounded = [];
-    for (let i = 0; i < points.length; i++) {
-      const a = points[i], b = points[(i + 1) % points.length];
-      rounded.push({ x: a.x * .75 + b.x * .25, y: a.y * .75 + b.y * .25 }, { x: a.x * .25 + b.x * .75, y: a.y * .25 + b.y * .75 });
-    }
-    points = rounded;
-  }
-  return [...points, { ...points[0] }];
-}
 function cbSimplifyLine(points, tolerance) {
   if (points.length <= 2) return points;
   const a = points[0], b = points.at(-1);
@@ -1229,10 +1220,15 @@ function cbSimplifyLine(points, tolerance) {
   }
   return selected < 0 ? [a, b] : [...cbSimplifyLine(points.slice(0, selected + 1), tolerance).slice(0, -1), ...cbSimplifyLine(points.slice(selected), tolerance)];
 }
-function cbSmoothParts(parts, metersPerUnit) {
+// Keep a town's measured extent, but replace its fine sampling contour with
+// deliberate straight edges. Unlike corner rounding, simplification retains
+// actual bends and produces a compact polygon rather than a soft halo.
+function cbAngularParts(parts, metersPerUnit) {
+  const tolerance = 45 / metersPerUnit;
   return parts.map(rings => rings.map(ring => {
-    const rounded = cbSmoothRing(ring), half = Math.floor((rounded.length - 1) / 2);
-    return [...cbSimplifyLine(rounded.slice(0, half + 1), .35 / metersPerUnit).slice(0, -1), ...cbSimplifyLine(rounded.slice(half), .35 / metersPerUnit)];
+    const half = Math.floor((ring.length - 1) / 2);
+    const points = [...cbSimplifyLine(ring.slice(0, half + 1), tolerance).slice(0, -1), ...cbSimplifyLine(ring.slice(half), tolerance)];
+    return points.length >= 4 ? points : ring;
   }));
 }
 
@@ -1400,16 +1396,16 @@ function buildCityBiomes(world = {}) {
   for (let y = minY; y <= maxY; y++) for (let x = minX; x <= maxX; x++) if (field[y * stride + x]) for (const [cx, cy] of [[x - 1, y - 1], [x, y - 1], [x - 1, y], [x, y]]) activeCells.add(cy * cols + cx);
   const contours = cbDensityContours(field, activeCells, cols, rows, cellSize, .48);
   const rectangle = [[[{ x: 0, y: 0 }, { x: world.width, y: 0 }, { x: world.width, y: world.height }, { x: 0, y: world.height }, { x: 0, y: 0 }]]];
-  let parts = polygonIntersection(polygonUnion(cbSmoothParts(contours.map(part => [part[0]]), metersPerUnit)), rectangle);
+  let parts = polygonIntersection(polygonUnion(cbAngularParts(contours.map(part => [part[0]]), metersPerUnit)), rectangle);
   if (airports.length) parts = polygonDifference(parts, airports);
   const features = parts.filter(part => Math.abs(cbArea(part[0])) * metersPerUnit ** 2 >= 1500).map(part => {
     const bounds = cbBounds(part[0]), related = selected.filter(building => cbBoxDistance(building.point, bounds) * metersPerUnit <= 110), center = { x: (bounds.minX + bounds.maxX) / 2, y: (bounds.minY + bounds.maxY) / 2 };
     const nearbyPlaces = places.map(place => ({ ...place, distance: Math.hypot(place.point.x - center.x, place.point.y - center.y) * metersPerUnit })).filter(place => place.distance <= 1500).sort((a, b) => a.distance - b.distance || String(a.id).localeCompare(String(b.id)));
     const sourceIds = [...new Set([...related.map(building => building.id), ...plots.filter(record => record.parts.flat(2).some(point => point.x >= bounds.minX && point.x <= bounds.maxX && point.y >= bounds.minY && point.y <= bounds.maxY)).map(record => cbSourceId(record.feature)), ...nearbyPlaces.slice(0, 1).map(place => place.id)])].filter(Boolean).sort();
     const id = `game-city-${cbHash(sourceIds.join('|'))}`, name = nearbyPlaces[0]?.name || 'Городская местность';
-    return { id, sourceId: id, sourceIds, name, biome: 'city', type: 'city', kind: 'city', geometry: 'polygon', points: part[0], rings: part, parts: [part], derived: true, city: true, fill: '#939797', provenance: { method: 'coherent-development-envelope', sourceIds, buildingCount: related.length, sampleSpacingMeters: cellSize * metersPerUnit, buildingHaloMeters: 110, closeGapsMeters: 120, filledInteriorGaps: true, sourceBoundary: false } };
+    return { id, sourceId: id, sourceIds, name, biome: 'city', type: 'city', kind: 'city', geometry: 'polygon', points: part[0], rings: part, parts: [part], derived: true, city: true, fill: '#969b99', provenance: { method: 'coherent-development-envelope', sourceIds, buildingCount: related.length, sampleSpacingMeters: cellSize * metersPerUnit, buildingHaloMeters: 110, closeGapsMeters: 120, filledInteriorGaps: true, contourStyle: 'angular', simplifyToleranceMeters: 45, sourceBoundary: false } };
   });
-  return { features, report: { method: 'coherent-development-envelope', cities: features.length, sourceBuildings: (world.buildings || []).length, eligibleBuildings: buildings.length, excludedAirportBuildings: (world.buildings || []).length - buildings.length, selectedBuildings: selected.length, sourcePlots: plots.length, sourceClusters: clusters.length, sampleSpacingMeters: cellSize * metersPerUnit, vertices: features.reduce((sum, feature) => sum + feature.parts.flat(2).length, 0), byCity: features.map(feature => ({ id: feature.id, name: feature.name, buildingCount: feature.provenance.buildingCount })) } };
+  return { features, report: { method: 'coherent-development-envelope', cities: features.length, sourceBuildings: (world.buildings || []).length, eligibleBuildings: buildings.length, excludedAirportBuildings: (world.buildings || []).length - buildings.length, selectedBuildings: selected.length, sourcePlots: plots.length, sourceClusters: clusters.length, sampleSpacingMeters: cellSize * metersPerUnit, contourStyle: 'angular', simplifyToleranceMeters: 45, vertices: features.reduce((sum, feature) => sum + feature.parts.flat(2).length, 0), byCity: features.map(feature => ({ id: feature.id, name: feature.name, buildingCount: feature.provenance.buildingCount })) } };
 }
 
 return {buildCityBiomes};
@@ -1594,7 +1590,7 @@ function mapBiome(feature = {}) {
 
 return {mapFeatureLayer,mapBiome,mapZoneBiome,shouldRenderFeature,shouldRenderLandscapeFeature,mapLandscapeBiome};
 })();
-const {ROAD_CLASSES,roadClass,mergeNetworkLines,mergeConnectedNetworks} = (() => {
+const {ROAD_CLASSES,roadClass,mergeNetworkLines,mergeConnectedNetworks,coalesceWaterwaySources} = (() => {
 // Derived display geometry only. Navigation and the original OSM features stay intact.
 const ROAD_CLASSES = Object.freeze(Object.fromEntries([
   ['highway', 'Магистраль', 'Магистрали'],
@@ -1635,6 +1631,48 @@ const sourceType = (feature, kind) => kind === 'road'
     : feature.tags?.power || feature.sourceType || feature.kind || 'line';
 const flag = value => value === undefined || value === false || value === 'no' || value === 'false' || value === '0'
   ? 'no' : value === true || value === 'true' || value === 'yes' || value === '1' ? 'yes' : String(value);
+
+/**
+ * A waterway relation repeats its member ways, but often omits their local
+ * seasonality, width or culvert tags. An exact native path supplies those display
+ * facts. Original ways and relation fragments remain unchanged in members.
+ */
+function coalesceWaterwaySources(sources = []) {
+  const sourceId = feature => feature.sourceId || String(feature.id || '').match(/^(?:node|way|relation)-\d+/)?.[0] || feature.id;
+  const relation = feature => feature.tags?.type === 'waterway' && /^relation-/.test(sourceId(feature));
+  const signature = feature => `${sourceType(feature, 'water')}|${(feature.paths || [feature.points || []]).map(path => {
+    const forward = path.map(pointKey).join(';'), reverse = [...path].reverse().map(pointKey).join(';');
+    return forward < reverse ? forward : reverse;
+  }).sort(compare).join('|')}`;
+  const semantics = feature => componentKey(feature, 'water');
+  const native = new Map(), attached = new Map(), duplicates = new Set();
+  for (const feature of sources) if (!relation(feature)) {
+    const key = signature(feature);
+    if (!native.has(key)) native.set(key, []);
+    native.get(key).push(feature);
+  }
+  for (const feature of sources) if (relation(feature)) {
+    const matches = native.get(signature(feature));
+    if (!matches?.length) continue;
+    // Conflicting native records cannot justify inferred local semantics.
+    if (matches.some(match => semantics(match) !== semantics(matches[0]))) continue;
+    const match = [...matches].sort((a, b) => compare(String(a.id), String(b.id)))[0];
+    if (!attached.has(match)) attached.set(match, []);
+    attached.get(match).push(feature); duplicates.add(feature);
+  }
+  const features = sources.filter(feature => !duplicates.has(feature)).map(feature => {
+    const relations = attached.get(feature);
+    if (!relations) return feature;
+    const members = [feature, ...relations].map(clone);
+    return { ...clone(feature), nativeWaterwayPresentation: true, members,
+      memberIds: [...new Set(members.flatMap(member => member.memberIds || [member.id]))].sort(compare),
+      sourceIds: [...new Set(members.flatMap(member => member.sourceIds || [sourceId(member)]))].sort(compare),
+      names: [...new Set(members.flatMap(member => member.names || [member.name || member.tags?.name]).filter(Boolean))],
+      provenance: { ...(feature.provenance || {}), presentationMethod: 'exact-native-waterway', nativeSourceId: sourceId(feature), relationSourceIds: [...new Set(relations.map(sourceId))].sort(compare) },
+    };
+  });
+  return { features, coalesced: duplicates.size };
+}
 
 function compatibility(feature, kind) {
   const tags = feature.tags || {};
@@ -1800,7 +1838,7 @@ function pointTouchesSegment(point, a, b) {
 }
 
 function componentFeature(edges, kind) {
-  const members = edges.map(edge => clone(edge.feature));
+  const members = edges.flatMap(edge => edge.feature.nativeWaterwayPresentation ? edge.feature.members.map(clone) : [clone(edge.feature)]);
   const first = members[0];
   const memberIds = [...new Set(edges.flatMap(edge => edge.feature.memberIds || [edge.id]))].sort(compare);
   const sourceIds = [...new Set(edges.flatMap(edge => edge.feature.sourceIds || [
@@ -1816,7 +1854,11 @@ function componentFeature(edges, kind) {
     sourceType: sourceType(first, kind), name: names.join(' / '),
     merged: memberIds.length > 1, length: paths.reduce((sum, path) => sum + geometryLength(path), 0),
   };
-  const widths = members.map(member => member.width).filter(Number.isFinite);
+  const coalesced = edges.filter(edge => edge.feature.nativeWaterwayPresentation);
+  if (coalesced.length) feature.provenance = { ...(feature.provenance || {}), presentationMethod: 'exact-native-waterway',
+    nativeSourceIds: [...new Set(coalesced.map(edge => edge.feature.provenance.nativeSourceId))].sort(compare),
+    relationSourceIds: [...new Set(coalesced.flatMap(edge => edge.feature.provenance.relationSourceIds))].sort(compare) };
+  const widths = edges.map(edge => edge.feature.width).filter(Number.isFinite);
   if (widths.length) feature.width = Math.max(...widths);
   if (kind === 'road') {
     feature.roadClass = roadClass(first);
@@ -1919,7 +1961,7 @@ function mergeConnectedNetworks(lines, { kind = 'road' } = {}) {
   };
 }
 
-return {ROAD_CLASSES,roadClass,mergeNetworkLines,mergeConnectedNetworks};
+return {ROAD_CLASSES,roadClass,mergeNetworkLines,mergeConnectedNetworks,coalesceWaterwaySources};
 })();
 const {OVERVIEW_MAX_ZOOM,createOverviewMarkers} = (() => {
 // Overview places come from mapped place/airport geometry, never census borders.
@@ -2445,9 +2487,11 @@ function bmDefaultSources(world, metersPerUnit) {
   const water = sources.filter(({ feature, group }) => mapFeatureLayer(feature, group) === 'water');
   const waterAreas = water.filter(({ feature, group }) => group === 'lake' || feature.geometry === 'polygon' || feature.rings?.length || feature.parts?.length).map(({ feature }) => ({ ...feature, parts: bmParts(feature) }));
   const waterLines = water.filter(({ feature, group }) => group !== 'lake' && feature.geometry !== 'polygon' && !feature.rings?.length && !feature.parts?.length && feature.geometry !== 'point' && (feature.paths?.length || feature.points?.length > 1)).map(({ feature }) => ({ ...feature, width: bmWidth(feature, metersPerUnit) }));
-  return { natureSources, waterAreas, waterLines: mergeConnectedNetworks(waterLines, { kind: 'water' }).features };
+  return { natureSources, waterAreas, waterLines: mergeConnectedNetworks(coalesceWaterwaySources(waterLines).features, { kind: 'water' }).features };
 }
-const bmPriority = (biome, water, dry, line) => water ? line ? dry ? 90 : 100 : dry ? 105 : 110 : biome === 'city' ? 40 : ['desert', 'valley', 'gully', 'plain', 'wasteland', 'landscape'].includes(biome) ? 20 : 60;
+// Sand describes the regional ground; built town land replaces it. Local
+// parks, woods and other specific natural areas still cut their own town space.
+const bmPriority = (biome, water, dry, line) => water ? line ? dry ? 90 : 100 : dry ? 105 : 110 : biome === 'city' ? 40 : ['sand', 'desert', 'valley', 'gully', 'plain', 'wasteland', 'landscape'].includes(biome) ? 20 : 60;
 const bmNames = { wasteland: 'Пустошь', city: 'Город', seasonal_river: 'Сезонное русло', river: 'Река', water: 'Водоём', dry_riverbed: 'Сухое русло' };
 
 /**
@@ -2544,7 +2588,7 @@ function buildBiomeMap(world = {}, options = {}) {
     cityFeatures: features.filter(feature => feature.biome === 'city').length,
     byBiome: Object.fromEntries([...new Set(features.map(feature => feature.biome))].sort().map(biome => [biome, { features: features.filter(feature => feature.biome === biome).length, area: features.filter(feature => feature.biome === biome).reduce((sum, feature) => sum + bmArea(feature.parts), 0) }])),
     city: cities.report,
-    priority: ['water areas', 'permanent rivers', 'seasonal rivers', 'specific nature', 'city', 'regional nature', 'unmapped ground'],
+    priority: ['water areas', 'permanent rivers', 'seasonal rivers', 'specific nature', 'city', 'regional nature and sand', 'unmapped ground'],
   } };
 }
 
@@ -2555,6 +2599,7 @@ const {createDetailRenderer} = (() => {
 const drClamp = (n, min, max) => Math.max(min, Math.min(max, n));
 const drFlag = value => value !== undefined && value !== null && !['', 'no', 'false', '0'].includes(String(value));
 const drDry = feature => drFlag(feature.intermittent) || drFlag(feature.seasonal) || drFlag(feature.tags?.intermittent) || drFlag(feature.tags?.seasonal);
+const drAllowsHighlight = record => !['biomes', 'roads', 'power'].includes(record.layer);
 
 function drHash(value) {
   let n = 2166136261;
@@ -2684,8 +2729,11 @@ const drLayer = (feature, group) => {
   const layer = mapFeatureLayer(feature, group);
   return layer === 'landscape' && drPhysicalAirSurface(feature) ? 'details' : layer;
 };
+const drValleyAxis = feature => feature.tags?.natural === 'valley' && (feature.geometry === 'line'
+  || !feature.geometry && !feature.rings?.length && !feature.parts?.length && feature.points?.length > 1
+    && (feature.points[0].x !== feature.points.at(-1).x || feature.points[0].y !== feature.points.at(-1).y));
 const drPresentFeature = (feature, group) => shouldRenderFeature(feature, group)
-  && (drLayer(feature, group) !== 'landscape' || shouldRenderLandscapeFeature(feature, group));
+  && (drLayer(feature, group) !== 'landscape' || shouldRenderLandscapeFeature(feature, group) && !drValleyAxis(feature));
 
 function drInteriorPoint(parts, bounds) {
   const contains = point => parts.some(rings => drInPolygon(point.x, point.y, rings));
@@ -2839,7 +2887,8 @@ function createDetailRenderer(world) {
   const sourceAreas = cache(world.areas, 'area'), sourceRivers = cache(world.rivers, 'river'), sourceLakes = cache(world.lakes, 'lake');
   const waterSources = [...sourceAreas, ...sourceRivers, ...sourceLakes, ...coalescedDetails].filter(record => record.layer === 'water');
   const waterLines = waterSources.filter(record => record.geometry === 'line');
-  const waterNetwork = mergeConnectedNetworks(waterLines.map(record => record.feature), { kind: 'water' });
+  const nativeWater = coalesceWaterwaySources(waterLines.map(record => record.feature));
+  const waterNetwork = mergeConnectedNetworks(nativeWater.features, { kind: 'water' });
   const rivers = cache(waterNetwork.features, 'river');
   const waterPolygons = waterSources.filter(record => record.geometry === 'polygon');
   const waterAreas = drMergeWaterPolygons(waterPolygons).map((feature, index) => drCache({ ...feature, geometry: 'polygon', kind: feature.kind || feature.type || 'water' }, 'detail', 'water', metersPerUnit, index));
@@ -2887,6 +2936,7 @@ function createDetailRenderer(world) {
     sourceWaterLines: waterLines.length, displayWaterLines: rivers.length, sourceWaterAreas: waterPolygons.length, displayWaterAreas: waterAreas.length,
     generatedBiomes: biomes.filter(record => record.feature.derived).length,
     biomeGeneration: biomeMap.report, biomePartition: biomeMap.report, biomeMap: biomeMap.report, buildingAssignments: buildingAssignments.report,
+    coalescedWaterRelationFragments: nativeWater.coalesced,
     drawCount: 0, highlightDrawCount: 0, viewCandidates: 0, pickCandidates: 0, zoneCandidates: 0 };
   for (const layer of Object.keys(layers)) {
     stats[layer] = registry.filter(record => record.layer === layer).length;
@@ -2928,7 +2978,7 @@ function createDetailRenderer(world) {
       while (end < ordered.length && roadTier(ordered[end]) === roadTier(ordered[start])) end++;
       for (let i = start; i < end; i++) {
         const record = ordered[i];
-        if (record.feature.id !== hoveredId) continue;
+        if (record.feature.id !== hoveredId || !drAllowsHighlight(record)) continue;
         ctx.globalAlpha = 1; ctx.strokeStyle = 'rgba(238,238,169,.65)';
         ctx.lineWidth = roadWidth(record, zoom).stroke + 4 / zoom; ctx.stroke(record.path);
       }
@@ -2951,7 +3001,7 @@ function createDetailRenderer(world) {
           ctx.strokeStyle = style.centre; ctx.lineWidth = .65 / zoom;
           ctx.setLineDash([1.8, 1.7]); ctx.stroke(record.path); ctx.setLineDash([]);
         }
-        if (record.feature.id === hoveredId) {
+        if (record.feature.id === hoveredId && drAllowsHighlight(record)) {
           ctx.globalAlpha = 1; ctx.strokeStyle = '#f2efb5'; ctx.lineWidth = Math.max(1.25 / zoom, width * .28); ctx.stroke(record.path);
         }
       }
@@ -2966,11 +3016,11 @@ function createDetailRenderer(world) {
 
   function paintPowerBatch(ctx, records, zoom, hoveredId) {
     ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.setLineDash([]);
-    for (const record of records) if (record.feature.id === hoveredId) {
+    for (const record of records) if (record.feature.id === hoveredId && drAllowsHighlight(record)) {
       ctx.strokeStyle = 'rgba(238,238,169,.65)'; ctx.lineWidth = powerWidth(record, zoom) + 4 / zoom; ctx.stroke(record.path);
     }
     for (const pass of ['edge', 'core']) for (const record of records) {
-      ctx.strokeStyle = pass === 'edge' ? '#566049' : record.feature.id === hoveredId ? '#f2efb5' : '#baa86e';
+      ctx.strokeStyle = pass === 'edge' ? '#566049' : record.feature.id === hoveredId && drAllowsHighlight(record) ? '#f2efb5' : '#baa86e';
       ctx.lineWidth = pass === 'edge' ? powerWidth(record, zoom) : Math.max(.22, .85 / zoom); ctx.stroke(record.path);
     }
   }
@@ -3094,7 +3144,7 @@ function createDetailRenderer(world) {
   function paintDetail(ctx, record, zoom, hoveredId) {
     const { feature, path, center } = record;
     const kind = feature.kind, polygon = record.geometry === 'polygon', point = record.geometry === 'point';
-    const highlighted = hoveredId === feature.id;
+    const highlighted = drAllowsHighlight(record) && hoveredId === feature.id;
     const aeroway = feature.tags?.aeroway || (['runway', 'taxiway', 'apron', 'aerodrome'].includes(kind) ? kind : null);
     const boundary = kind === 'boundary' || !!feature.tags?.boundary;
     if (polygon) {
@@ -3182,7 +3232,7 @@ function createDetailRenderer(world) {
   function paintWater(ctx, record, zoom, hoveredId) {
     const { feature } = record;
     if (!record.inkPath) return;
-    const hovered = hoveredId === feature.id, dry = drDry(feature);
+    const hovered = drAllowsHighlight(record) && hoveredId === feature.id, dry = drDry(feature);
     ctx.save(); clipRiverInk(ctx, record);
     ctx.lineJoin = 'round'; ctx.lineCap = 'butt';
     ctx.setLineDash(dry ? [6 / zoom, 4 / zoom] : []);
@@ -3205,13 +3255,13 @@ function createDetailRenderer(world) {
     };
     ctx.fillStyle = record.feature.water && !record.inkPath ? '#3f7eaa' : colors[record.biome] || colors.wasteland;
     ctx.fill(record.path, record.fillRule);
-    if (hoveredId === record.feature.id && !record.fallback) {
+    if (drAllowsHighlight(record) && hoveredId === record.feature.id && !record.fallback) {
       ctx.fillStyle = 'rgba(224,228,161,.12)'; ctx.fill(record.path, record.fillRule);
     }
   }
 
   function paintRoadSurface(ctx, record, zoom, hoveredId) {
-    const hovered = hoveredId === record.feature.id;
+    const hovered = drAllowsHighlight(record) && hoveredId === record.feature.id;
     ctx.fillStyle = '#bcb18e'; ctx.fill(record.path, record.fillRule);
     ctx.strokeStyle = hovered ? '#f2efb5' : '#77775d'; ctx.lineWidth = (hovered ? 1.6 : .8) / zoom; ctx.stroke(record.path);
   }
@@ -3239,7 +3289,10 @@ function createDetailRenderer(world) {
 
   function draw(ctx, view) {
     lastZoom = view.zoom;
-    lastHoveredId = view.hoveredId || null;
+    const hoverIdentity = view.hoveredKey || view.hoveredId;
+    const hoverRecord = recordsByKey.get(hoverIdentity) || recordsById.get(hoverIdentity);
+    const hoveredId = hoverRecord && drAllowsHighlight(hoverRecord) ? hoverRecord.feature.id : null;
+    lastHoveredId = hoveredId;
     if (view.layers) setLayers(view.layers);
     if (view.roadClasses) setRoadClasses(view.roadClasses);
     const halfWidth = view.width / (2 * view.zoom), halfHeight = view.height / (2 * view.zoom);
@@ -3256,23 +3309,23 @@ function createDetailRenderer(world) {
     if (layers.biomes) { ctx.fillStyle = '#a7a17d'; ctx.fillRect(0, 0, world.width, world.height); }
     // First complete the opaque ground plane, then ink its watercourses. This
     // prevents a neighbouring land fill erasing a river's readable screen width.
-    for (const record of visible) if (record.layer === 'biomes' && record.geometry === 'polygon') paintBiome(ctx, record, view.zoom, view.hoveredId);
-    for (const record of visible) if (record.layer === 'biomes' && record.inkPath) paintWater(ctx, record, view.zoom, view.hoveredId);
+    for (const record of visible) if (record.layer === 'biomes' && record.geometry === 'polygon') paintBiome(ctx, record, view.zoom, hoveredId);
+    for (const record of visible) if (record.layer === 'biomes' && record.inkPath) paintWater(ctx, record, view.zoom, hoveredId);
     let roadsPainted = false, powerPainted = false;
     for (const record of visible) {
       if (record.layer === 'biomes' && record.geometry === 'polygon') continue;
-      if (record.layer === 'biomes') paintDetail(ctx, record, view.zoom, view.hoveredId);
-      else if (record.layer === 'roads' && record.geometry === 'polygon') paintRoadSurface(ctx, record, view.zoom, view.hoveredId);
+      if (record.layer === 'biomes') paintDetail(ctx, record, view.zoom, hoveredId);
+      else if (record.layer === 'roads' && record.geometry === 'polygon') paintRoadSurface(ctx, record, view.zoom, hoveredId);
       else if (record.group === 'road') {
-        if (!roadsPainted) paintRoadBatch(ctx, visibleRoads, view.zoom, view.hoveredId);
+        if (!roadsPainted) paintRoadBatch(ctx, visibleRoads, view.zoom, hoveredId);
         roadsPainted = true;
       }
       else if (record.layer === 'power' && record.geometry === 'line') {
-        if (!powerPainted) paintPowerBatch(ctx, visiblePower, view.zoom, view.hoveredId);
+        if (!powerPainted) paintPowerBatch(ctx, visiblePower, view.zoom, hoveredId);
         powerPainted = true;
       }
-      else if (record.group === 'building') paintBuilding(ctx, record, view.zoom, view.hoveredId);
-      else paintDetail(ctx, record, view.zoom, view.hoveredId);
+      else if (record.group === 'building') paintBuilding(ctx, record, view.zoom, hoveredId);
+      else paintDetail(ctx, record, view.zoom, hoveredId);
     }
     paintRoadLabels(ctx, visibleRoads, view);
     paintBuildingLabels(ctx, visible, view);
@@ -3286,7 +3339,7 @@ function createDetailRenderer(world) {
     if (view.roadClasses) setRoadClasses(view.roadClasses);
     const identity = typeof target === 'object' && target ? target.key || target.id : target;
     const record = recordsByKey.get(identity) || recordsById.get(identity);
-    lastHoveredId = record && isEnabled(record) ? record.feature.id : null;
+    lastHoveredId = record && isEnabled(record) && drAllowsHighlight(record) ? record.feature.id : null;
     if (!lastHoveredId || !inView(record, view, Math.max(12, record.width / 2 + 4 / view.zoom))) return null;
     stats.highlightDrawCount++;
     if (record.fallback) return record.key;
@@ -3437,7 +3490,7 @@ function createDetailRenderer(world) {
       const record = candidates[i];
       if (!isEnabled(record) || record.geometry !== 'line' && !record.outlineOnly) continue;
       let stroke = record.outlineOnly ? boundaryWidth(lastZoom) : record.group === 'road' ? roadWidth(record, lastZoom).stroke : record.layer === 'water' ? waterWidth(record, lastZoom) : record.layer === 'power' ? powerWidth(record, lastZoom) : detailLineWidth(record, lastZoom);
-      if (record.feature.id === lastHoveredId) stroke += (record.group === 'road' ? 4 : record.layer === 'water' ? 3 : 1.5) / lastZoom;
+      if (drAllowsHighlight(record) && record.feature.id === lastHoveredId) stroke += (record.group === 'road' ? 4 : record.layer === 'water' ? 3 : 1.5) / lastZoom;
       const b = record.bounds;
       if (x < b.minX - tolerance - stroke / 2 || x > b.maxX + tolerance + stroke / 2 || y < b.minY - tolerance - stroke / 2 || y > b.maxY + tolerance + stroke / 2) continue;
       const point = drNearestOnRings(x, y, record.rings, record.outlineOnly && record.geometry === 'polygon'), edgeDistance = point.distance - stroke / 2;
@@ -4340,13 +4393,44 @@ function switchMap(map) {
 function hideObjectCard() {
   hoveredObject = null;
   $('object-card').hidden = true;
+  $('map-tooltip').hidden = true;
 }
 
-function inspectObject(point, screenX, screenY, touch = false, pickedFeature = null) {
-  const feature = pickedFeature || detailRenderer.pick(point.x, point.y, 5 / camera.zoom);
+const quietHoverLayers = new Set(['biomes', 'roads', 'power']);
+const roadHoverNames = { highway: 'Магистраль', road: 'Дорога', street: 'Улица / проезд', track: 'Грунтовая дорога', trail: 'Тропа', railway: 'Железная дорога' };
+
+function showMapTooltip(label, screenX, screenY) {
+  const tooltip = $('map-tooltip');
+  $('object-card').hidden = true;
+  tooltip.textContent = label;
+  tooltip.hidden = false;
+  const bounds = tooltip.getBoundingClientRect();
+  const left = screenX + 14 + bounds.width > vw - 8 ? screenX - bounds.width - 14 : screenX + 14;
+  const top = screenY + 18 + bounds.height > vh - 8 ? screenY - bounds.height - 12 : screenY + 18;
+  tooltip.style.left = `${clamp(left, 8, Math.max(8, vw - bounds.width - 8))}px`;
+  tooltip.style.top = `${clamp(top, 8, Math.max(8, vh - bounds.height - 8))}px`;
+}
+
+function briefMapLabel(feature) {
+  const type = feature.layer === 'roads' ? roadHoverNames[feature.roadClass] || 'Дорога'
+    : feature.layer === 'power' ? feature.kind === 'substation' ? 'Подстанция' : 'ЛЭП'
+    : feature.biomeName || feature.typeName || 'Местность';
+  const name = (feature.source?.name || feature.source?.tags?.name || '').trim();
+  // A named place helps orientation; technical or generic names add no detail.
+  const named = name && name !== type && !/^(Зона:|Участок|Пустошь$|Городская местность$)/.test(name);
+  return named ? `${type} · ${name.length > 48 ? name.slice(0, 47) + '…' : name}` : type;
+}
+
+function inspectObject(point, screenX, screenY, touch = false, pickedFeature) {
+  const feature = pickedFeature === undefined ? detailRenderer.pick(point.x, point.y, 5 / camera.zoom) : pickedFeature;
   if (!feature) { hideObjectCard(); return; }
   hoveredObject = feature;
   hoveredPoi = null;
+  if (quietHoverLayers.has(feature.layer)) {
+    showMapTooltip(briefMapLabel(feature), screenX, screenY);
+    return;
+  }
+  $('map-tooltip').hidden = true;
   const names = { settlement_boundary: 'ГРАНИЦА ПОСЕЛЕНИЯ', building: 'ЗДАНИЕ', road: 'ДОРОГА', fence: 'ОГРАДА', wall: 'СТЕНА', gate: 'ВОРОТА', railway: 'ЖЕЛЕЗНАЯ ДОРОГА', parking: 'ПАРКОВКА', pitch: 'СПОРТПЛОЩАДКА', garden: 'САД', pool: 'БАССЕЙН', tree: 'ДЕРЕВО', bench: 'СКАМЕЙКА', picnic_table: 'МЕСТО ДЛЯ ПРИВАЛА', fountain: 'ФОНТАН', well: 'КОЛОДЕЦ', ruins: 'РУИНЫ', shelter: 'УКРЫТИЕ', cemetery: 'КЛАДБИЩЕ', park: 'ПАРК', spring: 'РОДНИК', quarry: 'КАРЬЕР', playground: 'ДЕТСКАЯ ПЛОЩАДКА', cattle_grid: 'РЕШЁТКА НА ДОРОГЕ', runway: 'ВЗЛЁТНАЯ ПОЛОСА', taxiway: 'РУЛЁЖНАЯ ДОРОЖКА', apron: 'ПЕРРОН АЭРОДРОМА', aerodrome: 'АЭРОДРОМ', river: 'ВОДОТОК', lake: 'ОЗЕРО', water: 'ВОДОЁМ', forest: 'ЛЕС', swamp: 'БОЛОТО', plain: 'УЧАСТОК МЕСТНОСТИ', boundary: 'ГРАНИЦА' };
   const zoneNames = { residential: 'ЖИЛАЯ ЗОНА', industrial: 'ПРОМЫШЛЕННАЯ ЗОНА', commercial: 'КОММЕРЧЕСКАЯ ЗОНА', retail: 'ТОРГОВАЯ ЗОНА', farmland: 'ПОЛЯ', sand: 'ПЕСКИ', rock: 'СКАЛЫ', scrub: 'КУСТАРНИК', wetland: 'БОЛОТО' };
   const layerNames = { biomes: 'БИОМ', roads: 'ДОРОГА', power: 'ЭЛЕКТРОСЕТЬ', buildings: 'ЗДАНИЕ' };
@@ -4478,12 +4562,15 @@ canvas.addEventListener('pointerdown', e => {
 });
 canvas.addEventListener('pointermove', e => {
   hover = screenToWorld(e.clientX, e.clientY);
-  const pickedFeature = !pointer && !pinch && camera.zoom >= 2.5 ? detailRenderer.pick(hover.x, hover.y, 5 / camera.zoom) : null;
+  const pickedFeature = !pointer && !pinch ? detailRenderer.pick(hover.x, hover.y, 5 / camera.zoom) : null;
   hoveredPoi = pickedFeature?.gameplayAssignment ? null : pickPoi(hover);
   if (!pointer && !pinch) {
-    if (hoveredPoi) hideObjectCard(); else inspectObject(hover, e.clientX, e.clientY, false, pickedFeature);
+    if (hoveredPoi) {
+      hideObjectCard();
+      showMapTooltip(`${kindNames[hoveredPoi.kind] || 'Место'} · ${poiTitle(hoveredPoi)}`, e.clientX, e.clientY);
+    } else inspectObject(hover, e.clientX, e.clientY, false, pickedFeature);
   }
-  canvas.style.cursor = pointer?.moved ? 'grabbing' : hoveredPoi || hoveredObject ? 'pointer' : 'crosshair';
+  canvas.style.cursor = pointer?.moved ? 'grabbing' : hoveredPoi || hoveredObject && !quietHoverLayers.has(hoveredObject.layer) ? 'pointer' : 'crosshair';
   if (touches.has(e.pointerId)) touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
   if (pinch && touches.size === 2) {
     const [a, b] = [...touches.values()];
@@ -4527,7 +4614,7 @@ addEventListener('keydown', e => {
   keys.add(e.key.toLowerCase());
 });
 addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
-addEventListener('blur', () => { keys.clear(); pointer = null; touches.clear(); pinch = null; wasPinch = false; });
+addEventListener('blur', () => { keys.clear(); pointer = null; touches.clear(); pinch = null; wasPinch = false; hoveredPoi = null; hideObjectCard(); });
 
 function update(dt) {
   const panX = Number(keys.has('d') || keys.has('arrowright')) - Number(keys.has('a') || keys.has('arrowleft'));
@@ -4646,7 +4733,7 @@ function draw(time) {
   ctx.fillStyle = '#18251f'; ctx.fillRect(0, 0, vw, vh);
   drawStaticObjects(time);
   ctx.save(); ctx.translate(vw / 2, vh / 2); ctx.scale(camera.zoom, camera.zoom); ctx.translate(-camera.x, -camera.y);
-  detailRenderer.drawHighlight(ctx, { zoom: camera.zoom, cameraX: camera.x, cameraY: camera.y, width: vw, height: vh, time }, hoveredObject);
+  if (hoveredObject && !quietHoverLayers.has(hoveredObject.layer)) detailRenderer.drawHighlight(ctx, { zoom: camera.zoom, cameraX: camera.x, cameraY: camera.y, width: vw, height: vh, time }, hoveredObject);
   if (trail.length > 1) {
     line(ctx, trail); ctx.strokeStyle = 'rgba(54,61,35,.45)'; ctx.lineWidth = 1.5 / camera.zoom; ctx.setLineDash([2 / camera.zoom, 5 / camera.zoom]); ctx.stroke(); ctx.setLineDash([]);
   }

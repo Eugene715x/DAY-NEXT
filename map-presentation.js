@@ -39,6 +39,48 @@ const sourceType = (feature, kind) => kind === 'road'
 const flag = value => value === undefined || value === false || value === 'no' || value === 'false' || value === '0'
   ? 'no' : value === true || value === 'true' || value === 'yes' || value === '1' ? 'yes' : String(value);
 
+/**
+ * A waterway relation repeats its member ways, but often omits their local
+ * seasonality, width or culvert tags. An exact native path supplies those display
+ * facts. Original ways and relation fragments remain unchanged in members.
+ */
+export function coalesceWaterwaySources(sources = []) {
+  const sourceId = feature => feature.sourceId || String(feature.id || '').match(/^(?:node|way|relation)-\d+/)?.[0] || feature.id;
+  const relation = feature => feature.tags?.type === 'waterway' && /^relation-/.test(sourceId(feature));
+  const signature = feature => `${sourceType(feature, 'water')}|${(feature.paths || [feature.points || []]).map(path => {
+    const forward = path.map(pointKey).join(';'), reverse = [...path].reverse().map(pointKey).join(';');
+    return forward < reverse ? forward : reverse;
+  }).sort(compare).join('|')}`;
+  const semantics = feature => componentKey(feature, 'water');
+  const native = new Map(), attached = new Map(), duplicates = new Set();
+  for (const feature of sources) if (!relation(feature)) {
+    const key = signature(feature);
+    if (!native.has(key)) native.set(key, []);
+    native.get(key).push(feature);
+  }
+  for (const feature of sources) if (relation(feature)) {
+    const matches = native.get(signature(feature));
+    if (!matches?.length) continue;
+    // Conflicting native records cannot justify inferred local semantics.
+    if (matches.some(match => semantics(match) !== semantics(matches[0]))) continue;
+    const match = [...matches].sort((a, b) => compare(String(a.id), String(b.id)))[0];
+    if (!attached.has(match)) attached.set(match, []);
+    attached.get(match).push(feature); duplicates.add(feature);
+  }
+  const features = sources.filter(feature => !duplicates.has(feature)).map(feature => {
+    const relations = attached.get(feature);
+    if (!relations) return feature;
+    const members = [feature, ...relations].map(clone);
+    return { ...clone(feature), nativeWaterwayPresentation: true, members,
+      memberIds: [...new Set(members.flatMap(member => member.memberIds || [member.id]))].sort(compare),
+      sourceIds: [...new Set(members.flatMap(member => member.sourceIds || [sourceId(member)]))].sort(compare),
+      names: [...new Set(members.flatMap(member => member.names || [member.name || member.tags?.name]).filter(Boolean))],
+      provenance: { ...(feature.provenance || {}), presentationMethod: 'exact-native-waterway', nativeSourceId: sourceId(feature), relationSourceIds: [...new Set(relations.map(sourceId))].sort(compare) },
+    };
+  });
+  return { features, coalesced: duplicates.size };
+}
+
 function compatibility(feature, kind) {
   const tags = feature.tags || {};
   const structure = [String(tags.layer ?? feature.layer ?? 0), flag(tags.bridge ?? feature.bridge), flag(tags.tunnel ?? feature.tunnel)];
@@ -203,7 +245,7 @@ function pointTouchesSegment(point, a, b) {
 }
 
 function componentFeature(edges, kind) {
-  const members = edges.map(edge => clone(edge.feature));
+  const members = edges.flatMap(edge => edge.feature.nativeWaterwayPresentation ? edge.feature.members.map(clone) : [clone(edge.feature)]);
   const first = members[0];
   const memberIds = [...new Set(edges.flatMap(edge => edge.feature.memberIds || [edge.id]))].sort(compare);
   const sourceIds = [...new Set(edges.flatMap(edge => edge.feature.sourceIds || [
@@ -219,7 +261,11 @@ function componentFeature(edges, kind) {
     sourceType: sourceType(first, kind), name: names.join(' / '),
     merged: memberIds.length > 1, length: paths.reduce((sum, path) => sum + geometryLength(path), 0),
   };
-  const widths = members.map(member => member.width).filter(Number.isFinite);
+  const coalesced = edges.filter(edge => edge.feature.nativeWaterwayPresentation);
+  if (coalesced.length) feature.provenance = { ...(feature.provenance || {}), presentationMethod: 'exact-native-waterway',
+    nativeSourceIds: [...new Set(coalesced.map(edge => edge.feature.provenance.nativeSourceId))].sort(compare),
+    relationSourceIds: [...new Set(coalesced.flatMap(edge => edge.feature.provenance.relationSourceIds))].sort(compare) };
+  const widths = edges.map(edge => edge.feature.width).filter(Number.isFinite);
   if (widths.length) feature.width = Math.max(...widths);
   if (kind === 'road') {
     feature.roadClass = roadClass(first);

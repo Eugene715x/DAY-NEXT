@@ -1,5 +1,5 @@
 import { mapFeatureLayer, mapLandscapeBiome, shouldRenderFeature } from './map-layers.js';
-import { mergeConnectedNetworks } from './map-presentation.js';
+import { mergeConnectedNetworks, coalesceWaterwaySources } from './map-presentation.js';
 import { polygonDifference, polygonIntersection, polygonUnion, normalizePolygonParts } from './polygon-geometry.js';
 import { buildWaterRibbonParts } from './biome-ribbons.js';
 import { buildCityBiomes } from './city-biomes.js';
@@ -58,9 +58,11 @@ function bmDefaultSources(world, metersPerUnit) {
   const water = sources.filter(({ feature, group }) => mapFeatureLayer(feature, group) === 'water');
   const waterAreas = water.filter(({ feature, group }) => group === 'lake' || feature.geometry === 'polygon' || feature.rings?.length || feature.parts?.length).map(({ feature }) => ({ ...feature, parts: bmParts(feature) }));
   const waterLines = water.filter(({ feature, group }) => group !== 'lake' && feature.geometry !== 'polygon' && !feature.rings?.length && !feature.parts?.length && feature.geometry !== 'point' && (feature.paths?.length || feature.points?.length > 1)).map(({ feature }) => ({ ...feature, width: bmWidth(feature, metersPerUnit) }));
-  return { natureSources, waterAreas, waterLines: mergeConnectedNetworks(waterLines, { kind: 'water' }).features };
+  return { natureSources, waterAreas, waterLines: mergeConnectedNetworks(coalesceWaterwaySources(waterLines).features, { kind: 'water' }).features };
 }
-const bmPriority = (biome, water, dry, line) => water ? line ? dry ? 90 : 100 : dry ? 105 : 110 : biome === 'city' ? 40 : ['desert', 'valley', 'gully', 'plain', 'wasteland', 'landscape'].includes(biome) ? 20 : 60;
+// Sand describes the regional ground; built town land replaces it. Local
+// parks, woods and other specific natural areas still cut their own town space.
+const bmPriority = (biome, water, dry, line) => water ? line ? dry ? 90 : 100 : dry ? 105 : 110 : biome === 'city' ? 40 : ['sand', 'desert', 'valley', 'gully', 'plain', 'wasteland', 'landscape'].includes(biome) ? 20 : 60;
 const bmNames = { wasteland: 'Пустошь', city: 'Город', seasonal_river: 'Сезонное русло', river: 'Река', water: 'Водоём', dry_riverbed: 'Сухое русло' };
 
 /**
@@ -157,6 +159,6 @@ export function buildBiomeMap(world = {}, options = {}) {
     cityFeatures: features.filter(feature => feature.biome === 'city').length,
     byBiome: Object.fromEntries([...new Set(features.map(feature => feature.biome))].sort().map(biome => [biome, { features: features.filter(feature => feature.biome === biome).length, area: features.filter(feature => feature.biome === biome).reduce((sum, feature) => sum + bmArea(feature.parts), 0) }])),
     city: cities.report,
-    priority: ['water areas', 'permanent rivers', 'seasonal rivers', 'specific nature', 'city', 'regional nature', 'unmapped ground'],
+    priority: ['water areas', 'permanent rivers', 'seasonal rivers', 'specific nature', 'city', 'regional nature and sand', 'unmapped ground'],
   } };
 }

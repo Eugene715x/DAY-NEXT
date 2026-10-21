@@ -21,7 +21,7 @@
     ]
   },
   "layerCounts": {
-    "biomes": 317,
+    "biomes": 320,
     "roads": 83,
     "power": 6,
     "buildings": 893,
@@ -29,27 +29,28 @@
   },
   "presentation": {
     "inputFeatures": 2607,
-    "filteredFeatures": 556,
+    "filteredFeatures": 557,
     "coalescedFeatures": 13,
+    "coalescedWaterRelationFragments": 26,
     "sourceRoads": 658,
     "displayRoads": 83,
     "sourcePowerLines": 13,
     "displayPowerLines": 5,
     "sourceRailwayLines": 11,
     "sourceWaterLines": 88,
-    "displayWaterLines": 29,
+    "displayWaterLines": 33,
     "sourceWaterAreas": 11,
     "displayWaterAreas": 11,
     "biomeMap": {
       "enabled": true,
       "exclusive": true,
       "method": "exclusive-ground-priority",
-      "featureCount": 277,
-      "sourceCandidates": 276,
+      "featureCount": 281,
+      "sourceCandidates": 280,
       "sourceElements": 1247,
       "representedSourceElements": 1247,
       "obscuredFeatures": 0,
-      "modifiedFeatures": 32,
+      "modifiedFeatures": 29,
       "sourceIds": [
         "node-150947246",
         "node-150968333",
@@ -1301,12 +1302,12 @@
       ],
       "obscuredSourceIds": [],
       "mapArea": 6975000,
-      "coveredArea": 6974999.999999992,
-      "coverageError": 8.381903171539307e-9,
+      "coveredArea": 6974999.999999989,
+      "coverageError": 1.1175870895385742e-8,
       "overlapArea": 0,
-      "uncoveredArea": 8.381903171539307e-9,
-      "fallbackArea": 4607416.6236451985,
-      "waterLineFeatures": 29,
+      "uncoveredArea": 1.1175870895385742e-8,
+      "fallbackArea": 4610353.93224161,
+      "waterLineFeatures": 33,
       "waterAreaFeatures": 11,
       "cityFeatures": 3,
       "byBiome": {
@@ -1316,7 +1317,7 @@
         },
         "city": {
           "features": 3,
-          "area": 210235.17682473708
+          "area": 215361.96058837022
         },
         "desert": {
           "features": 1,
@@ -1342,29 +1343,25 @@
           "features": 8,
           "area": 5119.376014000002
         },
-        "river": {
-          "features": 1,
-          "area": 2713.791633370242
-        },
         "rock": {
           "features": 204,
           "area": 111564.11073673092
         },
         "sand": {
           "features": 1,
-          "area": 1829978.626648354
+          "area": 1821914.534288308
         },
         "scrub": {
           "features": 6,
-          "area": 19517.108923928325
+          "area": 19517.108923928303
         },
         "seasonal_river": {
-          "features": 28,
-          "area": 36751.64028633402
+          "features": 33,
+          "area": 39465.43191970337
         },
         "wasteland": {
           "features": 1,
-          "area": 4607416.6236451985
+          "area": 4610353.93224161
         },
         "water": {
           "features": 11,
@@ -1381,7 +1378,9 @@
         "sourcePlots": 86,
         "sourceClusters": 3,
         "sampleSpacingMeters": 15,
-        "vertices": 751,
+        "contourStyle": "angular",
+        "simplifyToleranceMeters": 45,
+        "vertices": 51,
         "byCity": [
           {
             "id": "game-city-dukocc",
@@ -1406,7 +1405,7 @@
         "seasonal rivers",
         "specific nature",
         "city",
-        "regional nature",
+        "regional nature and sand",
         "unmapped ground"
       ]
     },
@@ -43332,12 +43331,12 @@
       "enabled": true,
       "exclusive": true,
       "method": "exclusive-ground-priority",
-      "featureCount": 277,
-      "sourceCandidates": 276,
+      "featureCount": 281,
+      "sourceCandidates": 280,
       "sourceElements": 1247,
       "representedSourceElements": 1247,
       "obscuredFeatures": 0,
-      "modifiedFeatures": 32,
+      "modifiedFeatures": 29,
       "sourceIds": [
         "node-150947246",
         "node-150968333",
@@ -44589,12 +44588,12 @@
       ],
       "obscuredSourceIds": [],
       "mapArea": 6975000,
-      "coveredArea": 6974999.999999992,
-      "coverageError": 8.381903171539307e-9,
+      "coveredArea": 6974999.999999989,
+      "coverageError": 1.1175870895385742e-8,
       "overlapArea": 0,
-      "uncoveredArea": 8.381903171539307e-9,
-      "fallbackArea": 4607416.6236451985,
-      "waterLineFeatures": 29,
+      "uncoveredArea": 1.1175870895385742e-8,
+      "fallbackArea": 4610353.93224161,
+      "waterLineFeatures": 33,
       "waterAreaFeatures": 11,
       "cityFeatures": 3,
       "byBiome": {
@@ -44604,7 +44603,7 @@
         },
         "city": {
           "features": 3,
-          "area": 210235.17682473708
+          "area": 215361.96058837022
         },
         "desert": {
           "features": 1,
@@ -44630,29 +44629,25 @@
           "features": 8,
           "area": 5119.376014000002
         },
-        "river": {
-          "features": 1,
-          "area": 2713.791633370242
-        },
         "rock": {
           "features": 204,
           "area": 111564.11073673092
         },
         "sand": {
           "features": 1,
-          "area": 1829978.626648354
+          "area": 1821914.534288308
         },
         "scrub": {
           "features": 6,
-          "area": 19517.108923928325
+          "area": 19517.108923928303
         },
         "seasonal_river": {
-          "features": 28,
-          "area": 36751.64028633402
+          "features": 33,
+          "area": 39465.43191970337
         },
         "wasteland": {
           "features": 1,
-          "area": 4607416.6236451985
+          "area": 4610353.93224161
         },
         "water": {
           "features": 11,
@@ -44669,7 +44664,9 @@
         "sourcePlots": 86,
         "sourceClusters": 3,
         "sampleSpacingMeters": 15,
-        "vertices": 751,
+        "contourStyle": "angular",
+        "simplifyToleranceMeters": 45,
+        "vertices": 51,
         "byCity": [
           {
             "id": "game-city-dukocc",
@@ -44694,15 +44691,15 @@
         "seasonal rivers",
         "specific nature",
         "city",
-        "regional nature",
+        "regional nature and sand",
         "unmapped ground"
       ]
     },
-    "count": 317,
+    "count": 320,
     "geometryCounts": {
       "point": 31,
-      "line": 9,
-      "polygon": 277
+      "line": 8,
+      "polygon": 281
     },
     "types": [
       {
@@ -44716,11 +44713,11 @@
       },
       {
         "id": "seasonal_river",
-        "count": 28,
+        "count": 33,
         "geometryCounts": {
           "point": 0,
           "line": 0,
-          "polygon": 28
+          "polygon": 33
         }
       },
       {
@@ -44823,30 +44820,12 @@
         }
       },
       {
-        "id": "river",
-        "count": 1,
-        "geometryCounts": {
-          "point": 0,
-          "line": 0,
-          "polygon": 1
-        }
-      },
-      {
         "id": "sand",
         "count": 1,
         "geometryCounts": {
           "point": 0,
           "line": 0,
           "polygon": 1
-        }
-      },
-      {
-        "id": "valley",
-        "count": 1,
-        "geometryCounts": {
-          "point": 0,
-          "line": 1,
-          "polygon": 0
         }
       },
       {
@@ -44893,64 +44872,6 @@
           ]
         },
         "waterKind": null,
-        "width": 1
-      },
-      {
-        "id": "biome-seasonal_river-component-water-e6eebjcldxb",
-        "key": "biomes:biome:biome-seasonal_river-component-water-e6eebjcldxb",
-        "name": "Upper Amargosa River / Amargosa River",
-        "biome": "seasonal_river",
-        "geometry": "polygon",
-        "typeId": "biome.seasonal_river",
-        "sourceIds": [
-          "relation-16748249",
-          "way-1210867699",
-          "way-1210867701",
-          "way-1212141045",
-          "way-1226393066",
-          "way-1226393080",
-          "way-1226393083",
-          "way-1226393084",
-          "way-1226393087",
-          "way-1226393088",
-          "way-125523016"
-        ],
-        "provenance": {
-          "partitionMethod": "exclusive-ground-priority",
-          "sourceIds": [
-            "relation-16748249",
-            "way-1210867699",
-            "way-1210867701",
-            "way-1212141045",
-            "way-1226393066",
-            "way-1226393080",
-            "way-1226393083",
-            "way-1226393084",
-            "way-1226393087",
-            "way-1226393088",
-            "way-125523016"
-          ]
-        },
-        "waterKind": "seasonal_river",
-        "width": 6.488040828007643
-      },
-      {
-        "id": "biome-river-component-water-5v4qtk1gqzgwe",
-        "key": "biomes:biome:biome-river-component-water-5v4qtk1gqzgwe",
-        "name": "Amargosa River",
-        "biome": "river",
-        "geometry": "polygon",
-        "typeId": "biome.water",
-        "sourceIds": [
-          "relation-19574302"
-        ],
-        "provenance": {
-          "partitionMethod": "exclusive-ground-priority",
-          "sourceIds": [
-            "relation-19574302"
-          ]
-        },
-        "waterKind": "river",
         "width": 1
       },
       {
@@ -45002,6 +44923,37 @@
         },
         "waterKind": null,
         "width": 1
+      },
+      {
+        "id": "biome-seasonal_river-way-1210867699-0",
+        "key": "biomes:biome:biome-seasonal_river-way-1210867699-0",
+        "name": "Amargosa River / Upper Amargosa River",
+        "biome": "seasonal_river",
+        "geometry": "polygon",
+        "typeId": "biome.seasonal_river",
+        "sourceIds": [
+          "relation-16748249",
+          "relation-19574302",
+          "way-1210867699"
+        ],
+        "provenance": {
+          "presentationMethod": "exact-native-waterway",
+          "nativeSourceIds": [
+            "way-1210867699"
+          ],
+          "relationSourceIds": [
+            "relation-16748249",
+            "relation-19574302"
+          ],
+          "partitionMethod": "exclusive-ground-priority",
+          "sourceIds": [
+            "relation-16748249",
+            "relation-19574302",
+            "way-1210867699"
+          ]
+        },
+        "waterKind": "seasonal_river",
+        "width": 6.488040828007643
       },
       {
         "id": "biome-city-game-city-bgqbjq",
@@ -46863,6 +46815,8 @@
           "buildingHaloMeters": 110,
           "closeGapsMeters": 120,
           "filledInteriorGaps": true,
+          "contourStyle": "angular",
+          "simplifyToleranceMeters": 45,
           "sourceBoundary": false,
           "partitionMethod": "exclusive-ground-priority"
         },
@@ -46907,6 +46861,43 @@
         },
         "waterKind": "seasonal_river",
         "width": 2
+      },
+      {
+        "id": "biome-seasonal_river-component-water-1yj4z8hv8fx9n",
+        "key": "biomes:biome:biome-seasonal_river-component-water-1yj4z8hv8fx9n",
+        "name": "Amargosa River / Upper Amargosa River",
+        "biome": "seasonal_river",
+        "geometry": "polygon",
+        "typeId": "biome.seasonal_river",
+        "sourceIds": [
+          "relation-16748249",
+          "relation-19574302",
+          "way-1226393080",
+          "way-1226393088",
+          "way-125523016"
+        ],
+        "provenance": {
+          "presentationMethod": "exact-native-waterway",
+          "nativeSourceIds": [
+            "way-1226393080",
+            "way-1226393088",
+            "way-125523016"
+          ],
+          "relationSourceIds": [
+            "relation-16748249",
+            "relation-19574302"
+          ],
+          "partitionMethod": "exclusive-ground-priority",
+          "sourceIds": [
+            "relation-16748249",
+            "relation-19574302",
+            "way-1226393080",
+            "way-1226393088",
+            "way-125523016"
+          ]
+        },
+        "waterKind": "seasonal_river",
+        "width": 6.488040828007643
       },
       {
         "id": "biome-seasonal_river-way-1543321237-0",
@@ -47165,6 +47156,8 @@
           "buildingHaloMeters": 110,
           "closeGapsMeters": 120,
           "filledInteriorGaps": true,
+          "contourStyle": "angular",
+          "simplifyToleranceMeters": 45,
           "sourceBoundary": false,
           "partitionMethod": "exclusive-ground-priority"
         },
@@ -47233,6 +47226,37 @@
         "width": 2
       },
       {
+        "id": "biome-seasonal_river-way-1210867701-0",
+        "key": "biomes:biome:biome-seasonal_river-way-1210867701-0",
+        "name": "Amargosa River / Upper Amargosa River",
+        "biome": "seasonal_river",
+        "geometry": "polygon",
+        "typeId": "biome.seasonal_river",
+        "sourceIds": [
+          "relation-16748249",
+          "relation-19574302",
+          "way-1210867701"
+        ],
+        "provenance": {
+          "presentationMethod": "exact-native-waterway",
+          "nativeSourceIds": [
+            "way-1210867701"
+          ],
+          "relationSourceIds": [
+            "relation-16748249",
+            "relation-19574302"
+          ],
+          "partitionMethod": "exclusive-ground-priority",
+          "sourceIds": [
+            "relation-16748249",
+            "relation-19574302",
+            "way-1210867701"
+          ]
+        },
+        "waterKind": "seasonal_river",
+        "width": 6.488040828007643
+      },
+      {
         "id": "biome-seasonal_river-way-1543321226-0",
         "key": "biomes:biome:biome-seasonal_river-way-1543321226-0",
         "name": "Сезонное русло",
@@ -47252,6 +47276,43 @@
         "width": 2
       },
       {
+        "id": "biome-seasonal_river-component-water-14b9q1ouuf672",
+        "key": "biomes:biome:biome-seasonal_river-component-water-14b9q1ouuf672",
+        "name": "Amargosa River / Upper Amargosa River",
+        "biome": "seasonal_river",
+        "geometry": "polygon",
+        "typeId": "biome.seasonal_river",
+        "sourceIds": [
+          "relation-16748249",
+          "relation-19574302",
+          "way-1226393066",
+          "way-1226393084",
+          "way-1226393087"
+        ],
+        "provenance": {
+          "presentationMethod": "exact-native-waterway",
+          "nativeSourceIds": [
+            "way-1226393066",
+            "way-1226393084",
+            "way-1226393087"
+          ],
+          "relationSourceIds": [
+            "relation-16748249",
+            "relation-19574302"
+          ],
+          "partitionMethod": "exclusive-ground-priority",
+          "sourceIds": [
+            "relation-16748249",
+            "relation-19574302",
+            "way-1226393066",
+            "way-1226393084",
+            "way-1226393087"
+          ]
+        },
+        "waterKind": "seasonal_river",
+        "width": 6.488040828007643
+      },
+      {
         "id": "biome-scrub-way-168226509",
         "key": "biomes:biome:biome-scrub-way-168226509",
         "name": "Кустарник",
@@ -47266,6 +47327,46 @@
           "sourceIds": [
             "way-168226509"
           ]
+        },
+        "waterKind": null,
+        "width": 1
+      },
+      {
+        "id": "biome-city-game-city-hue75x",
+        "key": "biomes:biome:biome-city-game-city-hue75x",
+        "name": "Gold Center",
+        "biome": "city",
+        "geometry": "polygon",
+        "typeId": "biome.city",
+        "sourceIds": [
+          "node-150974730",
+          "relation-16700368",
+          "way-1543321448",
+          "way-1543321449",
+          "way-1543321450",
+          "way-557030000",
+          "way-908504675"
+        ],
+        "provenance": {
+          "method": "coherent-development-envelope",
+          "sourceIds": [
+            "node-150974730",
+            "relation-16700368",
+            "way-1543321448",
+            "way-1543321449",
+            "way-1543321450",
+            "way-557030000",
+            "way-908504675"
+          ],
+          "buildingCount": 5,
+          "sampleSpacingMeters": 15,
+          "buildingHaloMeters": 110,
+          "closeGapsMeters": 120,
+          "filledInteriorGaps": true,
+          "contourStyle": "angular",
+          "simplifyToleranceMeters": 45,
+          "sourceBoundary": false,
+          "partitionMethod": "exclusive-ground-priority"
         },
         "waterKind": null,
         "width": 1
@@ -47446,44 +47547,6 @@
         "width": 1
       },
       {
-        "id": "biome-city-game-city-hue75x",
-        "key": "biomes:biome:biome-city-game-city-hue75x",
-        "name": "Gold Center",
-        "biome": "city",
-        "geometry": "polygon",
-        "typeId": "biome.city",
-        "sourceIds": [
-          "node-150974730",
-          "relation-16700368",
-          "way-1543321448",
-          "way-1543321449",
-          "way-1543321450",
-          "way-557030000",
-          "way-908504675"
-        ],
-        "provenance": {
-          "method": "coherent-development-envelope",
-          "sourceIds": [
-            "node-150974730",
-            "relation-16700368",
-            "way-1543321448",
-            "way-1543321449",
-            "way-1543321450",
-            "way-557030000",
-            "way-908504675"
-          ],
-          "buildingCount": 5,
-          "sampleSpacingMeters": 15,
-          "buildingHaloMeters": 110,
-          "closeGapsMeters": 120,
-          "filledInteriorGaps": true,
-          "sourceBoundary": false,
-          "partitionMethod": "exclusive-ground-priority"
-        },
-        "waterKind": null,
-        "width": 1
-      },
-      {
         "id": "biome-rock-way-1543321454",
         "key": "biomes:biome:biome-rock-way-1543321454",
         "name": "Скальная местность",
@@ -47581,6 +47644,34 @@
         "width": 1
       },
       {
+        "id": "biome-seasonal_river-way-1226393083-0",
+        "key": "biomes:biome:biome-seasonal_river-way-1226393083-0",
+        "name": "Upper Amargosa River",
+        "biome": "seasonal_river",
+        "geometry": "polygon",
+        "typeId": "biome.seasonal_river",
+        "sourceIds": [
+          "relation-16748249",
+          "way-1226393083"
+        ],
+        "provenance": {
+          "presentationMethod": "exact-native-waterway",
+          "nativeSourceIds": [
+            "way-1226393083"
+          ],
+          "relationSourceIds": [
+            "relation-16748249"
+          ],
+          "partitionMethod": "exclusive-ground-priority",
+          "sourceIds": [
+            "relation-16748249",
+            "way-1226393083"
+          ]
+        },
+        "waterKind": "seasonal_river",
+        "width": 6.488040828007643
+      },
+      {
         "id": "biome-rock-way-1543321451",
         "key": "biomes:biome:biome-rock-way-1543321451",
         "name": "Скальная местность",
@@ -47655,6 +47746,37 @@
         },
         "waterKind": null,
         "width": 1
+      },
+      {
+        "id": "biome-seasonal_river-way-1212141045-0",
+        "key": "biomes:biome:biome-seasonal_river-way-1212141045-0",
+        "name": "Amargosa River / Upper Amargosa River",
+        "biome": "seasonal_river",
+        "geometry": "polygon",
+        "typeId": "biome.seasonal_river",
+        "sourceIds": [
+          "relation-16748249",
+          "relation-19574302",
+          "way-1212141045"
+        ],
+        "provenance": {
+          "presentationMethod": "exact-native-waterway",
+          "nativeSourceIds": [
+            "way-1212141045"
+          ],
+          "relationSourceIds": [
+            "relation-16748249",
+            "relation-19574302"
+          ],
+          "partitionMethod": "exclusive-ground-priority",
+          "sourceIds": [
+            "relation-16748249",
+            "relation-19574302",
+            "way-1212141045"
+          ]
+        },
+        "waterKind": "seasonal_river",
+        "width": 6.488040828007643
       },
       {
         "id": "biome-rock-way-1543321201",
@@ -50832,16 +50954,28 @@
       {
         "id": "biome-seasonal_river-way-1212141046-0",
         "key": "biomes:biome:biome-seasonal_river-way-1212141046-0",
-        "name": "Amargosa River",
+        "name": "Amargosa River / Upper Amargosa River",
         "biome": "seasonal_river",
         "geometry": "polygon",
         "typeId": "biome.seasonal_river",
         "sourceIds": [
+          "relation-16748249",
+          "relation-19574302",
           "way-1212141046"
         ],
         "provenance": {
+          "presentationMethod": "exact-native-waterway",
+          "nativeSourceIds": [
+            "way-1212141046"
+          ],
+          "relationSourceIds": [
+            "relation-16748249",
+            "relation-19574302"
+          ],
           "partitionMethod": "exclusive-ground-priority",
           "sourceIds": [
+            "relation-16748249",
+            "relation-19574302",
             "way-1212141046"
           ]
         },
@@ -50927,16 +51061,25 @@
       {
         "id": "biome-seasonal_river-way-1226393085-0",
         "key": "biomes:biome:biome-seasonal_river-way-1226393085-0",
-        "name": "Сезонное русло",
+        "name": "Upper Amargosa River",
         "biome": "seasonal_river",
         "geometry": "polygon",
         "typeId": "biome.seasonal_river",
         "sourceIds": [
+          "relation-16748249",
           "way-1226393085"
         ],
         "provenance": {
+          "presentationMethod": "exact-native-waterway",
+          "nativeSourceIds": [
+            "way-1226393085"
+          ],
+          "relationSourceIds": [
+            "relation-16748249"
+          ],
           "partitionMethod": "exclusive-ground-priority",
           "sourceIds": [
+            "relation-16748249",
             "way-1226393085"
           ]
         },
@@ -50963,6 +51106,37 @@
         "width": 1
       },
       {
+        "id": "biome-seasonal_river-way-1210867700-0",
+        "key": "biomes:biome:biome-seasonal_river-way-1210867700-0",
+        "name": "Amargosa River / Upper Amargosa River",
+        "biome": "seasonal_river",
+        "geometry": "polygon",
+        "typeId": "biome.seasonal_river",
+        "sourceIds": [
+          "relation-16748249",
+          "relation-19574302",
+          "way-1210867700"
+        ],
+        "provenance": {
+          "presentationMethod": "exact-native-waterway",
+          "nativeSourceIds": [
+            "way-1210867700"
+          ],
+          "relationSourceIds": [
+            "relation-16748249",
+            "relation-19574302"
+          ],
+          "partitionMethod": "exclusive-ground-priority",
+          "sourceIds": [
+            "relation-16748249",
+            "relation-19574302",
+            "way-1210867700"
+          ]
+        },
+        "waterKind": "seasonal_river",
+        "width": 6.488040828007643
+      },
+      {
         "id": "biome-rock-way-1543321428",
         "key": "biomes:biome:biome-rock-way-1543321428",
         "name": "Скальная местность",
@@ -50980,25 +51154,6 @@
         },
         "waterKind": null,
         "width": 1
-      },
-      {
-        "id": "biome-seasonal_river-way-1210867700-0",
-        "key": "biomes:biome:biome-seasonal_river-way-1210867700-0",
-        "name": "Amargosa River",
-        "biome": "seasonal_river",
-        "geometry": "polygon",
-        "typeId": "biome.seasonal_river",
-        "sourceIds": [
-          "way-1210867700"
-        ],
-        "provenance": {
-          "partitionMethod": "exclusive-ground-priority",
-          "sourceIds": [
-            "way-1210867700"
-          ]
-        },
-        "waterKind": "seasonal_river",
-        "width": 6.488040828007643
       },
       {
         "id": "biome-rock-way-1543321169",
@@ -51077,6 +51232,34 @@
         "width": 1
       },
       {
+        "id": "biome-seasonal_river-way-1226393086-0",
+        "key": "biomes:biome:biome-seasonal_river-way-1226393086-0",
+        "name": "Upper Amargosa River",
+        "biome": "seasonal_river",
+        "geometry": "polygon",
+        "typeId": "biome.seasonal_river",
+        "sourceIds": [
+          "relation-16748249",
+          "way-1226393086"
+        ],
+        "provenance": {
+          "presentationMethod": "exact-native-waterway",
+          "nativeSourceIds": [
+            "way-1226393086"
+          ],
+          "relationSourceIds": [
+            "relation-16748249"
+          ],
+          "partitionMethod": "exclusive-ground-priority",
+          "sourceIds": [
+            "relation-16748249",
+            "way-1226393086"
+          ]
+        },
+        "waterKind": "seasonal_river",
+        "width": 6.488040828007643
+      },
+      {
         "id": "biome-rock-way-1543321417",
         "key": "biomes:biome:biome-rock-way-1543321417",
         "name": "Скальная местность",
@@ -51136,16 +51319,28 @@
       {
         "id": "biome-seasonal_river-way-1210867702-0",
         "key": "biomes:biome:biome-seasonal_river-way-1210867702-0",
-        "name": "Amargosa River",
+        "name": "Amargosa River / Upper Amargosa River",
         "biome": "seasonal_river",
         "geometry": "polygon",
         "typeId": "biome.seasonal_river",
         "sourceIds": [
+          "relation-16748249",
+          "relation-19574302",
           "way-1210867702"
         ],
         "provenance": {
+          "presentationMethod": "exact-native-waterway",
+          "nativeSourceIds": [
+            "way-1210867702"
+          ],
+          "relationSourceIds": [
+            "relation-16748249",
+            "relation-19574302"
+          ],
           "partitionMethod": "exclusive-ground-priority",
           "sourceIds": [
+            "relation-16748249",
+            "relation-19574302",
             "way-1210867702"
           ]
         },
@@ -51208,25 +51403,6 @@
         },
         "waterKind": null,
         "width": 1
-      },
-      {
-        "id": "biome-seasonal_river-way-1226393086-0",
-        "key": "biomes:biome:biome-seasonal_river-way-1226393086-0",
-        "name": "Сезонное русло",
-        "biome": "seasonal_river",
-        "geometry": "polygon",
-        "typeId": "biome.seasonal_river",
-        "sourceIds": [
-          "way-1226393086"
-        ],
-        "provenance": {
-          "partitionMethod": "exclusive-ground-priority",
-          "sourceIds": [
-            "way-1226393086"
-          ]
-        },
-        "waterKind": "seasonal_river",
-        "width": 6.488040828007643
       },
       {
         "id": "biome-rock-way-1543321484",
@@ -51326,16 +51502,28 @@
       {
         "id": "biome-seasonal_river-way-1226393081-0",
         "key": "biomes:biome:biome-seasonal_river-way-1226393081-0",
-        "name": "Amargosa River",
+        "name": "Amargosa River / Upper Amargosa River",
         "biome": "seasonal_river",
         "geometry": "polygon",
         "typeId": "biome.seasonal_river",
         "sourceIds": [
+          "relation-16748249",
+          "relation-19574302",
           "way-1226393081"
         ],
         "provenance": {
+          "presentationMethod": "exact-native-waterway",
+          "nativeSourceIds": [
+            "way-1226393081"
+          ],
+          "relationSourceIds": [
+            "relation-16748249",
+            "relation-19574302"
+          ],
           "partitionMethod": "exclusive-ground-priority",
           "sourceIds": [
+            "relation-16748249",
+            "relation-19574302",
             "way-1226393081"
           ]
         },
@@ -52092,20 +52280,6 @@
         "typeId": "biome.forest",
         "sourceIds": [
           "way-1212141033"
-        ],
-        "provenance": {},
-        "waterKind": null,
-        "width": 1
-      },
-      {
-        "id": "way-1279019338-0",
-        "key": "biomes:detail:way-1279019338-0",
-        "name": "Oasis Valley",
-        "biome": "valley",
-        "geometry": "line",
-        "typeId": "biome.valley",
-        "sourceIds": [
-          "way-1279019338"
         ],
         "provenance": {},
         "waterKind": null,
@@ -54541,7 +54715,8 @@
     "Counts are rendered geometry records. Clipped ways can have several fragments; connected same-type road, water and power segments form whole selectable networks with branches, retaining all source IDs. Navigation keeps the original roads.",
     "Every building has a gameplay purpose and category color. Explicit mapped tags and contained POIs remain distinguishable from context or fictional game assignments; raw building geometry/tags remain unchanged.",
     "Crossings, traffic signs, barriers, aircraft parking marks and point electrical equipment are retained in raw data but omitted from the game presentation. Administrative boundaries are hidden. Railway lines belong to roads; physical airport/apron surfaces remain objects.",
-    "Biomes are the complete map ground: coherent gray city envelopes, natural areas and water form a mutually exclusive polygon partition. Seasonal river ink is dashed blue at the previous width; original connected paths and source geometry are retained. There is no separate terrain backdrop. Service grounds remain evidence for building roles.",
+    "Biomes are the complete map ground: angular gray city envelopes with priority above regional sand, natural areas and water form a mutually exclusive polygon partition. Seasonal river ink is dashed blue at the previous width; original connected paths and source geometry are retained. There is no separate terrain backdrop. Service grounds remain evidence for building roles.",
+    "Biomes, roads and power lines provide compact cursor tooltips without hover highlight. Waterway relation fragments identical to native ways use those ways’ specific seasonality/grade/width, preserving every original member. Conditional valley-axis lines such as Oasis Valley are hidden without altering source data.",
     "Categories partition the details layer exactly. Source tags and IDs are retained for every record."
   ]
 }

@@ -1,12 +1,40 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ROAD_CLASSES, roadClass, mergeNetworkLines, mergeConnectedNetworks } from '../map-presentation.js';
+import { ROAD_CLASSES, roadClass, mergeNetworkLines, mergeConnectedNetworks, coalesceWaterwaySources } from '../map-presentation.js';
 import nevadaMap from '../maps/usa.js';
 
 const points = coordinates => coordinates.map(([x, y]) => ({ x, y }));
 const line = (id, coordinates, tags = {}, extra = {}) => ({ id, points: points(coordinates), tags, ...extra });
 const flattenedIds = features => features.flatMap(feature => feature.memberIds).sort();
 const close = (a, b) => assert(Math.abs(a - b) < Math.max(1, a) * 1e-12, `${a} differs from ${b}`);
+
+test('waterway relations use exact native geometry facts without losing original tags or rendering duplicate paths', () => {
+  const native = line('way-1', [[0, 0], [10, 0]], { waterway: 'river', intermittent: 'yes', tunnel: 'culvert', layer: '-1' }, { sourceId: 'way-1', width: 3 });
+  const relation = line('relation-2-member-0', [[10, 0], [0, 0]], { type: 'waterway', waterway: 'river' }, { sourceId: 'relation-2', width: 99 });
+  const distant = line('relation-3-member-0', [[0, 10], [10, 10]], { type: 'waterway', waterway: 'river' }, { sourceId: 'relation-3', width: 2 });
+  const sources = [relation, distant, native], before = structuredClone(sources);
+  const prepared = coalesceWaterwaySources(sources);
+  assert.equal(prepared.coalesced, 1); assert.equal(prepared.features.length, 2);
+  assert.deepEqual(sources, before);
+  const merged = mergeConnectedNetworks(prepared.features, { kind: 'water' }).features;
+  const local = merged.find(feature => feature.sourceIds.includes('way-1'));
+  assert.equal(local.width, 3, 'A relation-level duplicate width cannot override the measured native way');
+  assert.deepEqual(local.paths, [native.points]);
+  assert.deepEqual(local.tags, native.tags);
+  assert.deepEqual(local.memberIds, ['relation-2-member-0', 'way-1']);
+  assert.deepEqual(local.members.find(member => member.id === relation.id), relation);
+  assert.equal(merged.find(feature => feature.sourceIds.includes('relation-3')).tags.intermittent, undefined, 'An unmatched relation does not acquire invented seasonal facts');
+});
+
+test('ambiguous native waterways and nonmatching relation paths are never coalesced by name or proximity', () => {
+  const sources = [
+    line('way-1', [[0, 0], [10, 0]], { waterway: 'river', intermittent: 'yes' }, { name: 'Amargosa River' }),
+    line('way-2', [[0, 0], [10, 0]], { waterway: 'river' }),
+    line('relation-3-member-0', [[0, 0], [10, 0]], { type: 'waterway', waterway: 'river' }, { sourceId: 'relation-3', name: 'Amargosa River' }),
+    line('relation-4-member-0', [[0, .001], [10, .001]], { type: 'waterway', waterway: 'river' }, { sourceId: 'relation-4', name: 'Amargosa River' }),
+  ];
+  assert.equal(coalesceWaterwaySources(sources).coalesced, 0);
+});
 
 test('roads use five broad classes and a railway class while original OSM types remain explicit', () => {
   const classes = {

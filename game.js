@@ -240,13 +240,44 @@ function switchMap(map) {
 function hideObjectCard() {
   hoveredObject = null;
   $('object-card').hidden = true;
+  $('map-tooltip').hidden = true;
 }
 
-function inspectObject(point, screenX, screenY, touch = false, pickedFeature = null) {
-  const feature = pickedFeature || detailRenderer.pick(point.x, point.y, 5 / camera.zoom);
+const quietHoverLayers = new Set(['biomes', 'roads', 'power']);
+const roadHoverNames = { highway: 'Магистраль', road: 'Дорога', street: 'Улица / проезд', track: 'Грунтовая дорога', trail: 'Тропа', railway: 'Железная дорога' };
+
+function showMapTooltip(label, screenX, screenY) {
+  const tooltip = $('map-tooltip');
+  $('object-card').hidden = true;
+  tooltip.textContent = label;
+  tooltip.hidden = false;
+  const bounds = tooltip.getBoundingClientRect();
+  const left = screenX + 14 + bounds.width > vw - 8 ? screenX - bounds.width - 14 : screenX + 14;
+  const top = screenY + 18 + bounds.height > vh - 8 ? screenY - bounds.height - 12 : screenY + 18;
+  tooltip.style.left = `${clamp(left, 8, Math.max(8, vw - bounds.width - 8))}px`;
+  tooltip.style.top = `${clamp(top, 8, Math.max(8, vh - bounds.height - 8))}px`;
+}
+
+function briefMapLabel(feature) {
+  const type = feature.layer === 'roads' ? roadHoverNames[feature.roadClass] || 'Дорога'
+    : feature.layer === 'power' ? feature.kind === 'substation' ? 'Подстанция' : 'ЛЭП'
+    : feature.biomeName || feature.typeName || 'Местность';
+  const name = (feature.source?.name || feature.source?.tags?.name || '').trim();
+  // A named place helps orientation; technical or generic names add no detail.
+  const named = name && name !== type && !/^(Зона:|Участок|Пустошь$|Городская местность$)/.test(name);
+  return named ? `${type} · ${name.length > 48 ? name.slice(0, 47) + '…' : name}` : type;
+}
+
+function inspectObject(point, screenX, screenY, touch = false, pickedFeature) {
+  const feature = pickedFeature === undefined ? detailRenderer.pick(point.x, point.y, 5 / camera.zoom) : pickedFeature;
   if (!feature) { hideObjectCard(); return; }
   hoveredObject = feature;
   hoveredPoi = null;
+  if (quietHoverLayers.has(feature.layer)) {
+    showMapTooltip(briefMapLabel(feature), screenX, screenY);
+    return;
+  }
+  $('map-tooltip').hidden = true;
   const names = { settlement_boundary: 'ГРАНИЦА ПОСЕЛЕНИЯ', building: 'ЗДАНИЕ', road: 'ДОРОГА', fence: 'ОГРАДА', wall: 'СТЕНА', gate: 'ВОРОТА', railway: 'ЖЕЛЕЗНАЯ ДОРОГА', parking: 'ПАРКОВКА', pitch: 'СПОРТПЛОЩАДКА', garden: 'САД', pool: 'БАССЕЙН', tree: 'ДЕРЕВО', bench: 'СКАМЕЙКА', picnic_table: 'МЕСТО ДЛЯ ПРИВАЛА', fountain: 'ФОНТАН', well: 'КОЛОДЕЦ', ruins: 'РУИНЫ', shelter: 'УКРЫТИЕ', cemetery: 'КЛАДБИЩЕ', park: 'ПАРК', spring: 'РОДНИК', quarry: 'КАРЬЕР', playground: 'ДЕТСКАЯ ПЛОЩАДКА', cattle_grid: 'РЕШЁТКА НА ДОРОГЕ', runway: 'ВЗЛЁТНАЯ ПОЛОСА', taxiway: 'РУЛЁЖНАЯ ДОРОЖКА', apron: 'ПЕРРОН АЭРОДРОМА', aerodrome: 'АЭРОДРОМ', river: 'ВОДОТОК', lake: 'ОЗЕРО', water: 'ВОДОЁМ', forest: 'ЛЕС', swamp: 'БОЛОТО', plain: 'УЧАСТОК МЕСТНОСТИ', boundary: 'ГРАНИЦА' };
   const zoneNames = { residential: 'ЖИЛАЯ ЗОНА', industrial: 'ПРОМЫШЛЕННАЯ ЗОНА', commercial: 'КОММЕРЧЕСКАЯ ЗОНА', retail: 'ТОРГОВАЯ ЗОНА', farmland: 'ПОЛЯ', sand: 'ПЕСКИ', rock: 'СКАЛЫ', scrub: 'КУСТАРНИК', wetland: 'БОЛОТО' };
   const layerNames = { biomes: 'БИОМ', roads: 'ДОРОГА', power: 'ЭЛЕКТРОСЕТЬ', buildings: 'ЗДАНИЕ' };
@@ -378,12 +409,15 @@ canvas.addEventListener('pointerdown', e => {
 });
 canvas.addEventListener('pointermove', e => {
   hover = screenToWorld(e.clientX, e.clientY);
-  const pickedFeature = !pointer && !pinch && camera.zoom >= 2.5 ? detailRenderer.pick(hover.x, hover.y, 5 / camera.zoom) : null;
+  const pickedFeature = !pointer && !pinch ? detailRenderer.pick(hover.x, hover.y, 5 / camera.zoom) : null;
   hoveredPoi = pickedFeature?.gameplayAssignment ? null : pickPoi(hover);
   if (!pointer && !pinch) {
-    if (hoveredPoi) hideObjectCard(); else inspectObject(hover, e.clientX, e.clientY, false, pickedFeature);
+    if (hoveredPoi) {
+      hideObjectCard();
+      showMapTooltip(`${kindNames[hoveredPoi.kind] || 'Место'} · ${poiTitle(hoveredPoi)}`, e.clientX, e.clientY);
+    } else inspectObject(hover, e.clientX, e.clientY, false, pickedFeature);
   }
-  canvas.style.cursor = pointer?.moved ? 'grabbing' : hoveredPoi || hoveredObject ? 'pointer' : 'crosshair';
+  canvas.style.cursor = pointer?.moved ? 'grabbing' : hoveredPoi || hoveredObject && !quietHoverLayers.has(hoveredObject.layer) ? 'pointer' : 'crosshair';
   if (touches.has(e.pointerId)) touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
   if (pinch && touches.size === 2) {
     const [a, b] = [...touches.values()];
@@ -427,7 +461,7 @@ addEventListener('keydown', e => {
   keys.add(e.key.toLowerCase());
 });
 addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
-addEventListener('blur', () => { keys.clear(); pointer = null; touches.clear(); pinch = null; wasPinch = false; });
+addEventListener('blur', () => { keys.clear(); pointer = null; touches.clear(); pinch = null; wasPinch = false; hoveredPoi = null; hideObjectCard(); });
 
 function update(dt) {
   const panX = Number(keys.has('d') || keys.has('arrowright')) - Number(keys.has('a') || keys.has('arrowleft'));
@@ -546,7 +580,7 @@ function draw(time) {
   ctx.fillStyle = '#18251f'; ctx.fillRect(0, 0, vw, vh);
   drawStaticObjects(time);
   ctx.save(); ctx.translate(vw / 2, vh / 2); ctx.scale(camera.zoom, camera.zoom); ctx.translate(-camera.x, -camera.y);
-  detailRenderer.drawHighlight(ctx, { zoom: camera.zoom, cameraX: camera.x, cameraY: camera.y, width: vw, height: vh, time }, hoveredObject);
+  if (hoveredObject && !quietHoverLayers.has(hoveredObject.layer)) detailRenderer.drawHighlight(ctx, { zoom: camera.zoom, cameraX: camera.x, cameraY: camera.y, width: vw, height: vh, time }, hoveredObject);
   if (trail.length > 1) {
     line(ctx, trail); ctx.strokeStyle = 'rgba(54,61,35,.45)'; ctx.lineWidth = 1.5 / camera.zoom; ctx.setLineDash([2 / camera.zoom, 5 / camera.zoom]); ctx.stroke(); ctx.setLineDash([]);
   }

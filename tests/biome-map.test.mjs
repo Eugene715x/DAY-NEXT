@@ -42,15 +42,32 @@ test('exclusive full ground cover puts coherent city over regional nature and sp
   const options = fixture(), before = structuredClone(options);
   const { features, report } = buildBiomeMap(baseWorld, options);
   verifyPartition(features, 10000);
-  for (const [x, y, biome] of [[5, 5, 'desert'], [15, 15, 'city'], [40, 40, 'forest'], [30, 30, 'sand'], [60, 60, 'water'], [65, 65, 'forest'], [50, 45, 'seasonal_river']]) {
+  for (const [x, y, biome] of [[5, 5, 'desert'], [15, 15, 'city'], [40, 40, 'forest'], [30, 30, 'forest'], [60, 60, 'water'], [65, 65, 'forest'], [50, 45, 'seasonal_river']]) {
     assert.equal(at(features, x, y).length, 1); assert.equal(at(features, x, y)[0].biome, biome);
   }
   assert(report.coverageError < 1e-6); assert.equal(report.cityFeatures, 1);
   const cutForest = features.find(feature => feature.sourceId === 'wood');
-  assert.notDeepEqual(cutForest.parts, options.natureSources[1].parts, 'Water and higher priority nature cut the displayed forest');
+  assert.notDeepEqual(cutForest.parts, options.natureSources[1].parts, 'Higher priority water cuts the displayed forest');
   assert.deepEqual(cutForest.members, [options.natureSources[1]], 'The entire uncut source footprint remains inspectable');
   assert.notEqual(cutForest.members[0], options.natureSources[1], 'Source snapshots are independent objects');
   assert.deepEqual(options, before, 'Derived partition cannot edit source facts or source geometry');
+});
+
+test('city replaces sand inside its outline while parks and water keep their own ground', () => {
+  const options = {
+    ...empty,
+    natureSources: [polygon('regional-sand', 'sand', ring(0, 0, 100, 100)), polygon('city-park', 'park', ring(25, 25, 45, 45))],
+    cityFeatures: [polygon('town', 'city', ring(10, 10, 90, 90))],
+    waterAreas: [polygon('pond', 'water', ring(55, 55, 65, 65))],
+  };
+  const { features } = buildBiomeMap(baseWorld, options);
+  verifyPartition(features, 10000);
+  for (const [x, y, biome] of [[5, 5, 'sand'], [15, 15, 'city'], [30, 30, 'park'], [60, 60, 'water'], [80, 80, 'city']]) {
+    assert.equal(at(features, x, y).length, 1); assert.equal(at(features, x, y)[0].biome, biome);
+  }
+  const city = features.find(feature => feature.biome === 'city');
+  const sand = features.find(feature => feature.biome === 'sand');
+  assert.deepEqual(polygonIntersection(city.parts, sand.parts), [], 'Sand has an actual geometric cut around town, not an overlapping paint order');
 });
 
 test('a seasonal river removes all ground beneath its physical ribbon while retaining native width and original paths', () => {
@@ -84,7 +101,7 @@ test('deterministic priority and smaller equal-priority areas do not depend on i
   const first = buildBiomeMap(baseWorld, options);
   const reversed = Object.fromEntries(Object.entries(options).map(([key, values]) => [key, [...values].reverse()]));
   assert.deepEqual(buildBiomeMap(baseWorld, reversed), first);
-  assert.equal(at(first.features, 30, 30)[0].biome, 'sand');
+  assert.equal(at(first.features, 30, 30)[0].biome, 'scrub');
   assert.equal(at(first.features, 37, 37)[0].biome, 'scrub');
 });
 
@@ -110,6 +127,10 @@ test('the actual Nevada source produces complete exclusive biomes without changi
   const before = JSON.stringify(map), { features, report } = buildBiomeMap(map);
   assert.equal(JSON.stringify(map), before); assert.equal(map.buildings.length, 893);
   assert.equal(report.cityFeatures, 3); assert(report.byBiome.seasonal_river.features > 0); assert(report.coverageError < 1e-6);
+  assert.equal(report.waterLineFeatures, 33);
+  assert(!features.some(feature => feature.waterKind === 'river'), 'Generic Amargosa relation duplicates cannot turn mapped seasonal native ways into permanent water');
+  const originalRelation = features.flatMap(feature => feature.members || []).find(feature => feature.sourceId === 'relation-19574302');
+  assert(originalRelation); assert.equal(originalRelation.tags.intermittent, undefined, 'The relation source facts remain unchanged');
   assert.equal(new Set(features.map(feature => feature.id)).size, features.length);
   const sand = features.find(feature => feature.sourceId === 'relation-15569711');
   const originalSand = sand.members.find(feature => feature.sourceId === 'relation-15569711');

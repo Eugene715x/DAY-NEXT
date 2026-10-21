@@ -25,18 +25,6 @@ const cbBoxDistance = (point, bounds) => Math.hypot(Math.max(bounds.minX - point
 const cbUrbanUses = new Set(['residential', 'commercial', 'retail', 'industrial']);
 const cbSettlements = new Set(['city', 'town', 'village', 'hamlet', 'isolated_dwelling']);
 function cbHash(text) { let hash = 2166136261; for (const char of text) hash = Math.imul(hash ^ char.charCodeAt(0), 16777619) >>> 0; return hash.toString(36); }
-function cbSmoothRing(ring, iterations = 2) {
-  let points = ring.slice(0, -1);
-  for (let pass = 0; pass < iterations; pass++) {
-    const rounded = [];
-    for (let i = 0; i < points.length; i++) {
-      const a = points[i], b = points[(i + 1) % points.length];
-      rounded.push({ x: a.x * .75 + b.x * .25, y: a.y * .75 + b.y * .25 }, { x: a.x * .25 + b.x * .75, y: a.y * .25 + b.y * .75 });
-    }
-    points = rounded;
-  }
-  return [...points, { ...points[0] }];
-}
 function cbSimplifyLine(points, tolerance) {
   if (points.length <= 2) return points;
   const a = points[0], b = points.at(-1);
@@ -47,10 +35,15 @@ function cbSimplifyLine(points, tolerance) {
   }
   return selected < 0 ? [a, b] : [...cbSimplifyLine(points.slice(0, selected + 1), tolerance).slice(0, -1), ...cbSimplifyLine(points.slice(selected), tolerance)];
 }
-function cbSmoothParts(parts, metersPerUnit) {
+// Keep a town's measured extent, but replace its fine sampling contour with
+// deliberate straight edges. Unlike corner rounding, simplification retains
+// actual bends and produces a compact polygon rather than a soft halo.
+function cbAngularParts(parts, metersPerUnit) {
+  const tolerance = 45 / metersPerUnit;
   return parts.map(rings => rings.map(ring => {
-    const rounded = cbSmoothRing(ring), half = Math.floor((rounded.length - 1) / 2);
-    return [...cbSimplifyLine(rounded.slice(0, half + 1), .35 / metersPerUnit).slice(0, -1), ...cbSimplifyLine(rounded.slice(half), .35 / metersPerUnit)];
+    const half = Math.floor((ring.length - 1) / 2);
+    const points = [...cbSimplifyLine(ring.slice(0, half + 1), tolerance).slice(0, -1), ...cbSimplifyLine(ring.slice(half), tolerance)];
+    return points.length >= 4 ? points : ring;
   }));
 }
 
@@ -218,14 +211,14 @@ export function buildCityBiomes(world = {}) {
   for (let y = minY; y <= maxY; y++) for (let x = minX; x <= maxX; x++) if (field[y * stride + x]) for (const [cx, cy] of [[x - 1, y - 1], [x, y - 1], [x - 1, y], [x, y]]) activeCells.add(cy * cols + cx);
   const contours = cbDensityContours(field, activeCells, cols, rows, cellSize, .48);
   const rectangle = [[[{ x: 0, y: 0 }, { x: world.width, y: 0 }, { x: world.width, y: world.height }, { x: 0, y: world.height }, { x: 0, y: 0 }]]];
-  let parts = polygonIntersection(polygonUnion(cbSmoothParts(contours.map(part => [part[0]]), metersPerUnit)), rectangle);
+  let parts = polygonIntersection(polygonUnion(cbAngularParts(contours.map(part => [part[0]]), metersPerUnit)), rectangle);
   if (airports.length) parts = polygonDifference(parts, airports);
   const features = parts.filter(part => Math.abs(cbArea(part[0])) * metersPerUnit ** 2 >= 1500).map(part => {
     const bounds = cbBounds(part[0]), related = selected.filter(building => cbBoxDistance(building.point, bounds) * metersPerUnit <= 110), center = { x: (bounds.minX + bounds.maxX) / 2, y: (bounds.minY + bounds.maxY) / 2 };
     const nearbyPlaces = places.map(place => ({ ...place, distance: Math.hypot(place.point.x - center.x, place.point.y - center.y) * metersPerUnit })).filter(place => place.distance <= 1500).sort((a, b) => a.distance - b.distance || String(a.id).localeCompare(String(b.id)));
     const sourceIds = [...new Set([...related.map(building => building.id), ...plots.filter(record => record.parts.flat(2).some(point => point.x >= bounds.minX && point.x <= bounds.maxX && point.y >= bounds.minY && point.y <= bounds.maxY)).map(record => cbSourceId(record.feature)), ...nearbyPlaces.slice(0, 1).map(place => place.id)])].filter(Boolean).sort();
     const id = `game-city-${cbHash(sourceIds.join('|'))}`, name = nearbyPlaces[0]?.name || 'Городская местность';
-    return { id, sourceId: id, sourceIds, name, biome: 'city', type: 'city', kind: 'city', geometry: 'polygon', points: part[0], rings: part, parts: [part], derived: true, city: true, fill: '#939797', provenance: { method: 'coherent-development-envelope', sourceIds, buildingCount: related.length, sampleSpacingMeters: cellSize * metersPerUnit, buildingHaloMeters: 110, closeGapsMeters: 120, filledInteriorGaps: true, sourceBoundary: false } };
+    return { id, sourceId: id, sourceIds, name, biome: 'city', type: 'city', kind: 'city', geometry: 'polygon', points: part[0], rings: part, parts: [part], derived: true, city: true, fill: '#969b99', provenance: { method: 'coherent-development-envelope', sourceIds, buildingCount: related.length, sampleSpacingMeters: cellSize * metersPerUnit, buildingHaloMeters: 110, closeGapsMeters: 120, filledInteriorGaps: true, contourStyle: 'angular', simplifyToleranceMeters: 45, sourceBoundary: false } };
   });
-  return { features, report: { method: 'coherent-development-envelope', cities: features.length, sourceBuildings: (world.buildings || []).length, eligibleBuildings: buildings.length, excludedAirportBuildings: (world.buildings || []).length - buildings.length, selectedBuildings: selected.length, sourcePlots: plots.length, sourceClusters: clusters.length, sampleSpacingMeters: cellSize * metersPerUnit, vertices: features.reduce((sum, feature) => sum + feature.parts.flat(2).length, 0), byCity: features.map(feature => ({ id: feature.id, name: feature.name, buildingCount: feature.provenance.buildingCount })) } };
+  return { features, report: { method: 'coherent-development-envelope', cities: features.length, sourceBuildings: (world.buildings || []).length, eligibleBuildings: buildings.length, excludedAirportBuildings: (world.buildings || []).length - buildings.length, selectedBuildings: selected.length, sourcePlots: plots.length, sourceClusters: clusters.length, sampleSpacingMeters: cellSize * metersPerUnit, contourStyle: 'angular', simplifyToleranceMeters: 45, vertices: features.reduce((sum, feature) => sum + feature.parts.flat(2).length, 0), byCity: features.map(feature => ({ id: feature.id, name: feature.name, buildingCount: feature.provenance.buildingCount })) } };
 }
