@@ -1,0 +1,91 @@
+{
+  "version": 1,
+  "provider": "USGS 3D Elevation Program (3DEP)",
+  "serviceUrl": "https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer",
+  "exportRequestUrl": "https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer/exportImage?f=json&bbox=-116.860084635417%2C36.8599324324324%2C-116.729915364583%2C36.9400675675676&bboxSR=4326&imageSR=4326&size=769%2C593&format=tiff&pixelType=F32&noData=-9999&noDataInterpretation=esriNoDataMatchAny&adjustAspectRatio=false&interpolation=RSP_BilinearInterpolation&renderingRule=%7B%22rasterFunction%22%3A%22None%22%7D",
+  "exportParameters": {
+    "f": "json",
+    "bbox": "-116.860084635417,36.8599324324324,-116.729915364583,36.9400675675676",
+    "bboxSR": "4326",
+    "imageSR": "4326",
+    "size": "769,593",
+    "format": "tiff",
+    "pixelType": "F32",
+    "noData": "-9999",
+    "noDataInterpretation": "esriNoDataMatchAny",
+    "adjustAspectRatio": "false",
+    "interpolation": "RSP_BilinearInterpolation",
+    "renderingRule": "{\"rasterFunction\":\"None\"}"
+  },
+  "downloadUrl": "https://elevation.nationalmap.gov/arcgis/rest/directories/elevation_output/3DEPElevation_ImageServer/_ags_3be626a3_7d5b_4d5f_aef6_49781c1f1791.tif",
+  "downloadedAt": "2026-10-22T17:59:00.412966+00:00",
+  "sourceFile": "maps/source/beatty-elevation.tif",
+  "sourceBytes": 2294864,
+  "sha256": "907063fbe4009343df30c29595f4ed5433b8abd6bc1463575c7f334c7c6ccc24",
+  "bbox": [
+    -116.86,
+    36.86,
+    -116.73,
+    36.94
+  ],
+  "columns": 769,
+  "rows": 593,
+  "units": "m",
+  "rowOrder": "north-to-south",
+  "samplePlacement": "bbox endpoints are sample centres; columns west-to-east",
+  "sampling": "USGS service bilinear resampling; no local synthetic terrain or gap filling",
+  "storageRoundingMeters": 0.1,
+  "sourceResolution": "Dynamic USGS 3DEP service; native product resolution varies. The exported grid spacing is recorded separately.",
+  "verticalDatum": null,
+  "verticalDatumNote": "No vertical datum transformation performed. Service metadata and original GeoTIFF retained; an unreported vertical datum is not inferred.",
+  "acquisitionDate": null,
+  "acquisitionDateNote": "Download time is not the terrain survey date; the service mosaics source surveys.",
+  "attribution": "Elevation: U.S. Geological Survey, 3D Elevation Program (3DEP).",
+  "copyrightText": "USGS National Map 3D Elevation Program (3DEP). October 01, 2026.",
+  "license": "USGS-authored U.S. elevation data are public domain; retain source attribution.",
+  "licenseUrl": "https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits",
+  "responseHeaders": {
+    "Content-Type": "image/tiff",
+    "Content-Length": "2294864",
+    "ETag": "\"1a164c42903\""
+  },
+  "gridSpacingMetersApprox": {
+    "x": 15.069,
+    "y": 15.043
+  },
+  "statistics": {
+    "minimumMeters": 926.69,
+    "maximumMeters": 1824.635,
+    "meanMeters": 1130.137,
+    "validSamples": 456017,
+    "noDataSamples": 0
+  },
+  "raster": {
+    "crs": "EPSG:4326",
+    "transform": [
+      0.00016927083333420385,
+      0.0,
+      -116.860084635417,
+      0.0,
+      -0.00013513513513524638,
+      36.9400675675676
+    ],
+    "nodata": -9999.0,
+    "dataType": "float32",
+    "bands": 1,
+    "width": 769,
+    "height": 593,
+    "tags": {
+      "DataType": "Generic",
+      "AREA_OR_POINT": "Area"
+    },
+    "northWestSample": [
+      -116.86000000000033,
+      36.94000000000003
+    ],
+    "southEastSample": [
+      -116.72999999999966,
+      36.85999999999997
+    ]
+  }
+}
