@@ -377,13 +377,43 @@ export function createDetailRenderer(world) {
   }
 
   const roadStyles = {
-    highway: { edge: '#706e54', core: '#c8bb8e', centre: '#eee0ae' },
-    road: { edge: '#77775d', core: '#c5b891', centre: '#e4d7ad' },
-    street: { edge: '#82816a', core: '#d2c6a1' },
+    highway: { edge: '#292d2f', core: '#45494b', centre: '#b8b8a8' },
+    road: { edge: '#53595b', core: '#747a7c', centre: '#c5c7ba' },
+    street: { edge: '#62686a', core: '#858b8c' },
     track: { edge: '#898064', core: '#b4a582' },
     trail: { edge: '#77775b', core: '#d3c6a0' },
     railway: { edge: '#485647', core: '#a29d7c' },
   };
+
+  const unpavedSurfaces = new Set(['unpaved', 'gravel', 'fine_gravel', 'compacted', 'dirt', 'earth', 'ground', 'grass', 'sand', 'mud', 'clay', 'pebblestone', 'rock', 'woodchips']);
+  const pavedSurfaces = new Set(['paved', 'asphalt', 'concrete', 'concrete:plates', 'concrete:lanes', 'paving_stones', 'sett', 'cobblestone', 'metal']);
+
+  function roadPaintStyle(feature, classId) {
+    if (classId === 'railway') return roadStyles.railway;
+    const surfaces = String(feature.tags?.surface || feature.surface || '').split(';').map(surface => surface.trim());
+    if (surfaces.some(surface => unpavedSurfaces.has(surface))) return roadStyles.track;
+    if (surfaces.some(surface => pavedSurfaces.has(surface))) return roadStyles[['track', 'trail'].includes(classId) ? 'street' : classId] || roadStyles.road;
+    return roadStyles[classId] || roadStyles.road;
+  }
+
+  function roadPaintSections(record) {
+    if (record.paintSections) return record.paintSections;
+    const members = record.feature.members?.length ? record.feature.members : [record.feature];
+    const groups = new Map();
+    for (const member of members) {
+      const style = roadPaintStyle(member, record.roadClass);
+      if (!groups.has(style)) groups.set(style, []);
+      groups.get(style).push(...(member.paths || [member.points || []]));
+    }
+    if (groups.size === 1) return (record.paintSections = [{ ...record, paintStyle: groups.keys().next().value }]);
+    // A connected selectable network can contain asphalt and gravel. Style only
+    // the measured member paths; grouping them must not recolor its whole extent.
+    return (record.paintSections = [...groups].map(([paintStyle, paths]) => {
+      const path = new Path2D();
+      for (const points of paths) points.forEach((point, index) => index ? path.lineTo(point.x, point.y) : path.moveTo(point.x, point.y));
+      return { ...record, path, paintStyle };
+    }));
+  }
 
   function roadWidth(record, zoom) {
     const fine = record.roadClass === 'track' || record.roadClass === 'trail';
@@ -395,7 +425,7 @@ export function createDetailRenderer(world) {
   function paintRoadBatch(ctx, records, zoom, hoveredId) {
     // Finish every casing before painting any interior in the same level. Shared
     // endpoints and junctions then form a continuous surface without end caps.
-    const ordered = records;
+    const ordered = records.flatMap(roadPaintSections);
     ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.setLineDash([]);
     for (let start = 0; start < ordered.length;) {
       let end = start + 1;
@@ -407,7 +437,7 @@ export function createDetailRenderer(world) {
         ctx.lineWidth = roadWidth(record, zoom).stroke + 4 / zoom; ctx.stroke(record.path);
       }
       for (const pass of ['edge', 'core']) for (let i = start; i < end; i++) {
-        const record = ordered[i], style = roadStyles[record.roadClass] || roadStyles.road;
+        const record = ordered[i], style = record.paintStyle;
         const tunnel = drFlag(record.feature.tunnel ?? record.feature.tags?.tunnel);
         ctx.globalAlpha = tunnel ? .58 : 1;
         ctx.strokeStyle = pass === 'edge' && drFlag(record.feature.bridge ?? record.feature.tags?.bridge) ? '#4b5847' : style[pass];
@@ -415,7 +445,7 @@ export function createDetailRenderer(world) {
       }
       // Only a highway/road centre marking is dashed; the mapped surface stays solid.
       for (let i = start; i < end; i++) {
-        const record = ordered[i], width = roadWidth(record, zoom).core, style = roadStyles[record.roadClass] || roadStyles.road;
+        const record = ordered[i], width = roadWidth(record, zoom).core, style = record.paintStyle;
         ctx.globalAlpha = drFlag(record.feature.tunnel ?? record.feature.tags?.tunnel) ? .58 : 1;
         if (record.roadClass === 'railway' && zoom >= 1.5) {
           ctx.strokeStyle = '#52634d'; ctx.lineWidth = Math.max(width + .6, 4 / zoom);
@@ -633,6 +663,13 @@ export function createDetailRenderer(world) {
     return Math.max(record.width, (dry ? 2 : 2.4) / zoom) + (dry ? 1.5 : 1) / zoom;
   }
 
+  function waterDash(record, zoom) {
+    // Readable screen minima blend continuously into native-width proportions.
+    // The gap includes both round caps, leaving a real opening at every zoom.
+    const width = waterWidth(record, zoom);
+    return [Math.hypot(7 / zoom, width * 2.2), width + Math.hypot(4 / zoom, width * .8)];
+  }
+
   function clipRiverInk(ctx, record) {
     const masks = record.feature.inkExclusionParts;
     if (!masks?.length) return;
@@ -658,15 +695,15 @@ export function createDetailRenderer(world) {
     if (!record.inkPath) return;
     const hovered = drAllowsHighlight(record) && hoveredId === feature.id, dry = drDry(feature);
     ctx.save(); clipRiverInk(ctx, record);
-    ctx.lineJoin = 'round'; ctx.lineCap = 'butt';
-    ctx.setLineDash(dry ? [6 / zoom, 4 / zoom] : []);
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    ctx.setLineDash(dry ? waterDash(record, zoom) : []);
     if (hovered) { ctx.strokeStyle = 'rgba(233,236,172,.55)'; ctx.lineWidth = waterWidth(record, zoom) + 3 / zoom; ctx.stroke(record.inkPath); }
     ctx.strokeStyle = '#85abc4'; ctx.lineWidth = waterWidth(record, zoom); ctx.stroke(record.inkPath);
     ctx.strokeStyle = dry ? '#4c91bd' : '#3f7eaa'; ctx.lineWidth = Math.max(record.width, 1.1 / zoom); ctx.stroke(record.inkPath);
     ctx.setLineDash([]); ctx.restore();
   }
 
-  function paintBiome(ctx, record, zoom, hoveredId) {
+  function paintBiome(ctx, record, zoom, hoveredId, translucent = false) {
     if (record.geometry !== 'polygon') { paintDetail(ctx, record, zoom, hoveredId); return; }
     const colors = {
       city: '#969b99', forest: '#748c5c', wetland: '#81987a', grassland: '#a4af79', scrub: '#9ba378',
@@ -677,11 +714,18 @@ export function createDetailRenderer(world) {
       landfill: '#9c9b7e', glacier: '#c3d3ce', plain: '#a6ab85', wasteland: '#a7a17d',
       seasonal_river: '#a7a17d', dry_riverbed: '#a7a17d', water: '#3f7eaa', river: '#3f7eaa', lake: '#3f7eaa',
     };
+    const opacity = record.feature.water && !record.inkPath ? .78 : record.fallback ? .10 : ({
+      city: .42, forest: .38, wetland: .38, park: .38, garden: .36, recreation: .34,
+      cemetery: .34, sand: .30, desert: .26, rock: .28, quarry: .34,
+      seasonal_river: .12, dry_riverbed: .12,
+    })[record.biome] || .32;
+    ctx.globalAlpha = translucent ? opacity : 1;
     ctx.fillStyle = record.feature.water && !record.inkPath ? '#3f7eaa' : colors[record.biome] || colors.wasteland;
     ctx.fill(record.path, record.fillRule);
     if (drAllowsHighlight(record) && hoveredId === record.feature.id && !record.fallback) {
       ctx.fillStyle = 'rgba(224,228,161,.12)'; ctx.fill(record.path, record.fillRule);
     }
+    ctx.globalAlpha = 1;
   }
 
   function paintRoadSurface(ctx, record, zoom, hoveredId) {
@@ -710,15 +754,16 @@ export function createDetailRenderer(world) {
     // The fallback biome supplies an opaque matte for antialiased shared edges.
     // Without it, adjacent exact polygons can leave a translucent pixel seam.
     if (layers.biomes) { ctx.fillStyle = '#a7a17d'; ctx.fillRect(0, 0, world.width, world.height); }
-    // First complete the opaque ground plane, then ink its watercourses. This
-    // prevents a neighbouring land fill erasing a river's readable screen width.
-    for (const record of visible) if (record.layer === 'biomes' && record.geometry === 'polygon') paintBiome(ctx, record, view.zoom, hoveredId);
-    if (typeof view.groundOverlay === 'function') {
+    const relief = typeof view.groundOverlay === 'function';
+    if (relief) {
       ctx.save();
       try { view.groundOverlay(ctx, view); } finally { ctx.restore(); }
-      // Water is part of the biome ground, but remains visible over elevation.
-      for (const record of visible) if (record.layer === 'biomes' && record.geometry === 'polygon' && record.feature.water && !record.inkPath) paintBiome(ctx, record, view.zoom, hoveredId);
+      ctx.globalAlpha = 1;
     }
+    // Biomes tint the measured relief. Their exclusive geometry means opacity
+    // never accumulates from overlapping source zones. Without relief they form
+    // the same complete opaque ground plane used by the ordinary map.
+    for (const record of visible) if (record.layer === 'biomes' && record.geometry === 'polygon') paintBiome(ctx, record, view.zoom, hoveredId, relief);
     for (const record of visible) if (record.layer === 'biomes' && record.inkPath) paintWater(ctx, record, view.zoom, hoveredId);
     let roadsPainted = false, powerPainted = false;
     for (const record of visible) {
@@ -756,8 +801,8 @@ export function createDetailRenderer(world) {
     if (record.geometry === 'point') paintDetail(ctx, record, view.zoom, record.feature.id);
     else if (record.inkPath) {
       clipRiverInk(ctx, record);
-      ctx.lineJoin = 'round'; ctx.lineCap = 'butt';
-      ctx.setLineDash(drDry(record.feature) ? [6 / view.zoom, 4 / view.zoom] : []);
+      ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+      ctx.setLineDash(drDry(record.feature) ? waterDash(record, view.zoom) : []);
       const width = waterWidth(record, view.zoom);
       ctx.strokeStyle = 'rgba(238,238,169,.65)'; ctx.lineWidth = width + 4 / view.zoom; ctx.stroke(record.inkPath);
       ctx.strokeStyle = '#f2efb5'; ctx.lineWidth = Math.max(1.25 / view.zoom, width * .28); ctx.stroke(record.inkPath);
@@ -838,8 +883,8 @@ export function createDetailRenderer(world) {
   function riverInkHit(record, x, y, tolerance) {
     if (!record.inkPaths || (record.feature.inkExclusionParts || []).some(rings => drInPolygon(x, y, rings))) return null;
     let best = null, score = Infinity;
-    const halfWidth = (waterWidth(record, lastZoom) + (record.feature.id === lastHoveredId ? 4 / lastZoom : 0)) / 2;
-    const period = 10 / lastZoom, dashLength = 6 / lastZoom, dry = drDry(record.feature);
+    const halfWidth = waterWidth(record, lastZoom) / 2;
+    const [dashLength, gapLength] = waterDash(record, lastZoom), period = dashLength + gapLength, dry = drDry(record.feature);
     for (const path of record.inkPaths) {
       let offset = 0;
       for (let i = 1; i < path.length; i++) {
@@ -855,11 +900,12 @@ export function createDetailRenderer(world) {
           if (end < start) continue;
           const nearest = drClamp(offset + along, start, end) - offset;
           const px = a.x + nearest / length * dx, py = a.y + nearest / length * dy;
-          // Butt caps leave real gaps. Distance along a cap counts towards the
-          // pointer tolerance rather than silently rounding away the dash gap.
+          // Match the round dash caps used by the paint pass. The shared gap
+          // formula reserves their full diameter, so the centre of a gap stays
+          // ground rather than acquiring an expanded river hit footprint.
           const longitudinal = Math.abs(along - nearest);
           const perpendicular = Math.abs((x - a.x) * dy - (y - a.y) * dx) / length;
-          const distance = Math.hypot(Math.max(0, perpendicular - halfWidth), longitudinal);
+          const distance = Math.max(0, Math.hypot(perpendicular, longitudinal) - halfWidth);
           if (distance <= tolerance && distance < score) { score = distance; best = { x: px, y: py }; }
         }
         offset += length;

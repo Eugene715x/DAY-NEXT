@@ -1,0 +1,743 @@
+{
+  "version": "0.16.0",
+  "checkedAt": "2026-10-22T18:42:34.119573+00:00",
+  "status": "PASS",
+  "environment": {
+    "browser": "Chromium",
+    "viewport": {
+      "width": 1440,
+      "height": 960
+    },
+    "deviceScaleFactor": 1
+  },
+  "offline": {
+    "errors": [],
+    "requests": 0
+  },
+  "preservation": {
+    "buildings": 893,
+    "rolesColors": true,
+    "roads": 83,
+    "power": 6
+  },
+  "sourceHashes": {
+    "beatty.osm": "44f3641860c1e3966edf259c5487b89f1997699aec77cff783360f8c66414d99",
+    "beatty-sand.osm": "a11681c538c5d897758cfafdadfaf325fab4cd1bc529acbaeb5766b098fed297",
+    "beatty-elevation.tif": "907063fbe4009343df30c29595f4ed5433b8abd6bc1463575c7f334c7c6ccc24"
+  },
+  "navigation": {
+    "width": 3000,
+    "height": 2325,
+    "cellSize": 6.25,
+    "cols": 480,
+    "rows": 372,
+    "cellCount": 178560,
+    "metadata": {
+      "type": "osm",
+      "version": 1,
+      "relief": true,
+      "navigationResolutionMeters": 24.082770768873456,
+      "sourceCellSize": 25,
+      "navigationSubdivision": 4,
+      "maxPoiSnapMeters": 100,
+      "requestedStart": {
+        "x": 2341.664,
+        "y": 888.292
+      },
+      "componentCount": 1,
+      "startSnapDistanceMeters": 0,
+      "unreachablePoiCount": 0,
+      "movement": {
+        "cells": 178560,
+        "cellSize": 6.25,
+        "resolutionMeters": 24.082770768873456,
+        "elevationSamples": 178560,
+        "roadCells": 15898,
+        "roadSources": 669,
+        "permanentWaterCells": 179,
+        "biomeCounts": {
+          "wasteland": 118157,
+          "rock": 2883,
+          "seasonal_river": 1008,
+          "scrub": 500,
+          "city": 5502,
+          "quarry": 2105,
+          "forest": 24,
+          "grassland": 6,
+          "park": 34,
+          "recreation": 132,
+          "water": 179,
+          "cemetery": 51,
+          "sand": 46540,
+          "desert": 1439
+        },
+        "components": 1,
+        "unreachablePois": 0
+      }
+    }
+  },
+  "layerVisibilityDoesNotChangePhysics": true,
+  "tint": {
+    "heightOnly": {
+      "city1": {
+        "rgba": [
+          104,
+          104,
+          104,
+          255
+        ],
+        "biome": "city"
+      },
+      "city2": {
+        "rgba": [
+          128,
+          128,
+          128,
+          255
+        ],
+        "biome": "city"
+      },
+      "forest": {
+        "rgba": [
+          160,
+          160,
+          160,
+          255
+        ],
+        "biome": "forest"
+      },
+      "sand": {
+        "rgba": [
+          169,
+          169,
+          169,
+          255
+        ],
+        "biome": "sand"
+      },
+      "water": {
+        "rgba": [
+          188,
+          188,
+          188,
+          255
+        ],
+        "biome": "water"
+      },
+      "fallback": {
+        "rgba": [
+          85,
+          85,
+          85,
+          255
+        ],
+        "biome": "city"
+      }
+    },
+    "biomeOnly": {
+      "city1": {
+        "rgba": [
+          150,
+          155,
+          153,
+          255
+        ],
+        "biome": "city"
+      },
+      "city2": {
+        "rgba": [
+          150,
+          155,
+          153,
+          255
+        ],
+        "biome": "city"
+      },
+      "forest": {
+        "rgba": [
+          116,
+          140,
+          92,
+          255
+        ],
+        "biome": "forest"
+      },
+      "sand": {
+        "rgba": [
+          197,
+          181,
+          131,
+          255
+        ],
+        "biome": "sand"
+      },
+      "water": {
+        "rgba": [
+          63,
+          126,
+          170,
+          255
+        ],
+        "biome": "water"
+      },
+      "fallback": {
+        "rgba": [
+          150,
+          155,
+          153,
+          255
+        ],
+        "biome": "city"
+      }
+    },
+    "combined": {
+      "city1": {
+        "rgba": [
+          123,
+          125,
+          124,
+          255
+        ],
+        "biome": "city"
+      },
+      "city2": {
+        "rgba": [
+          137,
+          139,
+          138,
+          255
+        ],
+        "biome": "city"
+      },
+      "forest": {
+        "rgba": [
+          143,
+          152,
+          134,
+          255
+        ],
+        "biome": "forest"
+      },
+      "sand": {
+        "rgba": [
+          177,
+          173,
+          158,
+          255
+        ],
+        "biome": "sand"
+      },
+      "water": {
+        "rgba": [
+          90,
+          139,
+          174,
+          255
+        ],
+        "biome": "water"
+      },
+      "fallback": {
+        "rgba": [
+          112,
+          114,
+          113,
+          255
+        ],
+        "biome": "city"
+      }
+    },
+    "cityUnderlyingContrastRetained": 0.5833333333333334,
+    "opaqueGroundAlphaFailures": [],
+    "quietHoverOverlayChanged": false
+  },
+  "roadPixels": {
+    "highway": [
+      69,
+      73,
+      75,
+      255
+    ],
+    "road": [
+      116,
+      122,
+      124,
+      255
+    ],
+    "street": [
+      133,
+      139,
+      140,
+      255
+    ],
+    "track": [
+      180,
+      165,
+      130,
+      255
+    ],
+    "unpavedStreet": [
+      180,
+      165,
+      130,
+      255
+    ]
+  },
+  "riverDashes": [
+    {
+      "zoom": 0.32,
+      "bluePixels": 174,
+      "gapPixels": 56,
+      "cap": "round",
+      "dashWorld": [
+        32.51952362060547,
+        26.195693969726562
+      ],
+      "outerWidthWorld": 10.9375,
+      "dashOutsideRibbonPick": "seasonal_river",
+      "gapOutsideRibbonPick": "desert"
+    },
+    {
+      "zoom": 0.6,
+      "bluePixels": 332,
+      "gapPixels": 100,
+      "cap": "round",
+      "dashWorld": [
+        22.040895462036133,
+        18.022838592529297
+      ],
+      "outerWidthWorld": 8.5,
+      "dashOutsideRibbonPick": "seasonal_river",
+      "gapOutsideRibbonPick": "desert"
+    },
+    {
+      "zoom": 1,
+      "bluePixels": 569,
+      "gapPixels": 151,
+      "cap": "round",
+      "dashWorld": [
+        17.92344856262207,
+        14.711102485656738
+      ],
+      "outerWidthWorld": 7.5,
+      "dashOutsideRibbonPick": "seasonal_river",
+      "gapOutsideRibbonPick": "desert"
+    },
+    {
+      "zoom": 2,
+      "bluePixels": 759,
+      "gapPixels": 201,
+      "cap": "round",
+      "dashWorld": [
+        15.25688362121582,
+        12.508472442626953
+      ],
+      "outerWidthWorld": 6.75,
+      "dashOutsideRibbonPick": "seasonal_river",
+      "gapOutsideRibbonPick": "desert"
+    },
+    {
+      "zoom": 4,
+      "bluePixels": 761,
+      "gapPixels": 199,
+      "cap": "round",
+      "dashWorld": [
+        14.133758544921875,
+        11.572114944458008
+      ],
+      "outerWidthWorld": 6.375,
+      "dashOutsideRibbonPick": "seasonal_river",
+      "gapOutsideRibbonPick": "desert"
+    },
+    {
+      "zoom": 6,
+      "bluePixels": 751,
+      "gapPixels": 209,
+      "cap": "round",
+      "dashWorld": [
+        13.799406051635742,
+        11.294248580932617
+      ],
+      "outerWidthWorld": 6.25,
+      "dashOutsideRibbonPick": "seasonal_river",
+      "gapOutsideRibbonPick": "desert"
+    },
+    {
+      "zoom": 12,
+      "bluePixels": 772,
+      "gapPixels": 188,
+      "cap": "round",
+      "dashWorld": [
+        13.48762035369873,
+        11.036324501037598
+      ],
+      "outerWidthWorld": 6.125,
+      "dashOutsideRibbonPick": "seasonal_river",
+      "gapOutsideRibbonPick": "desert"
+    },
+    {
+      "zoom": 24,
+      "bluePixels": 728,
+      "gapPixels": 232,
+      "cap": "round",
+      "dashWorld": [
+        13.340688705444336,
+        10.915363311767578
+      ],
+      "outerWidthWorld": 6.0625,
+      "dashOutsideRibbonPick": "seasonal_river",
+      "gapOutsideRibbonPick": "desert"
+    }
+  ],
+  "tooltip": "Город · Beatty · 1018 м",
+  "buildingCard": "ЖИЛЬЁ\n\nЖилой дом\n\nИгровое назначение\nБиом: Город\nВысота: 1014 м\nПрофили ресурсов: Бытовые припасы, Строительные материалы",
+  "outsideCoverage": {
+    "available": false,
+    "height": null,
+    "elevatedCells": 0,
+    "movementPrepared": true
+  },
+  "performance": {
+    "idle": {
+      "frames": 120,
+      "fps": 60.00300015000751,
+      "maxFrameMs": 16.80000000000109
+    },
+    "cursor": {
+      "frames": 120,
+      "fps": 59.50609937518595,
+      "maxFrameMs": 33.29999999999927
+    },
+    "detailed": {
+      "frames": 120,
+      "fps": 59.99999999999999,
+      "maxFrameMs": 16.80000000000291
+    }
+  },
+  "staticCacheReused": true,
+  "movementChecks": {
+    "normal": {
+      "zoom": 0.3225806451612903,
+      "speedMode": 1,
+      "controlledFrames": 50,
+      "millisecondsPerFrame": 40,
+      "elapsedGameMinutes": 3.999999999999204,
+      "walkedMeters": 262.0468840688171,
+      "position": {
+        "x": 2276.563091632605,
+        "y": 868.6247333292428
+      },
+      "routeDurationMinutes": 38.30680362573231,
+      "remainingDurationMinutes": 34.306803625732336
+    },
+    "zoomed": {
+      "zoom": 6,
+      "speedMode": 1,
+      "controlledFrames": 50,
+      "millisecondsPerFrame": 40,
+      "elapsedGameMinutes": 3.999999999999204,
+      "walkedMeters": 262.0468840688171,
+      "position": {
+        "x": 2276.563091632605,
+        "y": 868.6247333292428
+      },
+      "routeDurationMinutes": 38.30680362573231,
+      "remainingDurationMinutes": 34.306803625732336
+    },
+    "fast": {
+      "zoom": 0.3225806451612903,
+      "speedMode": 3,
+      "controlledFrames": 50,
+      "millisecondsPerFrame": 40,
+      "elapsedGameMinutes": 12.000000000000455,
+      "walkedMeters": 767.8855989303308,
+      "position": {
+        "x": 2150.896419647937,
+        "y": 830.6602868794159
+      },
+      "routeDurationMinutes": 38.30680362573231,
+      "remainingDurationMinutes": 26.30680362573229
+    },
+    "normalTriple": {
+      "zoom": 0.3225806451612903,
+      "speedMode": 1,
+      "controlledFrames": 150,
+      "millisecondsPerFrame": 40,
+      "elapsedGameMinutes": 11.999999999997613,
+      "walkedMeters": 767.8855989303312,
+      "position": {
+        "x": 2150.896419647937,
+        "y": 830.6602868794159
+      },
+      "routeDurationMinutes": 38.30680362573231,
+      "remainingDurationMinutes": 26.306803625732403
+    }
+  },
+  "movementAssertions": {
+    "sameTimeSamePositionAtDifferentZooms": true,
+    "timeAcceleration3xMatches1xTripleDuration": true,
+    "remainingEtaDecreasesByConsumedTravelTime": true
+  },
+  "physicsOracle": {
+    "status": "PASS",
+    "fixtures": [
+      {
+        "name": "sealed diagonal corner",
+        "reachable": false
+      },
+      {
+        "name": "one blocked diagonal side",
+        "reachable": true,
+        "durationMinutes": 0.3,
+        "gridDijkstraMinutes": 0.3,
+        "points": 3,
+        "distance": 20
+      },
+      {
+        "name": "wetland detour",
+        "reachable": true,
+        "durationMinutes": 1.0242640687119284,
+        "gridDijkstraMinutes": 1.0242640687119284,
+        "points": 4,
+        "distance": 68.2842712474619
+      },
+      {
+        "name": "sand detour",
+        "reachable": true,
+        "durationMinutes": 1.0242640687119284,
+        "gridDijkstraMinutes": 1.0242640687119284,
+        "points": 4,
+        "distance": 68.2842712474619
+      },
+      {
+        "name": "fast road detour",
+        "reachable": true,
+        "durationMinutes": 0.8671875,
+        "gridDijkstraMinutes": 0.8671875,
+        "points": 2,
+        "distance": 60
+      },
+      {
+        "name": "bridge-only crossing",
+        "reachable": true,
+        "durationMinutes": 0.9200536896324726,
+        "gridDijkstraMinutes": 0.9914515687119285,
+        "points": 3,
+        "distance": 63.591736031174506
+      },
+      {
+        "name": "ridge detour",
+        "reachable": true,
+        "durationMinutes": 1.2975422309809326,
+        "gridDijkstraMinutes": 1.3242640687119285,
+        "points": 4,
+        "distance": 86.50281539872884
+      }
+    ],
+    "randomized": {
+      "cases": 80,
+      "reachable": 75,
+      "unreachable": 5,
+      "maxReturnedToDijkstraRatio": 1.0000000000000002
+    },
+    "advancement": {
+      "uphillMinutes": 2.0546481000851564,
+      "downhillMinutes": 1.2472044321686817,
+      "flatRouteMinutes": 1.3499999999999999,
+      "halfTimeMidpoint": true,
+      "exactArrival": true
+    },
+    "analyticModel": {
+      "flatExpectedMinutes": 1.35,
+      "mixedExpectedMinutes": 1.7723028487370835,
+      "mixedActualMinutes": 1.7723028487370838,
+      "mixedExpectedHalfPosition": 56.49549278846153,
+      "mixedActualHalfPosition": 56.49549278846153,
+      "legacyHeightIgnored": true
+    }
+  },
+  "actualMapPhysics": {
+    "world": {
+      "width": 3000,
+      "height": 2325,
+      "cellSize": 6.25,
+      "cols": 480,
+      "rows": 372,
+      "cells": 178560,
+      "metadata": {
+        "type": "osm",
+        "version": 1,
+        "relief": true,
+        "navigationResolutionMeters": 24.082770768873456,
+        "sourceCellSize": 25,
+        "navigationSubdivision": 4,
+        "maxPoiSnapMeters": 100,
+        "requestedStart": {
+          "x": 2341.664,
+          "y": 888.292
+        },
+        "componentCount": 1,
+        "startSnapDistanceMeters": 0,
+        "unreachablePoiCount": 0,
+        "movement": {
+          "cells": 178560,
+          "cellSize": 6.25,
+          "resolutionMeters": 24.082770768873456,
+          "elevationSamples": 178560,
+          "roadCells": 15898,
+          "roadSources": 669,
+          "permanentWaterCells": 179,
+          "biomeCounts": {
+            "wasteland": 118157,
+            "rock": 2883,
+            "seasonal_river": 1008,
+            "scrub": 500,
+            "city": 5502,
+            "quarry": 2105,
+            "forest": 24,
+            "grassland": 6,
+            "park": 34,
+            "recreation": 132,
+            "water": 179,
+            "cemetery": 51,
+            "sand": 46540,
+            "desert": 1439
+          },
+          "components": 1,
+          "unreachablePois": 0
+        }
+      }
+    },
+    "prepMs": 380.1161139999999,
+    "requestedDestinations": 49,
+    "reachableRoutes": 49,
+    "unreachable": [],
+    "invalidSegments": [],
+    "sourceUnchanged": true,
+    "demUnchanged": true,
+    "meanSearchMsNode": 279.16537712244906,
+    "maximumSearchMsNode": 1171.7110309999998,
+    "representativeRoutes": [
+      {
+        "id": "overview-way-642329463",
+        "name": "Beatty Airport",
+        "kind": "overview",
+        "searchMs": 418.96238100000005,
+        "points": 6,
+        "distanceMeters": 4914.274183414598,
+        "durationMinutes": 84.32228902928634,
+        "roadFraction": 0.2651665877872436,
+        "pointsPerKilometer": 1.220933097353352
+      },
+      {
+        "id": "overview-node-150974730",
+        "name": "Gold Center",
+        "kind": "overview",
+        "searchMs": 295.92044499999975,
+        "points": 9,
+        "distanceMeters": 5193.926347042871,
+        "durationMinutes": 69.32211627022507,
+        "roadFraction": 0.7129969758200455,
+        "pointsPerKilometer": 1.7327931508162593
+      },
+      {
+        "id": "overview-node-6806526987",
+        "name": "Bullfrog",
+        "kind": "overview",
+        "searchMs": 571.4642289999997,
+        "points": 20,
+        "distanceMeters": 8603.762928176306,
+        "durationMinutes": 113.05883224241134,
+        "roadFraction": 0.988396071330016,
+        "pointsPerKilometer": 2.324564282739866
+      },
+      {
+        "id": "overview-node-150968333",
+        "name": "Rhyolite",
+        "kind": "overview",
+        "searchMs": 429.8303310000001,
+        "points": 17,
+        "distanceMeters": 6823.27046174807,
+        "durationMinutes": 105.51776331576916,
+        "roadFraction": 0.5506232867288611,
+        "pointsPerKilometer": 2.4914738607100047
+      }
+    ]
+  },
+  "browserRoutes": [
+    {
+      "name": "Rhyolite",
+      "target": {
+        "x": 718.0684615383403,
+        "y": 1043.9355337247714
+      },
+      "clickToRouteMs": 445,
+      "points": 17,
+      "durationMinutes": 105.51776331576916,
+      "moving": {
+        "frames": 120,
+        "fps": 60,
+        "maxFrameMs": 16.800000000000182
+      },
+      "offline": {
+        "errors": [],
+        "requests": 0
+      }
+    },
+    {
+      "name": "Northwest mountain",
+      "target": {
+        "x": 180,
+        "y": 180
+      },
+      "clickToRouteMs": 1082,
+      "points": 33,
+      "durationMinutes": 209.550229919637,
+      "moving": {
+        "frames": 120,
+        "fps": 60,
+        "maxFrameMs": 16.800000000000182
+      },
+      "offline": {
+        "errors": [],
+        "requests": 0
+      }
+    }
+  ],
+  "tests": {
+    "total": 216,
+    "passed": 216,
+    "failed": 0
+  },
+  "htmlSha256": "cd159fa9bcb4fe4a1d6fa16eb45b8df146fa26bc3e95abcfca37bcf32d27c889",
+  "model": {
+    "baseSpeedKmh": 4,
+    "maximumMultiplier": 1.5,
+    "minimumWalkableMultiplier": 0.08,
+    "routeObjective": "directed travel time on navigation grid, followed by obstacle- and cost-aware smoothing",
+    "smoothingRelativeIntegrationTolerance": 0.001,
+    "continuousGlobalOptimalityClaimed": false,
+    "gameMinutesPerRealSecondAt1x": 2,
+    "timeAccelerationModes": [
+      1,
+      3
+    ],
+    "visibilityChangesPhysics": false,
+    "elevationSource": "existing real USGS 3DEP DEM; no synthetic height fallback"
+  },
+  "artifacts": {
+    "downloads/day-next.html": {
+      "bytes": 5051420,
+      "sha256": "cd159fa9bcb4fe4a1d6fa16eb45b8df146fa26bc3e95abcfca37bcf32d27c889"
+    },
+    "downloads/day-next.zip": {
+      "bytes": 1328069,
+      "sha256": "40efccbae140d9ff5efdc8b33e0607d83f7f332f4445be2bb0c57843c63fd5d7"
+    }
+  },
+  "archiveValidation": {
+    "crcValid": true,
+    "htmlMatchesTestedDownload": true,
+    "htmlMatchesDist": true,
+    "sourceHashesUnchanged": true
+  }
+}

@@ -51,6 +51,8 @@
 .map-tooltip{position:absolute;z-index:4;max-width:min(340px,calc(100vw - 16px));padding:7px 10px;border:1px solid rgba(169,189,140,.32);border-radius:3px;background:rgba(18,27,22,.96);color:#d4dfc4;font:11px/1.45 "Segoe UI",sans-serif;box-shadow:0 3px 12px rgba(0,0,0,.2);pointer-events:none;overflow-wrap:anywhere}
 
 .elevation-button{width:44px;height:44px;min-width:44px;min-height:44px}.elevation-button[aria-pressed="true"]{color:var(--accent);border-color:rgba(209,223,135,.55)}.elevation-button:disabled{opacity:.35;cursor:default}.elevation-key{position:absolute;right:32px;bottom:185px;width:260px;padding:13px 15px;pointer-events:none}.elevation-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.elevation-heading .eyebrow{font-size:8px;letter-spacing:1.5px}.elevation-source-mark{font:8px monospace;letter-spacing:1.3px;color:#8d9f7e}.elevation-gradient{height:9px;border:1px solid rgba(211,224,184,.22);background:linear-gradient(90deg,#779475,#bbba8e,#bc9d72,#d0c8b2)}.elevation-ticks{display:flex;justify-content:space-between;margin-top:6px;font:9px monospace;color:#c5d0b5}.elevation-source{font-size:8px;line-height:1.7;color:#94a783;margin:8px 0 0}@media(max-height:800px){.elevation-key{bottom:125px;width:225px;padding:10px 12px}}
+
+.road-swatch-highway{border-top-color:#45494b}.road-swatch-road{border-top-color:#747a7c}.road-swatch-street{border-top-color:#858b8c}.road-swatch-track{border-top-color:#b4a582}.movement-status{margin-top:12px;padding-top:11px;border-top:1px solid var(--line)}.movement-heading{display:flex;gap:9px;align-items:center;font:8px monospace;letter-spacing:.6px;color:#91a27e}.movement-heading strong{margin-left:auto;font-size:11px;font-weight:500;letter-spacing:0;color:#d2dfb8}.movement-heading #movement-multiplier{color:var(--accent);font-size:10px;letter-spacing:0}.movement-factors{display:block;margin-top:6px;color:#91a27e;font-size:8px;line-height:1.7}
 </style>
   </head>
   <body>
@@ -80,7 +82,7 @@
       <div class="hud">
         <header class="top-bar">
           <div class="brand-block">
-            <div class="brand" aria-label="DAY NEXT"><span>DAY</span><span class="brand-divider">/</span><span class="brand-next">NEXT</span><span class="prototype">ПРОТОТИП <b>15</b></span></div>
+            <div class="brand" aria-label="DAY NEXT"><span>DAY</span><span class="brand-divider">/</span><span class="brand-next">NEXT</span><span class="prototype">ПРОТОТИП <b>16</b></span></div>
             <div class="brand-caption"><span class="live-dot"></span> ОДИНОЧНАЯ ЭКСПЕДИЦИЯ</div>
           </div>
           <div class="world-status glass">
@@ -131,12 +133,13 @@
             <div class="stat stat-water"><div class="stat-label"><svg class="icon"><use href="#i-water" /></svg><span>Вода</span><strong id="water-value">100</strong></div><div class="stat-track"><span id="water-bar" style="width:100%"></span></div></div>
           </div>
           <div class="location"><svg class="icon"><use href="#i-pin" /></svg><div><strong id="location-name">Местность</strong><span id="terrain-label">Открытая местность</span><span id="biome-label" class="biome-label" hidden></span></div></div>
+          <div class="movement-status"><div class="movement-heading"><span>ХОДЬБА</span><strong id="movement-speed">4,0 км/ч</strong><span id="movement-multiplier">×1,00</span></div><span id="movement-factors" class="movement-factors">Ровная местность</span></div>
         </section>
 
         <section id="travel-panel" class="travel-panel glass" aria-label="Текущий маршрут" hidden>
-          <div class="travel-top"><span class="eyebrow"><span class="live-dot"></span> МАРШРУТ</span><button id="speed-button" class="speed-button" type="button" title="Скорость передвижения">1×</button></div>
+          <div class="travel-top"><span class="eyebrow"><span class="live-dot"></span> МАРШРУТ</span><button id="speed-button" class="speed-button" type="button" title="Ускорение игрового времени · 1× / 3×">1×</button></div>
           <div class="travel-destination"><svg class="icon"><use href="#i-route" /></svg><strong id="destination-label">Точка на карте</strong></div>
-          <div class="travel-bottom"><div class="travel-metrics"><strong id="distance-label">0,0 км</strong><span class="metric-divider"></span><span id="eta-label">0 мин</span></div><div class="travel-actions"><button id="pause-button" class="text-button" type="button" title="Пауза · Пробел">Пауза</button><button id="cancel-button" class="icon-button cancel-button" type="button" aria-label="Отменить маршрут" title="Отменить маршрут · Esc">×</button></div></div>
+          <div class="travel-bottom"><div class="travel-metrics"><strong id="distance-label">0,0 км</strong><span class="metric-divider"></span><span id="eta-label" title="Время с учётом покрытия и уклона">0 мин</span></div><div class="travel-actions"><button id="pause-button" class="text-button" type="button" title="Пауза · Пробел">Пауза</button><button id="cancel-button" class="icon-button cancel-button" type="button" aria-label="Отменить маршрут" title="Отменить маршрут · Esc">×</button></div></div>
         </section>
 
         <aside class="journal" aria-label="Журнал экспедиции">
@@ -169,7 +172,7 @@
 
         <section id="help-panel" class="help-panel glass" role="dialog" aria-label="Как играть" aria-modal="false" hidden>
           <div class="help-heading"><div><p class="eyebrow">ПОЛЕВОЙ СПРАВОЧНИК</p><h2>Сначала — первый шаг.</h2></div><button id="help-close" class="icon-button" type="button" aria-label="Закрыть справку">×</button></div>
-          <p>Выбери точку на суше. Путник сам проложит маршрут, обойдёт воду и найдёт мост.</p>
+          <p>Выбери точку на суше. Путник проложит путь с учётом дорог, биомов и уклона: удобный обход может оказаться быстрее прямого подъёма. Вода пересекается по мостам.</p>
           <dl><div><dt>Клик / касание</dt><dd>Идти в выбранную точку</dd></div><div><dt>Перетаскивание</dt><dd>Осмотреть карту</dd></div><div><dt>Колесо / щипок / + −</dt><dd>Приблизить улицы и дома</dd></div><div><dt>B / кнопка дома</dt><dd>Показать застройку</dd></div><div><dt>Слои карты</dt><dd>Выбрать, что показывать</dd></div><div><dt>Пробел</dt><dd>Пауза в пути</dd></div><div><dt>F</dt><dd>Вернуться к путнику</dd></div><div><dt>Esc</dt><dd>Закрыть окно / отменить путь</dd></div></dl>
           <p class="help-note">Наведи на объект, а на телефоне коснись его, чтобы узнать детали на любом масштабе. Приблизь карту, чтобы рассмотреть контуры домов и дорожки. В «Слоях карты» можно отдельно показать дороги, здания и природные объекты. Отдых восстанавливает выносливость.</p>
         </section>
@@ -223,12 +226,215 @@
               <label class="layer-option" for="layer-buildings"><input id="layer-buildings" type="checkbox" checked /><span>Здания</span><span id="count-buildings" class="layer-count">—</span></label>
               <label class="layer-option" for="layer-details"><input id="layer-details" type="checkbox" checked /><span>Остальные объекты</span><span id="count-details" class="layer-count">—</span></label>
             </div>
-            <p class="layers-note" id="layers-note">Карта высот показывает рельеф цветом, тенями и горизонталями. Выключи её, чтобы увидеть цвета биомов. Дороги, русла и здания остаются поверх рельефа. Наведение показывает тип местности и высоту.</p>
+            <p class="layers-note" id="layers-note">Полупрозрачные биомы окрашивают рельеф, сохраняя видимость склонов. Асфальт серый, грунтовки песочные. Видимость слоёв не меняет скорость и построение маршрута.</p>
           </div>
         </section>
       </div>
     </main>
-    <script type="module">const {findPath,terrainAt,nearestWalkable} = (() => {
+    <script type="module">const {BASE_WALK_METERS_PER_MINUTE,MAX_MOVEMENT_MULTIPLIER,biomeSpeedMultiplier,roadSpeedMultiplier,cellMovementMultiplier,movementAt,segmentTravel,advanceAlongRoute} = (() => {
+// Shared travel-time model for route search, smoothing, ETA and the moving actor.
+// Multipliers describe a walking game character, not a real-world hiking forecast.
+const BASE_WALK_METERS_PER_MINUTE = 4000 / 60;
+const MAX_MOVEMENT_MULTIPLIER = 1.5;
+const mmClamp = (value, low, high) => Math.max(low, Math.min(high, value));
+const mmDistance = (a, b) => Math.hypot(b.x - a.x, b.y - a.y);
+const mmScale = world => Number(world.metersPerUnit) > 0 ? Number(world.metersPerUnit) : 1;
+const mmCell = (world, x, y) => Number.isFinite(x) && Number.isFinite(y) && x >= 0 && y >= 0 && x < world.width && y < world.height
+  ? world.cells[Math.floor(y / world.cellSize) * world.cols + Math.floor(x / world.cellSize)] : null;
+const mmBiomes = Object.freeze({
+  plain: 1, wasteland: 1, city: 1, desert: .94, grassland: .94, park: .94, recreation: .94,
+  garden: .9, farmland: .84, orchard: .82, vineyard: .82, cemetery: .88,
+  sand: .67, beach: .67, scrub: .75, forest: .65, rock: .58, hill: .72, quarry: .58,
+  wetland: .44, swamp: .44, glacier: .5, landfill: .65, construction: .72, brownfield: .82,
+  seasonal_river: .66, dry_riverbed: .66, gully: .7, valley: 1, water: 0,
+});
+const mmRoads = Object.freeze({ highway: 1.28, road: 1.22, street: 1.18, track: .98, trail: 1.04, railway: .8 });
+const mmSurfaces = Object.freeze({
+  asphalt: 1, concrete: 1, 'concrete:plates': .97, 'concrete:lanes': .97, paved: 1,
+  paving_stones: .94, sett: .88, cobblestone: .84, metal: .91, wood: .9,
+  compacted: .94, fine_gravel: .9, gravel: .83, pebblestone: .8, unpaved: .79,
+  ground: .77, dirt: .77, earth: .77, grass: .74, sand: .58, mud: .44, rock: .62,
+});
+
+function biomeSpeedMultiplier(biome) { return mmBiomes[biome] ?? 1; }
+
+function roadSpeedMultiplier(roadClass, surface) {
+  const base = mmRoads[roadClass] ?? 1.16;
+  const material = typeof surface === 'string' ? surface.split(';')[0].trim().toLowerCase() : '';
+  // Track/trail defaults already represent a maintained unpaved path. Explicit
+  // loose surfaces still slow them down, without applying the dirt default twice.
+  const correction = material ? mmSurfaces[material] ?? 1 : 1;
+  return mmClamp(base * correction, .12, MAX_MOVEMENT_MULTIPLIER);
+}
+
+function cellMovementMultiplier(cell) {
+  if (!cell?.walkable) return 0;
+  if (cell.roadClass || cell.type === 'bridge' && cell.biome !== undefined) return roadSpeedMultiplier(cell.roadClass || 'road', cell.surface);
+  if (cell.biome !== undefined) return Math.max(.12, biomeSpeedMultiplier(cell.biome));
+  // Historic fixtures/imports can supply their own weighted grid without a DEM.
+  if (Number.isFinite(cell.cost) && cell.cost > 0) return mmClamp(1 / cell.cost, .01, MAX_MOVEMENT_MULTIPLIER);
+  return Math.max(.12, biomeSpeedMultiplier(cell.type));
+}
+
+function mmSlopeMultiplier(grade) {
+  if (!Number.isFinite(grade)) return 1;
+  if (grade >= 0) return Math.exp(-3.5 * Math.min(grade, 2));
+  const descent = Math.min(-grade, 2);
+  // A gentle descent helps slightly; a steep descent requires slower footing.
+  return Math.exp(1.5 * descent - 7 * descent * descent);
+}
+
+function mmElevation(world, x, y) {
+  const source = world.movementElevationAt || world.elevationAt;
+  if (typeof source === 'function') {
+    const value = source(x, y);
+    return Number.isFinite(value) ? value : null;
+  }
+  // Bilinear interpolation of genuine elevation samples stored at cell centres.
+  // Legacy cell.height may be synthetic/normalised, so it is never treated as m.
+  const gx = mmClamp(x / world.cellSize - .5, 0, world.cols - 1), gy = mmClamp(y / world.cellSize - .5, 0, world.rows - 1);
+  const ix = Math.floor(gx), iy = Math.floor(gy), rx = gx - ix, ry = gy - iy;
+  const x2 = Math.min(ix + 1, world.cols - 1), y2 = Math.min(iy + 1, world.rows - 1);
+  const corners = [[ix, iy, (1 - rx) * (1 - ry)], [x2, iy, rx * (1 - ry)], [ix, y2, (1 - rx) * ry], [x2, y2, rx * ry]];
+  let height = 0, weight = 0;
+  for (const [cx, cy, part] of corners) {
+    if (part <= 1e-12) continue;
+    const value = world.cells[cy * world.cols + cx]?.elevationMeters;
+    if (!Number.isFinite(value)) return null;
+    height += value * part; weight += part;
+  }
+  return weight > 0 ? height / weight : null;
+}
+
+function mmFactors(cell, grade = 0) {
+  const terrainMultiplier = cellMovementMultiplier(cell);
+  if (!(terrainMultiplier > 0)) return { multiplier: 0, terrainMultiplier: 0, slopeMultiplier: 1, grade, walkable: false };
+  const slopeMultiplier = mmSlopeMultiplier(grade);
+  const multiplier = mmClamp(terrainMultiplier * slopeMultiplier, .08, MAX_MOVEMENT_MULTIPLIER);
+  return { multiplier, terrainMultiplier, slopeMultiplier, grade, walkable: true };
+}
+
+function movementAt(world, x, y, toward = null) {
+  const cell = mmCell(world, x, y);
+  let grade = 0;
+  if (cell?.walkable && toward && Number.isFinite(toward.x) && Number.isFinite(toward.y)) {
+    const dx = toward.x - x, dy = toward.y - y, distance = Math.hypot(dx, dy);
+    if (distance > 1e-8) {
+      const probe = Math.min(world.cellSize * .5, 12 / mmScale(world));
+      const ax = mmClamp(x - dx / distance * probe, 0, world.width - 1e-8), ay = mmClamp(y - dy / distance * probe, 0, world.height - 1e-8);
+      const bx = mmClamp(x + dx / distance * probe, 0, world.width - 1e-8), by = mmClamp(y + dy / distance * probe, 0, world.height - 1e-8);
+      const a = mmElevation(world, ax, ay), b = mmElevation(world, bx, by), meters = Math.hypot(bx - ax, by - ay) * mmScale(world);
+      if (a !== null && b !== null && meters > 1e-6) grade = (b - a) / meters;
+    }
+  }
+  const factors = mmFactors(cell, grade);
+  return { ...factors, speedKmh: factors.multiplier * 4,
+    biome: cell?.biome || cell?.type || null, roadClass: cell?.roadClass || null, surface: cell?.surface || null,
+    elevationMeters: mmElevation(world, x, y), slopePercent: grade * 100,
+  };
+}
+
+/** Integrate a line through exact grid-boundary intervals, never skipping a cell. */
+function segmentTravel(world, from, to, options = {}) {
+  const distance = from && to ? mmDistance(from, to) : Infinity, meters = distance * mmScale(world);
+  const invalid = () => ({ walkable: false, distance, meters, durationMinutes: Infinity, cost: Infinity, pieces: [] });
+  if (!from || !to || !mmCell(world, from.x, from.y)?.walkable || !mmCell(world, to.x, to.y)?.walkable || !Number.isFinite(distance)) return invalid();
+  if (distance <= 1e-10) return { walkable: true, distance: 0, meters: 0, durationMinutes: 0, cost: 0, pieces: [] };
+  const detailed = options.detailed !== false, size = world.cellSize, dx = to.x - from.x, dy = to.y - from.y;
+  const cuts = [0, 1];
+  if (Math.abs(dx) > 1e-12) for (let edge = (Math.floor(Math.min(from.x, to.x) / size) + 1) * size; edge < Math.max(from.x, to.x) - 1e-9; edge += size) cuts.push((edge - from.x) / dx);
+  if (Math.abs(dy) > 1e-12) for (let edge = (Math.floor(Math.min(from.y, to.y) / size) + 1) * size; edge < Math.max(from.y, to.y) - 1e-9; edge += size) cuts.push((edge - from.y) / dy);
+  cuts.sort((a, b) => a - b);
+  const unique = cuts.filter((cut, index) => !index || cut - cuts[index - 1] > 1e-10);
+  // At simultaneous x/y crossings, both orthogonal cells must be walkable.
+  if (Math.abs(dx) > 1e-12 && Math.abs(dy) > 1e-12) for (let i = 1; i < unique.length - 1; i++) {
+    const t = unique[i], x = from.x + dx * t, y = from.y + dy * t;
+    if (Math.abs(x / size - Math.round(x / size)) > 1e-8 || Math.abs(y / size - Math.round(y / size)) > 1e-8) continue;
+    const beforeX = Math.floor((x - Math.sign(dx) * size * 1e-8) / size), beforeY = Math.floor((y - Math.sign(dy) * size * 1e-8) / size);
+    const afterX = beforeX + Math.sign(dx), afterY = beforeY + Math.sign(dy);
+    if (!world.cells[beforeY * world.cols + afterX]?.walkable || !world.cells[afterY * world.cols + beforeX]?.walkable) return invalid();
+  }
+  const pieces = [], scale = mmScale(world);
+  let durationMinutes = 0;
+  for (let index = 1; index < unique.length; index++) {
+    const start = unique[index - 1], end = unique[index];
+    const count = Math.max(1, Math.ceil(distance * (end - start) / (size * .5)));
+    for (let part = 0; part < count; part++) {
+      const a = start + (end - start) * part / count, b = start + (end - start) * (part + 1) / count, middle = (a + b) / 2;
+      const cell = mmCell(world, from.x + dx * middle, from.y + dy * middle);
+      if (!cell?.walkable) return invalid();
+      const ax = from.x + dx * a, ay = from.y + dy * a, bx = from.x + dx * b, by = from.y + dy * b;
+      const length = distance * (b - a), physical = length * scale;
+      const ha = mmElevation(world, ax, ay), hb = mmElevation(world, bx, by);
+      const grade = ha !== null && hb !== null && physical > 1e-8 ? (hb - ha) / physical : 0;
+      const factors = mmFactors(cell, grade);
+      if (!factors.walkable) return invalid();
+      const duration = physical / (BASE_WALK_METERS_PER_MINUTE * factors.multiplier);
+      durationMinutes += duration;
+      if (detailed) pieces.push({ from: { x: ax, y: ay }, to: { x: bx, y: by }, distance: length, meters: physical, durationMinutes: duration, ...factors,
+        biome: cell.biome || cell.type, roadClass: cell.roadClass || null, surface: cell.surface || null });
+    }
+  }
+  return { walkable: true, distance, meters, durationMinutes, cost: durationMinutes, pieces };
+}
+
+const mmRouteCaches = new WeakMap();
+function mmRouteCache(world, route, player) {
+  let cache = mmRouteCaches.get(route);
+  if (cache && cache.world === world && cache.points === route.points && mmDistance(cache.position, player) < 1e-6) return cache;
+  const pieces = [], firstIndex = Math.max(0, Number(route.index) || 0);
+  let from = { x: player.x, y: player.y }, remainingDistance = 0, remainingDurationMinutes = 0;
+  for (let index = firstIndex; index < route.points.length; index++) {
+    const to = route.points[index], segment = segmentTravel(world, from, to);
+    if (!segment.walkable) return null;
+    for (const piece of segment.pieces) pieces.push({ ...piece, pointIndex: index });
+    remainingDistance += segment.distance; remainingDurationMinutes += segment.durationMinutes;
+    from = to;
+  }
+  cache = { world, points: route.points, pieces, pieceIndex: 0, fraction: 0, remainingDistance, remainingDurationMinutes, position: { x: player.x, y: player.y } };
+  mmRouteCaches.set(route, cache);
+  return cache;
+}
+
+/** Spend game minutes, mutating actor/route once with the same costs used by A*. */
+function advanceAlongRoute(world, route, player, gameMinutes) {
+  const cache = route && player && Array.isArray(route.points) ? mmRouteCache(world, route, player) : null;
+  if (!cache) return { walkedDistance: 0, walkedMeters: 0, elapsedMinutes: 0, remainingDurationMinutes: Infinity, remainingDistance: Infinity, currentMultiplier: 0, arrived: false, blocked: true };
+  let budget = Number.isFinite(gameMinutes) ? Math.max(0, gameMinutes) : 0, walkedDistance = 0, elapsedMinutes = 0, currentMultiplier = 1;
+  while (cache.pieceIndex < cache.pieces.length && budget > 1e-12) {
+    const piece = cache.pieces[cache.pieceIndex], remainingFraction = 1 - cache.fraction;
+    const remainingTime = piece.durationMinutes * remainingFraction, spent = Math.min(budget, remainingTime);
+    const fraction = remainingTime > 1e-12 ? spent / piece.durationMinutes : remainingFraction;
+    cache.fraction = Math.min(1, cache.fraction + fraction);
+    const walked = piece.distance * fraction;
+    walkedDistance += walked; elapsedMinutes += spent; budget -= spent;
+    cache.remainingDistance = Math.max(0, cache.remainingDistance - walked);
+    cache.remainingDurationMinutes = Math.max(0, cache.remainingDurationMinutes - spent);
+    player.x = piece.from.x + (piece.to.x - piece.from.x) * cache.fraction;
+    player.y = piece.from.y + (piece.to.y - piece.from.y) * cache.fraction;
+    currentMultiplier = piece.multiplier; route.index = piece.pointIndex;
+    if (cache.fraction >= 1 - 1e-10) {
+      cache.pieceIndex++; cache.fraction = 0;
+      const next = cache.pieces[cache.pieceIndex];
+      if (!next || next.pointIndex !== piece.pointIndex) route.index = piece.pointIndex + 1;
+    }
+  }
+  const arrived = cache.pieceIndex >= cache.pieces.length;
+  if (arrived) {
+    const destination = route.points.at(-1);
+    if (destination) { player.x = destination.x; player.y = destination.y; }
+    route.index = route.points.length; cache.remainingDistance = cache.remainingDurationMinutes = 0;
+  } else if (cache.pieces[cache.pieceIndex]) currentMultiplier = cache.pieces[cache.pieceIndex].multiplier;
+  cache.position = { x: player.x, y: player.y };
+  route.remaining = route.remainingDistance = cache.remainingDistance;
+  route.remainingDurationMinutes = cache.remainingDurationMinutes;
+  return { walkedDistance, walkedMeters: walkedDistance * mmScale(world), elapsedMinutes, remainingDurationMinutes: cache.remainingDurationMinutes,
+    remainingDistance: cache.remainingDistance, currentMultiplier, arrived, blocked: false };
+}
+
+return {BASE_WALK_METERS_PER_MINUTE,MAX_MOVEMENT_MULTIPLIER,biomeSpeedMultiplier,roadSpeedMultiplier,cellMovementMultiplier,movementAt,segmentTravel,advanceAlongRoute};
+})();
+const {findPath,terrainAt,nearestWalkable} = (() => {
 /** Weighted, water-aware navigation shared by imported real maps. */
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
@@ -288,32 +494,74 @@ class MinHeap {
   }
 }
 
-function heuristic(ax, ay, bx, by) {
-  const dx = Math.abs(ax - bx);
-  const dy = Math.abs(ay - by);
-  return (Math.max(dx, dy) + (Math.SQRT2 - 1) * Math.min(dx, dy)) * 0.75;
+function navigationPoint(world, id) {
+  const x = id % world.cols, y = Math.floor(id / world.cols), size = world.cellSize;
+  const anchor = world.cells[id].roadAnchor;
+  if (anchor && Number.isFinite(anchor.x) && Number.isFinite(anchor.y)
+    && anchor.x > x * size && anchor.x < (x + 1) * size && anchor.y > y * size && anchor.y < (y + 1) * size) return { x: anchor.x, y: anchor.y };
+  return { x: (x + .5) * size, y: (y + .5) * size };
 }
 
-/** A route follows terrain costs, never enters water, and cannot cut water corners. */
+const routeDistance = (a, b) => Math.hypot(b.x - a.x, b.y - a.y);
+function describeRoute(world, points, search = {}) {
+  const compact = points.filter((point, index) => !index || routeDistance(point, points[index - 1]) > 1e-8).map(point => ({ x: point.x, y: point.y }));
+  if (compact.length === 1) compact.push({ ...compact[0] });
+  const segments = [];
+  let distance = 0, durationMinutes = 0;
+  for (let index = 1; index < compact.length; index++) {
+    const segment = segmentTravel(world, compact[index - 1], compact[index]);
+    if (!segment.walkable) return null;
+    distance += segment.distance; durationMinutes += segment.durationMinutes;
+    segments.push({ ...segment, from: { ...compact[index - 1] }, to: { ...compact[index] } });
+  }
+  return { points: compact, distance, durationMinutes, segments, search };
+}
+
+function smoothRoute(world, points) {
+  if (points.length < 3) return points;
+  const prefix = [0];
+  for (let i = 1; i < points.length; i++) prefix.push(prefix.at(-1) + segmentTravel(world, points[i - 1], points[i], { detailed: false }).durationMinutes);
+  const result = [points[0]];
+  let index = 0;
+  while (index < points.length - 1) {
+    let selected = index + 1;
+    // Bounded string pulling removes grid zigzags without a quadratic full-map
+    // visibility search. Each shortcut must respect both water and travel time.
+    for (let candidate = Math.min(points.length - 1, index + 48); candidate > index + 1; candidate--) {
+      const direct = segmentTravel(world, points[index], points[candidate], { detailed: false });
+      const originalTime = prefix[candidate] - prefix[index];
+      if (direct.walkable && direct.durationMinutes <= originalTime * 1.001 + 1e-9) { selected = candidate; break; }
+    }
+    result.push(points[selected]); index = selected;
+  }
+  return result;
+}
+
+/**
+ * Directed least-time A* over the navigation grid. Real road-centre anchors keep
+ * road legs on mapped geometry; visibility smoothing cannot cut expensive ground
+ * or water corners. All returned times use the actor's shared movement model.
+ */
 function findPath(world, from, to) {
   if (!from || !to || !terrainAt(world, from.x, from.y)?.walkable || !terrainAt(world, to.x, to.y)?.walkable) return null;
   const size = world.cellSize;
-  const sx = Math.floor(from.x / size);
-  const sy = Math.floor(from.y / size);
-  const tx = Math.floor(to.x / size);
-  const ty = Math.floor(to.y / size);
-  const start = sy * world.cols + sx;
-  const target = ty * world.cols + tx;
-  if (start === target) return { points: [{ x: from.x, y: from.y }, { x: to.x, y: to.y }], distance: Math.hypot(to.x - from.x, to.y - from.y) };
-  const scores = new Float64Array(world.cells.length);
-  scores.fill(Infinity);
-  const parents = new Int32Array(world.cells.length);
-  parents.fill(-1);
-  const closed = new Uint8Array(world.cells.length);
-  const heap = new MinHeap();
-  scores[start] = 0;
-  heap.push({ id: start, f: heuristic(sx, sy, tx, ty) });
+  const sx = Math.floor(from.x / size), sy = Math.floor(from.y / size);
+  const tx = Math.floor(to.x / size), ty = Math.floor(to.y / size);
+  const start = sy * world.cols + sx, target = ty * world.cols + tx;
+  if (start === target) return describeRoute(world, [{ x: from.x, y: from.y }, { x: to.x, y: to.y }], { visited: 0, rawPoints: 2 });
+  const scores = new Float64Array(world.cells.length); scores.fill(Infinity);
+  const parents = new Int32Array(world.cells.length); parents.fill(-1);
+  const closed = new Uint8Array(world.cells.length), heap = new MinHeap();
+  const nodePoints = new Map();
+  const pointAt = id => { if (!nodePoints.has(id)) nodePoints.set(id, navigationPoint(world, id)); return nodePoints.get(id); };
+  const scale = Number(world.metersPerUnit) > 0 ? Number(world.metersPerUnit) : 1;
+  const lowerBound = point => routeDistance(point, to) * scale / (BASE_WALK_METERS_PER_MINUTE * MAX_MOVEMENT_MULTIPLIER);
+  const beginning = segmentTravel(world, from, pointAt(start), { detailed: false });
+  if (!beginning.walkable) return null;
+  scores[start] = beginning.durationMinutes;
+  heap.push({ id: start, f: scores[start] + lowerBound(pointAt(start)) });
   const directions = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
+  let visited = 0;
   while (heap.items.length) {
     const current = heap.pop().id;
     if (closed[current]) continue;
@@ -321,38 +569,25 @@ function findPath(world, from, to) {
       const ids = [];
       for (let id = target; id !== -1; id = parents[id]) ids.push(id);
       ids.reverse();
-      const centers = ids.map(id => ({ x: ((id % world.cols) + 0.5) * size, y: (Math.floor(id / world.cols) + 0.5) * size }));
-      const simplified = [centers[0]];
-      for (let i = 1; i < centers.length - 1; i++) {
-        const before = centers[i - 1];
-        const here = centers[i];
-        const after = centers[i + 1];
-        if ((here.x - before.x) * (after.y - here.y) !== (here.y - before.y) * (after.x - here.x)) simplified.push(here);
-      }
-      simplified.push(centers[centers.length - 1]);
-      const points = [{ x: from.x, y: from.y }, ...simplified, { x: to.x, y: to.y }];
-      // Exact endpoints connect only within their already-validated start/end cells.
-      const compact = points.filter((point, i) => !i || Math.hypot(point.x - points[i - 1].x, point.y - points[i - 1].y) > 0.01);
-      let distance = 0;
-      for (let i = 1; i < compact.length; i++) distance += Math.hypot(compact[i].x - compact[i - 1].x, compact[i].y - compact[i - 1].y);
-      return { points: compact, distance };
+      const raw = [{ x: from.x, y: from.y }, ...ids.map(pointAt), { x: to.x, y: to.y }]
+        .filter((point, index, all) => !index || routeDistance(point, all[index - 1]) > 1e-8);
+      const smooth = smoothRoute(world, raw);
+      return describeRoute(world, smooth, { visited, rawPoints: raw.length, smoothedPoints: smooth.length, gridCellMeters: size * scale });
     }
-    closed[current] = 1;
-    const cx = current % world.cols;
-    const cy = Math.floor(current / world.cols);
+    closed[current] = 1; visited++;
+    const cx = current % world.cols, cy = Math.floor(current / world.cols), here = pointAt(current);
     for (const [dx, dy] of directions) {
-      const nx = cx + dx;
-      const ny = cy + dy;
+      const nx = cx + dx, ny = cy + dy;
       if (nx < 0 || ny < 0 || nx >= world.cols || ny >= world.rows) continue;
       const next = ny * world.cols + nx;
       if (closed[next] || !world.cells[next].walkable) continue;
       if (dx && dy && (!world.cells[cy * world.cols + nx].walkable || !world.cells[ny * world.cols + cx].walkable)) continue;
-      const cost = (world.cells[current].cost + world.cells[next].cost) * 0.5 * (dx && dy ? Math.SQRT2 : 1);
-      const score = scores[current] + cost;
+      const edge = segmentTravel(world, here, pointAt(next), { detailed: false });
+      if (!edge.walkable) continue;
+      const score = scores[current] + edge.durationMinutes;
       if (score < scores[next]) {
-        parents[next] = current;
-        scores[next] = score;
-        heap.push({ id: next, f: score + heuristic(nx, ny, tx, ty) });
+        parents[next] = current; scores[next] = score;
+        heap.push({ id: next, f: score + lowerBound(pointAt(next)) });
       }
     }
   }
@@ -361,9 +596,8 @@ function findPath(world, from, to) {
 
 return {findPath,terrainAt,nearestWalkable};
 })();
-const {createRealWorld} = (() => {
+const {createRealWorld,prepareTravelWorld} = (() => {
 /** Raster navigation over imported OSM geometry. No terrain or elevation is invented. */
-
 function rwPointInRing(x, y, ring) {
   let inside = false;
   for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
@@ -512,9 +746,19 @@ function rwValidateMap(map) {
 }
 
 /** Convert projected source geometry to the same world interface as createWorld(). */
-function createRealWorld(map) {
+function createRealWorld(map, options = {}) {
   rwValidateMap(map);
-  const { width, height, cellSize, metersPerUnit } = map;
+  const { width, height, metersPerUnit } = map;
+  const sourceCellSize = map.cellSize;
+  const requestedCellSize = options.navigationCellSize;
+  if (requestedCellSize !== undefined && (!Number.isFinite(requestedCellSize) || requestedCellSize <= 0)) throw new Error('Invalid navigation cell size');
+  let subdivision = 1;
+  const sourceCells = width / sourceCellSize * (height / sourceCellSize);
+  // Refine only the runtime navigation, preserving the source's coordinates and
+  // grid declaration. A power-of-two subdivision keeps map edges exact and the
+  // same node limit also bounds unusually large imported maps.
+  while (requestedCellSize !== undefined && sourceCellSize / subdivision > requestedCellSize && sourceCells * (subdivision * 2) ** 2 <= 250000) subdivision *= 2;
+  const cellSize = sourceCellSize / subdivision;
   let seed = 2166136261;
   for (const character of String(map.id || map.name || 'osm')) seed = Math.imul(seed ^ character.charCodeAt(0), 16777619) >>> 0;
   const world = {
@@ -526,7 +770,7 @@ function createRealWorld(map) {
     labels: (map.labels || []).map(rwCopyGeometry), relations: (map.relations || []).map(rwCopyGeometry), lakes: [], radiationZones: [], seed,
     id: map.id, name: map.name, region: map.region, country: map.country, bbox: [...map.bbox],
     source: rwCopyGeometry(map.source || {}), coverage: rwCopyGeometry(map.coverage || null), geographic: true, relief: false,
-    metadata: { type: 'osm', version: map.version, relief: false, navigationResolutionMeters: cellSize * metersPerUnit, maxPoiSnapMeters: 100 },
+    metadata: { type: 'osm', version: map.version, relief: false, navigationResolutionMeters: cellSize * metersPerUnit, sourceCellSize, navigationSubdivision: subdivision, maxPoiSnapMeters: 100 },
   };
   // Elevation deliberately stays flat: OSM surface tags do not supply a DEM.
   const priorities = { plain: 0, forest: 1, swamp: 2, water: 3 };
@@ -555,6 +799,7 @@ function createRealWorld(map) {
   const components = rwFindComponents(world);
   if (components.main === -1) throw new Error('Map has no walkable land');
   const desiredStart = map.start && Number.isFinite(map.start.x) && Number.isFinite(map.start.y) ? map.start : { x: width / 2, y: height / 2 };
+  world.metadata.requestedStart = { x: desiredStart.x, y: desiredStart.y };
   world.start = rwNearestInComponent(world, components, desiredStart, components.main);
   world.metadata.componentCount = components.components.length;
   world.metadata.startSnapDistanceMeters = Math.hypot(world.start.x - desiredStart.x, world.start.y - desiredStart.y) * metersPerUnit;
@@ -577,7 +822,154 @@ function createRealWorld(map) {
   return world;
 }
 
-return {createRealWorld};
+function rwParts(feature) {
+  if (feature.parts?.length) return feature.parts;
+  if (feature.rings?.length) return [feature.rings];
+  if (feature.points?.length >= 3) return [[feature.points]];
+  return [];
+}
+
+// Paint centre samples by scanline rather than testing every map cell against
+// every vertex of a regional polygon and all of its holes.
+function rwRasterParts(world, parts, visit) {
+  const size = world.cellSize;
+  for (const rings of parts) {
+    if (!rings[0]?.length) continue;
+    const bounds = rwBounds(rings[0]);
+    const firstRow = Math.max(0, Math.ceil(bounds.minY / size - .5));
+    const lastRow = Math.min(world.rows - 1, Math.floor(bounds.maxY / size - .5));
+    for (let row = firstRow; row <= lastRow; row++) {
+      const y = (row + .5) * size, crossings = [];
+      for (const ring of rings) for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+        const a = ring[j], b = ring[i];
+        if ((a.y > y) !== (b.y > y)) crossings.push(a.x + (y - a.y) * (b.x - a.x) / (b.y - a.y));
+      }
+      crossings.sort((a, b) => a - b);
+      for (let i = 0; i + 1 < crossings.length; i += 2) {
+        const firstCol = Math.max(0, Math.ceil(crossings[i] / size - .5));
+        const lastCol = Math.min(world.cols - 1, Math.ceil(crossings[i + 1] / size - .5) - 1);
+        for (let col = firstCol; col <= lastCol; col++) visit(row * world.cols + col);
+      }
+    }
+  }
+}
+
+const rwFlag = value => value !== undefined && value !== null && !['', 'no', 'false', '0'].includes(String(value));
+const rwDryBiome = feature => ['seasonal_river', 'dry_riverbed'].includes(feature.biome) || String(feature.waterKind || '').startsWith('seasonal_') || rwFlag(feature.intermittent) || rwFlag(feature.seasonal) || rwFlag(feature.tags?.intermittent) || rwFlag(feature.tags?.seasonal);
+const rwGroundBiome = cell => ({ forest: 'forest', swamp: 'wetland', hill: 'rock', water: 'water' })[cell?.type] || 'wasteland';
+
+/**
+ * Prepare the same physical costs for route search and travel. This runs once
+ * per loaded map and never consults layer visibility. Input geometry and DEM
+ * samples are retained as source facts; only runtime navigation cells change.
+ */
+function prepareTravelWorld(world, { elevationAt, biomeFeatures = [] } = {}) {
+  if (!world || !Array.isArray(world.cells) || !Number.isFinite(world.cellSize) || world.cellSize <= 0) throw new Error('Invalid travel world');
+  const ground = world.terrainCells || world.cells;
+  for (let index = 0; index < world.cells.length; index++) {
+    const cell = world.cells[index];
+    cell.biome = rwGroundBiome(ground[index]);
+    cell.roadClass = null; cell.surface = null; cell.roadDistanceMeters = null; cell.roadWidthMeters = null; cell.roadId = null;
+    delete cell.roadAnchor;
+    cell.elevationMeters = null;
+  }
+  const polygons = biomeFeatures.filter(feature => feature?.geometry === 'polygon' && feature.exclusive !== false);
+  const fallback = polygons.find(feature => feature.fallback);
+  if (fallback?.biome) for (const cell of world.cells) cell.biome = fallback.biome;
+  let permanentWaterCells = 0;
+  for (const feature of polygons) {
+    if (feature.fallback) continue;
+    const wet = (feature.water === true || ['water', 'river', 'lake'].includes(feature.biome)) && !rwDryBiome(feature);
+    rwRasterParts(world, rwParts(feature), index => {
+      const cell = world.cells[index];
+      cell.biome = feature.biome || rwGroundBiome(cell);
+      if (wet && cell.type !== 'bridge') { cell.type = 'water'; cell.walkable = false; }
+    });
+  }
+  const nearestRoad = new Float64Array(world.cells.length); nearestRoad.fill(Infinity);
+  const roadPreference = new Float64Array(world.cells.length);
+  const size = world.cellSize, metersPerUnit = world.metersPerUnit || 5;
+  const railTypes = new Set(['rail', 'light_rail', 'narrow_gauge', 'tram', 'subway', 'monorail', 'funicular', 'abandoned', 'disused', 'dismantled', 'razed']);
+  const roads = new Map((world.roads || []).map((road, index) => [road.id || `road-${index}`, road]));
+  for (const detail of world.details || []) if (detail.geometry === 'line' && railTypes.has(detail.tags?.railway || detail.kind) && !roads.has(detail.id)) roads.set(detail.id, detail);
+  for (const road of roads.values()) {
+    const paths = road.paths?.length ? road.paths : [road.points || []];
+    const klass = roadClass(road), surface = road.surface || road.tags?.surface || null;
+    const preference = roadSpeedMultiplier(klass, surface);
+    const width = Number(road.widthMeters) > 0 ? Number(road.widthMeters) / metersPerUnit : Number(road.width) > 0 ? Number(road.width) : 2;
+    const radius = Math.max(width / 2, size * .72);
+    const bridge = rwFlag(road.bridge ?? road.tags?.bridge);
+    for (const path of paths) for (let segment = 1; segment < path.length; segment++) {
+      const a = path[segment - 1], b = path[segment], dx = b.x - a.x, dy = b.y - a.y, square = dx * dx + dy * dy;
+      rwRasterBounds(world, rwBounds([a, b]), radius, (index, x, y) => {
+        const cell = world.cells[index];
+        const fraction = square ? Math.max(0, Math.min(1, ((x - a.x) * dx + (y - a.y) * dy) / square)) : 0;
+        const px = a.x + fraction * dx, py = a.y + fraction * dy, distance = Math.hypot(x - px, y - py);
+        if (distance > radius) return;
+        // Only an explicit mapped bridge may override mapped permanent water.
+        if (!cell.walkable && !bridge) return;
+        if (bridge && !cell.walkable) { cell.type = 'bridge'; cell.walkable = true; }
+        if (!cell.walkable) return;
+        // At crossings use the better surface; elsewhere favour the closest
+        // native centreline, independent of the order of OSM records.
+        const normalized = distance / radius;
+        const score = normalized + (1 / Math.max(.01, preference)) * .2;
+        const old = nearestRoad[index];
+        if (score > old + 1e-9 || Math.abs(score - old) < 1e-9 && (preference < roadPreference[index] || preference === roadPreference[index] && cell.roadId !== null && String(road.id || '').localeCompare(String(cell.roadId)) >= 0)) return;
+        nearestRoad[index] = score; roadPreference[index] = preference;
+        cell.roadClass = klass; cell.surface = surface; cell.roadDistanceMeters = distance * metersPerUnit; cell.roadWidthMeters = width * metersPerUnit; cell.roadId = road.id || null;
+        if (cell.type !== 'bridge') cell.type = 'road';
+        const left = Math.floor(index % world.cols) * size, top = Math.floor(index / world.cols) * size;
+        const epsilon = Math.min(1e-6, size * 1e-6);
+        if (px >= left - epsilon && px <= left + size + epsilon && py >= top - epsilon && py <= top + size + epsilon) {
+          cell.roadAnchor = { x: Math.max(left + epsilon, Math.min(left + size - epsilon, px)), y: Math.max(top + epsilon, Math.min(top + size - epsilon, py)) };
+        } else delete cell.roadAnchor;
+      });
+    }
+  }
+  let elevationSamples = 0, roadCells = 0;
+  const biomeCounts = {};
+  for (let index = 0; index < world.cells.length; index++) {
+    const cell = world.cells[index], x = (index % world.cols + .5) * size, y = (Math.floor(index / world.cols) + .5) * size;
+    const height = typeof elevationAt === 'function' ? elevationAt(x, y) : null;
+    if (Number.isFinite(height)) { cell.elevationMeters = height; elevationSamples++; }
+    if (cell.roadClass) roadCells++;
+    if (!cell.walkable) permanentWaterCells++;
+    biomeCounts[cell.biome] = (biomeCounts[cell.biome] || 0) + 1;
+    const multiplier = cellMovementMultiplier(cell);
+    cell.cost = cell.walkable && Number.isFinite(multiplier) && multiplier > 0 ? 1 / multiplier : Infinity;
+    if (!Number.isFinite(cell.cost)) cell.walkable = false;
+  }
+  world.movementPrepared = true;
+  world.movementElevationAt = typeof elevationAt === 'function' ? elevationAt : null;
+  world.relief = elevationSamples > 0;
+  const components = rwFindComponents(world);
+  if (components.main === -1) throw new Error('Map has no walkable travel ground');
+  const requestedStart = world.metadata?.requestedStart || world.start || { x: world.width / 2, y: world.height / 2 };
+  world.start = rwNearestInComponent(world, components, requestedStart, components.main);
+  for (const poi of world.pois || []) {
+    const source = { x: Number.isFinite(poi.sourceX) ? poi.sourceX : poi.x, y: Number.isFinite(poi.sourceY) ? poi.sourceY : poi.y };
+    const sourceIndex = rwIndexAt(world, source);
+    const landing = sourceIndex >= 0 && world.cells[sourceIndex].walkable ? source : rwNearestInComponent(world, components, source, components.main, 100 / metersPerUnit);
+    if (landing) { poi.x = landing.x; poi.y = landing.y; }
+    else { poi.x = source.x; poi.y = source.y; }
+    const index = rwIndexAt(world, poi);
+    poi.reachable = index >= 0 && world.cells[index].walkable && components.ids[index] === components.main;
+    poi.snapDistanceMeters = Math.hypot(poi.x - source.x, poi.y - source.y) * metersPerUnit;
+    poi.discovered = Boolean(poi.discovered) || poi.reachable && Math.hypot(poi.x - world.start.x, poi.y - world.start.y) * metersPerUnit <= 100;
+  }
+  const report = {
+    cells: world.cells.length, cellSize: size, resolutionMeters: size * metersPerUnit,
+    elevationSamples, roadCells, roadSources: roads.size, permanentWaterCells, biomeCounts,
+    components: components.components.length, unreachablePois: (world.pois || []).filter(poi => !poi.reachable).length,
+  };
+  world.metadata = { ...(world.metadata || {}), relief: world.relief, movement: report, componentCount: components.components.length,
+    startSnapDistanceMeters: Math.hypot(world.start.x - requestedStart.x, world.start.y - requestedStart.y) * metersPerUnit,
+    unreachablePoiCount: report.unreachablePois };
+  return report;
+}
+
+return {createRealWorld,prepareTravelWorld};
 })();
 const {polygonClipping} = (() => {
 // polygon-clipping 0.15.7. Vendored UMD bundle, unchanged apart from the local
@@ -2841,13 +3233,43 @@ function createDetailRenderer(world) {
   }
 
   const roadStyles = {
-    highway: { edge: '#706e54', core: '#c8bb8e', centre: '#eee0ae' },
-    road: { edge: '#77775d', core: '#c5b891', centre: '#e4d7ad' },
-    street: { edge: '#82816a', core: '#d2c6a1' },
+    highway: { edge: '#292d2f', core: '#45494b', centre: '#b8b8a8' },
+    road: { edge: '#53595b', core: '#747a7c', centre: '#c5c7ba' },
+    street: { edge: '#62686a', core: '#858b8c' },
     track: { edge: '#898064', core: '#b4a582' },
     trail: { edge: '#77775b', core: '#d3c6a0' },
     railway: { edge: '#485647', core: '#a29d7c' },
   };
+
+  const unpavedSurfaces = new Set(['unpaved', 'gravel', 'fine_gravel', 'compacted', 'dirt', 'earth', 'ground', 'grass', 'sand', 'mud', 'clay', 'pebblestone', 'rock', 'woodchips']);
+  const pavedSurfaces = new Set(['paved', 'asphalt', 'concrete', 'concrete:plates', 'concrete:lanes', 'paving_stones', 'sett', 'cobblestone', 'metal']);
+
+  function roadPaintStyle(feature, classId) {
+    if (classId === 'railway') return roadStyles.railway;
+    const surfaces = String(feature.tags?.surface || feature.surface || '').split(';').map(surface => surface.trim());
+    if (surfaces.some(surface => unpavedSurfaces.has(surface))) return roadStyles.track;
+    if (surfaces.some(surface => pavedSurfaces.has(surface))) return roadStyles[['track', 'trail'].includes(classId) ? 'street' : classId] || roadStyles.road;
+    return roadStyles[classId] || roadStyles.road;
+  }
+
+  function roadPaintSections(record) {
+    if (record.paintSections) return record.paintSections;
+    const members = record.feature.members?.length ? record.feature.members : [record.feature];
+    const groups = new Map();
+    for (const member of members) {
+      const style = roadPaintStyle(member, record.roadClass);
+      if (!groups.has(style)) groups.set(style, []);
+      groups.get(style).push(...(member.paths || [member.points || []]));
+    }
+    if (groups.size === 1) return (record.paintSections = [{ ...record, paintStyle: groups.keys().next().value }]);
+    // A connected selectable network can contain asphalt and gravel. Style only
+    // the measured member paths; grouping them must not recolor its whole extent.
+    return (record.paintSections = [...groups].map(([paintStyle, paths]) => {
+      const path = new Path2D();
+      for (const points of paths) points.forEach((point, index) => index ? path.lineTo(point.x, point.y) : path.moveTo(point.x, point.y));
+      return { ...record, path, paintStyle };
+    }));
+  }
 
   function roadWidth(record, zoom) {
     const fine = record.roadClass === 'track' || record.roadClass === 'trail';
@@ -2859,7 +3281,7 @@ function createDetailRenderer(world) {
   function paintRoadBatch(ctx, records, zoom, hoveredId) {
     // Finish every casing before painting any interior in the same level. Shared
     // endpoints and junctions then form a continuous surface without end caps.
-    const ordered = records;
+    const ordered = records.flatMap(roadPaintSections);
     ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.setLineDash([]);
     for (let start = 0; start < ordered.length;) {
       let end = start + 1;
@@ -2871,7 +3293,7 @@ function createDetailRenderer(world) {
         ctx.lineWidth = roadWidth(record, zoom).stroke + 4 / zoom; ctx.stroke(record.path);
       }
       for (const pass of ['edge', 'core']) for (let i = start; i < end; i++) {
-        const record = ordered[i], style = roadStyles[record.roadClass] || roadStyles.road;
+        const record = ordered[i], style = record.paintStyle;
         const tunnel = drFlag(record.feature.tunnel ?? record.feature.tags?.tunnel);
         ctx.globalAlpha = tunnel ? .58 : 1;
         ctx.strokeStyle = pass === 'edge' && drFlag(record.feature.bridge ?? record.feature.tags?.bridge) ? '#4b5847' : style[pass];
@@ -2879,7 +3301,7 @@ function createDetailRenderer(world) {
       }
       // Only a highway/road centre marking is dashed; the mapped surface stays solid.
       for (let i = start; i < end; i++) {
-        const record = ordered[i], width = roadWidth(record, zoom).core, style = roadStyles[record.roadClass] || roadStyles.road;
+        const record = ordered[i], width = roadWidth(record, zoom).core, style = record.paintStyle;
         ctx.globalAlpha = drFlag(record.feature.tunnel ?? record.feature.tags?.tunnel) ? .58 : 1;
         if (record.roadClass === 'railway' && zoom >= 1.5) {
           ctx.strokeStyle = '#52634d'; ctx.lineWidth = Math.max(width + .6, 4 / zoom);
@@ -3097,6 +3519,13 @@ function createDetailRenderer(world) {
     return Math.max(record.width, (dry ? 2 : 2.4) / zoom) + (dry ? 1.5 : 1) / zoom;
   }
 
+  function waterDash(record, zoom) {
+    // Readable screen minima blend continuously into native-width proportions.
+    // The gap includes both round caps, leaving a real opening at every zoom.
+    const width = waterWidth(record, zoom);
+    return [Math.hypot(7 / zoom, width * 2.2), width + Math.hypot(4 / zoom, width * .8)];
+  }
+
   function clipRiverInk(ctx, record) {
     const masks = record.feature.inkExclusionParts;
     if (!masks?.length) return;
@@ -3122,15 +3551,15 @@ function createDetailRenderer(world) {
     if (!record.inkPath) return;
     const hovered = drAllowsHighlight(record) && hoveredId === feature.id, dry = drDry(feature);
     ctx.save(); clipRiverInk(ctx, record);
-    ctx.lineJoin = 'round'; ctx.lineCap = 'butt';
-    ctx.setLineDash(dry ? [6 / zoom, 4 / zoom] : []);
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    ctx.setLineDash(dry ? waterDash(record, zoom) : []);
     if (hovered) { ctx.strokeStyle = 'rgba(233,236,172,.55)'; ctx.lineWidth = waterWidth(record, zoom) + 3 / zoom; ctx.stroke(record.inkPath); }
     ctx.strokeStyle = '#85abc4'; ctx.lineWidth = waterWidth(record, zoom); ctx.stroke(record.inkPath);
     ctx.strokeStyle = dry ? '#4c91bd' : '#3f7eaa'; ctx.lineWidth = Math.max(record.width, 1.1 / zoom); ctx.stroke(record.inkPath);
     ctx.setLineDash([]); ctx.restore();
   }
 
-  function paintBiome(ctx, record, zoom, hoveredId) {
+  function paintBiome(ctx, record, zoom, hoveredId, translucent = false) {
     if (record.geometry !== 'polygon') { paintDetail(ctx, record, zoom, hoveredId); return; }
     const colors = {
       city: '#969b99', forest: '#748c5c', wetland: '#81987a', grassland: '#a4af79', scrub: '#9ba378',
@@ -3141,11 +3570,18 @@ function createDetailRenderer(world) {
       landfill: '#9c9b7e', glacier: '#c3d3ce', plain: '#a6ab85', wasteland: '#a7a17d',
       seasonal_river: '#a7a17d', dry_riverbed: '#a7a17d', water: '#3f7eaa', river: '#3f7eaa', lake: '#3f7eaa',
     };
+    const opacity = record.feature.water && !record.inkPath ? .78 : record.fallback ? .10 : ({
+      city: .42, forest: .38, wetland: .38, park: .38, garden: .36, recreation: .34,
+      cemetery: .34, sand: .30, desert: .26, rock: .28, quarry: .34,
+      seasonal_river: .12, dry_riverbed: .12,
+    })[record.biome] || .32;
+    ctx.globalAlpha = translucent ? opacity : 1;
     ctx.fillStyle = record.feature.water && !record.inkPath ? '#3f7eaa' : colors[record.biome] || colors.wasteland;
     ctx.fill(record.path, record.fillRule);
     if (drAllowsHighlight(record) && hoveredId === record.feature.id && !record.fallback) {
       ctx.fillStyle = 'rgba(224,228,161,.12)'; ctx.fill(record.path, record.fillRule);
     }
+    ctx.globalAlpha = 1;
   }
 
   function paintRoadSurface(ctx, record, zoom, hoveredId) {
@@ -3174,15 +3610,16 @@ function createDetailRenderer(world) {
     // The fallback biome supplies an opaque matte for antialiased shared edges.
     // Without it, adjacent exact polygons can leave a translucent pixel seam.
     if (layers.biomes) { ctx.fillStyle = '#a7a17d'; ctx.fillRect(0, 0, world.width, world.height); }
-    // First complete the opaque ground plane, then ink its watercourses. This
-    // prevents a neighbouring land fill erasing a river's readable screen width.
-    for (const record of visible) if (record.layer === 'biomes' && record.geometry === 'polygon') paintBiome(ctx, record, view.zoom, hoveredId);
-    if (typeof view.groundOverlay === 'function') {
+    const relief = typeof view.groundOverlay === 'function';
+    if (relief) {
       ctx.save();
       try { view.groundOverlay(ctx, view); } finally { ctx.restore(); }
-      // Water is part of the biome ground, but remains visible over elevation.
-      for (const record of visible) if (record.layer === 'biomes' && record.geometry === 'polygon' && record.feature.water && !record.inkPath) paintBiome(ctx, record, view.zoom, hoveredId);
+      ctx.globalAlpha = 1;
     }
+    // Biomes tint the measured relief. Their exclusive geometry means opacity
+    // never accumulates from overlapping source zones. Without relief they form
+    // the same complete opaque ground plane used by the ordinary map.
+    for (const record of visible) if (record.layer === 'biomes' && record.geometry === 'polygon') paintBiome(ctx, record, view.zoom, hoveredId, relief);
     for (const record of visible) if (record.layer === 'biomes' && record.inkPath) paintWater(ctx, record, view.zoom, hoveredId);
     let roadsPainted = false, powerPainted = false;
     for (const record of visible) {
@@ -3220,8 +3657,8 @@ function createDetailRenderer(world) {
     if (record.geometry === 'point') paintDetail(ctx, record, view.zoom, record.feature.id);
     else if (record.inkPath) {
       clipRiverInk(ctx, record);
-      ctx.lineJoin = 'round'; ctx.lineCap = 'butt';
-      ctx.setLineDash(drDry(record.feature) ? [6 / view.zoom, 4 / view.zoom] : []);
+      ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+      ctx.setLineDash(drDry(record.feature) ? waterDash(record, view.zoom) : []);
       const width = waterWidth(record, view.zoom);
       ctx.strokeStyle = 'rgba(238,238,169,.65)'; ctx.lineWidth = width + 4 / view.zoom; ctx.stroke(record.inkPath);
       ctx.strokeStyle = '#f2efb5'; ctx.lineWidth = Math.max(1.25 / view.zoom, width * .28); ctx.stroke(record.inkPath);
@@ -3302,8 +3739,8 @@ function createDetailRenderer(world) {
   function riverInkHit(record, x, y, tolerance) {
     if (!record.inkPaths || (record.feature.inkExclusionParts || []).some(rings => drInPolygon(x, y, rings))) return null;
     let best = null, score = Infinity;
-    const halfWidth = (waterWidth(record, lastZoom) + (record.feature.id === lastHoveredId ? 4 / lastZoom : 0)) / 2;
-    const period = 10 / lastZoom, dashLength = 6 / lastZoom, dry = drDry(record.feature);
+    const halfWidth = waterWidth(record, lastZoom) / 2;
+    const [dashLength, gapLength] = waterDash(record, lastZoom), period = dashLength + gapLength, dry = drDry(record.feature);
     for (const path of record.inkPaths) {
       let offset = 0;
       for (let i = 1; i < path.length; i++) {
@@ -3319,11 +3756,12 @@ function createDetailRenderer(world) {
           if (end < start) continue;
           const nearest = drClamp(offset + along, start, end) - offset;
           const px = a.x + nearest / length * dx, py = a.y + nearest / length * dy;
-          // Butt caps leave real gaps. Distance along a cap counts towards the
-          // pointer tolerance rather than silently rounding away the dash gap.
+          // Match the round dash caps used by the paint pass. The shared gap
+          // formula reserves their full diameter, so the centre of a gap stays
+          // ground rather than acquiring an expanded river hit footprint.
           const longitudinal = Math.abs(along - nearest);
           const perpendicular = Math.abs((x - a.x) * dy - (y - a.y) * dx) / length;
-          const distance = Math.hypot(Math.max(0, perpendicular - halfWidth), longitudinal);
+          const distance = Math.max(0, Math.hypot(perpendicular, longitudinal) - halfWidth);
           if (distance <= tolerance && distance < score) { score = distance; best = { x: px, y: py }; }
         }
         offset += length;
@@ -4294,13 +4732,16 @@ const canvas = $('map');
 const ctx = canvas.getContext('2d');
 const objectCache = document.createElement('canvas');
 const objectCacheCtx = objectCache.getContext('2d');
-let world = createRealWorld(usaMap);
+const createGameWorld = map => createRealWorld(map, { navigationCellSize: map.cellSize / 4 });
+let world = createGameWorld(usaMap);
 let currentMap = usaMap;
-let overviewMarkers = createOverviewMarkers(world);
+let overviewMarkers = [];
 const layers = { biomes: true, elevation: true, roads: true, power: true, buildings: true, details: true };
 const roadClasses = Object.fromEntries(Object.keys(ROAD_CLASSES).map(key => [key, true]));
 let detailRenderer = createDetailRenderer(world);
 let elevationRenderer = createElevationRenderer(world, beattyElevation);
+prepareTravelWorld(world, { elevationAt: elevationRenderer.available ? elevationRenderer.sampleAt : null, biomeFeatures: detailRenderer.getFeatures().filter(feature => feature.exclusive) });
+overviewMarkers = createOverviewMarkers(world);
 let typedBuildingSources = new Set();
 let hoveredObject = null;
 const maximumZoom = () => 24;
@@ -4311,6 +4752,7 @@ let vw = innerWidth, vh = innerHeight, dpr = Math.min(devicePixelRatio || 1, 2);
 let player = { ...world.start };
 let camera = { x: world.width / 2, y: world.height / 2, zoom: Math.max(.32, Math.min(.85, (innerWidth - 360) / world.width, (innerHeight - 210) / world.height)) };
 let route = null, paused = false, following = false, speed = 1;
+const GAME_MINUTES_PER_SECOND = 2;
 let stamina = 100, water = 100, minutes = 7 * 60 + 42, totalDistance = 0;
 let pointer = null, hover = null, hoveredPoi = null, trail = [];
 let discovered = new Set(world.pois.filter(p => p.discovered).map(p => p.id));
@@ -4334,7 +4776,7 @@ function line(context, points) {
 }
 
 let objectRevision = 0, objectCacheState = null;
-const renderStats = { frames: 0, staticRebuilds: 0, lastStaticMs: 0, lastFrameMs: 0, totalFrameMs: 0 };
+const renderStats = { frames: 0, staticRebuilds: 0, lastStaticMs: 0, lastFrameMs: 0, totalFrameMs: 0, lastRouteSearchMs: 0 };
 
 function resize() {
   vw = innerWidth; vh = innerHeight; dpr = Math.min(devicePixelRatio || 1, 2);
@@ -4377,11 +4819,13 @@ function setDestination(position) {
   const target = poi ? { x: poi.x, y: poi.y } : position;
   if (target.x < 0 || target.y < 0 || target.x >= world.width || target.y >= world.height) { toast('Здесь заканчивается лист карты.'); return; }
   if (!terrainAt(world, target.x, target.y)?.walkable) { toast('Вода непроходима. Ищи мост или обойди берег.'); return; }
+  const searchStarted = performance.now();
   const result = findPath(world, player, target);
+  renderStats.lastRouteSearchMs = performance.now() - searchStarted;
   if (!result || !result.points.length) { toast('Путь закрыт. Попробуй другой берег или дорогу.'); return; }
   if (result.distance < 5) return;
   const name = poi ? poiTitle(poi) : terrainNames[terrainAt(world, target.x, target.y)?.type] || 'Точка на карте';
-  route = { points: result.points.map(p => ({ ...p })), index: 0, destination: target, name, remaining: result.distance };
+  route = { ...result, points: result.points.map(p => ({ ...p })), index: 0, destination: target, name, remaining: result.distance, remainingDurationMinutes: result.durationMinutes };
   paused = false; arrivalMarker = target;
   log(`Маршрут: ${name.toLowerCase()}`, true);
   $('travel-panel').hidden = false; $('destination-label').textContent = name;
@@ -4529,12 +4973,15 @@ $('elevation-button').addEventListener('click', () => {
 });
 
 function switchMap(map) {
-  const next = createRealWorld(map);
+  const next = createGameWorld(map);
+  const nextDetailRenderer = createDetailRenderer(next);
+  const nextElevationRenderer = createElevationRenderer(next, beattyElevation);
+  prepareTravelWorld(next, { elevationAt: nextElevationRenderer.available ? nextElevationRenderer.sampleAt : null, biomeFeatures: nextDetailRenderer.getFeatures().filter(feature => feature.exclusive) });
   world = next; currentMap = map;
   closeBuildingTypes();
   overviewMarkers = createOverviewMarkers(world);
-  detailRenderer = createDetailRenderer(world);
-  elevationRenderer = createElevationRenderer(world, beattyElevation);
+  detailRenderer = nextDetailRenderer;
+  elevationRenderer = nextElevationRenderer;
   objectCacheState = null; objectRevision++;
   detailRenderer.setLayers(layers);
   detailRenderer.setRoadClasses(roadClasses);
@@ -4692,7 +5139,7 @@ $('pause-button').addEventListener('click', togglePause);
 $('cancel-button').addEventListener('click', cancelRoute);
 $('center-button').addEventListener('click', () => { hideObjectCard(); following = true; camera.x = player.x; camera.y = player.y; updateUI(); });
 $('reset-button').addEventListener('click', reset);
-$('speed-button').addEventListener('click', () => { speed = speed === 1 ? 3 : 1; $('speed-button').textContent = `${speed}×`; toast(`Скорость путешествия: ${speed}×`); });
+$('speed-button').addEventListener('click', () => { speed = speed === 1 ? 3 : 1; $('speed-button').textContent = `${speed}×`; toast(`Темп времени: ${speed}×`); });
 $('help-button').addEventListener('click', () => { closeLayers(); closeBuildingTypes(); hideObjectCard(); $('help-panel').hidden = !$('help-panel').hidden; $('help-button').setAttribute('aria-expanded', String(!$('help-panel').hidden)); $('maps-close').click(); });
 $('help-close').addEventListener('click', () => { $('help-panel').hidden = true; $('help-button').setAttribute('aria-expanded', 'false'); });
 function zoomBy(factor, point = { x: vw / 2, y: vh / 2 }) {
@@ -4782,22 +5229,14 @@ function update(dt) {
   const panY = Number(keys.has('s') || keys.has('arrowdown')) - Number(keys.has('w') || keys.has('arrowup'));
   if (panX || panY) { hideObjectCard(); following = false; camera.x += panX * dt * 450 / camera.zoom; camera.y += panY * dt * 450 / camera.zoom; }
   if (route && !paused) {
-    const cell = terrainAt(world, player.x, player.y);
-    const factor = cell?.type === 'road' || cell?.type === 'bridge' ? 1.35 : cell?.type === 'forest' ? .73 : cell?.type === 'swamp' ? .48 : cell?.type === 'hill' ? .8 : 1;
-    let budget = dt * Math.min(33, 110 / camera.zoom) * speed * factor;
-    let walked = 0;
-    while (route && budget > 0 && route.index < route.points.length) {
-      const target = route.points[route.index], length = dist(player, target);
-      if (length <= budget) { player.x = target.x; player.y = target.y; budget -= length; walked += length; route.index++; }
-      else { player.x += (target.x - player.x) / length * budget; player.y += (target.y - player.y) / length * budget; walked += budget; budget = 0; }
-    }
-    totalDistance += walked * metersPerUnit(); minutes += walked * metersPerUnit() / 66.67;
-    stamina = Math.max(5, stamina - walked * .018); water = Math.max(10, water - walked * .005);
-    if (!trail.length || dist(player, trail[trail.length - 1]) > 9) { trail.push({ ...player }); if (trail.length > 350) trail.shift(); }
-    if (route) {
-      route.remaining = dist(player, route.points[route.index] || player);
-      for (let i = route.index + 1; i < route.points.length; i++) route.remaining += dist(route.points[i - 1], route.points[i]);
-      if (route.index >= route.points.length) {
+    const travel = advanceAlongRoute(world, route, player, dt * GAME_MINUTES_PER_SECOND * speed);
+    if (travel.blocked) {
+      cancelRoute(); toast('Этот путь недоступен. Выбери другую точку.');
+    } else {
+      totalDistance += travel.walkedMeters; minutes += travel.elapsedMinutes;
+      stamina = Math.max(5, stamina - travel.walkedDistance * .018); water = Math.max(10, water - travel.walkedDistance * .005);
+      if (!trail.length || dist(player, trail[trail.length - 1]) > 9) { trail.push({ ...player }); if (trail.length > 350) trail.shift(); }
+      if (travel.arrived) {
         log(`На месте: ${route.name.toLowerCase()}`, true);
         route = null; paused = false; arrivalMarker = null; $('travel-panel').hidden = true;
         toast('Ты на месте. Выбери, куда идти дальше.');
@@ -4976,6 +5415,15 @@ function updateUI() {
   $('biome-label').hidden = !biomes.length;
   $('biome-label').textContent = biomes.length ? `Биом: ${biomes.join(' + ')}` : '';
   $('biome-label').title = $('biome-label').textContent;
+  const toward = route?.points[route.index] || null;
+  const movement = movementAt(world, player.x, player.y, toward);
+  $('movement-speed').textContent = `${movement.speedKmh.toFixed(1).replace('.', ',')} км/ч`;
+  $('movement-multiplier').textContent = `×${movement.multiplier.toFixed(2).replace('.', ',')}`;
+  const surfaceNames = { asphalt: 'Асфальт', concrete: 'Бетон', paved: 'Твёрдое покрытие', paving_stones: 'Брусчатка', gravel: 'Щебень', fine_gravel: 'Мелкий гравий', compacted: 'Уплотнённый грунт', dirt: 'Грунт', earth: 'Грунт', ground: 'Грунт', unpaved: 'Грунтовая дорога', sand: 'Песок', mud: 'Грязь', grass: 'Трава', rock: 'Камни' };
+  const footing = movement.roadClass ? [ROAD_CLASSES[movement.roadClass]?.name || 'Дорога', surfaceNames[movement.surface]].filter(Boolean).join(' · ') : biomes[0] || 'Пустошь';
+  const slope = toward ? Math.abs(movement.slopePercent) < .5 ? 'Почти ровно' : `${movement.slopePercent > 0 ? 'Подъём +' : 'Спуск −'}${Math.round(Math.abs(movement.slopePercent))}%` : '';
+  $('movement-factors').textContent = [footing, slope].filter(Boolean).join(' · ');
+  $('movement-multiplier').title = `Покрытие ×${movement.terrainMultiplier.toFixed(2)} · Уклон ×${movement.slopeMultiplier.toFixed(2)}`;
   if (world.geographic) {
     const [west, south, east, north] = world.bbox;
     const degree = 6371008.8 * Math.PI / 180, cosine = Math.cos((south + north) * Math.PI / 360);
@@ -4991,7 +5439,7 @@ function updateUI() {
   $('center-button').setAttribute('aria-pressed', String(following));
   if (route) {
     $('distance-label').textContent = formatDistance(route.remaining * metersPerUnit());
-    const eta = Math.max(1, Math.round(route.remaining * metersPerUnit() / 66.67));
+    const eta = Math.max(1, Math.ceil(route.remainingDurationMinutes));
     $('eta-label').textContent = `${eta < 60 ? `${eta} мин` : `${Math.floor(eta / 60)} ч ${eta % 60} мин`} пути${paused ? ' · пауза' : ''}`;
   }
 }
@@ -4999,6 +5447,8 @@ function updateUI() {
 // Small read-only diagnostics for automated smoke checks and future iteration.
 window.__DAY_NEXT__ = {
   getState: () => ({ player: { ...player }, camera: { ...camera }, moving: !!route && !paused, paused, speed, stamina, water, minutes, totalDistance, destination: route ? { ...route.destination } : null, remaining: route?.remaining || 0, discovered: [...discovered] }),
+  getRoute: () => route ? { points: route.points.map(point => ({ ...point })), distance: route.distance, durationMinutes: route.durationMinutes, remaining: route.remaining, remainingDurationMinutes: route.remainingDurationMinutes, index: route.index, destination: { ...route.destination }, search: { ...route.search } } : null,
+  getMovementAt: (x, y, toward = null) => movementAt(world, x, y, toward),
   getWorld: () => world,
   worldToScreen: position => worldToScreen(position),
   getDetails: () => detailRenderer.getStats(),
@@ -5008,7 +5458,7 @@ window.__DAY_NEXT__ = {
   getRoadClasses: () => ({ ...roadClasses }),
   getOverviewMarkers: () => overviewMarkers.map(marker => ({ ...structuredClone(marker), visible: world.geographic && camera.zoom <= OVERVIEW_MAX_ZOOM && poiEnabled(marker) })),
   getFeatures: () => detailRenderer.getFeatures(),
-  getRenderStats: () => ({ ...renderStats, meanFrameMs: renderStats.totalFrameMs / Math.max(1, renderStats.frames), cachePixels: objectCache.width * objectCache.height, cacheBytes: objectCache.width * objectCache.height * 4, renderer: detailRenderer.getStats(), elevation: elevationRenderer.getStats() }),
+  getRenderStats: () => ({ ...renderStats, meanFrameMs: renderStats.totalFrameMs / Math.max(1, renderStats.frames), cachePixels: objectCache.width * objectCache.height, cacheBytes: objectCache.width * objectCache.height * 4, renderer: detailRenderer.getStats(), elevation: elevationRenderer.getStats(), navigation: structuredClone(world.metadata?.movement || {}) }),
   getElevationInfo: () => elevationRenderer.getInfo(),
   elevationAt: (x, y) => elevationRenderer.sampleAt(x, y),
   getTypeCatalogs: () => structuredClone({ buildingTypes: BUILDING_TYPES, buildingRoles: BUILDING_ROLES, buildingCategories: BUILDING_CATEGORIES, biomeTypes: BIOME_TYPES, resourceProfiles: RESOURCE_PROFILES, resourceKinds: RESOURCE_KINDS }),

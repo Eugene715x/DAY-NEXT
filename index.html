@@ -36,7 +36,7 @@
       <div class="hud">
         <header class="top-bar">
           <div class="brand-block">
-            <div class="brand" aria-label="DAY NEXT"><span>DAY</span><span class="brand-divider">/</span><span class="brand-next">NEXT</span><span class="prototype">ПРОТОТИП <b>15</b></span></div>
+            <div class="brand" aria-label="DAY NEXT"><span>DAY</span><span class="brand-divider">/</span><span class="brand-next">NEXT</span><span class="prototype">ПРОТОТИП <b>16</b></span></div>
             <div class="brand-caption"><span class="live-dot"></span> ОДИНОЧНАЯ ЭКСПЕДИЦИЯ</div>
           </div>
           <div class="world-status glass">
@@ -87,12 +87,13 @@
             <div class="stat stat-water"><div class="stat-label"><svg class="icon"><use href="#i-water" /></svg><span>Вода</span><strong id="water-value">100</strong></div><div class="stat-track"><span id="water-bar" style="width:100%"></span></div></div>
           </div>
           <div class="location"><svg class="icon"><use href="#i-pin" /></svg><div><strong id="location-name">Местность</strong><span id="terrain-label">Открытая местность</span><span id="biome-label" class="biome-label" hidden></span></div></div>
+          <div class="movement-status"><div class="movement-heading"><span>ХОДЬБА</span><strong id="movement-speed">4,0 км/ч</strong><span id="movement-multiplier">×1,00</span></div><span id="movement-factors" class="movement-factors">Ровная местность</span></div>
         </section>
 
         <section id="travel-panel" class="travel-panel glass" aria-label="Текущий маршрут" hidden>
-          <div class="travel-top"><span class="eyebrow"><span class="live-dot"></span> МАРШРУТ</span><button id="speed-button" class="speed-button" type="button" title="Скорость передвижения">1×</button></div>
+          <div class="travel-top"><span class="eyebrow"><span class="live-dot"></span> МАРШРУТ</span><button id="speed-button" class="speed-button" type="button" title="Ускорение игрового времени · 1× / 3×">1×</button></div>
           <div class="travel-destination"><svg class="icon"><use href="#i-route" /></svg><strong id="destination-label">Точка на карте</strong></div>
-          <div class="travel-bottom"><div class="travel-metrics"><strong id="distance-label">0,0 км</strong><span class="metric-divider"></span><span id="eta-label">0 мин</span></div><div class="travel-actions"><button id="pause-button" class="text-button" type="button" title="Пауза · Пробел">Пауза</button><button id="cancel-button" class="icon-button cancel-button" type="button" aria-label="Отменить маршрут" title="Отменить маршрут · Esc">×</button></div></div>
+          <div class="travel-bottom"><div class="travel-metrics"><strong id="distance-label">0,0 км</strong><span class="metric-divider"></span><span id="eta-label" title="Время с учётом покрытия и уклона">0 мин</span></div><div class="travel-actions"><button id="pause-button" class="text-button" type="button" title="Пауза · Пробел">Пауза</button><button id="cancel-button" class="icon-button cancel-button" type="button" aria-label="Отменить маршрут" title="Отменить маршрут · Esc">×</button></div></div>
         </section>
 
         <aside class="journal" aria-label="Журнал экспедиции">
@@ -125,7 +126,7 @@
 
         <section id="help-panel" class="help-panel glass" role="dialog" aria-label="Как играть" aria-modal="false" hidden>
           <div class="help-heading"><div><p class="eyebrow">ПОЛЕВОЙ СПРАВОЧНИК</p><h2>Сначала — первый шаг.</h2></div><button id="help-close" class="icon-button" type="button" aria-label="Закрыть справку">×</button></div>
-          <p>Выбери точку на суше. Путник сам проложит маршрут, обойдёт воду и найдёт мост.</p>
+          <p>Выбери точку на суше. Путник проложит путь с учётом дорог, биомов и уклона: удобный обход может оказаться быстрее прямого подъёма. Вода пересекается по мостам.</p>
           <dl><div><dt>Клик / касание</dt><dd>Идти в выбранную точку</dd></div><div><dt>Перетаскивание</dt><dd>Осмотреть карту</dd></div><div><dt>Колесо / щипок / + −</dt><dd>Приблизить улицы и дома</dd></div><div><dt>B / кнопка дома</dt><dd>Показать застройку</dd></div><div><dt>Слои карты</dt><dd>Выбрать, что показывать</dd></div><div><dt>Пробел</dt><dd>Пауза в пути</dd></div><div><dt>F</dt><dd>Вернуться к путнику</dd></div><div><dt>Esc</dt><dd>Закрыть окно / отменить путь</dd></div></dl>
           <p class="help-note">Наведи на объект, а на телефоне коснись его, чтобы узнать детали на любом масштабе. Приблизь карту, чтобы рассмотреть контуры домов и дорожки. В «Слоях карты» можно отдельно показать дороги, здания и природные объекты. Отдых восстанавливает выносливость.</p>
         </section>
@@ -179,7 +180,7 @@
               <label class="layer-option" for="layer-buildings"><input id="layer-buildings" type="checkbox" checked /><span>Здания</span><span id="count-buildings" class="layer-count">—</span></label>
               <label class="layer-option" for="layer-details"><input id="layer-details" type="checkbox" checked /><span>Остальные объекты</span><span id="count-details" class="layer-count">—</span></label>
             </div>
-            <p class="layers-note" id="layers-note">Карта высот показывает рельеф цветом, тенями и горизонталями. Выключи её, чтобы увидеть цвета биомов. Дороги, русла и здания остаются поверх рельефа. Наведение показывает тип местности и высоту.</p>
+            <p class="layers-note" id="layers-note">Полупрозрачные биомы окрашивают рельеф, сохраняя видимость склонов. Асфальт серый, грунтовки песочные. Видимость слоёв не меняет скорость и построение маршрута.</p>
           </div>
         </section>
       </div>

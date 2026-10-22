@@ -1,5 +1,6 @@
 import { findPath, terrainAt, nearestWalkable } from './world.js';
-import { createRealWorld } from './real-world.js';
+import { createRealWorld, prepareTravelWorld } from './real-world.js';
+import { BASE_WALK_METERS_PER_MINUTE, advanceAlongRoute, movementAt } from './movement-model.js';
 import { convertOSM, validateBbox } from './scripts/lib/osm-converter.mjs';
 import usaMap from './maps/usa.js';
 import beattyElevation from './maps/beatty-elevation.js';
@@ -16,13 +17,16 @@ const canvas = $('map');
 const ctx = canvas.getContext('2d');
 const objectCache = document.createElement('canvas');
 const objectCacheCtx = objectCache.getContext('2d');
-let world = createRealWorld(usaMap);
+const createGameWorld = map => createRealWorld(map, { navigationCellSize: map.cellSize / 4 });
+let world = createGameWorld(usaMap);
 let currentMap = usaMap;
-let overviewMarkers = createOverviewMarkers(world);
+let overviewMarkers = [];
 const layers = { biomes: true, elevation: true, roads: true, power: true, buildings: true, details: true };
 const roadClasses = Object.fromEntries(Object.keys(ROAD_CLASSES).map(key => [key, true]));
 let detailRenderer = createDetailRenderer(world);
 let elevationRenderer = createElevationRenderer(world, beattyElevation);
+prepareTravelWorld(world, { elevationAt: elevationRenderer.available ? elevationRenderer.sampleAt : null, biomeFeatures: detailRenderer.getFeatures().filter(feature => feature.exclusive) });
+overviewMarkers = createOverviewMarkers(world);
 let typedBuildingSources = new Set();
 let hoveredObject = null;
 const maximumZoom = () => 24;
@@ -33,6 +37,7 @@ let vw = innerWidth, vh = innerHeight, dpr = Math.min(devicePixelRatio || 1, 2);
 let player = { ...world.start };
 let camera = { x: world.width / 2, y: world.height / 2, zoom: Math.max(.32, Math.min(.85, (innerWidth - 360) / world.width, (innerHeight - 210) / world.height)) };
 let route = null, paused = false, following = false, speed = 1;
+const GAME_MINUTES_PER_SECOND = 2;
 let stamina = 100, water = 100, minutes = 7 * 60 + 42, totalDistance = 0;
 let pointer = null, hover = null, hoveredPoi = null, trail = [];
 let discovered = new Set(world.pois.filter(p => p.discovered).map(p => p.id));
@@ -56,7 +61,7 @@ function line(context, points) {
 }
 
 let objectRevision = 0, objectCacheState = null;
-const renderStats = { frames: 0, staticRebuilds: 0, lastStaticMs: 0, lastFrameMs: 0, totalFrameMs: 0 };
+const renderStats = { frames: 0, staticRebuilds: 0, lastStaticMs: 0, lastFrameMs: 0, totalFrameMs: 0, lastRouteSearchMs: 0 };
 
 function resize() {
   vw = innerWidth; vh = innerHeight; dpr = Math.min(devicePixelRatio || 1, 2);
@@ -99,11 +104,13 @@ function setDestination(position) {
   const target = poi ? { x: poi.x, y: poi.y } : position;
   if (target.x < 0 || target.y < 0 || target.x >= world.width || target.y >= world.height) { toast('Здесь заканчивается лист карты.'); return; }
   if (!terrainAt(world, target.x, target.y)?.walkable) { toast('Вода непроходима. Ищи мост или обойди берег.'); return; }
+  const searchStarted = performance.now();
   const result = findPath(world, player, target);
+  renderStats.lastRouteSearchMs = performance.now() - searchStarted;
   if (!result || !result.points.length) { toast('Путь закрыт. Попробуй другой берег или дорогу.'); return; }
   if (result.distance < 5) return;
   const name = poi ? poiTitle(poi) : terrainNames[terrainAt(world, target.x, target.y)?.type] || 'Точка на карте';
-  route = { points: result.points.map(p => ({ ...p })), index: 0, destination: target, name, remaining: result.distance };
+  route = { ...result, points: result.points.map(p => ({ ...p })), index: 0, destination: target, name, remaining: result.distance, remainingDurationMinutes: result.durationMinutes };
   paused = false; arrivalMarker = target;
   log(`Маршрут: ${name.toLowerCase()}`, true);
   $('travel-panel').hidden = false; $('destination-label').textContent = name;
@@ -251,12 +258,15 @@ $('elevation-button').addEventListener('click', () => {
 });
 
 function switchMap(map) {
-  const next = createRealWorld(map);
+  const next = createGameWorld(map);
+  const nextDetailRenderer = createDetailRenderer(next);
+  const nextElevationRenderer = createElevationRenderer(next, beattyElevation);
+  prepareTravelWorld(next, { elevationAt: nextElevationRenderer.available ? nextElevationRenderer.sampleAt : null, biomeFeatures: nextDetailRenderer.getFeatures().filter(feature => feature.exclusive) });
   world = next; currentMap = map;
   closeBuildingTypes();
   overviewMarkers = createOverviewMarkers(world);
-  detailRenderer = createDetailRenderer(world);
-  elevationRenderer = createElevationRenderer(world, beattyElevation);
+  detailRenderer = nextDetailRenderer;
+  elevationRenderer = nextElevationRenderer;
   objectCacheState = null; objectRevision++;
   detailRenderer.setLayers(layers);
   detailRenderer.setRoadClasses(roadClasses);
@@ -414,7 +424,7 @@ $('pause-button').addEventListener('click', togglePause);
 $('cancel-button').addEventListener('click', cancelRoute);
 $('center-button').addEventListener('click', () => { hideObjectCard(); following = true; camera.x = player.x; camera.y = player.y; updateUI(); });
 $('reset-button').addEventListener('click', reset);
-$('speed-button').addEventListener('click', () => { speed = speed === 1 ? 3 : 1; $('speed-button').textContent = `${speed}×`; toast(`Скорость путешествия: ${speed}×`); });
+$('speed-button').addEventListener('click', () => { speed = speed === 1 ? 3 : 1; $('speed-button').textContent = `${speed}×`; toast(`Темп времени: ${speed}×`); });
 $('help-button').addEventListener('click', () => { closeLayers(); closeBuildingTypes(); hideObjectCard(); $('help-panel').hidden = !$('help-panel').hidden; $('help-button').setAttribute('aria-expanded', String(!$('help-panel').hidden)); $('maps-close').click(); });
 $('help-close').addEventListener('click', () => { $('help-panel').hidden = true; $('help-button').setAttribute('aria-expanded', 'false'); });
 function zoomBy(factor, point = { x: vw / 2, y: vh / 2 }) {
@@ -504,22 +514,14 @@ function update(dt) {
   const panY = Number(keys.has('s') || keys.has('arrowdown')) - Number(keys.has('w') || keys.has('arrowup'));
   if (panX || panY) { hideObjectCard(); following = false; camera.x += panX * dt * 450 / camera.zoom; camera.y += panY * dt * 450 / camera.zoom; }
   if (route && !paused) {
-    const cell = terrainAt(world, player.x, player.y);
-    const factor = cell?.type === 'road' || cell?.type === 'bridge' ? 1.35 : cell?.type === 'forest' ? .73 : cell?.type === 'swamp' ? .48 : cell?.type === 'hill' ? .8 : 1;
-    let budget = dt * Math.min(33, 110 / camera.zoom) * speed * factor;
-    let walked = 0;
-    while (route && budget > 0 && route.index < route.points.length) {
-      const target = route.points[route.index], length = dist(player, target);
-      if (length <= budget) { player.x = target.x; player.y = target.y; budget -= length; walked += length; route.index++; }
-      else { player.x += (target.x - player.x) / length * budget; player.y += (target.y - player.y) / length * budget; walked += budget; budget = 0; }
-    }
-    totalDistance += walked * metersPerUnit(); minutes += walked * metersPerUnit() / 66.67;
-    stamina = Math.max(5, stamina - walked * .018); water = Math.max(10, water - walked * .005);
-    if (!trail.length || dist(player, trail[trail.length - 1]) > 9) { trail.push({ ...player }); if (trail.length > 350) trail.shift(); }
-    if (route) {
-      route.remaining = dist(player, route.points[route.index] || player);
-      for (let i = route.index + 1; i < route.points.length; i++) route.remaining += dist(route.points[i - 1], route.points[i]);
-      if (route.index >= route.points.length) {
+    const travel = advanceAlongRoute(world, route, player, dt * GAME_MINUTES_PER_SECOND * speed);
+    if (travel.blocked) {
+      cancelRoute(); toast('Этот путь недоступен. Выбери другую точку.');
+    } else {
+      totalDistance += travel.walkedMeters; minutes += travel.elapsedMinutes;
+      stamina = Math.max(5, stamina - travel.walkedDistance * .018); water = Math.max(10, water - travel.walkedDistance * .005);
+      if (!trail.length || dist(player, trail[trail.length - 1]) > 9) { trail.push({ ...player }); if (trail.length > 350) trail.shift(); }
+      if (travel.arrived) {
         log(`На месте: ${route.name.toLowerCase()}`, true);
         route = null; paused = false; arrivalMarker = null; $('travel-panel').hidden = true;
         toast('Ты на месте. Выбери, куда идти дальше.');
@@ -698,6 +700,15 @@ function updateUI() {
   $('biome-label').hidden = !biomes.length;
   $('biome-label').textContent = biomes.length ? `Биом: ${biomes.join(' + ')}` : '';
   $('biome-label').title = $('biome-label').textContent;
+  const toward = route?.points[route.index] || null;
+  const movement = movementAt(world, player.x, player.y, toward);
+  $('movement-speed').textContent = `${movement.speedKmh.toFixed(1).replace('.', ',')} км/ч`;
+  $('movement-multiplier').textContent = `×${movement.multiplier.toFixed(2).replace('.', ',')}`;
+  const surfaceNames = { asphalt: 'Асфальт', concrete: 'Бетон', paved: 'Твёрдое покрытие', paving_stones: 'Брусчатка', gravel: 'Щебень', fine_gravel: 'Мелкий гравий', compacted: 'Уплотнённый грунт', dirt: 'Грунт', earth: 'Грунт', ground: 'Грунт', unpaved: 'Грунтовая дорога', sand: 'Песок', mud: 'Грязь', grass: 'Трава', rock: 'Камни' };
+  const footing = movement.roadClass ? [ROAD_CLASSES[movement.roadClass]?.name || 'Дорога', surfaceNames[movement.surface]].filter(Boolean).join(' · ') : biomes[0] || 'Пустошь';
+  const slope = toward ? Math.abs(movement.slopePercent) < .5 ? 'Почти ровно' : `${movement.slopePercent > 0 ? 'Подъём +' : 'Спуск −'}${Math.round(Math.abs(movement.slopePercent))}%` : '';
+  $('movement-factors').textContent = [footing, slope].filter(Boolean).join(' · ');
+  $('movement-multiplier').title = `Покрытие ×${movement.terrainMultiplier.toFixed(2)} · Уклон ×${movement.slopeMultiplier.toFixed(2)}`;
   if (world.geographic) {
     const [west, south, east, north] = world.bbox;
     const degree = 6371008.8 * Math.PI / 180, cosine = Math.cos((south + north) * Math.PI / 360);
@@ -713,7 +724,7 @@ function updateUI() {
   $('center-button').setAttribute('aria-pressed', String(following));
   if (route) {
     $('distance-label').textContent = formatDistance(route.remaining * metersPerUnit());
-    const eta = Math.max(1, Math.round(route.remaining * metersPerUnit() / 66.67));
+    const eta = Math.max(1, Math.ceil(route.remainingDurationMinutes));
     $('eta-label').textContent = `${eta < 60 ? `${eta} мин` : `${Math.floor(eta / 60)} ч ${eta % 60} мин`} пути${paused ? ' · пауза' : ''}`;
   }
 }
@@ -721,6 +732,8 @@ function updateUI() {
 // Small read-only diagnostics for automated smoke checks and future iteration.
 window.__DAY_NEXT__ = {
   getState: () => ({ player: { ...player }, camera: { ...camera }, moving: !!route && !paused, paused, speed, stamina, water, minutes, totalDistance, destination: route ? { ...route.destination } : null, remaining: route?.remaining || 0, discovered: [...discovered] }),
+  getRoute: () => route ? { points: route.points.map(point => ({ ...point })), distance: route.distance, durationMinutes: route.durationMinutes, remaining: route.remaining, remainingDurationMinutes: route.remainingDurationMinutes, index: route.index, destination: { ...route.destination }, search: { ...route.search } } : null,
+  getMovementAt: (x, y, toward = null) => movementAt(world, x, y, toward),
   getWorld: () => world,
   worldToScreen: position => worldToScreen(position),
   getDetails: () => detailRenderer.getStats(),
@@ -730,7 +743,7 @@ window.__DAY_NEXT__ = {
   getRoadClasses: () => ({ ...roadClasses }),
   getOverviewMarkers: () => overviewMarkers.map(marker => ({ ...structuredClone(marker), visible: world.geographic && camera.zoom <= OVERVIEW_MAX_ZOOM && poiEnabled(marker) })),
   getFeatures: () => detailRenderer.getFeatures(),
-  getRenderStats: () => ({ ...renderStats, meanFrameMs: renderStats.totalFrameMs / Math.max(1, renderStats.frames), cachePixels: objectCache.width * objectCache.height, cacheBytes: objectCache.width * objectCache.height * 4, renderer: detailRenderer.getStats(), elevation: elevationRenderer.getStats() }),
+  getRenderStats: () => ({ ...renderStats, meanFrameMs: renderStats.totalFrameMs / Math.max(1, renderStats.frames), cachePixels: objectCache.width * objectCache.height, cacheBytes: objectCache.width * objectCache.height * 4, renderer: detailRenderer.getStats(), elevation: elevationRenderer.getStats(), navigation: structuredClone(world.metadata?.movement || {}) }),
   getElevationInfo: () => elevationRenderer.getInfo(),
   elevationAt: (x, y) => elevationRenderer.sampleAt(x, y),
   getTypeCatalogs: () => structuredClone({ buildingTypes: BUILDING_TYPES, buildingRoles: BUILDING_ROLES, buildingCategories: BUILDING_CATEGORIES, biomeTypes: BIOME_TYPES, resourceProfiles: RESOURCE_PROFILES, resourceKinds: RESOURCE_KINDS }),

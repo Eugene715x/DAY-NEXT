@@ -1,4 +1,6 @@
 /** Raster navigation over imported OSM geometry. No terrain or elevation is invented. */
+import { roadClass } from './map-presentation.js';
+import { cellMovementMultiplier, roadSpeedMultiplier } from './movement-model.js';
 
 function rwPointInRing(x, y, ring) {
   let inside = false;
@@ -148,9 +150,19 @@ function rwValidateMap(map) {
 }
 
 /** Convert projected source geometry to the same world interface as createWorld(). */
-export function createRealWorld(map) {
+export function createRealWorld(map, options = {}) {
   rwValidateMap(map);
-  const { width, height, cellSize, metersPerUnit } = map;
+  const { width, height, metersPerUnit } = map;
+  const sourceCellSize = map.cellSize;
+  const requestedCellSize = options.navigationCellSize;
+  if (requestedCellSize !== undefined && (!Number.isFinite(requestedCellSize) || requestedCellSize <= 0)) throw new Error('Invalid navigation cell size');
+  let subdivision = 1;
+  const sourceCells = width / sourceCellSize * (height / sourceCellSize);
+  // Refine only the runtime navigation, preserving the source's coordinates and
+  // grid declaration. A power-of-two subdivision keeps map edges exact and the
+  // same node limit also bounds unusually large imported maps.
+  while (requestedCellSize !== undefined && sourceCellSize / subdivision > requestedCellSize && sourceCells * (subdivision * 2) ** 2 <= 250000) subdivision *= 2;
+  const cellSize = sourceCellSize / subdivision;
   let seed = 2166136261;
   for (const character of String(map.id || map.name || 'osm')) seed = Math.imul(seed ^ character.charCodeAt(0), 16777619) >>> 0;
   const world = {
@@ -162,7 +174,7 @@ export function createRealWorld(map) {
     labels: (map.labels || []).map(rwCopyGeometry), relations: (map.relations || []).map(rwCopyGeometry), lakes: [], radiationZones: [], seed,
     id: map.id, name: map.name, region: map.region, country: map.country, bbox: [...map.bbox],
     source: rwCopyGeometry(map.source || {}), coverage: rwCopyGeometry(map.coverage || null), geographic: true, relief: false,
-    metadata: { type: 'osm', version: map.version, relief: false, navigationResolutionMeters: cellSize * metersPerUnit, maxPoiSnapMeters: 100 },
+    metadata: { type: 'osm', version: map.version, relief: false, navigationResolutionMeters: cellSize * metersPerUnit, sourceCellSize, navigationSubdivision: subdivision, maxPoiSnapMeters: 100 },
   };
   // Elevation deliberately stays flat: OSM surface tags do not supply a DEM.
   const priorities = { plain: 0, forest: 1, swamp: 2, water: 3 };
@@ -191,6 +203,7 @@ export function createRealWorld(map) {
   const components = rwFindComponents(world);
   if (components.main === -1) throw new Error('Map has no walkable land');
   const desiredStart = map.start && Number.isFinite(map.start.x) && Number.isFinite(map.start.y) ? map.start : { x: width / 2, y: height / 2 };
+  world.metadata.requestedStart = { x: desiredStart.x, y: desiredStart.y };
   world.start = rwNearestInComponent(world, components, desiredStart, components.main);
   world.metadata.componentCount = components.components.length;
   world.metadata.startSnapDistanceMeters = Math.hypot(world.start.x - desiredStart.x, world.start.y - desiredStart.y) * metersPerUnit;
@@ -211,4 +224,151 @@ export function createRealWorld(map) {
   }
   world.metadata.unreachablePoiCount = world.pois.filter(poi => !poi.reachable).length;
   return world;
+}
+
+function rwParts(feature) {
+  if (feature.parts?.length) return feature.parts;
+  if (feature.rings?.length) return [feature.rings];
+  if (feature.points?.length >= 3) return [[feature.points]];
+  return [];
+}
+
+// Paint centre samples by scanline rather than testing every map cell against
+// every vertex of a regional polygon and all of its holes.
+function rwRasterParts(world, parts, visit) {
+  const size = world.cellSize;
+  for (const rings of parts) {
+    if (!rings[0]?.length) continue;
+    const bounds = rwBounds(rings[0]);
+    const firstRow = Math.max(0, Math.ceil(bounds.minY / size - .5));
+    const lastRow = Math.min(world.rows - 1, Math.floor(bounds.maxY / size - .5));
+    for (let row = firstRow; row <= lastRow; row++) {
+      const y = (row + .5) * size, crossings = [];
+      for (const ring of rings) for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+        const a = ring[j], b = ring[i];
+        if ((a.y > y) !== (b.y > y)) crossings.push(a.x + (y - a.y) * (b.x - a.x) / (b.y - a.y));
+      }
+      crossings.sort((a, b) => a - b);
+      for (let i = 0; i + 1 < crossings.length; i += 2) {
+        const firstCol = Math.max(0, Math.ceil(crossings[i] / size - .5));
+        const lastCol = Math.min(world.cols - 1, Math.ceil(crossings[i + 1] / size - .5) - 1);
+        for (let col = firstCol; col <= lastCol; col++) visit(row * world.cols + col);
+      }
+    }
+  }
+}
+
+const rwFlag = value => value !== undefined && value !== null && !['', 'no', 'false', '0'].includes(String(value));
+const rwDryBiome = feature => ['seasonal_river', 'dry_riverbed'].includes(feature.biome) || String(feature.waterKind || '').startsWith('seasonal_') || rwFlag(feature.intermittent) || rwFlag(feature.seasonal) || rwFlag(feature.tags?.intermittent) || rwFlag(feature.tags?.seasonal);
+const rwGroundBiome = cell => ({ forest: 'forest', swamp: 'wetland', hill: 'rock', water: 'water' })[cell?.type] || 'wasteland';
+
+/**
+ * Prepare the same physical costs for route search and travel. This runs once
+ * per loaded map and never consults layer visibility. Input geometry and DEM
+ * samples are retained as source facts; only runtime navigation cells change.
+ */
+export function prepareTravelWorld(world, { elevationAt, biomeFeatures = [] } = {}) {
+  if (!world || !Array.isArray(world.cells) || !Number.isFinite(world.cellSize) || world.cellSize <= 0) throw new Error('Invalid travel world');
+  const ground = world.terrainCells || world.cells;
+  for (let index = 0; index < world.cells.length; index++) {
+    const cell = world.cells[index];
+    cell.biome = rwGroundBiome(ground[index]);
+    cell.roadClass = null; cell.surface = null; cell.roadDistanceMeters = null; cell.roadWidthMeters = null; cell.roadId = null;
+    delete cell.roadAnchor;
+    cell.elevationMeters = null;
+  }
+  const polygons = biomeFeatures.filter(feature => feature?.geometry === 'polygon' && feature.exclusive !== false);
+  const fallback = polygons.find(feature => feature.fallback);
+  if (fallback?.biome) for (const cell of world.cells) cell.biome = fallback.biome;
+  let permanentWaterCells = 0;
+  for (const feature of polygons) {
+    if (feature.fallback) continue;
+    const wet = (feature.water === true || ['water', 'river', 'lake'].includes(feature.biome)) && !rwDryBiome(feature);
+    rwRasterParts(world, rwParts(feature), index => {
+      const cell = world.cells[index];
+      cell.biome = feature.biome || rwGroundBiome(cell);
+      if (wet && cell.type !== 'bridge') { cell.type = 'water'; cell.walkable = false; }
+    });
+  }
+  const nearestRoad = new Float64Array(world.cells.length); nearestRoad.fill(Infinity);
+  const roadPreference = new Float64Array(world.cells.length);
+  const size = world.cellSize, metersPerUnit = world.metersPerUnit || 5;
+  const railTypes = new Set(['rail', 'light_rail', 'narrow_gauge', 'tram', 'subway', 'monorail', 'funicular', 'abandoned', 'disused', 'dismantled', 'razed']);
+  const roads = new Map((world.roads || []).map((road, index) => [road.id || `road-${index}`, road]));
+  for (const detail of world.details || []) if (detail.geometry === 'line' && railTypes.has(detail.tags?.railway || detail.kind) && !roads.has(detail.id)) roads.set(detail.id, detail);
+  for (const road of roads.values()) {
+    const paths = road.paths?.length ? road.paths : [road.points || []];
+    const klass = roadClass(road), surface = road.surface || road.tags?.surface || null;
+    const preference = roadSpeedMultiplier(klass, surface);
+    const width = Number(road.widthMeters) > 0 ? Number(road.widthMeters) / metersPerUnit : Number(road.width) > 0 ? Number(road.width) : 2;
+    const radius = Math.max(width / 2, size * .72);
+    const bridge = rwFlag(road.bridge ?? road.tags?.bridge);
+    for (const path of paths) for (let segment = 1; segment < path.length; segment++) {
+      const a = path[segment - 1], b = path[segment], dx = b.x - a.x, dy = b.y - a.y, square = dx * dx + dy * dy;
+      rwRasterBounds(world, rwBounds([a, b]), radius, (index, x, y) => {
+        const cell = world.cells[index];
+        const fraction = square ? Math.max(0, Math.min(1, ((x - a.x) * dx + (y - a.y) * dy) / square)) : 0;
+        const px = a.x + fraction * dx, py = a.y + fraction * dy, distance = Math.hypot(x - px, y - py);
+        if (distance > radius) return;
+        // Only an explicit mapped bridge may override mapped permanent water.
+        if (!cell.walkable && !bridge) return;
+        if (bridge && !cell.walkable) { cell.type = 'bridge'; cell.walkable = true; }
+        if (!cell.walkable) return;
+        // At crossings use the better surface; elsewhere favour the closest
+        // native centreline, independent of the order of OSM records.
+        const normalized = distance / radius;
+        const score = normalized + (1 / Math.max(.01, preference)) * .2;
+        const old = nearestRoad[index];
+        if (score > old + 1e-9 || Math.abs(score - old) < 1e-9 && (preference < roadPreference[index] || preference === roadPreference[index] && cell.roadId !== null && String(road.id || '').localeCompare(String(cell.roadId)) >= 0)) return;
+        nearestRoad[index] = score; roadPreference[index] = preference;
+        cell.roadClass = klass; cell.surface = surface; cell.roadDistanceMeters = distance * metersPerUnit; cell.roadWidthMeters = width * metersPerUnit; cell.roadId = road.id || null;
+        if (cell.type !== 'bridge') cell.type = 'road';
+        const left = Math.floor(index % world.cols) * size, top = Math.floor(index / world.cols) * size;
+        const epsilon = Math.min(1e-6, size * 1e-6);
+        if (px >= left - epsilon && px <= left + size + epsilon && py >= top - epsilon && py <= top + size + epsilon) {
+          cell.roadAnchor = { x: Math.max(left + epsilon, Math.min(left + size - epsilon, px)), y: Math.max(top + epsilon, Math.min(top + size - epsilon, py)) };
+        } else delete cell.roadAnchor;
+      });
+    }
+  }
+  let elevationSamples = 0, roadCells = 0;
+  const biomeCounts = {};
+  for (let index = 0; index < world.cells.length; index++) {
+    const cell = world.cells[index], x = (index % world.cols + .5) * size, y = (Math.floor(index / world.cols) + .5) * size;
+    const height = typeof elevationAt === 'function' ? elevationAt(x, y) : null;
+    if (Number.isFinite(height)) { cell.elevationMeters = height; elevationSamples++; }
+    if (cell.roadClass) roadCells++;
+    if (!cell.walkable) permanentWaterCells++;
+    biomeCounts[cell.biome] = (biomeCounts[cell.biome] || 0) + 1;
+    const multiplier = cellMovementMultiplier(cell);
+    cell.cost = cell.walkable && Number.isFinite(multiplier) && multiplier > 0 ? 1 / multiplier : Infinity;
+    if (!Number.isFinite(cell.cost)) cell.walkable = false;
+  }
+  world.movementPrepared = true;
+  world.movementElevationAt = typeof elevationAt === 'function' ? elevationAt : null;
+  world.relief = elevationSamples > 0;
+  const components = rwFindComponents(world);
+  if (components.main === -1) throw new Error('Map has no walkable travel ground');
+  const requestedStart = world.metadata?.requestedStart || world.start || { x: world.width / 2, y: world.height / 2 };
+  world.start = rwNearestInComponent(world, components, requestedStart, components.main);
+  for (const poi of world.pois || []) {
+    const source = { x: Number.isFinite(poi.sourceX) ? poi.sourceX : poi.x, y: Number.isFinite(poi.sourceY) ? poi.sourceY : poi.y };
+    const sourceIndex = rwIndexAt(world, source);
+    const landing = sourceIndex >= 0 && world.cells[sourceIndex].walkable ? source : rwNearestInComponent(world, components, source, components.main, 100 / metersPerUnit);
+    if (landing) { poi.x = landing.x; poi.y = landing.y; }
+    else { poi.x = source.x; poi.y = source.y; }
+    const index = rwIndexAt(world, poi);
+    poi.reachable = index >= 0 && world.cells[index].walkable && components.ids[index] === components.main;
+    poi.snapDistanceMeters = Math.hypot(poi.x - source.x, poi.y - source.y) * metersPerUnit;
+    poi.discovered = Boolean(poi.discovered) || poi.reachable && Math.hypot(poi.x - world.start.x, poi.y - world.start.y) * metersPerUnit <= 100;
+  }
+  const report = {
+    cells: world.cells.length, cellSize: size, resolutionMeters: size * metersPerUnit,
+    elevationSamples, roadCells, roadSources: roads.size, permanentWaterCells, biomeCounts,
+    components: components.components.length, unreachablePois: (world.pois || []).filter(poi => !poi.reachable).length,
+  };
+  world.metadata = { ...(world.metadata || {}), relief: world.relief, movement: report, componentCount: components.components.length,
+    startSnapDistanceMeters: Math.hypot(world.start.x - requestedStart.x, world.start.y - requestedStart.y) * metersPerUnit,
+    unreachablePoiCount: report.unreachablePois };
+  return report;
 }
