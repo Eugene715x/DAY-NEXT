@@ -1,0 +1,49 @@
+name: Fetch Beatty elevation
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/fetch-elevation.yml
+      - scripts/import-elevation.py
+
+permissions:
+  contents: write
+
+concurrency:
+  group: beatty-elevation-fetch
+  cancel-in-progress: false
+
+jobs:
+  elevation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install authoring-only GeoTIFF reader
+        run: python -m pip install rasterio==1.4.3 numpy==2.2.6
+      - name: Download and validate real USGS elevation
+        run: python scripts/import-elevation.py
+      - name: Publish source and game elevation grid
+        run: |
+          git add maps/beatty-elevation.js maps/source/beatty-elevation.tif maps/source/beatty-elevation.provenance.json maps/source/beatty-elevation.service.json maps/source/beatty-elevation.export.json
+          if git diff --cached --quiet; then
+            echo 'Elevation source and grid are already current.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Fetch real USGS elevation source and Beatty game grid'
+          git push origin HEAD:main
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: beatty-elevation-source-and-grid
+          path: |
+            maps/beatty-elevation.js
+            maps/source/beatty-elevation.*
+          retention-days: 14
