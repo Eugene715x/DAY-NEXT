@@ -25,6 +25,7 @@
       <symbol id="i-house" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7M5 9v12h14V9M10 21v-7h4v7M8 10h2m4 0h2"/></symbol>
       <symbol id="i-layers" viewBox="0 0 24 24"><path d="m3 7 9-5 9 5-9 5-9-5Zm0 5 9 5 9-5M3 17l9 5 9-5"/></symbol>
       <symbol id="i-types" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
+      <symbol id="i-elevation" viewBox="0 0 24 24"><path d="m2 20 8-15 6 10 3-5 3 10H2Zm5-9 3 2 2-2M5 20l5-8 5 8"/></symbol>
       <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V3m-5 5 5-5 5 5M4 15v6h16v-6"/></symbol>
       <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v13m-5-5 5 5 5-5M4 15v6h16v-6"/></symbol>
     </svg>
@@ -35,7 +36,7 @@
       <div class="hud">
         <header class="top-bar">
           <div class="brand-block">
-            <div class="brand" aria-label="DAY NEXT"><span>DAY</span><span class="brand-divider">/</span><span class="brand-next">NEXT</span><span class="prototype">ПРОТОТИП <b>14</b></span></div>
+            <div class="brand" aria-label="DAY NEXT"><span>DAY</span><span class="brand-divider">/</span><span class="brand-next">NEXT</span><span class="prototype">ПРОТОТИП <b>15</b></span></div>
             <div class="brand-caption"><span class="live-dot"></span> ОДИНОЧНАЯ ЭКСПЕДИЦИЯ</div>
           </div>
           <div class="world-status glass">
@@ -67,6 +68,7 @@
           </div>
           <div class="map-tool-cluster">
             <div class="map-tool"><button id="maps-button" class="icon-button glass maps-button" type="button" aria-label="Карты и импорт" aria-controls="maps-panel" aria-expanded="false" title="Карты и импорт"><svg class="icon"><use href="#i-map" /></svg></button><span class="control-caption">КАРТЫ</span></div>
+            <div class="map-tool"><button id="elevation-button" class="icon-button glass elevation-button" type="button" aria-label="Показать или скрыть карту высот" aria-pressed="true" title="Карта высот"><svg class="icon"><use href="#i-elevation" /></svg></button><span class="control-caption">ВЫСОТЫ</span></div>
             <div class="map-tool"><button id="detail-button" class="icon-button glass detail-button" type="button" aria-label="Показать застройку · B" title="Показать застройку · B"><svg class="icon"><use href="#i-house" /></svg></button><span class="control-caption">ЗАСТРОЙКА</span></div>
             <div class="map-tool"><button id="building-types-button" class="icon-button glass building-types-button" type="button" aria-label="Типы зданий" aria-controls="building-types-panel" aria-expanded="false" title="Типы зданий"><svg class="icon"><use href="#i-types" /></svg></button><span class="control-caption">ТИПЫ</span></div>
             <div class="map-tool"><button id="layers-button" class="icon-button glass layers-button" type="button" aria-label="Слои карты" aria-controls="layers-panel" aria-expanded="false" title="Слои карты"><svg class="icon"><use href="#i-layers" /></svg></button><span class="control-caption">СЛОИ</span></div>
@@ -84,7 +86,7 @@
             <div class="stat stat-stamina"><div class="stat-label"><svg class="icon"><use href="#i-bolt" /></svg><span>Выносливость</span><strong id="stamina-value">100</strong></div><div class="stat-track"><span id="stamina-bar" style="width:100%"></span></div></div>
             <div class="stat stat-water"><div class="stat-label"><svg class="icon"><use href="#i-water" /></svg><span>Вода</span><strong id="water-value">100</strong></div><div class="stat-track"><span id="water-bar" style="width:100%"></span></div></div>
           </div>
-          <div class="location"><svg class="icon"><use href="#i-pin" /></svg><div><strong id="location-name">Северный сектор</strong><span id="terrain-label">Открытая местность</span><span id="biome-label" class="biome-label" hidden></span></div></div>
+          <div class="location"><svg class="icon"><use href="#i-pin" /></svg><div><strong id="location-name">Местность</strong><span id="terrain-label">Открытая местность</span><span id="biome-label" class="biome-label" hidden></span></div></div>
         </section>
 
         <section id="travel-panel" class="travel-panel glass" aria-label="Текущий маршрут" hidden>
@@ -105,6 +107,12 @@
         </footer>
 
         <div id="map-attribution" class="attribution"><a id="map-source-link" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors · ODbL</a></div>
+        <aside id="elevation-key" class="elevation-key glass" aria-label="Шкала высот">
+          <div class="elevation-heading"><span class="eyebrow">ВЫСОТА · МЕТРЫ</span><span class="elevation-source-mark">USGS</span></div>
+          <div id="elevation-gradient" class="elevation-gradient" aria-hidden="true"></div>
+          <div class="elevation-ticks"><span id="elevation-min">—</span><span id="elevation-mid">—</span><span id="elevation-max">—</span></div>
+          <p id="elevation-source" class="elevation-source">USGS 3DEP</p>
+        </aside>
 
         <div id="toast" class="toast glass" role="status" hidden></div>
 
@@ -127,7 +135,6 @@
           <div class="maps-content">
             <div class="map-choices" aria-label="Доступные территории">
               <button id="map-usa" class="map-choice" type="button" data-map="usa" aria-pressed="true"><span class="map-choice-icon"><svg class="icon"><use href="#i-map" /></svg></span><span class="map-choice-copy"><strong>Реальная местность · США</strong><span id="usa-map-title">Подготовленная территория</span></span><span class="map-choice-dot" aria-hidden="true"></span></button>
-              <button id="map-generated" class="map-choice" type="button" data-map="generated" aria-pressed="false"><span class="map-choice-icon"><svg class="icon"><use href="#i-crosshair" /></svg></span><span class="map-choice-copy"><strong>Северные пустоши</strong><span>Вымышленная карта</span></span><span class="map-choice-dot" aria-hidden="true"></span></button>
             </div>
             <p id="map-summary" class="map-summary">Местность, дороги и вода на основе открытых данных.</p>
             <p id="coverage-summary" class="coverage-summary">Проверка полноты исходных данных…</p>
@@ -155,6 +162,8 @@
           <div class="layers-heading help-heading"><div><p class="eyebrow">ВИД КАРТЫ</p><h2>Слои карты</h2></div><button id="layers-close" class="icon-button" type="button" aria-label="Закрыть слои карты">×</button></div>
           <div class="layers-content">
             <div class="layer-options">
+              <label class="layer-option" for="layer-elevation"><input id="layer-elevation" type="checkbox" checked /><span>Карта высот</span><span class="layer-count">USGS</span></label>
+              <p id="elevation-unavailable" class="layers-note" hidden>Для этого участка данные высот ещё не загружены.</p>
               <label class="layer-option" for="layer-biomes"><input id="layer-biomes" type="checkbox" checked /><span>Биомы</span><span id="count-biomes" class="layer-count">—</span></label>
               <div id="biome-key" class="biome-key" aria-label="Обозначения биомов"><span><i class="biome-swatch city-swatch" aria-hidden="true"></i>Город</span><span><i class="biome-swatch seasonal-river-swatch" aria-hidden="true"></i>Сезонное русло</span><span><i class="biome-swatch water-swatch" aria-hidden="true"></i>Постоянная вода</span></div>
               <label class="layer-option" for="layer-roads"><input id="layer-roads" type="checkbox" checked /><span>Дороги и тропы</span><span id="count-roads" class="layer-count">—</span></label>
@@ -170,7 +179,7 @@
               <label class="layer-option" for="layer-buildings"><input id="layer-buildings" type="checkbox" checked /><span>Здания</span><span id="count-buildings" class="layer-count">—</span></label>
               <label class="layer-option" for="layer-details"><input id="layer-details" type="checkbox" checked /><span>Остальные объекты</span><span id="count-details" class="layer-count">—</span></label>
             </div>
-            <p class="layers-note" id="layers-note">Биомы образуют фон карты и не пересекаются. Город — серый, сезонные русла — синий пунктир. Наведение даёт краткую подсказку без подсветки территории, дорог и ЛЭП. Цвет здания показывает его назначение; легенда — кнопка «Типы».</p>
+            <p class="layers-note" id="layers-note">Карта высот показывает рельеф цветом, тенями и горизонталями. Выключи её, чтобы увидеть цвета биомов. Дороги, русла и здания остаются поверх рельефа. Наведение показывает тип местности и высоту.</p>
           </div>
         </section>
       </div>

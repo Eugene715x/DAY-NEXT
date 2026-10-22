@@ -1,0 +1,346 @@
+{
+  "version": "0.15.0",
+  "checkedAt": "2026-10-22T18:10:50.115641+00:00",
+  "status": "PASS",
+  "environment": {
+    "browser": "Chromium",
+    "viewport": {
+      "width": 1440,
+      "height": 960
+    },
+    "deviceScaleFactor": 1
+  },
+  "offline": {
+    "errors": [],
+    "requests": 0
+  },
+  "preservation": {
+    "buildings": 893,
+    "rolesColors": true,
+    "roads": 83,
+    "power": 6,
+    "navigationUnchanged": true
+  },
+  "elevation": {
+    "available": true,
+    "reason": null,
+    "min": 926.7,
+    "max": 1824.6,
+    "units": "m",
+    "columns": 769,
+    "rows": 593,
+    "bbox": [
+      -116.86,
+      36.86,
+      -116.73,
+      36.94
+    ],
+    "contourInterval": 50,
+    "majorContourInterval": 100,
+    "palette": [
+      {
+        "height": 926.7,
+        "position": 0,
+        "color": "#8f9d73"
+      },
+      {
+        "height": 1142.196,
+        "position": 0.24,
+        "color": "#b4b984"
+      },
+      {
+        "height": 1375.65,
+        "position": 0.5,
+        "color": "#c9be95"
+      },
+      {
+        "height": 1555.23,
+        "position": 0.7,
+        "color": "#b7a080"
+      },
+      {
+        "height": 1716.8519999999999,
+        "position": 0.88,
+        "color": "#9b8d7e"
+      },
+      {
+        "height": 1824.6,
+        "position": 1,
+        "color": "#c2bdb7"
+      }
+    ],
+    "source": {
+      "provider": "USGS 3D Elevation Program (3DEP)",
+      "serviceUrl": "https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer",
+      "downloadedAt": "2026-10-22T17:59:00.412966+00:00",
+      "sourceFile": "maps/source/beatty-elevation.tif",
+      "sha256": "907063fbe4009343df30c29595f4ed5433b8abd6bc1463575c7f334c7c6ccc24",
+      "attribution": "Elevation: U.S. Geological Survey, 3D Elevation Program (3DEP).",
+      "license": "USGS-authored U.S. elevation data are public domain; retain source attribution.",
+      "licenseUrl": "https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits",
+      "verticalDatum": null,
+      "sourceResolution": "Dynamic USGS 3DEP service; native product resolution varies. The exported grid spacing is recorded separately.",
+      "gridSpacingMetersApprox": {
+        "x": 15.069,
+        "y": 15.043
+      },
+      "storageRoundingMeters": 0.1
+    }
+  },
+  "samples": [
+    {
+      "x": 0,
+      "y": 0,
+      "expected": 1613.8,
+      "actual": 1613.8
+    },
+    {
+      "x": 3000,
+      "y": 0,
+      "expected": 1051,
+      "actual": 1051
+    },
+    {
+      "x": 0,
+      "y": 2325,
+      "expected": 1069.1,
+      "actual": 1069.1
+    },
+    {
+      "x": 3000,
+      "y": 2325,
+      "expected": 1226.1,
+      "actual": 1226.1
+    },
+    {
+      "x": 1500,
+      "y": 1162.5,
+      "expected": 1120.2,
+      "actual": 1120.2
+    },
+    {
+      "x": 1000,
+      "y": 773.6908783783784,
+      "expected": 1232.6,
+      "actual": 1232.5999999999935
+    }
+  ],
+  "legend": {
+    "text": "ВЫСОТА · МЕТРЫ\nUSGS\n926 м\n1376 м\n1825 м\n\nUSGS 3DEP · горизонтали 50 м",
+    "min": "926 м",
+    "max": "1825 м"
+  },
+  "tooltip": "Сезонное русло · 1477 м",
+  "buildingCard": "ЖИЛЬЁ\n\nЖилой дом\n\nИгровое назначение\nБиом: Город\nВысота: 1012 м\nПрофили ресурсов: Бытовые припасы, Строительные материалы",
+  "noStreetLabels": true,
+  "noFictionalMap": true,
+  "outsideMap": {
+    "info": {
+      "available": false,
+      "reason": "outside-coverage",
+      "min": null,
+      "max": null,
+      "units": "m",
+      "columns": 0,
+      "rows": 0,
+      "bbox": [
+        -116.86,
+        36.86,
+        -116.73,
+        36.94
+      ],
+      "contourInterval": 50,
+      "majorContourInterval": 100,
+      "palette": [],
+      "source": {
+        "provider": "USGS 3D Elevation Program (3DEP)",
+        "serviceUrl": "https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer",
+        "downloadedAt": "2026-10-22T17:59:00.412966+00:00",
+        "sourceFile": "maps/source/beatty-elevation.tif",
+        "sha256": "907063fbe4009343df30c29595f4ed5433b8abd6bc1463575c7f334c7c6ccc24",
+        "attribution": "Elevation: U.S. Geological Survey, 3D Elevation Program (3DEP).",
+        "license": "USGS-authored U.S. elevation data are public domain; retain source attribution.",
+        "licenseUrl": "https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits",
+        "verticalDatum": null,
+        "sourceResolution": "Dynamic USGS 3DEP service; native product resolution varies. The exported grid spacing is recorded separately.",
+        "gridSpacingMetersApprox": {
+          "x": 15.069,
+          "y": 15.043
+        },
+        "storageRoundingMeters": 0.1
+      }
+    },
+    "height": null
+  },
+  "performance": {
+    "idle": {
+      "frames": 120,
+      "fps": 59.50609937518595,
+      "maxFrameMs": 33.30000000000109
+    },
+    "cursor": {
+      "frames": 120,
+      "fps": 60.00300015000745,
+      "maxFrameMs": 16.799999999999272
+    },
+    "detailed": {
+      "frames": 120,
+      "fps": 59.506099375186,
+      "maxFrameMs": 33.400000000001455
+    }
+  },
+  "staticCacheReused": true,
+  "htmlSha256": "4d1662577063f8c54bd363a00a8341d192bfd17f5ec29c9c184113cf20dcbd6a",
+  "renderCache": {
+    "staticRebuilds": 4,
+    "cachePixels": 2873344,
+    "cacheBytes": 11493376
+  },
+  "elevationRenderStats": {
+    "rasterBuilds": 1,
+    "contourBuilds": 1,
+    "drawCount": 3,
+    "contourLevels": 18,
+    "contourSegments": 33208,
+    "labelsDrawn": 8,
+    "pixelCount": 456017,
+    "available": true
+  },
+  "sourceVerification": {
+    "status": "PASS",
+    "sourceBytes": 2294864,
+    "sha256": "907063fbe4009343df30c29595f4ed5433b8abd6bc1463575c7f334c7c6ccc24",
+    "reader": "Independent Pillow/libtiff +numpy",
+    "mode": "F",
+    "columns": 769,
+    "rows": 593,
+    "bbox": [
+      -116.86000000000033,
+      36.85999999999997,
+      -116.72999999999966,
+      36.94000000000003
+    ],
+    "geoKeys": {
+      "1024": 2,
+      "1025": 1,
+      "2048": 4326,
+      "2049": {
+        "locationTag": 34737,
+        "count": 74,
+        "offset": 0
+      },
+      "2050": 6326,
+      "2051": 8901,
+      "2054": 9102,
+      "2055": {
+        "locationTag": 34736,
+        "count": 1,
+        "offset": 0
+      },
+      "2056": 7030,
+      "2057": {
+        "locationTag": 34736,
+        "count": 1,
+        "offset": 1
+      },
+      "2059": {
+        "locationTag": 34736,
+        "count": 1,
+        "offset": 2
+      },
+      "2061": {
+        "locationTag": 34736,
+        "count": 1,
+        "offset": 3
+      },
+      "3073": {
+        "locationTag": 34737,
+        "count": 163,
+        "offset": 74
+      }
+    },
+    "validSamples": 456017,
+    "missingSamples": 0,
+    "maximumRoundingDifferenceFromExpectedMeters": 0.0,
+    "maximumStorageErrorMeters": 0.049999999999954525,
+    "minimumMeters": 926.7,
+    "maximumMeters": 1824.6,
+    "meanMeters": 1130.136660475377,
+    "samples": [
+      {
+        "row": 0,
+        "column": 0,
+        "rawMeters": 1613.816650390625,
+        "gameMeters": 1613.8
+      },
+      {
+        "row": 0,
+        "column": 768,
+        "rawMeters": 1051.039306640625,
+        "gameMeters": 1051.0
+      },
+      {
+        "row": 592,
+        "column": 0,
+        "rawMeters": 1069.07177734375,
+        "gameMeters": 1069.1
+      },
+      {
+        "row": 592,
+        "column": 768,
+        "rawMeters": 1226.1053466796875,
+        "gameMeters": 1226.1
+      },
+      {
+        "row": 296,
+        "column": 384,
+        "rawMeters": 1120.1812744140625,
+        "gameMeters": 1120.2
+      },
+      {
+        "row": 197,
+        "column": 256,
+        "rawMeters": 1232.5806884765625,
+        "gameMeters": 1232.6
+      }
+    ],
+    "sourceResolutionHonest": "Native source resolution explicitly varies; exported spacing recorded separately",
+    "verticalDatum": null,
+    "acquisitionDate": null,
+    "alignment": "TIFF pixel centres independently reconstruct exact requested bbox corners; north-to-south row order"
+  },
+  "walkingNameRegression": {
+    "status": "PASS",
+    "log": "07:49На месте: старая дорога\n07:47Обнаружено: Общественное здание\n07:45Обнаружено: Здание экстренных служб",
+    "location": "Учебное здание",
+    "toast": "Ты на месте. Выбери, куда идти дальше.",
+    "errors": [],
+    "requests": 0
+  },
+  "fullBrowserBuildSha256": "0199c69a156f40e683ed11a01a84c955ca7376e1804d840db05e8edd8ca0ba89",
+  "heightOnlyRegression": {
+    "status": "PASS",
+    "sample": 1120.2,
+    "tooltip": "Высота · 1120 м",
+    "heightOnlyWorks": true,
+    "offWorldHidden": true,
+    "allLayersOffHidden": true,
+    "offline": {
+      "errors": [],
+      "requests": 0
+    },
+    "htmlSha256": "4d1662577063f8c54bd363a00a8341d192bfd17f5ec29c9c184113cf20dcbd6a"
+  },
+  "tests": {
+    "total": 198,
+    "passed": 198,
+    "failed": 0
+  },
+  "archive": {
+    "bytes": 1318791,
+    "sha256": "e056633a3f081951718d9c35504ddb4cf801adf14114662e4d8e60939205c245",
+    "crcValid": true,
+    "htmlSha256": "4d1662577063f8c54bd363a00a8341d192bfd17f5ec29c9c184113cf20dcbd6a",
+    "htmlMatchesDist": true
+  }
+}

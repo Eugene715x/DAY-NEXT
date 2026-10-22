@@ -398,3 +398,69 @@ test('an abstract valley axis is hidden while real valley polygons and unrelated
   assert(features.some(feature => feature.sourceId === 'valley-water' && feature.water));
   assert(features.some(feature => feature.sourceId === 'valley-road' && feature.layer === 'roads'));
 });
+
+test('street and building presentation omits real identities while preserving game roles and archived inputs', () => {
+  const input = world({ width: 400, height: 300, buildings: [
+    { id: 'way-100', name: 'REAL_BUILDING_SIGN', address: 'REAL_POSTAL_ADDRESS', points: ring(30, 30, 100, 100), tags: { building: 'yes', name: 'REAL_BUILDING_SIGN', 'name:en': 'REAL_TRANSLATED_SIGN', 'addr:street': 'REAL_STREET', 'addr:housenumber': '999' } },
+  ], roads: [
+    { id: 'way-200', name: 'REAL_STREET', points: [{ x: 20, y: 180 }, { x: 200, y: 180 }], tags: { highway: 'residential', name: 'REAL_STREET', ref: 'REAL_ROUTE_REF', 'tiger:name_base': 'REAL_TIGER_STREET' } },
+    { id: 'way-201', name: 'REAL_OLD_STREET', points: [{ x: 200, y: 180 }, { x: 380, y: 180 }], tags: { highway: 'residential', name: 'REAL_OLD_STREET' } },
+  ], pois: [
+    { id: 'node-300', x: 60, y: 60, name: 'REAL_OCCUPANT_SIGN', tags: { shop: 'convenience', name: 'REAL_OCCUPANT_SIGN' } },
+  ] });
+  const before = structuredClone(input), renderer = createDetailRenderer(input);
+  const building = renderer.pick(60, 60, 0), road = renderer.pick(200, 180, 0);
+  assert.equal(building.roleId, 'role.shop_food', 'Contained functional evidence still assigns the same playable purpose');
+  assert.equal(building.name, building.roleName);
+  assert.equal(building.gameplayAssignment.displayName, building.roleName);
+  assert.equal(building.gameplayAssignment.occupants[0].roleId, 'role.shop_food');
+  assert.equal(road.name, 'Улица и проезд');
+  assert.equal(road.memberIds.length, 2);
+  const presented = JSON.stringify([building, road, renderer.getFeatures().filter(feature => ['buildings', 'roads'].includes(feature.layer))]);
+  assert(!presented.includes('REAL_'), 'Nested source tags, members and occupants cannot leak original signs or addresses');
+  assert.deepEqual(input, before, 'The source map remains available for provenance and functional classification');
+});
+
+test('named roads no longer paint their real street names at close zoom', () => {
+  const renderer = createDetailRenderer(world({ width: 400, height: 300, roads: [
+    { id: 'way-1', name: 'REAL_STREET_LABEL', points: [{ x: 20, y: 150 }, { x: 380, y: 150 }], tags: { highway: 'residential', name: 'REAL_STREET_LABEL' } },
+  ] }));
+  const labels = [], context = recordingContext();
+  context.fillText = text => labels.push(text); context.strokeText = text => labels.push(text);
+  renderer.draw(context, { ...fullView, zoom: 6, width: 2400, height: 1800 });
+  assert.deepEqual(labels, []);
+  assert(context.strokes.length > 0, 'The road remains visible without its real label');
+});
+
+test('elevation ground hook paints below water ink and objects independently of biome visibility', () => {
+  const input = world({ width: 400, height: 300, roads: [
+    { id: 'road', type: 'residential', points: [{ x: 20, y: 180 }, { x: 380, y: 180 }], width: 3 },
+  ], rivers: [
+    { id: 'river', points: [{ x: 20, y: 120 }, { x: 380, y: 120 }], width: 3, tags: { waterway: 'stream', intermittent: 'yes' } },
+  ], lakes: [
+    { id: 'lake', geometry: 'polygon', points: ring(20, 210, 80, 270), tags: { natural: 'water', water: 'lake' } },
+  ], buildings: [
+    { id: 'building', points: ring(260, 30, 300, 70), tags: { building: 'house' } },
+  ] });
+  const before = structuredClone(input), renderer = createDetailRenderer(input);
+  const capture = () => {
+    const events = [], context = recordingContext();
+    context.fill = function(path) { events.push({ type: 'fill', color: this.fillStyle, path }); };
+    context.stroke = function(path) { events.push({ type: 'stroke', color: this.strokeStyle, path }); };
+    context.fillRect = function() { events.push({ type: 'matte', color: this.fillStyle }); };
+    const view = { ...fullView, groundOverlay(ctx, passedView) { assert.equal(ctx, context); assert.equal(passedView, view); events.push({ type: 'elevation' }); } };
+    renderer.draw(context, view);
+    return events;
+  };
+  const visible = capture(), overlay = visible.findIndex(event => event.type === 'elevation');
+  assert(overlay > 0, 'Ordinary biome ground is completed before the optional height surface');
+  assert.equal(visible.filter(event => event.type === 'elevation').length, 1);
+  assert(visible.slice(overlay + 1).some(event => event.type === 'fill' && event.color === '#3f7eaa'), 'Lake water remains visible above the opaque height surface');
+  for (const color of ['#4c91bd', '#82816a', '#c3b88e']) assert(visible.slice(overlay + 1).some(event => event.color === color), `${color} object ink stays above elevation`);
+  renderer.setLayers({ biomes: false });
+  const hidden = capture();
+  assert.equal(hidden[0].type, 'elevation', 'The height layer does not depend on biome visibility');
+  assert(!hidden.some(event => ['#4c91bd', '#3f7eaa'].includes(event.color)), 'Hiding biomes still hides river and lake ink');
+  assert(hidden.some(event => event.color === '#82816a'));
+  assert.deepEqual(input, before);
+});

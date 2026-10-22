@@ -119,6 +119,22 @@ const drBiomeNames = {
   desert: 'Пустыня', valley: 'Долина', gully: 'Лощина', heath: 'Вересковая пустошь', beach: 'Пляж',
 };
 const drSourceId = feature => feature.sourceId || String(feature.id || '').match(/^(?:node|way|relation)-\d+/)?.[0] || feature.id;
+const drIdentityField = key => /(?:^|:)(?:name|alt_name|official_name|old_name|short_name|loc_name|addr)(?::|_|$)/.test(key)
+  || ['names', 'address', 'displayName', 'ref', 'int_ref', 'nat_ref', 'loc_ref', 'old_ref'].includes(key);
+
+// Street and building identities belong to the archived map, not to the game.
+// Keep geometry, functional tags and evidence IDs without exposing real signs
+// or addresses through an inspector's nested source/member descriptions.
+function drAnonymousClone(value) {
+  if (Array.isArray(value)) return value.map(drAnonymousClone);
+  if (!value || typeof value !== 'object') return value;
+  const clone = Object.fromEntries(Object.entries(value).filter(([key]) => !drIdentityField(key)).map(([key, item]) => [key, drAnonymousClone(item)]));
+  if (clone.roleId && clone.roleName) clone.displayName = clone.roleName;
+  return clone;
+}
+
+const drPublicFeature = (record, feature = record.feature) => record.group === 'building' || record.layer === 'roads'
+  ? drAnonymousClone(feature) : structuredClone(feature);
 const drTypeMetadata = record => {
   const type = record.gameplayType;
   if (!type) return { typeId: null, typeName: null, resourceProfileIds: [], gameplayType: null };
@@ -128,7 +144,7 @@ const drTypeMetadata = record => {
 const drRoleMetadata = record => {
   const assignment = record.feature.gameplayAssignment;
   if (!assignment) return { gameplayAssignment: null, roleId: null, roleName: null, categoryId: null, categoryName: null, color: null, stroke: null, icon: null, roleOrigin: null };
-  return { gameplayAssignment: structuredClone(assignment), roleId: assignment.roleId, roleName: assignment.roleName,
+  return { gameplayAssignment: drAnonymousClone(assignment), roleId: assignment.roleId, roleName: assignment.roleName,
     categoryId: assignment.categoryId, categoryName: assignment.categoryName, color: assignment.color || assignment.fill,
     stroke: assignment.stroke, icon: assignment.icon, roleOrigin: assignment.roleOrigin };
 };
@@ -159,6 +175,8 @@ function drInteriorPoint(parts, bounds) {
 }
 
 function drFeatureLabel(feature, group) {
+  if (group === 'building') return feature.gameplayAssignment?.roleName || drNames[feature.ruins ? 'ruins' : feature.type] || drNames.building;
+  if (group === 'road' || mapFeatureLayer(feature, group) === 'roads') return ROAD_CLASSES[roadClass(feature)]?.name || 'Дорога';
   if (feature.name) return feature.name;
   if ((feature.exclusive || feature.biomePartition) && feature.biome) return drBiomeNames[feature.biome] || feature.biome;
   if (['census', 'administrative'].includes(feature.tags?.boundary)) return 'Граница поселения';
@@ -166,9 +184,6 @@ function drFeatureLabel(feature, group) {
     const names = { pole: 'Столб электросети', tower: 'Опора ЛЭП', line: 'Линия электропередачи', minor_line: 'Линия местной электросети', cable: 'Электрический кабель', transformer: 'Трансформатор', substation: 'Подстанция', plant: 'Электростанция', switch: 'Выключатель электросети' };
     return feature.tags?.man_made === 'utility_pole' ? 'Коммунальный столб' : names[feature.tags?.power] || 'Объект электросети';
   }
-  if (group === 'building') return feature.gameplayAssignment?.roleName || drNames[feature.ruins ? 'ruins' : feature.type] || drNames.building;
-  if (group === 'road' && feature.names?.length > 4) return `${ROAD_CLASSES[roadClass(feature)]?.pluralName || 'Дороги'} · сеть`;
-  if (group === 'road') return feature.roadClassName || ROAD_CLASSES[roadClass(feature)]?.name || 'Дорога';
   if (group === 'river') return drDry(feature) ? 'Сезонное русло' : drNames.river;
   if (group === 'lake') return drNames.lake;
   const tags = feature.tags || {};
@@ -675,27 +690,6 @@ export function createDetailRenderer(world) {
     ctx.strokeStyle = hovered ? '#f2efb5' : '#77775d'; ctx.lineWidth = (hovered ? 1.6 : .8) / zoom; ctx.stroke(record.path);
   }
 
-  function paintRoadLabels(ctx, visible, view) {
-    if (view.zoom < 4) return;
-    const used = new Set(), boxes = [];
-    let count = 0;
-    for (const record of visible) {
-      const { feature: road, longest } = record;
-      if (!road.name || used.has(road.name) || !longest || longest.length * view.zoom < 115 || count >= 12) continue;
-      const x = (longest.a.x + longest.b.x) / 2, y = (longest.a.y + longest.b.y) / 2;
-      const screenX = (x - view.cameraX) * view.zoom + view.width / 2, screenY = (y - view.cameraY) * view.zoom + view.height / 2;
-      if (screenX < 30 || screenX > view.width - 30 || screenY < 60 || screenY > view.height - 60) continue;
-      const label = road.name.length > 30 ? road.name.slice(0, 29) + '…' : road.name;
-      const width = label.length * 5.3, box = { x: screenX - width / 2, y: screenY - 9, width, height: 18 };
-      if (boxes.some(b => box.x < b.x + b.width && box.x + box.width > b.x && box.y < b.y + b.height && box.y + box.height > b.y)) continue;
-      let angle = longest.angle; if (angle > Math.PI / 2 || angle < -Math.PI / 2) angle += Math.PI;
-      ctx.save(); ctx.translate(x, y); ctx.rotate(angle); ctx.scale(1 / view.zoom, 1 / view.zoom);
-      ctx.font = '500 10px "Segoe UI", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.lineWidth = 2.5; ctx.strokeStyle = 'rgba(186,175,140,.9)'; ctx.strokeText(label, 0, -2); ctx.fillStyle = '#48583d'; ctx.fillText(label, 0, -2); ctx.restore();
-      boxes.push(box); used.add(road.name); count++;
-    }
-  }
-
   function draw(ctx, view) {
     lastZoom = view.zoom;
     const hoverIdentity = view.hoveredKey || view.hoveredId;
@@ -719,6 +713,12 @@ export function createDetailRenderer(world) {
     // First complete the opaque ground plane, then ink its watercourses. This
     // prevents a neighbouring land fill erasing a river's readable screen width.
     for (const record of visible) if (record.layer === 'biomes' && record.geometry === 'polygon') paintBiome(ctx, record, view.zoom, hoveredId);
+    if (typeof view.groundOverlay === 'function') {
+      ctx.save();
+      try { view.groundOverlay(ctx, view); } finally { ctx.restore(); }
+      // Water is part of the biome ground, but remains visible over elevation.
+      for (const record of visible) if (record.layer === 'biomes' && record.geometry === 'polygon' && record.feature.water && !record.inkPath) paintBiome(ctx, record, view.zoom, hoveredId);
+    }
     for (const record of visible) if (record.layer === 'biomes' && record.inkPath) paintWater(ctx, record, view.zoom, hoveredId);
     let roadsPainted = false, powerPainted = false;
     for (const record of visible) {
@@ -736,7 +736,6 @@ export function createDetailRenderer(world) {
       else if (record.group === 'building') paintBuilding(ctx, record, view.zoom, hoveredId);
       else paintDetail(ctx, record, view.zoom, hoveredId);
     }
-    paintRoadLabels(ctx, visibleRoads, view);
     paintBuildingLabels(ctx, visible, view);
     ctx.restore();
   }
@@ -788,9 +787,9 @@ export function createDetailRenderer(world) {
       geometry: record.geometry, semanticGeometry: feature.semanticGeometry || record.geometry, water: feature.water === true, waterKind: feature.waterKind || null, exclusive: record.layer === 'biomes' && record.geometry === 'polygon', footprintOnly: record.footprintOnly === true, outlineOnly: record.outlineOnly, derived: feature.derived === true, urbanFiller: feature.urbanFiller === true, fallback: record.fallback, provenance: feature.provenance ? structuredClone(feature.provenance) : null,
       roadClass: record.roadClass, roadClassName: ROAD_CLASSES[record.roadClass]?.name || null,
       sourceIds: [...(feature.sourceIds || [drSourceId(feature)])], memberIds: [...(feature.memberIds || [feature.id])],
-      name: drFeatureLabel(feature, record.group), x: point.x, y: point.y, source: structuredClone(feature), members: (feature.members || []).map(member => structuredClone(member)),
+      name: drFeatureLabel(feature, record.group), x: point.x, y: point.y, source: drPublicFeature(record), members: (feature.members || []).map(member => drPublicFeature(record, member)),
       paths: (record.inkPaths || (record.geometry === 'line' ? record.rings : null))?.map(path => path.map(point => ({ ...point }))), parts: record.geometry === 'polygon' ? record.parts.map(part => part.map(ring => ring.map(point => ({ ...point })))) : undefined,
-      description: record.inkPath && drDry(feature) ? 'Сезонное русло · Вода бывает только в сезон' : feature.derived ? `${drBiomeNames[record.biome] || 'Игровая зона'} · Игровая разметка местности` : record.outlineOnly ? 'Граница населённого пункта' : record.group === 'building' ? [feature.gameplayAssignment?.roleName, feature.address, feature.levels ? `${feature.levels} эт.` : ''].filter(Boolean).join(' · ') : record.group === 'road' ? roadDescription : record.footprintOnly ? `${drBiomeNames[record.biome]} · По контуру здания` : feature.tags?.railway === 'abandoned' ? 'Заброшенная железная дорога' : record.layer === 'water' && drDry(feature) ? 'Сезонное русло' : drNames[kind] || drFeatureLabel(feature, record.group) };
+      description: record.inkPath && drDry(feature) ? 'Сезонное русло · Вода бывает только в сезон' : feature.derived ? `${drBiomeNames[record.biome] || 'Игровая зона'} · Игровая разметка местности` : record.outlineOnly ? 'Граница населённого пункта' : record.group === 'building' ? feature.gameplayAssignment?.roleName || drNames.building : record.group === 'road' ? roadDescription : record.footprintOnly ? `${drBiomeNames[record.biome]} · По контуру здания` : feature.tags?.railway === 'abandoned' ? 'Заброшенная железная дорога' : record.layer === 'water' && drDry(feature) ? 'Сезонное русло' : drNames[kind] || drFeatureLabel(feature, record.group) };
   }
 
   /** One physical ground biome, independent of layer visibility and objects. */
@@ -949,12 +948,12 @@ export function createDetailRenderer(world) {
     return registry.map(record => ({
       id: record.feature.id, key: record.key, sourceId: drSourceId(record.feature), layer: record.layer, group: record.group,
       sourceIds: [...(record.feature.sourceIds || [drSourceId(record.feature)])], memberIds: [...(record.feature.memberIds || [record.feature.id])],
-      sourceTypes: [...(record.feature.sourceTypes || [record.feature.type || record.feature.kind].filter(Boolean))], names: [...(record.feature.names || [record.feature.name].filter(Boolean))], merged: record.feature.merged === true,
+      sourceTypes: [...(record.feature.sourceTypes || [record.feature.type || record.feature.kind].filter(Boolean))], names: record.group === 'building' || record.layer === 'roads' ? [] : [...(record.feature.names || [record.feature.name].filter(Boolean))], merged: record.feature.merged === true,
       roadClass: record.roadClass, roadClassName: ROAD_CLASSES[record.roadClass]?.name || null,
       ...drTypeMetadata(record), ...drRoleMetadata(record),
       kind: describe(record).kind, name: drFeatureLabel(record.feature, record.group), geometry: record.geometry, semanticGeometry: record.feature.semanticGeometry || record.geometry,
       water: record.feature.water === true, waterKind: record.feature.waterKind || null, exclusive: record.layer === 'biomes' && record.geometry === 'polygon',
-      members: (record.feature.members || []).map(member => structuredClone(member)),
+      members: (record.feature.members || []).map(member => drPublicFeature(record, member)),
       points: record.points.map(point => ({ ...point })), rings: record.geometry === 'polygon' ? record.parts[0].map(ring => ring.map(point => ({ ...point }))) : undefined,
       parts: record.geometry === 'polygon' ? record.parts.map(part => part.map(ring => ring.map(point => ({ ...point })))) : undefined,
       paths: (record.inkPaths || (record.geometry === 'line' ? record.rings : null))?.map(path => path.map(point => ({ ...point }))),

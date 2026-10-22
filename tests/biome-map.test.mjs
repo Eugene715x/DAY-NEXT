@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import map from '../maps/usa.js';
 import { buildBiomeMap } from '../biome-map.js';
 import { polygonIntersection } from '../polygon-geometry.js';
-import { createWorld } from '../world.js';
+import { createWorld } from './fixtures/legacy-world.mjs';
 
 const p = (x, y) => ({ x, y });
 const ring = (left, top, right, bottom) => [p(left, top), p(right, top), p(right, bottom), p(left, bottom), p(left, top)];

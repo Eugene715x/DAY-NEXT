@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createWorld, findPath, nearestWalkable, terrainAt } from '../world.js';
+import { findPath, nearestWalkable, terrainAt } from '../world.js';
+import { createWorld } from './fixtures/legacy-world.mjs';
 
 const world = createWorld();
 

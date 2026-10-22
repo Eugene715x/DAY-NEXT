@@ -5,12 +5,12 @@ import { BUILDING_TYPES, BIOME_TYPES, RESOURCE_PROFILES, RESOURCE_KINDS } from '
 import { BUILDING_CATEGORIES, BUILDING_ROLES } from '../building-roles.js';
 const root = new URL('../', import.meta.url);
 const read = path => readFile(new URL(path, root), 'utf8');
-const [html, css, world, realWorld, polygonVendor, polygonGeometry, ribbons, cities, biomes, mapLayers, presentation, overview, types, roles, details, converter, map, game] = await Promise.all(['index.html', 'styles.css', 'world.js', 'real-world.js', 'vendor/polygon-clipping.js', 'polygon-geometry.js', 'biome-ribbons.js', 'city-biomes.js', 'biome-map.js', 'map-layers.js', 'map-presentation.js', 'map-overview.js', 'gameplay-types.js', 'building-roles.js', 'detail-renderer.js', 'scripts/lib/osm-converter.mjs', 'maps/usa.js', 'game.js'].map(read));
+const [html, css, world, realWorld, polygonVendor, polygonGeometry, ribbons, cities, biomes, mapLayers, presentation, overview, types, roles, details, elevationRenderer, elevationData, converter, map, game] = await Promise.all(['index.html', 'styles.css', 'world.js', 'real-world.js', 'vendor/polygon-clipping.js', 'polygon-geometry.js', 'biome-ribbons.js', 'city-biomes.js', 'biome-map.js', 'map-layers.js', 'map-presentation.js', 'map-overview.js', 'gameplay-types.js', 'building-roles.js', 'detail-renderer.js', 'elevation-renderer.js', 'maps/beatty-elevation.js', 'scripts/lib/osm-converter.mjs', 'maps/usa.js', 'game.js'].map(read));
 const { version } = JSON.parse(await read('package.json'));
 const mapData = JSON.parse(map.replace(/^export default\s+/, '').trim().replace(/;$/, ''));
 const objectsReport = await writeMapObjectsReport(mapData, root);
 const wrap = (body, names) => `const {${names}} = (() => {\n${body.replace(/^export\s+/gm, '')}\nreturn {${names}};\n})();\n`;
-const source = wrap(world, 'createWorld,findPath,terrainAt,nearestWalkable')
+const source = wrap(world, 'findPath,terrainAt,nearestWalkable')
   + wrap(realWorld, 'createRealWorld')
   + wrap(polygonVendor, 'polygonClipping')
   + wrap(polygonGeometry.replace(/^import\s+[^;]+;\s*/gm, ''), 'polygonDifference,polygonUnion,polygonIntersection,normalizePolygonParts')
@@ -23,13 +23,15 @@ const source = wrap(world, 'createWorld,findPath,terrainAt,nearestWalkable')
   + wrap(roles.replace(/^import\s+[^;]+;\s*/gm, ''), 'BUILDING_CATEGORIES,BUILDING_ROLES,createBuildingAssignments')
   + wrap(biomes.replace(/^import\s+[^;]+;\s*/gm, ''), 'buildBiomeMap')
   + wrap(details.replace(/^import\s+[^;]+;\s*/gm, ''), 'createDetailRenderer')
+  + wrap(elevationRenderer.replace(/^import\s+[^;]+;\s*/gm, ''), 'createElevationRenderer')
   + wrap(converter, 'convertOSM,validateBbox')
   + `const usaMap = ${map.replace(/^export default\s+/, '')}\n`
+  + `const beattyElevation = ${elevationData.replace(/^export default\s+/, '')}\n`
   + game.replace(/^import\s+[^;]+;\s*/gm, '');
 const standalone = html
   .replace(/<link\b[^>]*href=["'](?:\.\/)?styles\.css["'][^>]*>/, () => `<style>${css}</style>`)
   .replace(/<script\b[^>]*src=["'](?:\.\/)?game\.js["'][^>]*><\/script>/, () => `<script type="module">${source.replace(/<\/script/gi, '<\\/script')}</script>`);
-if (standalone.includes('src="./game.js"') || !standalone.includes('function createWorld')) throw new Error('Standalone bundle was not created');
+if (standalone.includes('src="./game.js"') || !standalone.includes('function findPath') || !standalone.includes('function createElevationRenderer')) throw new Error('Standalone bundle was not created');
 await mkdir(new URL('dist/', root), { recursive: true });
 await writeFile(new URL('dist/day-next.html', root), standalone);
 await mkdir(new URL('downloads/', root), { recursive: true });
@@ -39,7 +41,8 @@ const instructions = `DAY / NEXT ${version} — одиночная экспед�
 Откройте day-next.html в браузере. Установка и интернет не нужны.
 Клик — идти, перетаскивание — карта, колесо — масштаб до 24x.
 B / кнопка дома — посмотреть застройку; наведение — сведения об отдельном доме или дороге. F / прицел — вернуться к путнику.
-Кнопка «Слои» — отдельное включение биомов, дорог, электросети, домов и прочих объектов. Выключенные объекты не рисуются и не выбираются.
+Кнопка «Слои» — отдельное включение карты высот, биомов, дорог, электросети, домов и прочих объектов. Выключенные объекты не рисуются и не выбираются.
+Кнопка «Высоты» включает и выключает реальную карту рельефа USGS 3DEP. Цвет показывает высоту, тени — склоны, горизонтали проведены через 50 метров. При наведении видна высота в метрах. Сетка около 15 м встроена в игру, интернет не нужен. Начальный вид показывает весь участок. Рельеф пока не меняет скорость и проходимость.
 Каждый дом получил игровое назначение и цвет категории: жильё, разные магазины, еда, медицина, образование, производство, склады, транспорт, общественные здания, службы, гостиницы и руины.
 Кнопка «Типы» показывает цветовую легенду. Наведи на дом: в заголовке карточки будет конкретная роль — например, продуктовый магазин, школа, склад или ангар.
 Назначения берутся из собственных тегов и меток карты; для неуточнённых зданий заданы устойчивые игровые роли с отдельной пометкой «Игровое назначение». Исходные факты OSM сохранены отдельно.
@@ -51,7 +54,8 @@ biomes.json содержит отчёт покрытия карты и прои�
 building-roles.json содержит все назначенные роли зданий, категории, происхождение и профили возможных ресурсов.
 remaining-objects.md содержит полный список того, что осталось в слое остальных объектов.
 gameplay-types.json содержит типы зданий, биомов и общие профили ресурсов. Это настройки возможного поиска; механика добычи ещё не добавлена.
-Кнопка атласа — реальная/вымышленная карта, импорт OSM/XML/JSON, экспорт JSON и ссылка на свежий исходник OSM для выбранного участка.
+Реальные названия и адреса улиц и отдельных зданий убраны из игровых подписей и карточек; остаются игровые назначения. Архивные источники OSM сохранены отдельно.
+Кнопка атласа — реальная местность, импорт OSM/XML/JSON, экспорт JSON и ссылка на свежий исходник OSM для выбранного участка. Для импортированного участка за пределами снимка высот слой рельефа будет недоступен.
 
 Реальная местность: ${mapData.name} / ${mapData.region}.
 Снимок OSM: ${mapData.source?.snapshotAt || 'дата не указана'}.
@@ -60,6 +64,9 @@ ${mapData.roads.length} исходных участков дорог, ${mapData.
 Полнота относится к исходному файлу, а не ко всем существующим в реальности объектам.
 Геоданные: © OpenStreetMap contributors, ODbL 1.0
 https://www.openstreetmap.org/copyright
+Высоты: U.S. Geological Survey, 3D Elevation Program (3DEP), public domain.
+https://www.usgs.gov/3d-elevation-program
+Происхождение и контрольная сумма исходного GeoTIFF: elevation-source.json.
 Исходники, происхождение данных и конвертер:
 https://github.com/Eugene715x/DAY-NEXT
 `;
@@ -69,6 +76,7 @@ await writeFile(new URL('downloads/day-next.zip', root), createZip([
   { name: 'remaining-objects.json', data: JSON.stringify(objectsReport.report, null, 2) + '\n' },
   { name: 'THIRD_PARTY_NOTICES.txt', data: await read('vendor/THIRD_PARTY_NOTICES.txt') },
   { name: 'biomes.json', data: JSON.stringify({ version: 1, source: objectsReport.report.source, ...objectsReport.report.biomes }, null, 2) + '\n' },
+  { name: 'elevation-source.json', data: await read('maps/source/beatty-elevation.provenance.json') },
   { name: 'building-roles.json', data: JSON.stringify({ version: 1, source: objectsReport.report.source, categories: BUILDING_CATEGORIES, roles: BUILDING_ROLES, ...objectsReport.report.buildings }, null, 2) + '\n' },
   { name: 'gameplay-types.json', data: JSON.stringify({ buildingTypes: BUILDING_TYPES, biomeTypes: BIOME_TYPES, resourceProfiles: RESOURCE_PROFILES, resourceKinds: RESOURCE_KINDS }, null, 2) + '\n' },
 ]));

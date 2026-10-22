@@ -1,13 +1,15 @@
-import { createWorld, findPath, terrainAt, nearestWalkable } from './world.js';
+import { findPath, terrainAt, nearestWalkable } from './world.js';
 import { createRealWorld } from './real-world.js';
 import { convertOSM, validateBbox } from './scripts/lib/osm-converter.mjs';
 import usaMap from './maps/usa.js';
+import beattyElevation from './maps/beatty-elevation.js';
+import { createElevationRenderer } from './elevation-renderer.js';
 import { createDetailRenderer } from './detail-renderer.js';
 import { mapFeatureLayer, shouldRenderFeature } from './map-layers.js';
 import { ROAD_CLASSES } from './map-presentation.js';
 import { BUILDING_CATEGORIES, BUILDING_ROLES } from './building-roles.js';
 import { createOverviewMarkers, OVERVIEW_MAX_ZOOM } from './map-overview.js';
-import { BUILDING_TYPES, BIOME_TYPES, RESOURCE_PROFILES, RESOURCE_KINDS, collectResourceProfiles, collectResourceCandidates } from './gameplay-types.js';
+import { BUILDING_TYPES, BIOME_TYPES, RESOURCE_PROFILES, RESOURCE_KINDS, classifyBuilding, collectResourceProfiles, collectResourceCandidates } from './gameplay-types.js';
 
 const $ = id => document.getElementById(id);
 const canvas = $('map');
@@ -17,9 +19,10 @@ const objectCacheCtx = objectCache.getContext('2d');
 let world = createRealWorld(usaMap);
 let currentMap = usaMap;
 let overviewMarkers = createOverviewMarkers(world);
-const layers = { biomes: true, roads: true, power: true, buildings: true, details: true };
+const layers = { biomes: true, elevation: true, roads: true, power: true, buildings: true, details: true };
 const roadClasses = Object.fromEntries(Object.keys(ROAD_CLASSES).map(key => [key, true]));
 let detailRenderer = createDetailRenderer(world);
+let elevationRenderer = createElevationRenderer(world, beattyElevation);
 let typedBuildingSources = new Set();
 let hoveredObject = null;
 const maximumZoom = () => 24;
@@ -28,8 +31,8 @@ const terrainNames = { plain: 'Пустошь', forest: 'Хвойный лес',
 const kindNames = { village: 'Поселение', town: 'Заброшенный город', city: 'Заброшенный город', settlement: 'Поселение', camp: 'Укрытие', shelter: 'Укрытие', station: 'Станция', factory: 'Промзона', ruins: 'Руины', ruin: 'Руины', danger: 'Опасная зона', bunker: 'Бункер', tower: 'Радиовышка', airport: 'Аэропорт', locality: 'Местность', bridge: 'Переправа', gas: 'Заправка', hospital: 'Медпункт' };
 let vw = innerWidth, vh = innerHeight, dpr = Math.min(devicePixelRatio || 1, 2);
 let player = { ...world.start };
-let camera = { x: player.x, y: player.y, zoom: innerWidth < 640 ? .68 : .85 };
-let route = null, paused = false, following = true, speed = 1;
+let camera = { x: world.width / 2, y: world.height / 2, zoom: Math.max(.32, Math.min(.85, (innerWidth - 360) / world.width, (innerHeight - 210) / world.height)) };
+let route = null, paused = false, following = false, speed = 1;
 let stamina = 100, water = 100, minutes = 7 * 60 + 42, totalDistance = 0;
 let pointer = null, hover = null, hoveredPoi = null, trail = [];
 let discovered = new Set(world.pois.filter(p => p.discovered).map(p => p.id));
@@ -37,7 +40,12 @@ let last = performance.now(), uiTick = 0, hintTimer, arrivalMarker = null, keys 
 let mapLabelBoxes = [];
 const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-const poiTitle = poi => poi.name.replace(/\s*· OSM\s+\S+$/, '');
+const poiTitle = poi => {
+  const tags = poi.tags || {};
+  if (poi.overview || tags.place || tags['abandoned:place'] || tags.natural) return String(poi.name || 'Местность').replace(/\s*· OSM\s+\S+$/, '');
+  const type = classifyBuilding(poi);
+  return type.typeId !== 'building.unknown' ? type.typeName : kindNames[poi.kind] || 'Объект';
+};
 const formatDistance = d => d >= 1000 ? `${(d / 1000).toFixed(1).replace('.', ',')} км` : `${Math.max(0, Math.round(d / 10) * 10)} м`;
 const screenToWorld = (x, y) => ({ x: (x - vw / 2) / camera.zoom + camera.x, y: (y - vh / 2) / camera.zoom + camera.y });
 const worldToScreen = p => ({ x: (p.x - camera.x) * camera.zoom + vw / 2, y: (p.y - camera.y) * camera.zoom + vh / 2 });
@@ -128,9 +136,8 @@ function reset() {
 function updateMapDetails() {
   $('usa-map-title').textContent = `${usaMap.name} · ${usaMap.region || 'США'}`;
   $('map-usa').setAttribute('aria-pressed', String(currentMap === usaMap));
-  $('map-generated').setAttribute('aria-pressed', String(!currentMap));
-  $('sector-label').textContent = currentMap ? `${currentMap.region || currentMap.country || 'OPENSTREETMAP'} / РЕАЛЬНАЯ МЕСТНОСТЬ` : 'СЕВЕРНЫЙ СЕКТОР / 04';
-  $('map-summary').textContent = currentMap ? `${currentMap.name} · ${(world.width * metersPerUnit() / 1000).toFixed(1)} × ${(world.height * metersPerUnit() / 1000).toFixed(1)} км. ${world.roads.length} исходных участков дорог, ${world.buildings.length} зданий, ${world.pois.length} мест. ${currentMap.source?.snapshotAt ? `Снимок OSM: ${currentMap.source.snapshotAt.slice(0, 10)}` : 'Данные OpenStreetMap'}.` : 'Вымышленная территория · 12 локаций, леса и переправы.';
+  $('sector-label').textContent = `${currentMap.region || currentMap.country || 'OPENSTREETMAP'} / РЕАЛЬНАЯ МЕСТНОСТЬ`;
+  $('map-summary').textContent = `${currentMap.name} · ${(world.width * metersPerUnit() / 1000).toFixed(1)} × ${(world.height * metersPerUnit() / 1000).toFixed(1)} км. ${world.roads.length} исходных участков дорог, ${world.buildings.length} зданий, ${world.pois.length} мест. ${currentMap.source?.snapshotAt ? `Снимок OSM: ${currentMap.source.snapshotAt.slice(0, 10)}` : 'Данные OpenStreetMap'}.`;
   $('map-attribution').hidden = !currentMap;
   // Keep source attribution permanent and link only to the known source copyright page.
   $('map-source-link').href = 'https://www.openstreetmap.org/copyright';
@@ -181,7 +188,24 @@ function syncLayerUI() {
   }
   $('road-classes').classList.toggle('is-disabled', !layers.roads);
   $('biome-key').classList.toggle('is-disabled', !layers.biomes);
+  syncElevationUI();
   syncBuildingLegend(features);
+}
+
+function syncElevationUI() {
+  const info = elevationRenderer.getInfo(), available = elevationRenderer.available;
+  const active = available && layers.elevation;
+  $('layer-elevation').disabled = !available;
+  $('elevation-button').disabled = !available;
+  $('elevation-button').setAttribute('aria-pressed', String(active));
+  $('elevation-key').hidden = !active;
+  $('elevation-unavailable').hidden = available;
+  if (!available) return;
+  $('elevation-min').textContent = `${Math.floor(info.min)} м`;
+  $('elevation-max').textContent = `${Math.ceil(info.max)} м`;
+  $('elevation-mid').textContent = `${Math.round((info.min + info.max) / 2)} м`;
+  $('elevation-gradient').style.background = `linear-gradient(90deg,${info.palette.map(stop => `${stop.color} ${100 * (stop.height - info.min) / (info.max - info.min || 1)}%`).join(',')})`;
+  $('elevation-source').textContent = `USGS 3DEP · горизонтали ${info.contourInterval} м`;
 }
 
 function syncBuildingLegend(features = detailRenderer.getFeatures()) {
@@ -220,13 +244,19 @@ $('layers-button').addEventListener('click', () => {
   $('layers-panel').hidden = !open; $('layers-button').setAttribute('aria-expanded', String(open));
 });
 $('layers-close').addEventListener('click', closeLayers);
+$('elevation-button').addEventListener('click', () => {
+  if (!elevationRenderer.available) return;
+  $('layer-elevation').checked = !layers.elevation;
+  $('layer-elevation').dispatchEvent(new Event('change'));
+});
 
 function switchMap(map) {
-  const next = map ? createRealWorld(map) : createWorld();
+  const next = createRealWorld(map);
   world = next; currentMap = map;
   closeBuildingTypes();
   overviewMarkers = createOverviewMarkers(world);
   detailRenderer = createDetailRenderer(world);
+  elevationRenderer = createElevationRenderer(world, beattyElevation);
   objectCacheState = null; objectRevision++;
   detailRenderer.setLayers(layers);
   detailRenderer.setRoadClasses(roadClasses);
@@ -234,7 +264,7 @@ function switchMap(map) {
   hover = null; hoveredPoi = null;
   reset(); updateMapDetails();
   $('maps-panel').hidden = true; $('maps-button').setAttribute('aria-expanded', 'false');
-  toast(map ? `Территория: ${map.name}. Выбери точку на карте.` : 'Северные пустоши. Выбери свой путь.');
+  toast(`Территория: ${map.name}. Выбери точку на карте.`);
 }
 
 function hideObjectCard() {
@@ -249,7 +279,9 @@ const roadHoverNames = { highway: 'Магистраль', road: 'Дорога', 
 function showMapTooltip(label, screenX, screenY) {
   const tooltip = $('map-tooltip');
   $('object-card').hidden = true;
-  tooltip.textContent = label;
+  const position = screenToWorld(screenX, screenY);
+  const height = layers.elevation && elevationRenderer.available ? elevationRenderer.sampleAt(position.x, position.y) : null;
+  tooltip.textContent = Number.isFinite(height) ? `${label} · ${Math.round(height)} м` : label;
   tooltip.hidden = false;
   const bounds = tooltip.getBoundingClientRect();
   const left = screenX + 14 + bounds.width > vw - 8 ? screenX - bounds.width - 14 : screenX + 14;
@@ -262,7 +294,7 @@ function briefMapLabel(feature) {
   const type = feature.layer === 'roads' ? roadHoverNames[feature.roadClass] || 'Дорога'
     : feature.layer === 'power' ? feature.kind === 'substation' ? 'Подстанция' : 'ЛЭП'
     : feature.biomeName || feature.typeName || 'Местность';
-  const name = (feature.source?.name || feature.source?.tags?.name || '').trim();
+  const name = feature.layer === 'roads' || feature.layer === 'buildings' ? '' : (feature.source?.name || feature.source?.tags?.name || '').trim();
   // A named place helps orientation; technical or generic names add no detail.
   const named = name && name !== type && !/^(Зона:|Участок|Пустошь$|Городская местность$)/.test(name);
   return named ? `${type} · ${name.length > 48 ? name.slice(0, 47) + '…' : name}` : type;
@@ -270,7 +302,11 @@ function briefMapLabel(feature) {
 
 function inspectObject(point, screenX, screenY, touch = false, pickedFeature) {
   const feature = pickedFeature === undefined ? detailRenderer.pick(point.x, point.y, 5 / camera.zoom) : pickedFeature;
-  if (!feature) { hideObjectCard(); return; }
+  if (!feature) {
+    hideObjectCard();
+    if (layers.elevation && elevationRenderer.available && Number.isFinite(elevationRenderer.sampleAt(point.x, point.y))) showMapTooltip('Высота', screenX, screenY);
+    return;
+  }
   hoveredObject = feature;
   hoveredPoi = null;
   if (quietHoverLayers.has(feature.layer)) {
@@ -289,12 +325,13 @@ function inspectObject(point, screenX, screenY, touch = false, pickedFeature) {
   $('object-kind').textContent = assignment?.categoryName?.toUpperCase() || (feature.roadClassName && feature.roadClassName.toUpperCase()) || names[feature.kind] || (feature.layer === 'biomes' && feature.biomeName ? feature.biomeName.toUpperCase() : zoneNames[feature.biome || feature.kind]) || layerNames[feature.layer] || 'ОБЪЕКТ';
   $('object-name').textContent = assignment?.roleName || feature.name || (feature.kind === 'building' ? 'Безымянное здание' : 'Объект на карте');
   const source = feature.source || {};
-  const address = typeof source.address === 'string' ? source.address : source.address ? Object.values(source.address).join(', ') : '';
-  const buildingDescription = assignment ? [source.name, assignment.condition === 'ruined' ? 'Руины' : assignment.condition === 'abandoned' ? 'Заброшено' : '', assignment.roleOrigin === 'gameplay' ? 'Игровое назначение' : assignment.roleOrigin === 'context' ? 'Назначение по окружению' : 'Назначение по меткам карты'].filter(Boolean).join(' · ') : feature.description;
-  const extra = [buildingDescription, address, source.levels ? `${source.levels} эт.` : '', source.surface ? `Покрытие: ${source.surface}` : ''].filter(Boolean).flatMap(text => String(text).split(' · '));
+  const buildingDescription = assignment ? [assignment.condition === 'ruined' ? 'Руины' : assignment.condition === 'abandoned' ? 'Заброшено' : '', assignment.roleOrigin === 'gameplay' ? 'Игровое назначение' : assignment.roleOrigin === 'context' ? 'Назначение по окружению' : 'Назначение по меткам карты'].filter(Boolean).join(' · ') : feature.description;
+  const extra = [buildingDescription].filter(Boolean).flatMap(text => String(text).split(' · '));
   $('object-meta').textContent = [...new Set(extra)].filter(text => text !== (assignment?.roleName || feature.name)).join(' · ') || (feature.derived ? 'Игровая зона' : world.geographic ? 'Нанесён на карту OpenStreetMap' : 'Объект игровой карты');
   const zones = detailRenderer.zonesAt(point.x, point.y);
   if (zones.length) $('object-meta').textContent += `\nБиом: ${[...new Set(zones.map(zone => zone.biomeName || zone.name))].join(' + ')}`;
+  const elevation = layers.elevation && elevationRenderer.available ? elevationRenderer.sampleAt(point.x, point.y) : null;
+  if (Number.isFinite(elevation)) $('object-meta').textContent += `\nВысота: ${Math.round(elevation)} м`;
   if (feature.typeName && !assignment) $('object-meta').textContent += `\nИгровой тип: ${feature.typeName}`;
   const profiles = collectResourceProfiles(assignment || feature, zones);
   if (profiles.length) $('object-meta').textContent += `\nПрофили ресурсов: ${profiles.map(id => RESOURCE_PROFILES[id]?.name || id).join(', ')}`;
@@ -333,7 +370,6 @@ $('maps-button').addEventListener('click', () => {
 });
 $('maps-close').addEventListener('click', () => { $('maps-panel').hidden = true; $('maps-button').setAttribute('aria-expanded', 'false'); });
 $('map-usa').addEventListener('click', () => switchMap(usaMap));
-$('map-generated').addEventListener('click', () => switchMap(null));
 $('map-export').addEventListener('click', () => { if (currentMap) downloadJSON(currentMap); });
 $('map-bbox').addEventListener('input', updateSourceDownload);
 $('map-source-download').addEventListener('click', event => { if (event.currentTarget.getAttribute('aria-disabled') === 'true') event.preventDefault(); });
@@ -490,7 +526,7 @@ function update(dt) {
       }
     }
     for (const poi of world.pois) if (!discovered.has(poi.id) && dist(player, poi) < 65) {
-      discovered.add(poi.id); log(`Обнаружено: ${poi.name}`, true); toast(`${poi.name}. ${poi.description || 'Новое место отмечено в журнале.'}`);
+      discovered.add(poi.id); log(`Обнаружено: ${poiTitle(poi)}`, true); toast(`${poiTitle(poi)}. Новое место отмечено в журнале.`);
     }
   } else stamina = Math.min(100, stamina + dt * .8);
   if (following && !pointer) {
@@ -520,9 +556,9 @@ function drawPoi(poi, time) {
   ctx.fillStyle = active ? '#dbe7b7' : '#c8c6a7'; ctx.fillRect(-1.5, -1.5, 3, 3);
   }
   const anonymous = /· OSM\s+\S+$/.test(poi.name);
-  const important = (poi.overview || poi.kind === 'town') && !anonymous;
+  const important = (poi.overview || poi.tags?.place) && !anonymous;
   const fontSize = camera.zoom < .5 ? 10 : important ? 13 : 11;
-  const title = isHovered ? poiTitle(poi) : poi.name;
+  const title = poiTitle(poi);
   ctx.font = `${isHovered || active || important ? 600 : 500} ${fontSize}px "Segoe UI", sans-serif`;
   ctx.textAlign = 'center'; ctx.textBaseline = 'top';
   const width = ctx.measureText(title).width;
@@ -563,7 +599,8 @@ function drawStaticObjects(time) {
     objectCacheCtx.clearRect(0, 0, pixelWidth, pixelHeight);
     objectCacheCtx.setTransform(scale, 0, 0, scale, 0, 0);
     objectCacheCtx.save(); objectCacheCtx.translate(width / 2, height / 2); objectCacheCtx.scale(camera.zoom, camera.zoom); objectCacheCtx.translate(-camera.x, -camera.y);
-    detailRenderer.draw(objectCacheCtx, { zoom: camera.zoom, cameraX: camera.x, cameraY: camera.y, width, height, time, hoveredId: null });
+    detailRenderer.draw(objectCacheCtx, { zoom: camera.zoom, cameraX: camera.x, cameraY: camera.y, width, height, time, hoveredId: null,
+      groundOverlay: layers.elevation && elevationRenderer.available ? (context, view) => elevationRenderer.draw(context, view) : null });
     objectCacheCtx.restore();
     objectCacheState = { key, x: camera.x, y: camera.y, margin, scale, width, height };
     renderStats.staticRebuilds++; renderStats.lastStaticMs = performance.now() - started;
@@ -654,7 +691,7 @@ function updateUI() {
   $('water-value').textContent = `${Math.round(water)}%`; $('water-bar').style.width = `${water}%`;
   const nearest = [...world.pois].sort((a, b) => dist(player, a) - dist(player, b))[0];
   const atPoi = nearest && dist(player, nearest) < 65;
-  $('location-name').textContent = atPoi ? poiTitle(nearest) : world.name || 'Северные пустоши';
+  $('location-name').textContent = atPoi ? poiTitle(nearest) : world.name || 'Участок местности';
   const terrain = terrainAt(world, player.x, player.y);
   $('terrain-label').textContent = `${terrainNames[terrain?.type] || 'Пустошь'}${route ? paused ? ' · привал' : ' · в пути' : ' · на привале'}`;
   const biomes = [...new Set(detailRenderer.zonesAt(player.x, player.y).map(zone => zone.biomeName || zone.name))];
@@ -693,7 +730,9 @@ window.__DAY_NEXT__ = {
   getRoadClasses: () => ({ ...roadClasses }),
   getOverviewMarkers: () => overviewMarkers.map(marker => ({ ...structuredClone(marker), visible: world.geographic && camera.zoom <= OVERVIEW_MAX_ZOOM && poiEnabled(marker) })),
   getFeatures: () => detailRenderer.getFeatures(),
-  getRenderStats: () => ({ ...renderStats, meanFrameMs: renderStats.totalFrameMs / Math.max(1, renderStats.frames), cachePixels: objectCache.width * objectCache.height, cacheBytes: objectCache.width * objectCache.height * 4, renderer: detailRenderer.getStats() }),
+  getRenderStats: () => ({ ...renderStats, meanFrameMs: renderStats.totalFrameMs / Math.max(1, renderStats.frames), cachePixels: objectCache.width * objectCache.height, cacheBytes: objectCache.width * objectCache.height * 4, renderer: detailRenderer.getStats(), elevation: elevationRenderer.getStats() }),
+  getElevationInfo: () => elevationRenderer.getInfo(),
+  elevationAt: (x, y) => elevationRenderer.sampleAt(x, y),
   getTypeCatalogs: () => structuredClone({ buildingTypes: BUILDING_TYPES, buildingRoles: BUILDING_ROLES, buildingCategories: BUILDING_CATEGORIES, biomeTypes: BIOME_TYPES, resourceProfiles: RESOURCE_PROFILES, resourceKinds: RESOURCE_KINDS }),
   getResourceCandidatesAt: (x, y) => { const feature = detailRenderer.pick(x, y, 1); return collectResourceCandidates(feature?.gameplayAssignment || feature, detailRenderer.zonesAt(x, y)); },
 };

@@ -1,4 +1,6 @@
-# Beatty / Rhyolite: original OpenStreetMap data
+# Beatty / Rhyolite: geographic source data
+
+## Original OpenStreetMap data
 
 `beatty.osm` contains the original, unmodified OSM XML used to build the Nevada game map. It is geographic source data, not a rendered image. Selected bounds: `west=-116.86, south=36.86, east=-116.73, north=36.94`, approximately 11.6 × 8.9 km, covering Beatty, Rhyolite and Gold Center in Nye County, Nevada, USA.
 
@@ -24,9 +26,34 @@ The OSM map API returns nodes in the bbox, ways using those nodes, all coordinat
 
 Coverage is relative to the downloaded file, not to every object that exists in reality. Some buildings may not yet be mapped in OSM. Untagged coordinate vertices are geometry rather than standalone game objects. Latest edit time and download time are different facts, both kept in the metadata.
 
-This is desert terrain. Seasonal and intermittent waterways represent dry washes rather than permanent rivers. No elevation model is inferred from OSM. Roof and surface styling is artistic; real materials, levels and addresses are only shown when provided by tags.
+This is desert terrain. Seasonal and intermittent waterways represent dry washes rather than permanent rivers. No elevation model is inferred from OSM: the separate USGS source below supplies real heights. Roof and surface styling is artistic. Real street/building names, road reference labels and addresses are excluded from game labels, cards and public rendered-object descriptions; their original facts remain in the archived OSM data.
 
-## Previous source
+## Real USGS elevation
+
+[`beatty-elevation.tif`](beatty-elevation.tif) is the original 32-bit floating-point GeoTIFF returned by the [USGS 3DEP elevation ImageServer](https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer) for the same Nevada bounds. Its raw bytes are retained, rather than replaced with a rendered relief image. The preserved [`beatty-elevation.provenance.json`](beatty-elevation.provenance.json) records source URLs, export parameters, download time, SHA-256, no-data handling and raster transform. [`beatty-elevation.service.json`](beatty-elevation.service.json) and [`beatty-elevation.export.json`](beatty-elevation.export.json) preserve the service metadata and original export response.
+
+The source was downloaded on 2026-10-22: 2,294,864 bytes, SHA-256 `907063fbe4009343df30c29595f4ed5433b8abd6bc1463575c7f334c7c6ccc24`. It has 769 × 593 valid samples with no no-data gaps. Raw source heights range from 926.69 to 1824.635 m. The game grid in [`../beatty-elevation.js`](../beatty-elevation.js) stores metre values rounded to 0.1 m for compactness; this storage precision is not a claim of measurement accuracy.
+
+The first and last sample centres coincide with the geographic bbox endpoints. Rows run north to south, columns west to east; approximate sample spacing is 15.069 m by 15.043 m. ArcGIS export pixel-edge bounds were expanded by half a sample to preserve that alignment. Sampling uses the service's bilinear interpolation. No synthetic terrain, gap filling or vertical datum conversion was applied.
+
+The dynamic service combines multiple source products. Their native resolution, survey date and vertical datum for this export were not established and are not inferred from the output grid spacing or service-wide metadata. Download time is not survey time. The retained GeoTIFF and service responses support later inspection.
+
+### Refresh and reproduce elevation
+
+The [Fetch Beatty elevation workflow](https://github.com/Eugene715x/DAY-NEXT/actions/workflows/fetch-elevation.yml) runs `scripts/import-elevation.py`, validates the public USGS export and commits the original GeoTIFF, provenance and derived game grid. It can be run manually and also runs when its acquisition script or workflow changes; there is no scheduled download. This authoring workflow installs Python 3.12, NumPy and rasterio at the pinned versions shown in the workflow. The game, ordinary Node.js tests and `npm run build` do not require those packages or network access.
+
+With the authoring tools installed, rebuild the game grid from the preserved original without downloading it again:
+
+```sh
+python scripts/import-elevation.py --rebuild
+npm run build
+```
+
+Running `python scripts/import-elevation.py` performs a fresh official download; the provenance stores the repeatable export request. A temporary service download URL can expire, so the preserved source file and export parameters are the basis of offline reproduction.
+
+USGS-authored U.S. elevation data are public domain. Attribution: **Elevation: U.S. Geological Survey, 3D Elevation Program (3DEP).** See the [USGS copyright and credit policy](https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits) and [`../LICENSE.md`](../LICENSE.md).
+
+## Previous OSM source
 
 Before the live refresh pipeline, the game used a historical GraphHopper test extract with only 104 buildings inside the chosen bounds, latest timestamp `2017-08-18T15:44:51Z`. Its pinned source remains reproducible:
 
