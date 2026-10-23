@@ -495,27 +495,51 @@ export function createDetailRenderer(world) {
   }
 
   function paintEmptyBuildingMark(ctx, record, zoom) {
-    const b = record.bounds, width = b.maxX - b.minX, height = b.maxY - b.minY;
-    const short = Math.min(width, height);
-    if (!(short > 0)) return;
-    // The source footprint clips this loose graphite annotation, including
-    // courtyards. Fixed source-ID jitter makes it a pencil mark, not a UI X.
-    const jitter = ((record.hash >>> 9 & 255) / 255 - .5) * .055;
-    const line = (start, middle, end) => {
-      ctx.beginPath(); ctx.moveTo(b.minX + start[0] * width, b.minY + start[1] * height);
-      ctx.lineTo(b.minX + middle[0] * width, b.minY + middle[1] * height);
-      ctx.lineTo(b.minX + end[0] * width, b.minY + end[1] * height); ctx.stroke();
-    };
-    ctx.save(); ctx.clip(record.path, record.fillRule); ctx.setLineDash([]);
-    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    ctx.strokeStyle = '#454545'; ctx.globalAlpha = .86;
-    ctx.lineWidth = Math.min(Math.max(.045, 1.12 / zoom), short * .16);
-    line([.08, .13 + jitter], [.48, .48 - jitter], [.95, .89 + jitter]);
-    line([.12, .91 - jitter], [.52, .49 + jitter], [.91, .08 - jitter]);
-    ctx.strokeStyle = 'rgba(61,61,61,.32)'; ctx.globalAlpha = 1;
-    ctx.lineWidth = Math.min(Math.max(.025, .48 / zoom), short * .075);
-    line([.07, .16 + jitter], [.47, .50 - jitter], [.96, .92 + jitter]);
-    line([.15, .93 - jitter], [.55, .51 + jitter], [.93, .07 - jitter]);
+    if (!record.emptyMark) {
+      let seed = drHash(drSourceId(record.feature));
+      const random = () => { seed ^= seed << 13; seed ^= seed >>> 17; seed ^= seed << 5; return (seed >>> 0) / 4294967296; };
+      record.emptyMark = [1, -1].map(direction => {
+        const angle = direction * (.77 + random() * .13), cosine = Math.cos(angle), sine = Math.sin(angle);
+        const length = .96 + random() * .08, breadth = .9 + random() * .16;
+        const polygon = (path, points) => {
+          points.forEach(([u, v], index) => {
+            const x = u * length * cosine - v * breadth * sine, y = u * length * sine + v * breadth * cosine;
+            if (index) path.lineTo(x, y); else path.moveTo(x, y);
+          });
+          path.closePath();
+        };
+        // The outline narrows into split brush tips. Uneven edges and real
+        // transparent slivers keep the mark dry and hand-painted at any zoom.
+        const edge = new Path2D(), body = new Path2D(), grain = new Path2D();
+        const contour = [[-17.7, -.2], [-15.1, -.9], [-16, -1.5], [-12.7, -1.5], [-13.6, -2.2], [-9.6, -2.7],
+          [-6.7, -2.3], [-4.4, -3], [-1, -2.7], [2.5, -3.1], [6, -2.8], [9.5, -2.3], [12.7, -1.9],
+          [15.8, -1.3], [14, -.6], [17.8, .1], [14.1, .8], [16, 1.4], [12, 1.9], [10.5, 2.7],
+          [7.3, 2.4], [3.8, 3], [.5, 2.6], [-2.9, 3.1], [-6, 2.6], [-9.7, 2.4], [-12.5, 1.7],
+          [-15.2, 1.4], [-13.8, .7], [-17.6, .4]].map(([u, v]) => [u + (random() - .5) * .45, v + (random() - .5) * .35]);
+        polygon(edge, contour); polygon(body, contour);
+        for (const [from, to, v] of [[-13, -3, -1.2], [1, 13, .8], [-5, 7, 1.9], [-9, 3, -.15]]) {
+          const offset = (random() - .5) * .25;
+          polygon(body, [[from, v], [from + 1.6, v - .16], [to - 1, v + offset - .08], [to, v + offset], [to - 2.4, v + offset + .13], [from + .7, v + .1]]);
+        }
+        polygon(grain, [[-12, -3.05], [-5, -3.4], [3, -3.25], [-2, -3.1], [-9, -2.95]]);
+        polygon(grain, [[-8, -1.9], [3, -2.2], [12, -1.45], [4, -1.85], [-5, -1.7]]);
+        polygon(grain, [[-11, 2.9], [-3, 3.45], [8, 3.1], [3, 3.15], [-6, 3.05]]);
+        return { edge, body, grain };
+      });
+    }
+    // A compact annotation sits over the roof instead of stretching to the
+    // building's bounding box. Overview marks recede; street marks cap at 36px.
+    const size = Math.min(36, 8 + zoom * 5), scale = size / (32 * zoom);
+    ctx.save(); ctx.translate(record.labelPoint.x, record.labelPoint.y); ctx.scale(scale, scale);
+    ctx.setLineDash([]); ctx.lineJoin = 'round';
+    ctx.save(); ctx.translate(.65, .95); ctx.fillStyle = 'rgba(36,31,25,.3)';
+    for (const stroke of record.emptyMark) ctx.fill(stroke.body, 'evenodd');
+    ctx.restore();
+    for (const stroke of record.emptyMark) {
+      ctx.strokeStyle = 'rgba(63,56,44,.62)'; ctx.lineWidth = .85; ctx.stroke(stroke.edge);
+      ctx.fillStyle = '#eee8d8'; ctx.fill(stroke.body, 'evenodd');
+      ctx.fillStyle = 'rgba(255,249,231,.72)'; ctx.fill(stroke.grain);
+    }
     ctx.restore();
   }
 
@@ -599,7 +623,7 @@ export function createDetailRenderer(world) {
     ctx.strokeStyle = hovered ? '#eff0be' : edge; ctx.lineWidth = high ? Math.max(.26, .9 / zoom) : .8 / zoom;
     if (ruin) ctx.setLineDash([.7, .4]);
     ctx.stroke(path); ctx.setLineDash([]);
-    if (!high) { if (empty) paintEmptyBuildingMark(ctx, record, zoom); return; }
+    if (!high) return empty;
     ctx.save(); ctx.clip(path, record.fillRule);
     const diagonal = Math.hypot(b.maxX - b.minX, b.maxY - b.minY);
     ctx.translate(center.x, center.y); ctx.rotate(longest?.angle || 0);
@@ -628,7 +652,7 @@ export function createDetailRenderer(world) {
     }
     ctx.restore();
     paintBuildingIcon(ctx, record, zoom, visited);
-    if (empty) paintEmptyBuildingMark(ctx, record, zoom);
+    return empty;
   }
 
   function paintDetail(ctx, record, zoom, hoveredId) {
@@ -825,6 +849,7 @@ export function createDetailRenderer(world) {
     }
     for (const record of visible) if (record.layer === 'biomes' && record.inkPath) paintWater(ctx, record, view.zoom, hoveredId);
     let roadsPainted = false, powerPainted = false;
+    const emptyBuildings = [];
     for (const record of visible) {
       if (record.layer === 'biomes' && record.geometry === 'polygon') continue;
       if (record.layer === 'biomes') paintDetail(ctx, record, view.zoom, hoveredId);
@@ -837,10 +862,13 @@ export function createDetailRenderer(world) {
         if (!powerPainted) paintPowerBatch(ctx, visiblePower, view.zoom, hoveredId);
         powerPainted = true;
       }
-      else if (record.group === 'building') paintBuilding(ctx, record, view.zoom, hoveredId);
+      else if (record.group === 'building') {
+        if (paintBuilding(ctx, record, view.zoom, hoveredId)) emptyBuildings.push(record);
+      }
       else paintDetail(ctx, record, view.zoom, hoveredId);
     }
     paintBuildingLabels(ctx, visible, view);
+    for (const record of emptyBuildings) paintEmptyBuildingMark(ctx, record, view.zoom);
     ctx.restore();
   }
 

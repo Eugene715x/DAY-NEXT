@@ -1,0 +1,178 @@
+{
+  "version": "0.21.1",
+  "changes": [
+    "Arrival preserves window visibility and does not visit a building automatically; G or a nearby explicit click opens the local items.",
+    "Empty buildings use a free-standing pale dry-brush X with irregular filled strokes, grain, frayed tips and shadow, drawn above roofs without footprint clipping."
+  ],
+  "tests": {
+    "node": {
+      "passed": 272,
+      "failed": 0
+    },
+    "browserBehavior": {
+      "status": "PASS",
+      "htmlSha256": "c41bc2d2a411138af234a39fc44fa1d57f0eec3f3458fac61c8872df5dc87c83",
+      "oldSave": {
+        "fromHtmlSha256": "12a4f0fdc61a7f1fd44d9061401fdada81a4b5b1c66df2348957d0c0863a5f21",
+        "exactWorldAndInventory": true,
+        "exactPlayer": true,
+        "visitedEmptyAndPiles": true
+      },
+      "arrival": {
+        "closedStaysClosed": true,
+        "unvisitedUntilManualG": true,
+        "inventoryOnlyPreserved": true,
+        "groundOnlyPreserved": true,
+        "existingGroundFollowsLocalContainer": true,
+        "manualNearbyClickOpens": true
+      },
+      "loot": {
+        "emptyAfterTakeAll": true,
+        "refillRemovesEmpty": true,
+        "allIdsConserved": 3149,
+        "reloadExact": true
+      },
+      "houses": [
+        {
+          "id": "way-264407416",
+          "travelFrames": 40
+        },
+        {
+          "id": "way-264407418",
+          "travelFrames": 40
+        },
+        {
+          "id": "way-1436315448",
+          "travelFrames": 40
+        }
+      ],
+      "offline": {
+        "errors": [],
+        "requests": 0
+      }
+    },
+    "browserVisual": {
+      "status": "PASS",
+      "htmlSha256": "c41bc2d2a411138af234a39fc44fa1d57f0eec3f3458fac61c8872df5dc87c83",
+      "houses": [
+        {
+          "id": "way-889916711",
+          "point": {
+            "x": 2317.933,
+            "y": 860.2115714285715
+          },
+          "center": {
+            "x": 2317.933,
+            "y": 861.7750000000001
+          },
+          "bounds": {
+            "minX": 2316.222,
+            "minY": 859.951,
+            "maxX": 2319.644,
+            "maxY": 863.599
+          },
+          "area": 12.483455999998519,
+          "distance": 141.664784480366,
+          "role": "Жилой дом"
+        },
+        {
+          "id": "way-889916718",
+          "point": {
+            "x": 2311.9781428571428,
+            "y": 831.8173571428572
+          },
+          "center": {
+            "x": 2313.465,
+            "y": 833.8715
+          },
+          "bounds": {
+            "minX": 2310.863,
+            "minY": 831.475,
+            "maxX": 2316.067,
+            "maxY": 836.268
+          },
+          "area": 24.942772000000886,
+          "distance": 151.1532202246941,
+          "role": "Жилой дом"
+        },
+        {
+          "id": "way-106738787",
+          "point": {
+            "x": 2388.123857142857,
+            "y": 916.0165714285714
+          },
+          "center": {
+            "x": 2391.3810000000003,
+            "y": 920.49
+          },
+          "bounds": {
+            "minX": 2385.681,
+            "minY": 915.271,
+            "maxX": 2397.081,
+            "maxY": 925.709
+          },
+          "area": 118.99320000000081,
+          "distance": 364.0705892732454,
+          "role": "Гостиница"
+        }
+      ],
+      "refill": {
+        "houseId": "way-106738787",
+        "grayVisited": true,
+        "itemCount": 1,
+        "empty": false,
+        "screenshot": ".local/v21.1-large-refill-zoom24.png"
+      },
+      "playerMovedAway": true,
+      "zoomLevels": [
+        4,
+        8,
+        24
+      ],
+      "offline": {
+        "errors": [],
+        "requests": 0
+      }
+    },
+    "pileArrival": {
+      "status": "PASS",
+      "htmlSha256": "c41bc2d2a411138af234a39fc44fa1d57f0eec3f3458fac61c8872df5dc87c83",
+      "pileArrivalClosed": true,
+      "localGOpensPile": true,
+      "pileId": "pile-2",
+      "offline": {
+        "errors": [],
+        "requests": 0
+      }
+    }
+  },
+  "browserHarness": "Chromium PC; autonomous HTML fulfilled from memory under an intercepted HTTP origin, all further network blocked. Actual map clicks and simulation stepping, no actor teleport.",
+  "preservedSourceBytes": {
+    "maps/usa.js": "ab20b2ee633736db13675db5e56ddb4cfd669842eb367cd1df09e827a11ab20a",
+    "maps/beatty-elevation.js": "1d867f70be4a8a7ae741b3ec539979440212563d12eb3ed6795cc378d5df51f4",
+    "maps/source/beatty-elevation.tif": "907063fbe4009343df30c29595f4ed5433b8abd6bc1463575c7f334c7c6ccc24",
+    "building-roles.js": "534364d30e05d3d677b77dbedd72731bdc1b5044e5d7fc386e13d745addee695",
+    "world.js": "96a4db4b28a18c6d4f1921aaefd42931a5daf3311e7a47b1da63feb697abea6f",
+    "real-world.js": "2c66e7f0c1831f1205622da5fed746b45b36a9a7bd11985493de600fdfc8d7dd",
+    "movement-model.js": "d53ebf151d1731e4e5f4e46c6c90d9a73090d967ce0bb651a6a2041adf31f984",
+    "world-loot.js": "59838268469c4ece8e243a315059f88c5de1a8a8d1b997ebe962cb27848757ba",
+    "inventory-ui.js": "60db2939fdb0d5a79b1e3332224877ca9c58ace919425ffc2c3e5e44c79e6666"
+  },
+  "artifacts": {
+    "downloads/day-next.html": {
+      "bytes": 5113665,
+      "sha256": "c41bc2d2a411138af234a39fc44fa1d57f0eec3f3458fac61c8872df5dc87c83"
+    },
+    "downloads/day-next.zip": {
+      "bytes": 1347759,
+      "sha256": "4666e35cd6f6676716d874c850ae4441e76fce6ce7d1063e687387baa1b545ae"
+    }
+  },
+  "sourceSha256": {
+    "game.js": "66ee6c113837eef647397a4a442d21ded6a84342af80533da94b1c0cfb418682",
+    "detail-renderer.js": "58fa9b042f975219168e50185b7ed87e03c5e4de7580b22786ec3edff61f4e1d",
+    "tests/renderer-index.test.mjs": "9d3205befa24150e0d53d7d98d934ff3b6078dbd6a6729955968b84e4fe33e57"
+  },
+  "zipCrc": "PASS",
+  "zipHtmlMatchesStandalone": true
+}

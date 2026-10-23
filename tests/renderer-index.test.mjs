@@ -112,18 +112,20 @@ function recordingContext() {
 
 function buildingContext() {
   const context = recordingContext(), stack = [], styles = ['fillStyle', 'strokeStyle', 'lineWidth', 'globalAlpha', 'lineCap', 'lineJoin', 'dash'];
-  let commands = [];
+  let commands = [], transforms = [];
   Object.assign(context, {
     gradients: [], texts: [],
-    save() { stack.push(Object.fromEntries(styles.map(key => [key, this[key]]))); },
-    restore() { Object.assign(this, stack.pop()); },
-    translate() {}, scale() {}, rotate() {},
+    save() { stack.push({ styles: Object.fromEntries(styles.map(key => [key, this[key]])), transforms: structuredClone(transforms) }); },
+    restore() { const saved = stack.pop(); Object.assign(this, saved.styles); transforms = saved.transforms; },
+    translate(x, y) { transforms.push(['translate', x, y]); },
+    scale(x, y) { transforms.push(['scale', x, y]); },
+    rotate(angle) { transforms.push(['rotate', angle]); },
     beginPath() { commands = []; },
     moveTo(x, y) { commands.push(['moveTo', x, y]); },
     lineTo(x, y) { commands.push(['lineTo', x, y]); },
     closePath() { commands.push(['closePath']); },
     rect(...values) { commands.push(['rect', ...values]); },
-    fill(path, rule) { this.fills.push({ path, rule, color: this.fillStyle, alpha: this.globalAlpha }); },
+    fill(path, rule) { this.fills.push({ path, rule, color: this.fillStyle, alpha: this.globalAlpha, transforms: structuredClone(transforms) }); },
     stroke(path) { this.strokes.push({ path, commands: structuredClone(commands), color: this.strokeStyle, width: this.lineWidth, alpha: this.globalAlpha, cap: this.lineCap }); },
     strokeRect(...values) { this.strokes.push({ rect: values, color: this.strokeStyle, width: this.lineWidth }); },
     createLinearGradient() {
@@ -302,20 +304,22 @@ test('visited building containers become gray while untouched roles and source f
   assert.deepEqual(withoutState.fills.map(fill => fill.color), original.fills.map(fill => fill.color), 'A renderer without game state keeps the original colored map');
 });
 
-test('empty visited buildings gain a footprint-clipped pencil cross which disappears when refilled', () => {
-  const outer = ring(30, 30, 170, 170), courtyard = ring(70, 70, 130, 130);
+test('empty visited buildings gain a compact dry-brush X over the scene which disappears when refilled', () => {
+  const outer = [[30, 30], [310, 30], [310, 65], [65, 65], [65, 270], [30, 270], [30, 30]].map(([x, y]) => ({ x, y }));
+  const courtyard = ring(40, 100, 55, 125);
   const renderer = createDetailRenderer(world({ width: 400, height: 300, buildings: [
     { id: 'way-100', points: outer, rings: [outer, courtyard], tags: { building: 'house' } },
+    { id: 'neighbor', points: ring(140, 110, 170, 140), tags: { building: 'house' } },
   ] }));
   renderer.setLayers({ biomes: false });
   const source = renderer.getFeatures().find(feature => feature.layer === 'buildings');
   let state = { visited: false, itemCount: 3, empty: false };
   const capture = zoom => {
     const context = buildingContext();
-    renderer.draw(context, { ...fullView, zoom, width: 400 * zoom, height: 300 * zoom, buildingLootState: () => state });
+    renderer.draw(context, { ...fullView, zoom, width: 400 * zoom, height: 300 * zoom, buildingLootState: id => id === 'way-100' ? state : null });
     return context;
   };
-  const marks = context => context.strokes.filter(stroke => stroke.color === '#454545');
+  const marks = context => context.fills.filter(fill => fill.color === '#eee8d8');
   assert.equal(marks(capture(1)).length, 0, 'Unvisited seeded loot cannot mark a house as searched');
   state = { visited: true, itemCount: 3, empty: false };
   assert.equal(marks(capture(1)).length, 0, 'A searched house with remaining loot is gray without a cross');
@@ -323,14 +327,26 @@ test('empty visited buildings gain a footprint-clipped pencil cross which disapp
   const empty = capture(1), footprint = empty.fills[0].path;
   assert.equal(empty.fills[0].color, '#969696');
   assert.equal(marks(empty).length, 2);
-  assert.equal(empty.strokes.filter(stroke => stroke.color === 'rgba(61,61,61,.32)').length, 2, 'Faint graphite echoes soften the two pencil strokes');
-  assert(empty.clips.some(clip => clip.path === footprint && clip.rule === 'nonzero'), 'The mark stays inside the measured roof and excludes its courtyard');
+  assert(marks(empty).every(mark => mark.rule === 'evenodd' && mark.path.commands.filter(command => command[0] === 'closePath').length >= 5), 'Broad irregular filled brush shapes have true thin transparent grain gaps');
+  assert.equal(empty.fills.filter(fill => fill.color === 'rgba(36,31,25,.3)').length, 2, 'The pale paint has a subtle separate shadow');
+  assert(!empty.clips.some(clip => clip.path === footprint), 'The brush annotation is free of footprint or courtyard clipping');
   assert.equal(footprint.commands.filter(command => command[0] === 'closePath').length, 2);
-  const pencilCommands = marks(empty).map(stroke => stroke.commands);
-  for (const zoom of [.5, 6, 16]) {
+  const lastRoof = empty.fills.findLastIndex(fill => fill.path === footprint || fill.color === renderer.pick(150, 120, 0).color);
+  assert(empty.fills.indexOf(marks(empty)[0]) > lastRoof, 'The final annotation pass stays above every neighboring roof');
+  const anchor = marks(empty)[0].transforms[0];
+  assert.equal(anchor[0], 'translate');
+  assert.equal(renderer.pick(anchor[1], anchor[2], 0).id, 'way-100', 'The marker uses an interior label point even on a huge L-shaped footprint');
+  assert.notDeepEqual(anchor.slice(1), [170, 150], 'An empty bounding-box center cannot displace the mark into the street');
+  const brushCommands = marks(empty).map(mark => mark.path.commands);
+  let overviewWidth = 0;
+  for (const zoom of [.5, 6, 16, 24]) {
     const context = capture(zoom);
-    assert.deepEqual(marks(context).map(stroke => stroke.commands), pencilCommands, 'Pencil geometry is stable through redraws and zooming');
-    assert(marks(context).every(stroke => stroke.width * zoom <= 1.120001 && stroke.cap === 'round'), 'The annotation remains light at close zoom');
+    const brush = marks(context), coordinates = brush.flatMap(mark => mark.path.commands.filter(command => command[0] !== 'closePath'));
+    const scale = brush[0].transforms.find(transform => transform[0] === 'scale')[1] * zoom;
+    const width = (Math.max(...coordinates.map(command => command[1])) - Math.min(...coordinates.map(command => command[1]))) * scale;
+    assert.deepEqual(brush.map(mark => mark.path.commands), brushCommands, 'The hand-painted form remains stable through redraws and zooming');
+    if (zoom < 1) overviewWidth = width;
+    else assert(width >= 24 && width <= 36 && overviewWidth < width, 'Street annotations stay readable and capped independently of the huge footprint');
   }
   state = { visited: true, itemCount: 2, empty: false };
   const refilled = capture(1);

@@ -487,7 +487,7 @@ function update(dt) {
         log(`На месте: ${route.name.toLowerCase()}`, true);
         route = null; paused = false; arrivalMarker = null; $('travel-panel').hidden = true;
         syncLootPosition(); saveLoot();
-        if (!lootTarget || !openLocalLoot(lootTarget)) toast('Ты на месте. Выбери, куда идти дальше.');
+        toast(lootTarget ? 'Ты на месте. G — вещи рядом.' : 'Ты на месте. Выбери, куда идти дальше.');
       }
     }
     for (const poi of world.pois) if (!discovered.has(poi.id) && dist(player, poi) < 65) {
