@@ -1,0 +1,1377 @@
+{
+  "version": "0.18.0",
+  "checkedAt": "2026-10-23T11:41:34.208374+00:00",
+  "status": "PASS",
+  "environment": {
+    "browser": "Chromium",
+    "viewport": {
+      "width": 1440,
+      "height": 960
+    },
+    "deviceScaleFactor": 1
+  },
+  "offline": {
+    "errors": [],
+    "requests": 0
+  },
+  "preservation": {
+    "buildings": 893,
+    "rolesColors": true,
+    "roads": 83,
+    "power": 6
+  },
+  "sourceHashes": {
+    "beatty.osm": "44f3641860c1e3966edf259c5487b89f1997699aec77cff783360f8c66414d99",
+    "beatty-sand.osm": "a11681c538c5d897758cfafdadfaf325fab4cd1bc529acbaeb5766b098fed297",
+    "beatty-elevation.tif": "907063fbe4009343df30c29595f4ed5433b8abd6bc1463575c7f334c7c6ccc24"
+  },
+  "navigation": {
+    "width": 3000,
+    "height": 2325,
+    "cellSize": 6.25,
+    "cols": 480,
+    "rows": 372,
+    "cellCount": 178560,
+    "metadata": {
+      "type": "osm",
+      "version": 1,
+      "relief": true,
+      "navigationResolutionMeters": 24.082770768873456,
+      "sourceCellSize": 25,
+      "navigationSubdivision": 4,
+      "maxPoiSnapMeters": 100,
+      "requestedStart": {
+        "x": 2341.664,
+        "y": 888.292
+      },
+      "componentCount": 1,
+      "startSnapDistanceMeters": 0,
+      "unreachablePoiCount": 0,
+      "movement": {
+        "cells": 178560,
+        "cellSize": 6.25,
+        "resolutionMeters": 24.082770768873456,
+        "elevationSamples": 178560,
+        "roadCells": 15898,
+        "roadSources": 669,
+        "permanentWaterCells": 179,
+        "biomeCounts": {
+          "wasteland": 118157,
+          "rock": 2883,
+          "seasonal_river": 1008,
+          "scrub": 500,
+          "city": 5502,
+          "quarry": 2105,
+          "forest": 24,
+          "grassland": 6,
+          "park": 34,
+          "recreation": 132,
+          "water": 179,
+          "cemetery": 51,
+          "sand": 46540,
+          "desert": 1439
+        },
+        "landscapeSamples": 178560,
+        "landscapeCounts": {
+          "mountains": 39129,
+          "high_mountains": 21815,
+          "hills": 38646,
+          "uneven": 48415,
+          "plain": 30555
+        },
+        "geometry": {
+          "buildings": 893,
+          "seasonalParts": 34,
+          "bridgeSegments": 4,
+          "edges": 12541,
+          "buckets": 1363,
+          "bucketSize": 50
+        },
+        "components": 1,
+        "unreachablePois": 0
+      }
+    }
+  },
+  "landscape": {
+    "info": {
+      "available": true,
+      "reason": null,
+      "source": "real-dem-derived-game-landscape",
+      "columns": 480,
+      "rows": 372,
+      "resolutionMeters": 24.082770768873456,
+      "counts": {
+        "plain": 30555,
+        "uneven": 48415,
+        "hills": 38646,
+        "mountains": 39129,
+        "high_mountains": 21815
+      },
+      "unknownCells": 0,
+      "types": [
+        {
+          "id": "plain",
+          "name": "Равнина",
+          "multiplier": 1,
+          "color": "#a8bb87"
+        },
+        {
+          "id": "uneven",
+          "name": "Неровная местность",
+          "multiplier": 0.78,
+          "color": "#c6bb78"
+        },
+        {
+          "id": "hills",
+          "name": "Холмы",
+          "multiplier": 0.52,
+          "color": "#c39865"
+        },
+        {
+          "id": "mountains",
+          "name": "Горы",
+          "multiplier": 0.28,
+          "color": "#9b7b79"
+        },
+        {
+          "id": "high_mountains",
+          "name": "Высокие горы",
+          "multiplier": 0.14,
+          "color": "#887ba3"
+        }
+      ],
+      "thresholds": {
+        "gradientRadiusMeters": 75,
+        "localReliefRadiusMeters": 200,
+        "reliefRadiusMeters": 400,
+        "uneven": {
+          "slopePercent": 3,
+          "localReliefMeters": 20
+        },
+        "hills": {
+          "slopePercent": 9,
+          "slopeWithLocalReliefPercent": 4,
+          "localReliefMeters": 55,
+          "reliefMeters": 95
+        },
+        "mountains": {
+          "slopePercent": 20,
+          "reliefMeters": 100,
+          "broadSlopePercent": 12,
+          "broadReliefMeters": 180,
+          "localReliefMeters": 100
+        },
+        "high_mountains": {
+          "slopePercent": 38,
+          "reliefMeters": 180,
+          "broadSlopePercent": 22,
+          "broadReliefMeters": 260,
+          "localReliefMeters": 180,
+          "summitReliefMeters": 300
+        }
+      }
+    },
+    "legend": "Равнина\n×1,00\nНеровная местность\n×0,78\nХолмы\n×0,52\nГоры\n×0,28\nВысокие горы\n×0,14",
+    "card": "Ландшафт: Равнина ×1,00",
+    "classificationAtStart": {
+      "id": "plain",
+      "name": "Равнина",
+      "multiplier": 1,
+      "color": "#a8bb87",
+      "slopePercent": 2.4130516052246094,
+      "localReliefMeters": 14.147705078125,
+      "reliefMeters": 39.3018798828125
+    },
+    "overlayVisible": true,
+    "overlayIndependentOfHeightAndBiomes": true
+  },
+  "actualEffects": {
+    "building": {
+      "id": "relation-16700368-0",
+      "point": {
+        "x": 2260.9406688888885,
+        "y": 2164.8225255555553
+      },
+      "movement": {
+        "multiplier": 0.084,
+        "biomeMultiplier": 1.05,
+        "terrainMultiplier": 1.05,
+        "roadMultiplier": 1,
+        "landscapeMultiplier": 1,
+        "buildingMultiplier": 0.08,
+        "seasonalMultiplier": 1,
+        "slopeMultiplier": 1,
+        "grade": 0,
+        "building": true,
+        "seasonal": false,
+        "bridge": false,
+        "walkable": true,
+        "landscape": "plain",
+        "speedKmh": 0.336,
+        "biome": "city",
+        "roadClass": null,
+        "surface": null,
+        "elevationMeters": 956.5413590247535,
+        "slopePercent": 0
+      }
+    },
+    "seasonal": {
+      "id": "biome-seasonal_river-component-water-1bsxqy7i5tuon",
+      "point": {
+        "x": 523.383,
+        "y": 0
+      },
+      "movement": {
+        "multiplier": 0.016800000000000002,
+        "biomeMultiplier": 1,
+        "terrainMultiplier": 1,
+        "roadMultiplier": 1,
+        "landscapeMultiplier": 0.14,
+        "buildingMultiplier": 1,
+        "seasonalMultiplier": 0.12,
+        "slopeMultiplier": 1,
+        "grade": 0,
+        "building": false,
+        "seasonal": true,
+        "bridge": false,
+        "walkable": true,
+        "landscape": "high_mountains",
+        "speedKmh": 0.06720000000000001,
+        "biome": "wasteland",
+        "roadClass": null,
+        "surface": null,
+        "elevationMeters": 1459.6516224000843,
+        "slopePercent": 0
+      }
+    },
+    "geometry": {
+      "buildings": 893,
+      "seasonalParts": 34,
+      "bridgeSegments": 4,
+      "edges": 12541,
+      "buckets": 1363,
+      "bucketSize": 50
+    }
+  },
+  "movementFactors": {
+    "catalog": {
+      "baseSpeedKmh": 4,
+      "minimumMultiplier": 0.005,
+      "maximumMultiplier": 2,
+      "biomes": {
+        "plain": 1,
+        "wasteland": 1,
+        "city": 1.05,
+        "desert": 0.94,
+        "grassland": 0.94,
+        "park": 0.94,
+        "recreation": 0.94,
+        "garden": 0.9,
+        "farmland": 0.84,
+        "orchard": 0.82,
+        "vineyard": 0.82,
+        "cemetery": 0.88,
+        "sand": 0.67,
+        "beach": 0.67,
+        "scrub": 0.75,
+        "forest": 0.65,
+        "rock": 0.58,
+        "hill": 0.72,
+        "quarry": 0.58,
+        "wetland": 0.44,
+        "swamp": 0.44,
+        "glacier": 0.5,
+        "landfill": 0.65,
+        "construction": 0.72,
+        "brownfield": 0.82,
+        "seasonal_river": 1,
+        "dry_riverbed": 1,
+        "gully": 0.7,
+        "valley": 1,
+        "water": 0
+      },
+      "roads": {
+        "highway": 1.5,
+        "road": 1.35,
+        "street": 1.25,
+        "track": 1.16,
+        "trail": 1.12,
+        "railway": 1.08
+      },
+      "surfaceQuality": {
+        "asphalt": 1,
+        "concrete": 1,
+        "concrete:plates": 0.97,
+        "concrete:lanes": 0.97,
+        "paved": 1,
+        "paving_stones": 0.94,
+        "sett": 0.88,
+        "cobblestone": 0.84,
+        "metal": 0.91,
+        "wood": 0.9,
+        "compacted": 0.94,
+        "fine_gravel": 0.9,
+        "gravel": 0.83,
+        "pebblestone": 0.8,
+        "unpaved": 0.79,
+        "ground": 0.77,
+        "dirt": 0.77,
+        "earth": 0.77,
+        "grass": 0.74,
+        "sand": 0.58,
+        "mud": 0.44,
+        "rock": 0.62
+      },
+      "buildingMultiplier": 0.08,
+      "seasonalRiverMultiplier": 0.12
+    },
+    "samples": [
+      {
+        "point": {
+          "x": 2265.625,
+          "y": 659.375
+        },
+        "biome": "city",
+        "road": false,
+        "movement": {
+          "multiplier": 1.05,
+          "biomeMultiplier": 1.05,
+          "terrainMultiplier": 1.05,
+          "roadMultiplier": 1,
+          "landscapeMultiplier": 1,
+          "buildingMultiplier": 1,
+          "seasonalMultiplier": 1,
+          "slopeMultiplier": 1,
+          "grade": 0,
+          "building": false,
+          "seasonal": false,
+          "bridge": false,
+          "walkable": true,
+          "landscape": "plain",
+          "speedKmh": 4.2,
+          "biome": "city",
+          "roadClass": null,
+          "surface": null,
+          "elevationMeters": 1036.3322580645233,
+          "slopePercent": 0
+        }
+      },
+      {
+        "point": {
+          "x": 2271.875,
+          "y": 659.375
+        },
+        "biome": "city",
+        "road": true,
+        "movement": {
+          "multiplier": 0.9199008,
+          "biomeMultiplier": 1.05,
+          "terrainMultiplier": 1.05,
+          "roadMultiplier": 1.1232,
+          "landscapeMultiplier": 0.78,
+          "buildingMultiplier": 1,
+          "seasonalMultiplier": 1,
+          "slopeMultiplier": 1,
+          "grade": 0,
+          "building": false,
+          "seasonal": false,
+          "bridge": false,
+          "walkable": true,
+          "landscape": "uneven",
+          "speedKmh": 3.6796032,
+          "biome": "city",
+          "roadClass": "track",
+          "surface": "dirt",
+          "elevationMeters": 1035.41870967744,
+          "slopePercent": 0
+        }
+      },
+      {
+        "point": {
+          "x": 3.125,
+          "y": 3.125
+        },
+        "biome": "wasteland",
+        "road": false,
+        "movement": {
+          "multiplier": 0.28,
+          "biomeMultiplier": 1,
+          "terrainMultiplier": 1,
+          "roadMultiplier": 1,
+          "landscapeMultiplier": 0.28,
+          "buildingMultiplier": 1,
+          "seasonalMultiplier": 1,
+          "slopeMultiplier": 1,
+          "grade": 0,
+          "building": false,
+          "seasonal": false,
+          "bridge": false,
+          "walkable": true,
+          "landscape": "mountains",
+          "speedKmh": 1.12,
+          "biome": "wasteland",
+          "roadClass": null,
+          "surface": null,
+          "elevationMeters": 1619.6739784945967,
+          "slopePercent": 0
+        }
+      },
+      {
+        "point": {
+          "x": 146.875,
+          "y": 3.125
+        },
+        "biome": "wasteland",
+        "road": true,
+        "movement": {
+          "multiplier": 0.314496,
+          "biomeMultiplier": 1,
+          "terrainMultiplier": 1,
+          "roadMultiplier": 1.1232,
+          "landscapeMultiplier": 0.28,
+          "buildingMultiplier": 1,
+          "seasonalMultiplier": 1,
+          "slopeMultiplier": 1,
+          "grade": 0,
+          "building": false,
+          "seasonal": false,
+          "bridge": false,
+          "walkable": true,
+          "landscape": "mountains",
+          "speedKmh": 1.257984,
+          "biome": "wasteland",
+          "roadClass": "track",
+          "surface": "dirt",
+          "elevationMeters": 1561.5670967741482,
+          "slopePercent": 0
+        }
+      },
+      {
+        "point": {
+          "x": 171.875,
+          "y": 1321.875
+        },
+        "biome": "sand",
+        "road": false,
+        "movement": {
+          "multiplier": 0.5226000000000001,
+          "biomeMultiplier": 0.67,
+          "terrainMultiplier": 0.67,
+          "roadMultiplier": 1,
+          "landscapeMultiplier": 0.78,
+          "buildingMultiplier": 1,
+          "seasonalMultiplier": 1,
+          "slopeMultiplier": 1,
+          "grade": 0,
+          "building": false,
+          "seasonal": false,
+          "bridge": false,
+          "walkable": true,
+          "landscape": "uneven",
+          "speedKmh": 2.0904000000000003,
+          "biome": "sand",
+          "roadClass": null,
+          "surface": null,
+          "elevationMeters": 1163.7774193548162,
+          "slopePercent": 0
+        }
+      },
+      {
+        "point": {
+          "x": 203.125,
+          "y": 1321.875
+        },
+        "biome": "sand",
+        "road": true,
+        "movement": {
+          "multiplier": 0.58698432,
+          "biomeMultiplier": 0.67,
+          "terrainMultiplier": 0.67,
+          "roadMultiplier": 1.1232,
+          "landscapeMultiplier": 0.78,
+          "buildingMultiplier": 1,
+          "seasonalMultiplier": 1,
+          "slopeMultiplier": 1,
+          "grade": 0,
+          "building": false,
+          "seasonal": false,
+          "bridge": false,
+          "walkable": true,
+          "landscape": "uneven",
+          "speedKmh": 2.34793728,
+          "biome": "sand",
+          "roadClass": "track",
+          "surface": "dirt",
+          "elevationMeters": 1164.8193548386978,
+          "slopePercent": 0
+        }
+      }
+    ],
+    "products": "Биом ×1,05 × ландшафт 1,00 × дорога 1,50",
+    "legend": {
+      "city": "×1,05",
+      "wasteland": "×1,00",
+      "sand": "×0,67"
+    },
+    "height": {
+      "available": true,
+      "reason": null,
+      "min": 926.7,
+      "max": 1824.6,
+      "units": "m",
+      "columns": 769,
+      "rows": 593,
+      "bbox": [
+        -116.86,
+        36.86,
+        -116.73,
+        36.94
+      ],
+      "contourInterval": 50,
+      "majorContourInterval": 100,
+      "renderMode": "neutral-relief-mask",
+      "palette": [
+        {
+          "height": 926.7,
+          "position": 0,
+          "color": "#545454"
+        },
+        {
+          "height": 1375.65,
+          "position": 0.5,
+          "color": "#808080"
+        },
+        {
+          "height": 1824.6,
+          "position": 1,
+          "color": "#bdbdbd"
+        }
+      ],
+      "source": {
+        "provider": "USGS 3D Elevation Program (3DEP)",
+        "serviceUrl": "https://elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer",
+        "downloadedAt": "2026-10-22T17:59:00.412966+00:00",
+        "sourceFile": "maps/source/beatty-elevation.tif",
+        "sha256": "907063fbe4009343df30c29595f4ed5433b8abd6bc1463575c7f334c7c6ccc24",
+        "attribution": "Elevation: U.S. Geological Survey, 3D Elevation Program (3DEP).",
+        "license": "USGS-authored U.S. elevation data are public domain; retain source attribution.",
+        "licenseUrl": "https://www.usgs.gov/information-policies-and-instructions/copyrights-and-credits",
+        "verticalDatum": null,
+        "sourceResolution": "Dynamic USGS 3DEP service; native product resolution varies. The exported grid spacing is recorded separately.",
+        "gridSpacingMetersApprox": {
+          "x": 15.069,
+          "y": 15.043
+        },
+        "storageRoundingMeters": 0.1
+      }
+    },
+    "heightKey": "\n          РЕЛЬЕФ · СВЕТОТЕНЬUSGS\n          \n          ТЕНИНЕЙТРАЛЬНОСВЕТ\n          USGS 3DEP · 926–1825 м · горизонтали 50 м\n        "
+  },
+  "layerVisibilityDoesNotChangePhysics": true,
+  "riverDashes": [
+    {
+      "zoom": 0.32,
+      "widthWorld": 8,
+      "dashWorld": [
+        19.200000762939453,
+        12.800000190734863
+      ],
+      "cap": "butt",
+      "blueOutsidePhysicalBankSamples": 0,
+      "insidePixel": [
+        76,
+        145,
+        189,
+        255
+      ],
+      "nearBankPixel": [
+        169,
+        164,
+        133,
+        255
+      ],
+      "gapPixel": [
+        167,
+        161,
+        125,
+        255
+      ]
+    },
+    {
+      "zoom": 0.6,
+      "widthWorld": 8,
+      "dashWorld": [
+        19.200000762939453,
+        12.800000190734863
+      ],
+      "cap": "butt",
+      "blueOutsidePhysicalBankSamples": 0,
+      "insidePixel": [
+        76,
+        145,
+        189,
+        255
+      ],
+      "nearBankPixel": [
+        147,
+        159,
+        141,
+        255
+      ],
+      "gapPixel": [
+        167,
+        161,
+        125,
+        255
+      ]
+    },
+    {
+      "zoom": 1,
+      "widthWorld": 8,
+      "dashWorld": [
+        19.200000762939453,
+        12.800000190734863
+      ],
+      "cap": "butt",
+      "blueOutsidePhysicalBankSamples": 0,
+      "insidePixel": [
+        76,
+        145,
+        189,
+        255
+      ],
+      "nearBankPixel": [
+        76,
+        145,
+        189,
+        255
+      ],
+      "gapPixel": [
+        167,
+        161,
+        125,
+        255
+      ]
+    },
+    {
+      "zoom": 2,
+      "widthWorld": 8,
+      "dashWorld": [
+        19.200000762939453,
+        12.800000190734863
+      ],
+      "cap": "butt",
+      "blueOutsidePhysicalBankSamples": 0,
+      "insidePixel": [
+        76,
+        145,
+        189,
+        255
+      ],
+      "nearBankPixel": [
+        76,
+        145,
+        189,
+        255
+      ],
+      "gapPixel": [
+        167,
+        161,
+        125,
+        255
+      ]
+    },
+    {
+      "zoom": 4,
+      "widthWorld": 8,
+      "dashWorld": [
+        19.200000762939453,
+        12.800000190734863
+      ],
+      "cap": "butt",
+      "blueOutsidePhysicalBankSamples": 0,
+      "insidePixel": [
+        76,
+        145,
+        189,
+        255
+      ],
+      "nearBankPixel": [
+        76,
+        145,
+        189,
+        255
+      ],
+      "gapPixel": [
+        167,
+        161,
+        125,
+        255
+      ]
+    },
+    {
+      "zoom": 6,
+      "widthWorld": 8,
+      "dashWorld": [
+        19.200000762939453,
+        12.800000190734863
+      ],
+      "cap": "butt",
+      "blueOutsidePhysicalBankSamples": 0,
+      "insidePixel": [
+        76,
+        145,
+        189,
+        255
+      ],
+      "nearBankPixel": [
+        76,
+        145,
+        189,
+        255
+      ],
+      "gapPixel": [
+        167,
+        161,
+        125,
+        255
+      ]
+    },
+    {
+      "zoom": 12,
+      "widthWorld": 8,
+      "dashWorld": [
+        19.200000762939453,
+        12.800000190734863
+      ],
+      "cap": "butt",
+      "blueOutsidePhysicalBankSamples": 0,
+      "insidePixel": [
+        76,
+        145,
+        189,
+        255
+      ],
+      "nearBankPixel": [
+        76,
+        145,
+        189,
+        255
+      ],
+      "gapPixel": [
+        167,
+        161,
+        125,
+        255
+      ]
+    },
+    {
+      "zoom": 24,
+      "widthWorld": 8,
+      "dashWorld": [
+        19.200000762939453,
+        12.800000190734863
+      ],
+      "cap": "butt",
+      "blueOutsidePhysicalBankSamples": 0,
+      "insidePixel": [
+        76,
+        145,
+        189,
+        255
+      ],
+      "nearBankPixel": [
+        76,
+        145,
+        189,
+        255
+      ],
+      "gapPixel": [
+        167,
+        161,
+        125,
+        255
+      ]
+    }
+  ],
+  "seasonalClasses": [
+    {
+      "type": "river",
+      "biome": "seasonal_river"
+    },
+    {
+      "type": "stream",
+      "biome": "seasonal_river"
+    },
+    {
+      "type": "drain",
+      "biome": "seasonal_river"
+    },
+    {
+      "type": "ditch",
+      "biome": "seasonal_river"
+    },
+    {
+      "type": "wadi",
+      "biome": "seasonal_river"
+    }
+  ],
+  "lakePriorityPreserved": true,
+  "rendererMatchesTestedBundle": true,
+  "rendererSourceSha256": {
+    "detail-renderer.js": "18cd73db620c01c2678909248aae72959ef69e708622eccb46fadf9bc3694e4d",
+    "elevation-renderer.js": "d10dbd089ad7cdb64361f73ba8151c0390332b2c9eb895725d2f06bcdf0c7df4"
+  },
+  "neutralRelief": {
+    "flatBiomeColourSamples": [
+      {
+        "color": "#969b99",
+        "before": [
+          150,
+          155,
+          153
+        ],
+        "after": [
+          150,
+          155,
+          153,
+          255
+        ]
+      },
+      {
+        "color": "#c5b583",
+        "before": [
+          197,
+          181,
+          131
+        ],
+        "after": [
+          197,
+          181,
+          131,
+          255
+        ]
+      },
+      {
+        "color": "#a7a17d",
+        "before": [
+          167,
+          161,
+          125
+        ],
+        "after": [
+          167,
+          161,
+          125,
+          255
+        ]
+      },
+      {
+        "color": "#748c5c",
+        "before": [
+          116,
+          140,
+          92
+        ],
+        "after": [
+          116,
+          140,
+          92,
+          255
+        ]
+      }
+    ],
+    "sameShapeDifferentAltitudeMaskPixels": [
+      [
+        208,
+        194,
+        151,
+        255
+      ],
+      [
+        208,
+        194,
+        151,
+        255
+      ]
+    ],
+    "heightOnlyChromaticPixelCount": 0,
+    "flatRasterBuilds": 1,
+    "renderMode": "neutral-relief-mask"
+  },
+  "reliefVisibleOverBiomes": true,
+  "tooltip": "Город · Beatty · Биом ×1,05 · Неровная местность ×0,78 · 1018 м",
+  "buildingCard": "ЖИЛЬЁ\n\nЖилой дом\n\nИгровое назначение\nБиом: Город\nВысота: 1014 м\nЛандшафт: Неровная местность ×0,78\nПрофили ресурсов: Бытовые припасы, Строительные материалы",
+  "outsideCoverage": {
+    "available": false,
+    "height": null,
+    "elevatedCells": 0,
+    "movementPrepared": true,
+    "landscape": {
+      "available": false,
+      "reason": "missing-elevation",
+      "source": "real-dem-derived-game-landscape",
+      "columns": 0,
+      "rows": 0,
+      "resolutionMeters": null,
+      "counts": {
+        "plain": 0,
+        "uneven": 0,
+        "hills": 0,
+        "mountains": 0,
+        "high_mountains": 0
+      },
+      "unknownCells": 0,
+      "types": [
+        {
+          "id": "plain",
+          "name": "Равнина",
+          "multiplier": 1,
+          "color": "#a8bb87"
+        },
+        {
+          "id": "uneven",
+          "name": "Неровная местность",
+          "multiplier": 0.78,
+          "color": "#c6bb78"
+        },
+        {
+          "id": "hills",
+          "name": "Холмы",
+          "multiplier": 0.52,
+          "color": "#c39865"
+        },
+        {
+          "id": "mountains",
+          "name": "Горы",
+          "multiplier": 0.28,
+          "color": "#9b7b79"
+        },
+        {
+          "id": "high_mountains",
+          "name": "Высокие горы",
+          "multiplier": 0.14,
+          "color": "#887ba3"
+        }
+      ],
+      "thresholds": {
+        "gradientRadiusMeters": 75,
+        "localReliefRadiusMeters": 200,
+        "reliefRadiusMeters": 400,
+        "uneven": {
+          "slopePercent": 3,
+          "localReliefMeters": 20
+        },
+        "hills": {
+          "slopePercent": 9,
+          "slopeWithLocalReliefPercent": 4,
+          "localReliefMeters": 55,
+          "reliefMeters": 95
+        },
+        "mountains": {
+          "slopePercent": 20,
+          "reliefMeters": 100,
+          "broadSlopePercent": 12,
+          "broadReliefMeters": 180,
+          "localReliefMeters": 100
+        },
+        "high_mountains": {
+          "slopePercent": 38,
+          "reliefMeters": 180,
+          "broadSlopePercent": 22,
+          "broadReliefMeters": 260,
+          "localReliefMeters": 180,
+          "summitReliefMeters": 300
+        }
+      }
+    },
+    "landscapeAt": null
+  },
+  "performance": {
+    "idle": {
+      "frames": 120,
+      "fps": 60.00300015000745,
+      "maxFrameMs": 16.799999999999272
+    },
+    "cursor": {
+      "frames": 120,
+      "fps": 60.00300015000745,
+      "maxFrameMs": 16.80000000000291
+    },
+    "detailed": {
+      "frames": 120,
+      "fps": 59.99999999999999,
+      "maxFrameMs": 16.80000000000291
+    }
+  },
+  "staticCacheReused": true,
+  "movementChecks": {
+    "normal": {
+      "zoom": 0.3225806451612903,
+      "speedMode": 1,
+      "controlledFrames": 50,
+      "millisecondsPerFrame": 40,
+      "elapsedGameMinutes": 3.999999999999204,
+      "walkedMeters": 268.97199619513714,
+      "position": {
+        "x": 2285.824618598469,
+        "y": 846.4044228357506
+      },
+      "routeDurationMinutes": 66.58911341829447,
+      "remainingDurationMinutes": 62.58911341829453
+    },
+    "zoomed": {
+      "zoom": 6,
+      "speedMode": 1,
+      "controlledFrames": 50,
+      "millisecondsPerFrame": 40,
+      "elapsedGameMinutes": 3.999999999999204,
+      "walkedMeters": 268.97199619513714,
+      "position": {
+        "x": 2285.824618598469,
+        "y": 846.4044228357506
+      },
+      "routeDurationMinutes": 66.58911341829447,
+      "remainingDurationMinutes": 62.58911341829453
+    },
+    "fast": {
+      "zoom": 0.3225806451612903,
+      "speedMode": 3,
+      "controlledFrames": 50,
+      "millisecondsPerFrame": 40,
+      "elapsedGameMinutes": 12.000000000000455,
+      "walkedMeters": 688.6618457662158,
+      "position": {
+        "x": 2185.123711406746,
+        "y": 824.2065151307941
+      },
+      "routeDurationMinutes": 66.58911341829447,
+      "remainingDurationMinutes": 54.58911341829452
+    },
+    "normalTriple": {
+      "zoom": 0.3225806451612903,
+      "speedMode": 1,
+      "controlledFrames": 150,
+      "millisecondsPerFrame": 40,
+      "elapsedGameMinutes": 11.999999999997613,
+      "walkedMeters": 688.6618457662158,
+      "position": {
+        "x": 2185.123711406746,
+        "y": 824.2065151307941
+      },
+      "routeDurationMinutes": 66.58911341829447,
+      "remainingDurationMinutes": 54.58911341829458
+    }
+  },
+  "movementAssertions": {
+    "sameTimeSamePositionAtDifferentZooms": true,
+    "timeAcceleration3xMatches1xTripleDuration": true,
+    "remainingEtaDecreasesByConsumedTravelTime": true
+  },
+  "physicsOracle": {
+    "status": "PASS",
+    "finalHtmlSha256": "7463f97bbc7e0678a13e87d91c68839f1a51a3c746fb92057aa3fde8f69771ea",
+    "literalBundledModulesMatchSource": [
+      "world.js",
+      "movement-model.js",
+      "movement-geometry.js",
+      "real-world.js",
+      "landscape.js"
+    ],
+    "checkedSourceSha256": {
+      "world.js": "96a4db4b28a18c6d4f1921aaefd42931a5daf3311e7a47b1da63feb697abea6f",
+      "movement-model.js": "d53ebf151d1731e4e5f4e46c6c90d9a73090d967ce0bb651a6a2041adf31f984",
+      "movement-geometry.js": "f4efda25f0d15fb05bdcc951ad362a5763987e10c7bf73b40220f2ede68a71e1",
+      "real-world.js": "2c66e7f0c1831f1205622da5fed746b45b36a9a7bd11985493de600fdfc8d7dd",
+      "landscape.js": "590778ab062fb8730feec2105b079ebf5135119964bf88ca35b183a6c4df52a2"
+    },
+    "independentChecks": {
+      "randomizedCases": 216,
+      "preparedFixtures": 9,
+      "analyticIntervals": 44,
+      "roadMaterialCombinations": 42,
+      "rawAstarMatchesDijkstra": true,
+      "cacheInvalidation": {
+        "revisionChange": true,
+        "gridArrayReplacement": true,
+        "beforeMinutes": 4.800000000000001,
+        "afterRevisionMinutes": 6.4154328932550655,
+        "afterGridReplacementMinutes": 4.800000000000001
+      },
+      "noRoadMultiplier": 1,
+      "cityHighwayMultiplier": 1.5750000000000002,
+      "cityHighwayKmh": 6.300000000000001
+    },
+    "actualMap": {
+      "requested": 49,
+      "reachable": 49,
+      "unreachable": [],
+      "invalid": [],
+      "sourceUnchanged": true,
+      "demUnchanged": true,
+      "meanSearchMs": 225.44339410204083,
+      "maximumSearchMs": 1516.3770570000006,
+      "totalQaRunMs": 14061.045866
+    }
+  },
+  "actualMapPhysics": {
+    "requested": 49,
+    "routes": 49,
+    "unreachable": [],
+    "invalid": [],
+    "sourceUnchanged": true,
+    "demUnchanged": true,
+    "landscapeMs": 123.85520600000018,
+    "prepMs": 567.5580829999999,
+    "totalQaRunMs": 14061.045866,
+    "maximumSearchMs": 1516.3770570000006,
+    "meanSearchMs": 225.44339410204083,
+    "representativeRoutes": [
+      {
+        "id": "overview-way-642329463",
+        "name": "Beatty Airport",
+        "kind": "overview",
+        "searchMs": 1153.790239,
+        "points": 16,
+        "distanceMeters": 5257.821723237227,
+        "durationMinutes": 116.03172663635301,
+        "roadFraction": 0.6468086951129993,
+        "buildingMeters": 0,
+        "seasonalMeters": 7.765250328574579,
+        "bridgeMeters": 0,
+        "pointsPerKilometer": 3.0430853007600343
+      },
+      {
+        "id": "overview-node-150974730",
+        "name": "Gold Center",
+        "kind": "overview",
+        "searchMs": 172.25845299999946,
+        "points": 17,
+        "distanceMeters": 5670.406971596341,
+        "durationMinutes": 83.84427211894825,
+        "roadFraction": 0.9216028074793142,
+        "buildingMeters": 0,
+        "seasonalMeters": 45.80178553210244,
+        "bridgeMeters": 87.05275151351735,
+        "pointsPerKilometer": 2.998021144717614
+      },
+      {
+        "id": "overview-node-6806526987",
+        "name": "Bullfrog",
+        "kind": "overview",
+        "searchMs": 1516.3770570000006,
+        "points": 31,
+        "distanceMeters": 8681.761470515678,
+        "durationMinutes": 207.26931204161076,
+        "roadFraction": 0.6457541266290433,
+        "buildingMeters": 0,
+        "seasonalMeters": 8.585905336728512,
+        "bridgeMeters": 0,
+        "pointsPerKilometer": 3.57070395279573
+      },
+      {
+        "id": "overview-node-150968333",
+        "name": "Rhyolite",
+        "kind": "overview",
+        "searchMs": 254.372566,
+        "points": 27,
+        "distanceMeters": 7294.603864470113,
+        "durationMinutes": 180.89485346263874,
+        "roadFraction": 0.6878283564684039,
+        "buildingMeters": 0,
+        "seasonalMeters": 8.585905336728512,
+        "bridgeMeters": 0,
+        "pointsPerKilometer": 3.7013661744552193
+      }
+    ]
+  },
+  "browserRoutes": [
+    {
+      "name": "Rhyolite",
+      "target": {
+        "x": 718.0684615383403,
+        "y": 1043.9355337247714
+      },
+      "clickToRouteMs": 1622,
+      "searchMs": 1580.300000011921,
+      "moving": {
+        "frames": 120,
+        "fps": 58.06638923836255,
+        "maxFrameMs": 49.900000000000546
+      },
+      "offline": {
+        "errors": [],
+        "requests": 0
+      },
+      "points": 27,
+      "distance": 1893.1075078729768,
+      "durationMinutes": 180.89485346263874
+    },
+    {
+      "name": "Northwest mountain",
+      "target": {
+        "x": 180,
+        "y": 180
+      },
+      "clickToRouteMs": 4348,
+      "searchMs": 4295.799999982119,
+      "moving": {
+        "frames": 120,
+        "fps": 60.00300015000749,
+        "maxFrameMs": 16.80000000000109
+      },
+      "offline": {
+        "errors": [],
+        "requests": 0
+      },
+      "points": 80,
+      "distance": 3206.2517353084418,
+      "durationMinutes": 1124.9703551410169
+    }
+  ],
+  "tests": {
+    "total": 243,
+    "passed": 243,
+    "failed": 0
+  },
+  "htmlSha256": "7463f97bbc7e0678a13e87d91c68839f1a51a3c746fb92057aa3fde8f69771ea",
+  "artifactValidation": {
+    "status": "PASS",
+    "zipCRC": "PASS",
+    "htmlMatchesDist": true,
+    "sourceHashesUnchanged": {
+      "beatty.osm": "44f3641860c1e3966edf259c5487b89f1997699aec77cff783360f8c66414d99",
+      "beatty-sand.osm": "a11681c538c5d897758cfafdadfaf325fab4cd1bc529acbaeb5766b098fed297",
+      "beatty-elevation.tif": "907063fbe4009343df30c29595f4ed5433b8abd6bc1463575c7f334c7c6ccc24"
+    },
+    "buildingAssignments": 893,
+    "exclusiveBiomePolygons": 281,
+    "movementFactors": {
+      "baseSpeedKmh": 4,
+      "minimumMultiplier": 0.005,
+      "maximumMultiplier": 2,
+      "biomes": {
+        "plain": 1,
+        "wasteland": 1,
+        "city": 1.05,
+        "desert": 0.94,
+        "grassland": 0.94,
+        "park": 0.94,
+        "recreation": 0.94,
+        "garden": 0.9,
+        "farmland": 0.84,
+        "orchard": 0.82,
+        "vineyard": 0.82,
+        "cemetery": 0.88,
+        "sand": 0.67,
+        "beach": 0.67,
+        "scrub": 0.75,
+        "forest": 0.65,
+        "rock": 0.58,
+        "hill": 0.72,
+        "quarry": 0.58,
+        "wetland": 0.44,
+        "swamp": 0.44,
+        "glacier": 0.5,
+        "landfill": 0.65,
+        "construction": 0.72,
+        "brownfield": 0.82,
+        "seasonal_river": 1,
+        "dry_riverbed": 1,
+        "gully": 0.7,
+        "valley": 1,
+        "water": 0
+      },
+      "roads": {
+        "highway": 1.5,
+        "road": 1.35,
+        "street": 1.25,
+        "track": 1.16,
+        "trail": 1.12,
+        "railway": 1.08
+      },
+      "surfaceQuality": {
+        "asphalt": 1,
+        "concrete": 1,
+        "concrete:plates": 0.97,
+        "concrete:lanes": 0.97,
+        "paved": 1,
+        "paving_stones": 0.94,
+        "sett": 0.88,
+        "cobblestone": 0.84,
+        "metal": 0.91,
+        "wood": 0.9,
+        "compacted": 0.94,
+        "fine_gravel": 0.9,
+        "gravel": 0.83,
+        "pebblestone": 0.8,
+        "unpaved": 0.79,
+        "ground": 0.77,
+        "dirt": 0.77,
+        "earth": 0.77,
+        "grass": 0.74,
+        "sand": 0.58,
+        "mud": 0.44,
+        "rock": 0.62
+      },
+      "buildingMultiplier": 0.08,
+      "seasonalRiverMultiplier": 0.12
+    },
+    "artifacts": {
+      "downloads/day-next.html": {
+        "bytes": 5092413,
+        "sha256": "7463f97bbc7e0678a13e87d91c68839f1a51a3c746fb92057aa3fde8f69771ea"
+      },
+      "downloads/day-next.zip": {
+        "bytes": 1341552,
+        "sha256": "23d0dc7d23688aec129d9863dcfde650f7044fee8c295dd818327824487d42fd"
+      }
+    }
+  },
+  "presentation": {
+    "heightMode": "neutral-relief-mask",
+    "maskCompositeOperation": "soft-light",
+    "flatMaskGray": 128,
+    "absoluteElevationAddsColor": false,
+    "groundOrder": [
+      "opaque biome colors",
+      "optional landscape overlay",
+      "neutral relief mask",
+      "water ink and objects"
+    ],
+    "seasonalWidth": "native physical W",
+    "seasonalDashWorldUnits": "2.4W",
+    "seasonalGapWorldUnits": "1.6W",
+    "seasonalClip": "exact exclusive river biome polygon",
+    "zoomCompensation": false,
+    "cameraProjectionOfFixedMapGeometry": true
+  },
+  "model": {
+    "baseSpeedKmh": 4,
+    "product": [
+      "biomeMultiplier",
+      "roadMultiplier",
+      "landscapeMultiplier",
+      "slopeMultiplier",
+      "buildingMultiplier",
+      "seasonalMultiplier"
+    ],
+    "roadSurfaceFormula": "1+(baseRoadMultiplier-1)*surfaceQuality",
+    "noRoadMultiplier": 1,
+    "minimumMultiplier": 0.005,
+    "maximumMultiplier": 2,
+    "cityHighwayProduct": 1.575,
+    "buildingMultiplier": 0.08,
+    "seasonalMultiplier": 0.12,
+    "seasonalPenaltyAppliedOnce": true,
+    "gameMinutesPerRealSecondAt1x": 2,
+    "smoothingRelativeIntegrationTolerance": 0.001,
+    "continuousGlobalOptimalityClaimed": false,
+    "visibilityChangesPhysics": false
+  },
+  "limitations": [
+    "Synchronous first complex long route can pause interface for several seconds: measured click-to-route1622/4348ms.",
+    "Navigation and landscape approximately24.08m; exact footprint and river penalties retain discrete route candidate graph.",
+    "Speed coefficients and landscape categories are game settings derived from actual terrain data."
+  ]
+}

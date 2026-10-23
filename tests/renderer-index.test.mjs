@@ -2,7 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createDetailRenderer } from '../detail-renderer.js';
 
-globalThis.Path2D = class { moveTo() {} lineTo() {} closePath() {} ellipse() {} };
+globalThis.Path2D = class {
+  constructor() { this.commands = []; }
+  moveTo(x, y) { this.commands.push(['moveTo', x, y]); }
+  lineTo(x, y) { this.commands.push(['lineTo', x, y]); }
+  closePath() { this.commands.push(['closePath']); }
+  ellipse(...values) { this.commands.push(['ellipse', ...values]); }
+};
 const ring = (x1, y1, x2, y2) => [{ x: x1, y: y1 }, { x: x2, y: y1 }, { x: x2, y: y2 }, { x: x1, y: y2 }, { x: x1, y: y1 }];
 const world = changes => ({ width: 10000, height: 10000, metersPerUnit: 1, roads: [], buildings: [], areas: [], rivers: [], lakes: [], details: [], ...changes });
 
@@ -93,10 +99,10 @@ test('dry watercourses cannot inherit a water resource profile from their visual
 });
 
 function recordingContext() {
-  const strokes = [], fills = [], dashes = [];
+  const strokes = [], fills = [], dashes = [], clips = [];
   return {
-    strokes, fills, dashes,
-    save() {}, restore() {}, beginPath() {}, rect() {}, clip() {},
+    strokes, fills, dashes, clips,
+    save() {}, restore() {}, beginPath() {}, rect() {}, clip(path, rule) { clips.push({ path, rule }); },
     fillRect() { fills.push({ color: this.fillStyle, matte: true }); },
     setLineDash(value) { this.dash = [...value]; dashes.push([...value]); },
     stroke(path) { strokes.push({ path, color: this.strokeStyle, width: this.lineWidth, dash: [...(this.dash || [])], cap: this.lineCap }); },
@@ -245,44 +251,51 @@ test('building fills use functional category colors at overview as well as detai
   assert.equal(renderer.pick(40, 40), null);
 });
 
-test('seasonal river rectangular punctuation stays fixed in every screen dimension without changing its physical biome', () => {
-  const renderer = createDetailRenderer(world({ width: 400, height: 300, rivers: [
-    { id: 'dry', width: .8, points: [{ x: 20, y: 50 }, { x: 380, y: 50 }], tags: { waterway: 'stream', intermittent: 'yes' } },
-    { id: 'wet', width: 2, points: [{ x: 20, y: 100 }, { x: 380, y: 100 }], tags: { waterway: 'stream' } },
-  ] }));
-  const physicalBefore = renderer.zonesAt(100, 50).map(zone => [zone.id, zone.biome]);
+test('all seasonal river classes fill their physical bank width with map-locked rectangular punctuation', () => {
+  const input = world({ width: 400, height: 300, rivers: [
+    { id: 'dry-stream', width: .8, points: [{ x: 20, y: 35 }, { x: 380, y: 35 }], tags: { waterway: 'stream', intermittent: 'yes' } },
+    { id: 'dry-river', width: 6, points: [{ x: 20, y: 85 }, { x: 190, y: 85 }, { x: 220, y: 100 }, { x: 380, y: 100 }], tags: { waterway: 'river', intermittent: 'yes' } },
+    { id: 'dry-drain', width: 2, points: [{ x: 20, y: 150 }, { x: 380, y: 150 }], tags: { waterway: 'drain', seasonal: 'yes' } },
+    { id: 'wet', width: 2, points: [{ x: 20, y: 200 }, { x: 380, y: 200 }], tags: { waterway: 'stream' } },
+  ] });
+  const before = structuredClone(input), renderer = createDetailRenderer(input);
+  const physicalBefore = renderer.getFeatures().filter(feature => feature.waterKind === 'seasonal_river').map(feature => [feature.id, feature.parts]);
+  assert.equal(physicalBefore.length, 3, 'Streams, rivers and drains all use the seasonal rendering');
   for (const zoom of [.32, .5, 1, 2, 6, 12, 24]) {
     const context = recordingContext();
     renderer.draw(context, { ...fullView, zoom, width: 400 * zoom, height: 300 * zoom });
     const dry = context.strokes.filter(stroke => stroke.dash.length), wet = context.strokes.filter(stroke => !stroke.dash.length);
-    assert.equal(dry.length, 2); assert.equal(wet.length, 2);
-    assert(dry.every(stroke => stroke.cap === 'butt'));
-    assert.deepEqual(dry[0].dash, dry[1].dash, 'Casing and centre share the same dash phase and openings');
-    assert(Math.abs(dry[0].dash[0] * zoom - 6) < 1e-10, 'Rectangular marks remain six screen pixels long');
-    assert(Math.abs(dry[0].dash[1] * zoom - 5) < 1e-10, 'The complete five-pixel gap stays open at close scales');
+    assert.equal(dry.length, 3, 'Each seasonal channel gets one full-width blue punctuation, without a narrow centre or solid duplicate');
+    assert.equal(wet.length, 2);
+    assert(dry.every(stroke => stroke.cap === 'butt' && stroke.color === '#4c91bd'));
+    assert.deepEqual(dry.map(stroke => stroke.width).sort((a, b) => a - b), [.8, 2, 6]);
+    for (const stroke of dry) {
+      assert.deepEqual(stroke.dash, [stroke.width * 2.4, stroke.width * 1.6], 'Length, gap and full bank width remain fixed in world units at every zoom');
+      const clip = context.clips.find(item => item.path && item.path !== stroke.path && item.rule === 'nonzero');
+      assert(clip?.path.commands.some(command => command[0] === 'closePath'), 'Seasonal ink is clipped to a closed physical biome polygon');
+    }
     assert(wet.every(stroke => stroke.cap === 'round'), 'Permanent water keeps its continuous round-ended line');
-    assert.equal(dry[1].color, '#4c91bd'); assert.equal(wet[1].color, '#3f7eaa');
-    assert(Math.abs(dry[0].width * zoom - 1.8) < 1e-12, 'Small watercourse marks have a fixed screen width');
-    assert(Math.abs(dry[1].width * zoom - 1.1) < 1e-12, 'Blue core width also remains fixed');
+    assert.equal(wet[1].color, '#3f7eaa');
     assert(Math.abs(wet[0].width - (Math.max(2, 2.4 / zoom) + 1 / zoom)) < 1e-12);
     assert.equal(wet[1].width, Math.max(2, 1.1 / zoom));
-    assert.deepEqual(renderer.zonesAt(100, 50).map(zone => [zone.id, zone.biome]), physicalBefore, 'Visual symbol size never changes the river biome');
+    assert.deepEqual(renderer.getFeatures().filter(feature => feature.waterKind === 'seasonal_river').map(feature => [feature.id, feature.parts]), physicalBefore, 'Visual punctuation cannot alter the river biome');
   }
+  assert.deepEqual(input, before);
 });
 
-test('river information follows visible dash ink outside the native ribbon without adding a hover overlay', () => {
+test('seasonal river ink stays within its physical banks and exclusions without a hover overlay', () => {
   const renderer = createDetailRenderer(world({ width: 400, height: 300, rivers: [
     { id: 'dry', width: .8, points: [{ x: 20, y: 50 }, { x: 200, y: 50 }], tags: { waterway: 'stream', intermittent: 'yes' } },
     { id: 'branch', width: .8, points: [{ x: 200, y: 50 }, { x: 380, y: 50 }], tags: { waterway: 'stream', intermittent: 'yes' } },
   ], details: [{ id: 'lake', geometry: 'polygon', points: ring(140, 40, 180, 60), tags: { natural: 'water' } }] }));
-  const painted = recordingContext(); renderer.draw(painted, fullView);
-  assert.equal(renderer.zonesAt(22, 50.7)[0].biome, 'wasteland', 'Physical membership uses native width');
-  const selected = renderer.pick(22, 50.7, 0);
-  assert.equal(selected.waterKind, 'seasonal_river', 'The wider visible ink remains selectable');
-  const [dashLength, gapLength] = painted.strokes.find(stroke => stroke.dash.length).dash;
-  assert.equal(renderer.pick(20 + dashLength + gapLength / 2, 50.7, 0).biome, 'wasteland', 'A visual dash gap adds no expanded hit footprint');
-  assert.equal(renderer.pick(20 + dashLength + .8, 50.7, 0).biome, 'wasteland', 'The rectangular cap cannot extend beyond its visible end');
-  assert.equal(renderer.pick(152, 50, 0).biome, 'water', 'A higher priority lake clips river selection and ink');
+  for (const zoom of [.32, 1, 6, 24]) {
+    renderer.draw(recordingContext(), { ...fullView, zoom, width: 400 * zoom, height: 300 * zoom });
+    assert.equal(renderer.zonesAt(22, 50.7)[0].biome, 'wasteland');
+    assert.equal(renderer.pick(22, 50.7, 0).biome, 'wasteland', 'Seasonal ink does not create a screen-expanded hit footprint beyond the bank');
+    assert.equal(renderer.pick(22, 50.39, 0).waterKind, 'seasonal_river', 'Ink and biome reach the native bank instead of becoming a narrow centre line');
+    assert.equal(renderer.pick(152, 50, 0).biome, 'water', 'A higher-priority lake cuts both the physical ribbon and the punctuation');
+  }
+  const selected = renderer.pick(22, 50, 0);
   assert.equal(selected.paths.length, 2);
   const context = recordingContext();
   assert.equal(renderer.drawHighlight(context, fullView, selected), null);
@@ -290,7 +303,7 @@ test('river information follows visible dash ink outside the native ribbon witho
   assert.equal(context.strokes.length, 0);
   renderer.setLayers({ biomes: false });
   assert.equal(renderer.drawHighlight(context, fullView, selected), null);
-  assert.equal(renderer.pick(22, 50.7, 0), null);
+  assert.equal(renderer.pick(22, 50, 0), null);
 });
 
 test('city ground is opaque gray with an opaque biome matte and the biome switch removes every ground fill', () => {
@@ -384,9 +397,9 @@ test('exact waterway relation duplicates inherit native seasonal ink and keep or
     renderer.draw(context, { ...fullView, zoom, width: 400 * zoom, height: 300 * zoom });
     const dashed = context.strokes.filter(stroke => stroke.dash.length);
     const solid = context.strokes.filter(stroke => !stroke.dash.length);
-    assert.equal(dashed.length, 2, 'The duplicate relation cannot leave an extra continuous centerline');
+    assert.equal(dashed.length, 1, 'The duplicate relation cannot leave an extra continuous centerline');
     assert.equal(solid.length, 2, 'A genuinely permanent river keeps its two continuous strokes');
-    assert.equal(dashed[1].color, '#4c91bd'); assert.equal(solid[1].color, '#3f7eaa');
+    assert.equal(dashed[0].color, '#4c91bd'); assert.equal(solid[1].color, '#3f7eaa');
   }
 });
 
@@ -522,4 +535,31 @@ test('city and natural colors remain translucent over relief but return to opaqu
   assert(tinted.some(event => event.color === '#969b99' && event.alpha === .42), 'Gray city shows the measured relief below');
   assert(tinted.some(event => event.color === '#829b61' && event.alpha === .38), 'Park green also transmits the ground');
   assert(capture(false).every(event => event.alpha === 1), 'The ordinary biome map has no translucent gaps');
+});
+
+test('neutral relief mask overlays opaque biome and landscape colors below river and road ink', () => {
+  const renderer = createDetailRenderer(world({ width: 400, height: 300,
+    rivers: [{ id: 'wash', width: 4, points: [{ x: 20, y: 80 }, { x: 380, y: 80 }], tags: { waterway: 'stream', intermittent: 'yes' } }],
+    roads: [{ id: 'road', type: 'primary', width: 3, points: [{ x: 20, y: 180 }, { x: 380, y: 180 }] }],
+    buildings: [{ id: 'house', points: ring(240, 220, 270, 250), tags: { building: 'house' } }],
+  }));
+  const events = [], context = recordingContext();
+  context.fill = function() { events.push({ type: 'fill', alpha: this.globalAlpha, color: this.fillStyle }); };
+  context.stroke = function() { events.push({ type: 'stroke', color: this.strokeStyle }); };
+  const view = { ...fullView,
+    landscapeOverlay() { events.push({ type: 'landscape' }); },
+    reliefOverlay(ctx, passedView) { assert.equal(ctx, context); assert.equal(passedView, view); events.push({ type: 'relief-mask' }); },
+  };
+  renderer.draw(context, view);
+  const land = events.findIndex(event => event.type === 'landscape'), mask = events.findIndex(event => event.type === 'relief-mask');
+  assert(land >= 0 && mask > land);
+  assert(events.slice(0, land).some(event => event.type === 'fill'));
+  assert(events.slice(0, land).every(event => event.type !== 'fill' || event.alpha === 1), 'Enabling the neutral mask cannot dilute biome colors into an elevation palette');
+  for (const color of ['#4c91bd', '#45494b', '#c3b88e']) assert(events.slice(mask + 1).some(event => event.color === color), `${color} ink stays sharp above the relief mask`);
+  assert.equal(events.filter(event => event.type === 'relief-mask').length, 1);
+  const after = recordingContext(); let masks = 0;
+  renderer.setLayers({ biomes: false });
+  renderer.draw(after, { ...fullView, reliefOverlay() { masks++; } });
+  assert.equal(masks, 1, 'The renderer hook remains independent of biome visibility');
+  assert(after.strokes.some(stroke => stroke.color === '#45494b'));
 });

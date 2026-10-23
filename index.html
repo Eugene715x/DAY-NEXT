@@ -37,7 +37,7 @@
       <div class="hud">
         <header class="top-bar">
           <div class="brand-block">
-            <div class="brand" aria-label="DAY NEXT"><span>DAY</span><span class="brand-divider">/</span><span class="brand-next">NEXT</span><span class="prototype">ПРОТОТИП <b>17</b></span></div>
+            <div class="brand" aria-label="DAY NEXT"><span>DAY</span><span class="brand-divider">/</span><span class="brand-next">NEXT</span><span class="prototype">ПРОТОТИП <b>18</b></span></div>
             <div class="brand-caption"><span class="live-dot"></span> ОДИНОЧНАЯ ЭКСПЕДИЦИЯ</div>
           </div>
           <div class="world-status glass">
@@ -69,7 +69,7 @@
           </div>
           <div class="map-tool-cluster">
             <div class="map-tool"><button id="maps-button" class="icon-button glass maps-button" type="button" aria-label="Карты и импорт" aria-controls="maps-panel" aria-expanded="false" title="Карты и импорт"><svg class="icon"><use href="#i-map" /></svg></button><span class="control-caption">КАРТЫ</span></div>
-            <div class="map-tool"><button id="elevation-button" class="icon-button glass elevation-button" type="button" aria-label="Показать или скрыть карту высот" aria-pressed="true" title="Карта высот"><svg class="icon"><use href="#i-elevation" /></svg></button><span class="control-caption">ВЫСОТЫ</span></div>
+            <div class="map-tool"><button id="elevation-button" class="icon-button glass elevation-button" type="button" aria-label="Показать или скрыть карту высот" aria-pressed="true" title="Рельеф: светотень без высотной окраски"><svg class="icon"><use href="#i-elevation" /></svg></button><span class="control-caption">ВЫСОТЫ</span></div>
             <div class="map-tool"><button id="landscape-button" class="icon-button glass landscape-button" type="button" aria-label="Показать или скрыть типы ландшафта" aria-pressed="false" title="Ландшафт: равнины, холмы и горы"><svg class="icon"><use href="#i-landscape" /></svg></button><span class="control-caption">ЛАНДШАФТ</span></div>
             <div class="map-tool"><button id="detail-button" class="icon-button glass detail-button" type="button" aria-label="Показать застройку · B" title="Показать застройку · B"><svg class="icon"><use href="#i-house" /></svg></button><span class="control-caption">ЗАСТРОЙКА</span></div>
             <div class="map-tool"><button id="building-types-button" class="icon-button glass building-types-button" type="button" aria-label="Типы зданий" aria-controls="building-types-panel" aria-expanded="false" title="Типы зданий"><svg class="icon"><use href="#i-types" /></svg></button><span class="control-caption">ТИПЫ</span></div>
@@ -89,7 +89,7 @@
             <div class="stat stat-water"><div class="stat-label"><svg class="icon"><use href="#i-water" /></svg><span>Вода</span><strong id="water-value">100</strong></div><div class="stat-track"><span id="water-bar" style="width:100%"></span></div></div>
           </div>
           <div class="location"><svg class="icon"><use href="#i-pin" /></svg><div><strong id="location-name">Местность</strong><span id="terrain-label">Открытая местность</span><span id="biome-label" class="biome-label" hidden></span><span id="landscape-label" class="landscape-label" hidden></span></div></div>
-          <div class="movement-status"><div class="movement-heading"><span>ХОДЬБА</span><strong id="movement-speed">4,0 км/ч</strong><span id="movement-multiplier">×1,00</span></div><span id="movement-factors" class="movement-factors">Ровная местность</span></div>
+          <div class="movement-status"><div class="movement-heading"><span>ХОДЬБА</span><strong id="movement-speed">4,0 км/ч</strong><span id="movement-multiplier">×1,00</span></div><span id="movement-factors" class="movement-factors">Ровная местность</span><span id="movement-products" class="movement-products"></span></div>
         </section>
 
         <section id="travel-panel" class="travel-panel glass" aria-label="Текущий маршрут" hidden>
@@ -110,8 +110,8 @@
         </footer>
 
         <div id="map-attribution" class="attribution"><a id="map-source-link" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors · ODbL</a></div>
-        <aside id="elevation-key" class="elevation-key glass" aria-label="Шкала высот">
-          <div class="elevation-heading"><span class="eyebrow">ВЫСОТА · МЕТРЫ</span><span class="elevation-source-mark">USGS</span></div>
+        <aside id="elevation-key" class="elevation-key glass" aria-label="Светотень рельефа">
+          <div class="elevation-heading"><span class="eyebrow">РЕЛЬЕФ · СВЕТОТЕНЬ</span><span class="elevation-source-mark">USGS</span></div>
           <div id="elevation-gradient" class="elevation-gradient" aria-hidden="true"></div>
           <div class="elevation-ticks"><span id="elevation-min">—</span><span id="elevation-mid">—</span><span id="elevation-max">—</span></div>
           <p id="elevation-source" class="elevation-source">USGS 3DEP</p>
@@ -128,7 +128,7 @@
 
         <section id="help-panel" class="help-panel glass" role="dialog" aria-label="Как играть" aria-modal="false" hidden>
           <div class="help-heading"><div><p class="eyebrow">ПОЛЕВОЙ СПРАВОЧНИК</p><h2>Сначала — первый шаг.</h2></div><button id="help-close" class="icon-button" type="button" aria-label="Закрыть справку">×</button></div>
-          <p>Выбери точку на суше. Путник учитывает биом, ландшафт, покрытие и уклон. Здания и сезонные русла сильно замедляют: маршрут старается обойти их. Постоянная вода пересекается по мостам. Кнопка «Ландшафт» показывает равнины, холмы и горы; множители сочетаются с биомами.</p>
+          <p>Выбери точку на суше. Путник перемножает коэффициенты биома, ландшафта, дороги и уклона. Дорога ускоряет и сохраняет действие биома под ней. Здания и сезонные русла сильно замедляют: маршрут старается обойти их. Постоянная вода пересекается по мостам. Кнопка «Ландшафт» показывает равнины, холмы и горы; множители сочетаются с биомами.</p>
           <dl><div><dt>Клик / касание</dt><dd>Идти в выбранную точку</dd></div><div><dt>Перетаскивание</dt><dd>Осмотреть карту</dd></div><div><dt>Колесо / щипок / + −</dt><dd>Приблизить улицы и дома</dd></div><div><dt>B / кнопка дома</dt><dd>Показать застройку</dd></div><div><dt>Слои карты</dt><dd>Выбрать, что показывать</dd></div><div><dt>Пробел</dt><dd>Пауза в пути</dd></div><div><dt>F</dt><dd>Вернуться к путнику</dd></div><div><dt>Esc</dt><dd>Закрыть окно / отменить путь</dd></div></dl>
           <p class="help-note">Наведи на объект, а на телефоне коснись его, чтобы узнать детали на любом масштабе. Приблизь карту, чтобы рассмотреть контуры домов и дорожки. В «Слоях карты» можно отдельно показать дороги, здания и природные объекты. Отдых восстанавливает выносливость.</p>
         </section>
@@ -165,27 +165,28 @@
           <div class="layers-heading help-heading"><div><p class="eyebrow">ВИД КАРТЫ</p><h2>Слои карты</h2></div><button id="layers-close" class="icon-button" type="button" aria-label="Закрыть слои карты">×</button></div>
           <div class="layers-content">
             <div class="layer-options">
-              <label class="layer-option" for="layer-elevation"><input id="layer-elevation" type="checkbox" checked /><span>Карта высот</span><span class="layer-count">USGS</span></label>
+              <label class="layer-option" for="layer-elevation"><input id="layer-elevation" type="checkbox" checked /><span>Рельеф · светотень</span><span class="layer-count">USGS</span></label>
               <p id="elevation-unavailable" class="layers-note" hidden>Для этого участка данные высот ещё не загружены.</p>
               <label class="layer-option" for="layer-landscape"><input id="layer-landscape" type="checkbox" /><span>Ландшафт</span><span class="layer-count">× скорость</span></label>
               <p id="landscape-unavailable" class="layers-note" hidden>Для классификации ландшафта нужны данные высот этого участка.</p>
               <div id="landscape-legend" class="landscape-legend" aria-label="Типы ландшафта и множители скорости"></div>
               <label class="layer-option" for="layer-biomes"><input id="layer-biomes" type="checkbox" checked /><span>Биомы</span><span id="count-biomes" class="layer-count">—</span></label>
               <div id="biome-key" class="biome-key" aria-label="Обозначения биомов"><span><i class="biome-swatch city-swatch" aria-hidden="true"></i>Город</span><span><i class="biome-swatch seasonal-river-swatch" aria-hidden="true"></i>Сезонное русло</span><span><i class="biome-swatch water-swatch" aria-hidden="true"></i>Постоянная вода</span></div>
+              <div class="biome-speed-key" aria-label="Множители скорости биомов"><span>Город <b id="factor-biome-city"></b></span><span>Пустошь <b id="factor-biome-wasteland"></b></span><span>Пески <b id="factor-biome-sand"></b></span></div>
               <label class="layer-option" for="layer-roads"><input id="layer-roads" type="checkbox" checked /><span>Дороги и тропы</span><span id="count-roads" class="layer-count">—</span></label>
               <fieldset id="road-classes" class="road-classes"><legend>Типы дорог</legend>
-                <label class="road-class-option" for="road-class-highway"><input id="road-class-highway" type="checkbox" checked /><span class="road-swatch road-swatch-highway" aria-hidden="true"></span><span>Магистрали</span><span id="count-road-class-highway" class="layer-count">—</span></label>
-                <label class="road-class-option" for="road-class-road"><input id="road-class-road" type="checkbox" checked /><span class="road-swatch road-swatch-road" aria-hidden="true"></span><span>Дороги</span><span id="count-road-class-road" class="layer-count">—</span></label>
-                <label class="road-class-option" for="road-class-street"><input id="road-class-street" type="checkbox" checked /><span class="road-swatch road-swatch-street" aria-hidden="true"></span><span>Улицы и проезды</span><span id="count-road-class-street" class="layer-count">—</span></label>
-                <label class="road-class-option" for="road-class-track"><input id="road-class-track" type="checkbox" checked /><span class="road-swatch road-swatch-track" aria-hidden="true"></span><span>Грунтовки</span><span id="count-road-class-track" class="layer-count">—</span></label>
-                <label class="road-class-option" for="road-class-trail"><input id="road-class-trail" type="checkbox" checked /><span class="road-swatch road-swatch-trail" aria-hidden="true"></span><span>Тропы</span><span id="count-road-class-trail" class="layer-count">—</span></label>
-                <label class="road-class-option" for="road-class-railway"><input id="road-class-railway" type="checkbox" checked /><span class="road-swatch road-swatch-railway" aria-hidden="true"></span><span>Железная дорога</span><span id="count-road-class-railway" class="layer-count">—</span></label>
+                <label class="road-class-option" for="road-class-highway"><input id="road-class-highway" type="checkbox" checked /><span class="road-swatch road-swatch-highway" aria-hidden="true"></span><span>Магистрали</span><span id="factor-road-class-highway" class="road-bonus"></span><span id="count-road-class-highway" class="layer-count">—</span></label>
+                <label class="road-class-option" for="road-class-road"><input id="road-class-road" type="checkbox" checked /><span class="road-swatch road-swatch-road" aria-hidden="true"></span><span>Дороги</span><span id="factor-road-class-road" class="road-bonus"></span><span id="count-road-class-road" class="layer-count">—</span></label>
+                <label class="road-class-option" for="road-class-street"><input id="road-class-street" type="checkbox" checked /><span class="road-swatch road-swatch-street" aria-hidden="true"></span><span>Улицы и проезды</span><span id="factor-road-class-street" class="road-bonus"></span><span id="count-road-class-street" class="layer-count">—</span></label>
+                <label class="road-class-option" for="road-class-track"><input id="road-class-track" type="checkbox" checked /><span class="road-swatch road-swatch-track" aria-hidden="true"></span><span>Грунтовки</span><span id="factor-road-class-track" class="road-bonus"></span><span id="count-road-class-track" class="layer-count">—</span></label>
+                <label class="road-class-option" for="road-class-trail"><input id="road-class-trail" type="checkbox" checked /><span class="road-swatch road-swatch-trail" aria-hidden="true"></span><span>Тропы</span><span id="factor-road-class-trail" class="road-bonus"></span><span id="count-road-class-trail" class="layer-count">—</span></label>
+                <label class="road-class-option" for="road-class-railway"><input id="road-class-railway" type="checkbox" checked /><span class="road-swatch road-swatch-railway" aria-hidden="true"></span><span>Железная дорога</span><span id="factor-road-class-railway" class="road-bonus"></span><span id="count-road-class-railway" class="layer-count">—</span></label>
               </fieldset>
               <label class="layer-option" for="layer-power"><input id="layer-power" type="checkbox" checked /><span>Электросеть</span><span id="count-power" class="layer-count">—</span></label>
               <label class="layer-option" for="layer-buildings"><input id="layer-buildings" type="checkbox" checked /><span>Здания</span><span id="count-buildings" class="layer-count">—</span></label>
               <label class="layer-option" for="layer-details"><input id="layer-details" type="checkbox" checked /><span>Остальные объекты</span><span id="count-details" class="layer-count">—</span></label>
             </div>
-            <p class="layers-note" id="layers-note">Биом × ландшафт × уклон задают темп ходьбы. Здания и сезонные русла дают сильный штраф. Слой «Ландшафт» показывает формы местности цветом поверх биомов. Переключение слоёв не меняет физику.</p>
+            <p class="layers-note" id="layers-note">Биом × ландшафт × дорога × уклон задают темп ходьбы. Без дороги её множитель ×1, с дорогой — выше ×1; покрытие уточняет бонус. Здания и сезонные русла дают сильный штраф. Слой «Ландшафт» показывает формы местности цветом поверх биомов. Переключение слоёв не меняет физику.</p>
           </div>
         </section>
       </div>

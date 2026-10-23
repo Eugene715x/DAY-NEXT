@@ -2,18 +2,9 @@
 const erClamp = (value, low, high) => Math.max(low, Math.min(high, value));
 const erValidBbox = bbox => Array.isArray(bbox) && bbox.length === 4 && bbox.every(Number.isFinite)
   && bbox[0] >= -180 && bbox[2] <= 180 && bbox[1] >= -90 && bbox[3] <= 90 && bbox[0] < bbox[2] && bbox[1] < bbox[3];
-const erPalette = [
-  [0, '#8f9d73'], [.24, '#b4b984'], [.5, '#c9be95'], [.7, '#b7a080'], [.88, '#9b8d7e'], [1, '#c2bdb7'],
-];
-const erRGB = color => [1, 3, 5].map(offset => parseInt(color.slice(offset, offset + 2), 16));
-const erColors = erPalette.map(([position, color]) => ({ position, color, rgb: erRGB(color) }));
-function erColor(height, min, max) {
-  const position = max > min ? erClamp((height - min) / (max - min), 0, 1) : .5;
-  const right = erColors.findIndex(stop => stop.position >= position);
-  const b = erColors[Math.max(1, right)], a = erColors[Math.max(0, right - 1)];
-  const fraction = (position - a.position) / (b.position - a.position);
-  return a.rgb.map((value, channel) => value + (b.rgb[channel] - value) * fraction);
-}
+// Compatibility metadata for the neutral illumination legend. These stops no
+// longer colour elevation: the raster contains illumination only.
+const erPalette = [[0, '#545454'], [.5, '#808080'], [1, '#bdbdbd']];
 function erCanvas(width, height) {
   let canvas;
   if (typeof OffscreenCanvas !== 'undefined') canvas = new OffscreenCanvas(width, height);
@@ -72,7 +63,7 @@ function erStroke(ctx, contour) {
 export function createElevationRenderer(world = {}, data) {
   const width = Number(world.width), height = Number(world.height), mapBbox = world.bbox;
   const columns = Number(data?.columns), rows = Number(data?.rows), bbox = data?.bbox;
-  const stats = { rasterBuilds: 0, contourBuilds: 0, drawCount: 0, contourLevels: 0, contourSegments: 0, labelsDrawn: 0, pixelCount: 0 };
+  const stats = { rasterBuilds: 0, contourBuilds: 0, drawCount: 0, maskDrawCount: 0, contourLevels: 0, contourSegments: 0, labelsDrawn: 0, pixelCount: 0 };
   let reason = !data ? 'missing-data' : null;
   if (!reason && (!(width > 0 && height > 0) || !Number.isFinite(width + height) || !erValidBbox(mapBbox))) reason = 'map-no-geography';
   if (!reason && (!erValidBbox(bbox) || !Number.isInteger(columns) || !Number.isInteger(rows) || columns < 2 || rows < 2
@@ -96,11 +87,11 @@ export function createElevationRenderer(world = {}, data) {
   const getInfo = () => ({
     available, reason, min: available ? min : null, max: available ? max : null, units: 'm',
     columns: available ? columns : 0, rows: available ? rows : 0, bbox: erValidBbox(bbox) ? [...bbox] : null,
-    contourInterval, majorContourInterval,
+    contourInterval, majorContourInterval, renderMode: 'neutral-relief-mask',
     palette: available ? erPalette.map(([position, color]) => ({ height: min + (max - min) * position, position, color })) : [],
     source: source ? structuredClone(source) : null,
   });
-  if (!available) return { available, sampleAt: () => null, draw: () => false, getInfo, getStats: () => ({ ...stats, available }) };
+  if (!available) return { available, sampleAt: () => null, draw: () => false, drawMask: () => false, getInfo, getStats: () => ({ ...stats, available }) };
   const longitudeScale = (columns - 1) / (bbox[2] - bbox[0]), latitudeScale = (rows - 1) / (bbox[3] - bbox[1]);
   const worldX = column => (bbox[0] + column / longitudeScale - mapBbox[0]) / (mapBbox[2] - mapBbox[0]) * width;
   const worldY = row => (mapBbox[3] - (bbox[3] - row / latitudeScale)) / (mapBbox[3] - mapBbox[1]) * height;
@@ -148,8 +139,13 @@ export function createElevationRenderer(world = {}, data) {
       const sx = slope(index, row * columns + Math.max(0, column - 1), row * columns + Math.min(columns - 1, column + 1), stepX) * 1.6;
       const sy = slope(index, Math.max(0, row - 1) * columns + column, Math.min(rows - 1, row + 1) * columns + column, stepY) * 1.6;
       const normal = Math.hypot(sx, sy, 1), dot = erClamp((-sx * light[0] - sy * light[1] + light[2]) / normal, 0, 1);
-      const brightness = .7 + dot * .44, color = erColor(value, min, max);
-      for (let channel = 0; channel < 3; channel++) pixels[pixel + channel] = erClamp(Math.round(color[channel] * brightness), 0, 255);
+      // Flat ground is the neutral midpoint of soft-light. Absolute elevation
+      // never enters this illumination: identical shapes at different altitudes
+      // produce the same mask. All channels are equal, so no terrain hue leaks
+      // into the independent biome/landscape colours beneath it.
+      const illumination = erClamp(.5 + (dot - light[2]) * .88, .08, .90);
+      const gray = Math.round(illumination * 255);
+      for (let channel = 0; channel < 3; channel++) pixels[pixel + channel] = gray;
       pixels[pixel + 3] = 255;
     }
     context.putImageData(image, 0, 0); raster = canvas;
@@ -217,7 +213,7 @@ export function createElevationRenderer(world = {}, data) {
         let angle = point.angle; if (angle > Math.PI / 2 || angle < -Math.PI / 2) angle += Math.PI;
         ctx.save(); ctx.translate(point.x, point.y); ctx.rotate(angle); ctx.scale(1 / zoom, 1 / zoom);
         ctx.font = '500 10px "Segoe UI", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.lineJoin = 'round'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(216,211,183,.86)'; ctx.fillStyle = '#4e4b3d';
+        ctx.lineJoin = 'round'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(238,238,238,.68)'; ctx.fillStyle = '#484848';
         ctx.strokeText(`${contour.height} м`, 0, 0); ctx.fillText(`${contour.height} м`, 0, 0); ctx.restore();
         boxes.push({ x, y }); count++; break;
       }
@@ -225,25 +221,37 @@ export function createElevationRenderer(world = {}, data) {
     stats.labelsDrawn = count;
   }
 
-  function draw(ctx, view = {}) {
+  function paint(ctx, view, mask) {
     buildRaster(); buildContours();
     if (!raster) return false;
     const zoom = Number(view.zoom) > 0 ? Number(view.zoom) : 1;
     ctx.save(); ctx.globalAlpha = 1;
     ctx.beginPath(); ctx.rect(0, 0, width, height); ctx.clip();
     ctx.imageSmoothingEnabled = true;
+    // The biome ground is already opaque when this is used as a mask. A
+    // neutral soft-light transfer adds shading without painting a grey matte.
+    ctx.globalCompositeOperation = mask ? 'soft-light' : 'source-over';
     // Pixel centres correspond to DEM sample vertices, including bbox edges.
     ctx.drawImage(raster, .5, .5, columns - 1, rows - 1, left, top, rasterWidth, rasterHeight);
+    // Contours and their measured labels are ordinary neutral ink above relief.
+    ctx.globalCompositeOperation = 'source-over';
     if (view.elevationContours !== false) {
       ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.setLineDash([]);
       for (const contour of contours) {
-        ctx.strokeStyle = contour.major ? 'rgba(84,76,57,.44)' : 'rgba(84,76,57,.25)';
+        ctx.strokeStyle = contour.major ? 'rgba(55,55,55,.32)' : 'rgba(55,55,55,.18)';
         ctx.lineWidth = (contour.major ? 1.05 : .65) / zoom; erStroke(ctx, contour);
       }
       drawLabels(ctx, view, zoom);
     } else stats.labelsDrawn = 0;
     ctx.restore(); stats.drawCount++;
+    if (mask) stats.maskDrawCount++;
     return true;
   }
-  return { available, sampleAt, draw, getInfo, getStats: () => ({ ...stats, available }) };
+
+  // Standalone height view uses neutral grey relief; the normal map composites
+  // the same cached raster onto biome/landscape colours with drawMask().
+  const draw = (ctx, view = {}) => paint(ctx, view, false);
+  const drawMask = (ctx, view = {}) => paint(ctx, view, true);
+
+  return { available, sampleAt, draw, drawMask, getInfo, getStats: () => ({ ...stats, available }) };
 }

@@ -659,21 +659,25 @@ export function createDetailRenderer(world) {
   }
 
   function waterWidth(record, zoom) {
-    const dry = drDry(record.feature);
-    // Seasonal ink is a cartographic symbol. Its size must not turn into a
-    // stripe across a whole channel at close zoom; the physical ribbon below
-    // keeps its genuine width for biomes and travel costs.
-    if (dry) return (record.width >= 3 || record.feature.tags?.waterway === 'river' ? 3.2 : record.width >= 1.5 ? 2.4 : 1.8) / zoom;
+    // Seasonal punctuation is native geometry, just like the river biome. No
+    // minimum screen width or zoom compensation may detach it from its banks.
+    if (drDry(record.feature)) return record.width;
     return Math.max(record.width, 2.4 / zoom) + 1 / zoom;
   }
 
-  function waterDash(record, zoom) {
-    // Compact rectangular marks keep one screen-space rhythm at every zoom.
-    // Butt caps leave the full gap open even when the native river is wide.
-    return [6 / zoom, 5 / zoom];
+  function waterDash(record) {
+    // The complete rhythm lives in map coordinates and is fixed for this
+    // channel. The ordinary camera transform scales it with all other geometry.
+    return [record.width * 2.4, record.width * 1.6];
   }
 
   function clipRiverInk(ctx, record) {
+    if (drDry(record.feature)) {
+      // The exclusive physical ribbon supplies the banks, holes and clipped
+      // overlaps. Even curved joins cannot leak blue ink into another biome.
+      ctx.clip(record.path, record.fillRule);
+      return;
+    }
     const masks = record.feature.inkExclusionParts;
     if (!masks?.length) return;
     if (!record.inkClipPath) {
@@ -685,8 +689,8 @@ export function createDetailRenderer(world) {
       };
       append([{ x: 0, y: 0 }, { x: world.width, y: 0 }, { x: world.width, y: world.height }, { x: 0, y: world.height }], true);
       // Higher priority water regions are already exclusive, so opposite winding
-      // cuts their union while restoring their islands. The river's lateral
-      // ribbon is deliberately not a clip: screen readability retains v12 width.
+      // cuts their union while restoring their islands. Only permanent-water
+      // ink keeps the cartographic minimum beyond its lateral physical ribbon.
       for (const part of masks) part.forEach((ring, index) => append(ring, index !== 0));
       record.inkClipPath = path;
     }
@@ -698,11 +702,15 @@ export function createDetailRenderer(world) {
     if (!record.inkPath) return;
     const hovered = drAllowsHighlight(record) && hoveredId === feature.id, dry = drDry(feature);
     ctx.save(); clipRiverInk(ctx, record);
-    ctx.lineJoin = 'round'; ctx.lineCap = dry ? 'butt' : 'round';
-    ctx.setLineDash(dry ? waterDash(record, zoom) : []);
-    if (hovered) { ctx.strokeStyle = 'rgba(233,236,172,.55)'; ctx.lineWidth = waterWidth(record, zoom) + 3 / zoom; ctx.stroke(record.inkPath); }
-    ctx.strokeStyle = '#85abc4'; ctx.lineWidth = waterWidth(record, zoom); ctx.stroke(record.inkPath);
-    ctx.strokeStyle = dry ? '#4c91bd' : '#3f7eaa'; ctx.lineWidth = dry ? Math.max(1.1 / zoom, waterWidth(record, zoom) - 1 / zoom) : Math.max(record.width, 1.1 / zoom); ctx.stroke(record.inkPath);
+    ctx.lineJoin = 'round'; ctx.lineCap = dry ? 'butt' : 'round'; ctx.lineDashOffset = 0;
+    ctx.setLineDash(dry ? waterDash(record) : []);
+    if (dry) {
+      ctx.strokeStyle = '#4c91bd'; ctx.lineWidth = record.width; ctx.stroke(record.inkPath);
+    } else {
+      if (hovered) { ctx.strokeStyle = 'rgba(233,236,172,.55)'; ctx.lineWidth = waterWidth(record, zoom) + 3 / zoom; ctx.stroke(record.inkPath); }
+      ctx.strokeStyle = '#85abc4'; ctx.lineWidth = waterWidth(record, zoom); ctx.stroke(record.inkPath);
+      ctx.strokeStyle = '#3f7eaa'; ctx.lineWidth = Math.max(record.width, 1.1 / zoom); ctx.stroke(record.inkPath);
+    }
     ctx.setLineDash([]); ctx.restore();
   }
 
@@ -772,6 +780,11 @@ export function createDetailRenderer(world) {
       try { view.landscapeOverlay(ctx, view); } finally { ctx.restore(); }
       ctx.globalAlpha = 1;
     }
+    if (typeof view.reliefOverlay === 'function') {
+      ctx.save();
+      try { view.reliefOverlay(ctx, view); } finally { ctx.restore(); }
+      ctx.globalAlpha = 1;
+    }
     for (const record of visible) if (record.layer === 'biomes' && record.inkPath) paintWater(ctx, record, view.zoom, hoveredId);
     let roadsPainted = false, powerPainted = false;
     for (const record of visible) {
@@ -810,7 +823,7 @@ export function createDetailRenderer(world) {
     else if (record.inkPath) {
       clipRiverInk(ctx, record);
       ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-      ctx.setLineDash(drDry(record.feature) ? waterDash(record, view.zoom) : []);
+      ctx.setLineDash(drDry(record.feature) ? waterDash(record) : []);
       const width = waterWidth(record, view.zoom);
       ctx.strokeStyle = 'rgba(238,238,169,.65)'; ctx.lineWidth = width + 4 / view.zoom; ctx.stroke(record.inkPath);
       ctx.strokeStyle = '#f2efb5'; ctx.lineWidth = Math.max(1.25 / view.zoom, width * .28); ctx.stroke(record.inkPath);
@@ -889,10 +902,10 @@ export function createDetailRenderer(world) {
   }
 
   function riverInkHit(record, x, y, tolerance) {
-    if (!record.inkPaths || (record.feature.inkExclusionParts || []).some(rings => drInPolygon(x, y, rings))) return null;
+    if (!record.inkPaths || (drDry(record.feature) ? !drPartContains(record, x, y) : (record.feature.inkExclusionParts || []).some(rings => drInPolygon(x, y, rings)))) return null;
     let best = null, score = Infinity;
     const halfWidth = waterWidth(record, lastZoom) / 2;
-    const [dashLength, gapLength] = waterDash(record, lastZoom), period = dashLength + gapLength, dry = drDry(record.feature);
+    const [dashLength, gapLength] = waterDash(record), period = dashLength + gapLength, dry = drDry(record.feature);
     for (const path of record.inkPaths) {
       let offset = 0;
       for (let i = 1; i < path.length; i++) {
@@ -973,8 +986,8 @@ export function createDetailRenderer(world) {
       if (!isEnabled(record) || record.layer === 'biomes' || record.geometry !== 'polygon' || record.outlineOnly) continue;
       if (record.ellipse ? ((x - feature.x) / feature.rx) ** 2 + ((y - feature.y) / feature.ry) ** 2 <= 1 : drPartContains(record, x, y)) return describe(record);
     }
-    // Water's cartographic minimum width can exceed its physical ground ribbon.
-    // Select that visible ink too; area membership still uses the exact partition.
+    // Permanent water may have a cartographic minimum width; seasonal marks
+    // stay strictly within their physical biome. Select visible ink accordingly.
     for (let i = candidates.length - 1; i >= 0; i--) {
       const record = candidates[i];
       if (!isEnabled(record) || !record.inkPath) continue;

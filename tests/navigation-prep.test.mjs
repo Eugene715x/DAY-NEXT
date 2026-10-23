@@ -63,7 +63,7 @@ test('newly represented permanent water blocks travel except at an explicitly ma
   }
 });
 
-test('native road classes, surfaces and centreline anchors survive while railway corridors use ballast cost', () => {
+test('native road classes, surfaces and centreline anchors survive with a positive bonus on every corridor', () => {
   const source = fixture({
     roads: [
       { id: 'asphalt', type: 'primary', surface: 'asphalt', width: 3, points: [{ x: 10, y: 35 }, { x: 290, y: 35 }] },
@@ -78,6 +78,7 @@ test('native road classes, surfaces and centreline anchors survive while railway
   assert.equal(asphalt.roadClass, 'highway'); assert.equal(asphalt.surface, 'asphalt');
   assert.equal(gravel.roadClass, 'road'); assert.equal(dirt.roadClass, 'track'); assert.equal(rail.roadClass, 'railway');
   assert(asphalt.cost < gravel.cost); assert(asphalt.cost < dirt.cost); assert(rail.cost > asphalt.cost);
+  for (const cell of [asphalt, gravel, dirt, rail]) assert(cell.cost < 1, 'Every road corridor must improve its underlying neutral biome');
   assert.deepEqual(asphalt.roadAnchor, { x: 55, y: 35 });
   for (let index = 0; index < world.cells.length; index++) if (world.cells[index].roadAnchor) {
     const point = world.cells[index].roadAnchor, left = index % world.cols * world.cellSize, top = Math.floor(index / world.cols) * world.cellSize;
@@ -85,6 +86,23 @@ test('native road classes, surfaces and centreline anchors survive while railway
   }
   assert.equal(report.roadSources, 4); assert.equal(report.elevationSamples, 0); assert.equal(world.relief, false);
   assert(world.cells.every(cell => cell.elevationMeters === null), 'Unavailable DEM cannot become fabricated zero elevations');
+  assert.equal(JSON.stringify(source), before);
+});
+
+test('one prepared highway retains distinct city and sand factors while multiplying landscape', () => {
+  const source = fixture({ roads: [{ id: 'one-road', type: 'primary', surface: 'asphalt', width: 3,
+    points: [{ x: 10, y: 95 }, { x: 290, y: 95 }] }] });
+  const before = JSON.stringify(source), world = createRealWorld(source);
+  const biomeFeatures = [polygon('city', [ring(0, 0, 150, 200)]), polygon('sand', [ring(150, 0, 300, 200)])];
+  const landscape = { getAt: () => ({ id: 'hills', multiplier: .52, slopePercent: 12, reliefMeters: 100 }) };
+  prepareTravelWorld(world, { biomeFeatures, landscape });
+  const cityRoad = byPosition(world, 55, 95), sandRoad = byPosition(world, 235, 95);
+  assert.equal(cityRoad.biome, 'city'); assert.equal(sandRoad.biome, 'sand');
+  assert.equal(cityRoad.roadClass, 'highway'); assert.equal(sandRoad.roadClass, 'highway');
+  assert.equal(cityRoad.landscape, 'hills'); assert.equal(sandRoad.landscape, 'hills');
+  assert(Math.abs(cityRoad.cost - 1 / (1.05 * 1.5 * .52)) < 1e-10);
+  assert(Math.abs(sandRoad.cost - 1 / (.67 * 1.5 * .52)) < 1e-10);
+  assert(cityRoad.cost < sandRoad.cost, 'The road remains a bonus instead of replacing both biomes with one cost');
   assert.equal(JSON.stringify(source), before);
 });
 

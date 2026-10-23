@@ -1,4 +1,4 @@
-import { segmentTravel, BASE_WALK_METERS_PER_MINUTE, MAX_MOVEMENT_MULTIPLIER } from './movement-model.js';
+import { segmentTravel, biomeSpeedMultiplier, MOVEMENT_FACTORS, BASE_WALK_METERS_PER_MINUTE, MAX_MOVEMENT_MULTIPLIER } from './movement-model.js';
 
 /** Weighted, water-aware navigation shared by imported real maps. */
 function clamp(value, min, max) {
@@ -96,9 +96,18 @@ function landscapeLowerBound(world, target, destination, scale) {
   if (!graph || graph.revision !== revision || graph.cells !== world.cells) {
     const points = world.cells.map((cell, id) => navigationPoint(world, id));
     const weights = new Float32Array(world.cells.length * 8);
+    // Biome and road bonuses multiply. Bound both independently; using only
+    // the road maximum would overestimate the remaining time in a fast city.
+    // Historic weighted grids can also supply a custom biome-like ground cost.
+    let bestBiome = Math.max(1, ...Object.values(MOVEMENT_FACTORS.biomes));
+    for (const cell of world.cells) if (cell.biome === undefined) {
+      const legacy = Number.isFinite(cell.cost) && cell.cost > 0 ? Math.min(MAX_MOVEMENT_MULTIPLIER, Math.max(.01, 1 / cell.cost)) : biomeSpeedMultiplier(cell.type);
+      bestBiome = Math.max(bestBiome, legacy);
+    }
+    const bestRoad = Math.max(1, ...Object.values(MOVEMENT_FACTORS.roads));
     // exp(.016) is the maximum of exp(.8*d - 10*d*d). The floor is
     // respected even for custom tiny landscape multipliers.
-    const bestSurfaceAndSlope = MAX_MOVEMENT_MULTIPLIER * Math.exp(.016);
+    const bestSurfaceAndSlope = bestBiome * bestRoad * Math.exp(.016);
     const fastest = landscape => Math.min(MAX_MOVEMENT_MULTIPLIER, Math.max(.005, bestSurfaceAndSlope * landscape));
     for (let id = 0; id < world.cells.length; id++) {
       if (!world.cells[id].walkable) continue;

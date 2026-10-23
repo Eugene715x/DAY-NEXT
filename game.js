@@ -1,6 +1,6 @@
 import { findPath, terrainAt, nearestWalkable } from './world.js';
 import { createRealWorld, prepareTravelWorld } from './real-world.js';
-import { advanceAlongRoute, movementAt } from './movement-model.js';
+import { MOVEMENT_FACTORS, advanceAlongRoute, movementAt } from './movement-model.js';
 import { LANDSCAPE_TYPES, createLandscape } from './landscape.js';
 import { convertOSM, validateBbox } from './scripts/lib/osm-converter.mjs';
 import usaMap from './maps/usa.js';
@@ -54,6 +54,7 @@ const poiTitle = poi => {
   return type.typeId !== 'building.unknown' ? type.typeName : kindNames[poi.kind] || 'Объект';
 };
 const formatDistance = d => d >= 1000 ? `${(d / 1000).toFixed(1).replace('.', ',')} км` : `${Math.max(0, Math.round(d / 10) * 10)} м`;
+const formatFactor = value => `×${Number(value).toFixed(value < .1 ? 3 : 2).replace('.', ',')}`;
 const screenToWorld = (x, y) => ({ x: (x - vw / 2) / camera.zoom + camera.x, y: (y - vh / 2) / camera.zoom + camera.y });
 const worldToScreen = p => ({ x: (p.x - camera.x) * camera.zoom + vw / 2, y: (p.y - camera.y) * camera.zoom + vh / 2 });
 
@@ -193,10 +194,13 @@ function syncLayerUI() {
   for (const key of Object.keys(roadClasses)) {
     const input = $('road-class-' + key);
     input.checked = roadClasses[key]; input.disabled = !layers.roads;
+    $('factor-road-class-' + key).textContent = formatFactor(MOVEMENT_FACTORS.roads[key]);
+    $('factor-road-class-' + key).title = 'Бонус дороги; покрытие уточняет значение';
     $('count-road-class-' + key).textContent = features.filter(feature => feature.layer === 'roads' && feature.roadClass === key).length;
   }
   $('road-classes').classList.toggle('is-disabled', !layers.roads);
   $('biome-key').classList.toggle('is-disabled', !layers.biomes);
+  for (const biome of ['city', 'wasteland', 'sand']) $('factor-biome-' + biome).textContent = formatFactor(MOVEMENT_FACTORS.biomes[biome]);
   syncElevationUI();
   syncLandscapeUI();
   syncBuildingLegend(features);
@@ -211,11 +215,11 @@ function syncElevationUI() {
   $('elevation-key').hidden = !active;
   $('elevation-unavailable').hidden = available;
   if (!available) return;
-  $('elevation-min').textContent = `${Math.floor(info.min)} м`;
-  $('elevation-max').textContent = `${Math.ceil(info.max)} м`;
-  $('elevation-mid').textContent = `${Math.round((info.min + info.max) / 2)} м`;
-  $('elevation-gradient').style.background = `linear-gradient(90deg,${info.palette.map(stop => `${stop.color} ${100 * (stop.height - info.min) / (info.max - info.min || 1)}%`).join(',')})`;
-  $('elevation-source').textContent = `USGS 3DEP · горизонтали ${info.contourInterval} м`;
+  $('elevation-min').textContent = 'ТЕНИ';
+  $('elevation-max').textContent = 'СВЕТ';
+  $('elevation-mid').textContent = 'НЕЙТРАЛЬНО';
+  $('elevation-gradient').style.background = 'linear-gradient(90deg,#454545,#808080,#c5c5c5)';
+  $('elevation-source').textContent = `USGS 3DEP · ${Math.floor(info.min)}–${Math.ceil(info.max)} м · горизонтали ${info.contourInterval} м`;
 }
 
 function syncLandscapeUI() {
@@ -320,7 +324,10 @@ function showMapTooltip(label, screenX, screenY) {
   const height = layers.elevation && elevationRenderer.available ? elevationRenderer.sampleAt(position.x, position.y) : null;
   const land = landscape.getAt(position.x, position.y);
   const landscapeLabel = land ? `${land.name} ×${land.multiplier.toFixed(2).replace('.', ',')}` : '';
-  tooltip.textContent = [label, landscapeLabel, Number.isFinite(height) ? `${Math.round(height)} м` : ''].filter(Boolean).join(' · ');
+  const movement = movementAt(world, position.x, position.y);
+  const biomeFactor = `Биом ${formatFactor(movement.biomeMultiplier)}`;
+  const roadFactor = movement.roadMultiplier > 1 ? `Дорога ${formatFactor(movement.roadMultiplier)}` : '';
+  tooltip.textContent = [label, biomeFactor, landscapeLabel, roadFactor, Number.isFinite(height) ? `${Math.round(height)} м` : ''].filter(Boolean).join(' · ');
   tooltip.hidden = false;
   const bounds = tooltip.getBoundingClientRect();
   const left = screenX + 14 + bounds.width > vw - 8 ? screenX - bounds.width - 14 : screenX + 14;
@@ -633,8 +640,9 @@ function drawStaticObjects(time) {
     objectCacheCtx.setTransform(scale, 0, 0, scale, 0, 0);
     objectCacheCtx.save(); objectCacheCtx.translate(width / 2, height / 2); objectCacheCtx.scale(camera.zoom, camera.zoom); objectCacheCtx.translate(-camera.x, -camera.y);
     detailRenderer.draw(objectCacheCtx, { zoom: camera.zoom, cameraX: camera.x, cameraY: camera.y, width, height, time, hoveredId: null,
-      groundOverlay: layers.elevation && elevationRenderer.available ? (context, view) => elevationRenderer.draw(context, view) : null,
-      landscapeOverlay: layers.landscape && landscape.available ? (context, view) => landscape.draw(context, view) : null });
+      groundOverlay: layers.elevation && elevationRenderer.available && !layers.biomes ? (context, view) => elevationRenderer.draw(context, view) : null,
+      landscapeOverlay: layers.landscape && landscape.available ? (context, view) => landscape.draw(context, view) : null,
+      reliefOverlay: layers.elevation && elevationRenderer.available && layers.biomes ? (context, view) => elevationRenderer.drawMask(context, view) : null });
     objectCacheCtx.restore();
     objectCacheState = { key, x: camera.x, y: camera.y, margin, scale, width, height };
     renderStats.staticRebuilds++; renderStats.lastStaticMs = performance.now() - started;
@@ -744,7 +752,10 @@ function updateUI() {
   const slope = toward ? Math.abs(movement.slopePercent) < .5 ? 'Почти ровно' : `${movement.slopePercent > 0 ? 'Подъём +' : 'Спуск −'}${Math.round(Math.abs(movement.slopePercent))}%` : '';
   const obstacles = [movement.buildingMultiplier < 1 ? 'Через здание' : '', movement.seasonalMultiplier < 1 ? 'Сезонное русло' : ''].filter(Boolean);
   $('movement-factors').textContent = [footing, slope, ...obstacles].filter(Boolean).join(' · ');
-  $('movement-multiplier').title = `Поверхность ×${movement.terrainMultiplier.toFixed(2)} · Ландшафт ×${(movement.landscapeMultiplier ?? 1).toFixed(2)} · Уклон ×${movement.slopeMultiplier.toFixed(2)} · Здание ×${(movement.buildingMultiplier ?? 1).toFixed(2)} · Русло ×${(movement.seasonalMultiplier ?? 1).toFixed(2)}`;
+  $('biome-label').textContent = biomes.length ? `Биом: ${biomes.join(' + ')} ${formatFactor(movement.biomeMultiplier)}` : '';
+  $('biome-label').title = $('biome-label').textContent;
+  $('movement-products').textContent = `Биом ${formatFactor(movement.biomeMultiplier)} × ландшафт ${formatFactor(movement.landscapeMultiplier).slice(1)} × дорога ${formatFactor(movement.roadMultiplier).slice(1)}`;
+  $('movement-multiplier').title = `Биом ${formatFactor(movement.biomeMultiplier)} · Ландшафт ${formatFactor(movement.landscapeMultiplier)} · Дорога ${formatFactor(movement.roadMultiplier)} · Уклон ${formatFactor(movement.slopeMultiplier)} · Здание ${formatFactor(movement.buildingMultiplier)} · Русло ${formatFactor(movement.seasonalMultiplier)}`;
   if (world.geographic) {
     const [west, south, east, north] = world.bbox;
     const degree = 6371008.8 * Math.PI / 180, cosine = Math.cos((south + north) * Math.PI / 360);
@@ -769,6 +780,7 @@ function updateUI() {
 window.__DAY_NEXT__ = {
   getState: () => ({ player: { ...player }, camera: { ...camera }, moving: !!route && !paused, paused, speed, stamina, water, minutes, totalDistance, destination: route ? { ...route.destination } : null, remaining: route?.remaining || 0, discovered: [...discovered] }),
   getRoute: () => route ? { points: route.points.map(point => ({ ...point })), distance: route.distance, durationMinutes: route.durationMinutes, remaining: route.remaining, remainingDurationMinutes: route.remainingDurationMinutes, index: route.index, destination: { ...route.destination }, search: { ...route.search } } : null,
+  getMovementFactors: () => structuredClone(MOVEMENT_FACTORS),
   getMovementAt: (x, y, toward = null) => movementAt(world, x, y, toward),
   getWorld: () => world,
   worldToScreen: position => worldToScreen(position),

@@ -82,9 +82,9 @@ function withCanvas(run) {
 }
 function targetContext() {
   return {
-    images: [], strokes: [],
+    images: [], imageModes: [], strokes: [],
     save() {}, restore() {}, beginPath() {}, rect() {}, clip() {}, setLineDash() {},
-    drawImage(...args) { this.images.push(args); },
+    drawImage(...args) { this.images.push(args); this.imageModes.push(this.globalCompositeOperation); },
     stroke(path) { this.strokes.push({ path, width: this.lineWidth, color: this.strokeStyle }); },
   };
 }
@@ -126,4 +126,42 @@ test('nodata remains transparent and a flat measured map draws without invented 
   flat.draw(targetContext(), { zoom: 1 });
   assert.equal(flat.getStats().contourLevels, 0);
   assert.equal(flat.sampleAt(50, 40), 125);
+}));
+
+
+test('neutral relief is achromatic and invariant to absolute altitude offsets', () => withCanvas(canvases => {
+  const bbox = [0, 0, .002, .002], region = { ...world, bbox };
+  const values = [10, 80, 40, 20, 130, 100, 40, 100, 25];
+  const first = createElevationRenderer(region, dem(values, 3, 3, { bbox }));
+  const raised = createElevationRenderer(region, dem(values.map(value => value + 1500), 3, 3, { bbox }));
+  first.draw(targetContext(), { elevationContours: false });
+  raised.draw(targetContext(), { elevationContours: false });
+  assert.deepEqual(canvases[0].pixels, canvases[1].pixels, 'Only shape and illumination may affect the relief raster; elevation palette must not reappear');
+  for (let pixel = 0; pixel < canvases[0].pixels.length; pixel += 4) {
+    assert.equal(canvases[0].pixels[pixel], canvases[0].pixels[pixel + 1]);
+    assert.equal(canvases[0].pixels[pixel], canvases[0].pixels[pixel + 2]);
+  }
+  assert.equal(first.getInfo().renderMode, 'neutral-relief-mask');
+  for (const stop of first.getInfo().palette) assert(/^#([0-9a-f]{2})\1\1$/i.test(stop.color));
+}));
+
+test('a flat measured surface supplies a neutral soft-light mask reused with the standalone raster', () => withCanvas(canvases => {
+  const renderer = createElevationRenderer(world, dem([125, 125, 125, 125]));
+  const context = targetContext();
+  assert.equal(renderer.drawMask(context, { elevationContours: false }), true);
+  assert.equal(context.imageModes[0], 'soft-light', 'Biome colours must be illuminated rather than covered with a grey source-over matte');
+  for (let pixel = 0; pixel < canvases[0].pixels.length; pixel += 4) {
+    assert.equal(canvases[0].pixels[pixel], 128);
+    assert.equal(canvases[0].pixels[pixel + 1], 128);
+    assert.equal(canvases[0].pixels[pixel + 2], 128);
+  }
+  renderer.draw(context, { zoom: 4, elevationContours: false });
+  renderer.drawMask(context, { zoom: 24, elevationContours: false });
+  assert.equal(context.imageModes[1], 'source-over');
+  assert.equal(context.imageModes[2], 'soft-light');
+  assert.equal(renderer.getStats().rasterBuilds, 1);
+  assert.equal(renderer.getStats().maskDrawCount, 2);
+  assert.equal(renderer.getStats().drawCount, 3);
+  assert.equal(canvases.length, 1, 'Standalone relief and the overlay share one neutral raster cache');
+  assert.equal(createElevationRenderer(world).drawMask(context), false);
 }));

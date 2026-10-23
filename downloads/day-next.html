@@ -55,6 +55,8 @@
 .road-swatch-highway{border-top-color:#45494b}.road-swatch-road{border-top-color:#747a7c}.road-swatch-street{border-top-color:#858b8c}.road-swatch-track{border-top-color:#b4a582}.movement-status{margin-top:12px;padding-top:11px;border-top:1px solid var(--line)}.movement-heading{display:flex;gap:9px;align-items:center;font:8px monospace;letter-spacing:.6px;color:#91a27e}.movement-heading strong{margin-left:auto;font-size:11px;font-weight:500;letter-spacing:0;color:#d2dfb8}.movement-heading #movement-multiplier{color:var(--accent);font-size:10px;letter-spacing:0}.movement-factors{display:block;margin-top:6px;color:#91a27e;font-size:8px;line-height:1.7}
 
 .landscape-button{width:44px;height:44px;min-width:44px;min-height:44px}.landscape-button[aria-pressed="true"]{color:var(--accent);border-color:rgba(209,223,135,.55)}.landscape-button:disabled{opacity:.35;cursor:default}.landscape-label{display:block!important;max-width:190px;white-space:normal!important;line-height:1.5;margin-top:5px;color:#b8c58f!important}.landscape-label[hidden]{display:none!important}.landscape-legend{padding:8px 0 10px;border-bottom:1px solid var(--line)}.landscape-legend.is-disabled{opacity:.5}.landscape-legend-row{display:flex;align-items:center;gap:9px;padding:4px 0;font-size:10px;line-height:1.5;color:#b8c7a8}.landscape-legend-row i{display:block;width:15px;height:8px;border:1px solid rgba(220,229,190,.25)}.landscape-factor{margin-left:auto;color:var(--accent);font:10px monospace}.map-tooltip{max-width:min(410px,calc(100vw - 16px))}
+
+.movement-products{display:block;margin-top:5px;font-size:8px;line-height:1.8;color:#b1c394}.biome-speed-key{display:flex;flex-wrap:wrap;gap:5px 12px;padding:8px 0 11px;border-bottom:1px solid var(--line);font-size:9px;color:#aab99b}.biome-speed-key b{font:9px monospace;font-weight:400;color:var(--accent)}.road-bonus{margin-left:auto;white-space:nowrap;color:var(--accent);font:9px monospace}.road-class-option .layer-count{margin-left:0;min-width:18px}.elevation-gradient{background:linear-gradient(90deg,#454545,#808080,#c5c5c5)}
 </style>
   </head>
   <body>
@@ -85,7 +87,7 @@
       <div class="hud">
         <header class="top-bar">
           <div class="brand-block">
-            <div class="brand" aria-label="DAY NEXT"><span>DAY</span><span class="brand-divider">/</span><span class="brand-next">NEXT</span><span class="prototype">ПРОТОТИП <b>17</b></span></div>
+            <div class="brand" aria-label="DAY NEXT"><span>DAY</span><span class="brand-divider">/</span><span class="brand-next">NEXT</span><span class="prototype">ПРОТОТИП <b>18</b></span></div>
             <div class="brand-caption"><span class="live-dot"></span> ОДИНОЧНАЯ ЭКСПЕДИЦИЯ</div>
           </div>
           <div class="world-status glass">
@@ -117,7 +119,7 @@
           </div>
           <div class="map-tool-cluster">
             <div class="map-tool"><button id="maps-button" class="icon-button glass maps-button" type="button" aria-label="Карты и импорт" aria-controls="maps-panel" aria-expanded="false" title="Карты и импорт"><svg class="icon"><use href="#i-map" /></svg></button><span class="control-caption">КАРТЫ</span></div>
-            <div class="map-tool"><button id="elevation-button" class="icon-button glass elevation-button" type="button" aria-label="Показать или скрыть карту высот" aria-pressed="true" title="Карта высот"><svg class="icon"><use href="#i-elevation" /></svg></button><span class="control-caption">ВЫСОТЫ</span></div>
+            <div class="map-tool"><button id="elevation-button" class="icon-button glass elevation-button" type="button" aria-label="Показать или скрыть карту высот" aria-pressed="true" title="Рельеф: светотень без высотной окраски"><svg class="icon"><use href="#i-elevation" /></svg></button><span class="control-caption">ВЫСОТЫ</span></div>
             <div class="map-tool"><button id="landscape-button" class="icon-button glass landscape-button" type="button" aria-label="Показать или скрыть типы ландшафта" aria-pressed="false" title="Ландшафт: равнины, холмы и горы"><svg class="icon"><use href="#i-landscape" /></svg></button><span class="control-caption">ЛАНДШАФТ</span></div>
             <div class="map-tool"><button id="detail-button" class="icon-button glass detail-button" type="button" aria-label="Показать застройку · B" title="Показать застройку · B"><svg class="icon"><use href="#i-house" /></svg></button><span class="control-caption">ЗАСТРОЙКА</span></div>
             <div class="map-tool"><button id="building-types-button" class="icon-button glass building-types-button" type="button" aria-label="Типы зданий" aria-controls="building-types-panel" aria-expanded="false" title="Типы зданий"><svg class="icon"><use href="#i-types" /></svg></button><span class="control-caption">ТИПЫ</span></div>
@@ -137,7 +139,7 @@
             <div class="stat stat-water"><div class="stat-label"><svg class="icon"><use href="#i-water" /></svg><span>Вода</span><strong id="water-value">100</strong></div><div class="stat-track"><span id="water-bar" style="width:100%"></span></div></div>
           </div>
           <div class="location"><svg class="icon"><use href="#i-pin" /></svg><div><strong id="location-name">Местность</strong><span id="terrain-label">Открытая местность</span><span id="biome-label" class="biome-label" hidden></span><span id="landscape-label" class="landscape-label" hidden></span></div></div>
-          <div class="movement-status"><div class="movement-heading"><span>ХОДЬБА</span><strong id="movement-speed">4,0 км/ч</strong><span id="movement-multiplier">×1,00</span></div><span id="movement-factors" class="movement-factors">Ровная местность</span></div>
+          <div class="movement-status"><div class="movement-heading"><span>ХОДЬБА</span><strong id="movement-speed">4,0 км/ч</strong><span id="movement-multiplier">×1,00</span></div><span id="movement-factors" class="movement-factors">Ровная местность</span><span id="movement-products" class="movement-products"></span></div>
         </section>
 
         <section id="travel-panel" class="travel-panel glass" aria-label="Текущий маршрут" hidden>
@@ -158,8 +160,8 @@
         </footer>
 
         <div id="map-attribution" class="attribution"><a id="map-source-link" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors · ODbL</a></div>
-        <aside id="elevation-key" class="elevation-key glass" aria-label="Шкала высот">
-          <div class="elevation-heading"><span class="eyebrow">ВЫСОТА · МЕТРЫ</span><span class="elevation-source-mark">USGS</span></div>
+        <aside id="elevation-key" class="elevation-key glass" aria-label="Светотень рельефа">
+          <div class="elevation-heading"><span class="eyebrow">РЕЛЬЕФ · СВЕТОТЕНЬ</span><span class="elevation-source-mark">USGS</span></div>
           <div id="elevation-gradient" class="elevation-gradient" aria-hidden="true"></div>
           <div class="elevation-ticks"><span id="elevation-min">—</span><span id="elevation-mid">—</span><span id="elevation-max">—</span></div>
           <p id="elevation-source" class="elevation-source">USGS 3DEP</p>
@@ -176,7 +178,7 @@
 
         <section id="help-panel" class="help-panel glass" role="dialog" aria-label="Как играть" aria-modal="false" hidden>
           <div class="help-heading"><div><p class="eyebrow">ПОЛЕВОЙ СПРАВОЧНИК</p><h2>Сначала — первый шаг.</h2></div><button id="help-close" class="icon-button" type="button" aria-label="Закрыть справку">×</button></div>
-          <p>Выбери точку на суше. Путник учитывает биом, ландшафт, покрытие и уклон. Здания и сезонные русла сильно замедляют: маршрут старается обойти их. Постоянная вода пересекается по мостам. Кнопка «Ландшафт» показывает равнины, холмы и горы; множители сочетаются с биомами.</p>
+          <p>Выбери точку на суше. Путник перемножает коэффициенты биома, ландшафта, дороги и уклона. Дорога ускоряет и сохраняет действие биома под ней. Здания и сезонные русла сильно замедляют: маршрут старается обойти их. Постоянная вода пересекается по мостам. Кнопка «Ландшафт» показывает равнины, холмы и горы; множители сочетаются с биомами.</p>
           <dl><div><dt>Клик / касание</dt><dd>Идти в выбранную точку</dd></div><div><dt>Перетаскивание</dt><dd>Осмотреть карту</dd></div><div><dt>Колесо / щипок / + −</dt><dd>Приблизить улицы и дома</dd></div><div><dt>B / кнопка дома</dt><dd>Показать застройку</dd></div><div><dt>Слои карты</dt><dd>Выбрать, что показывать</dd></div><div><dt>Пробел</dt><dd>Пауза в пути</dd></div><div><dt>F</dt><dd>Вернуться к путнику</dd></div><div><dt>Esc</dt><dd>Закрыть окно / отменить путь</dd></div></dl>
           <p class="help-note">Наведи на объект, а на телефоне коснись его, чтобы узнать детали на любом масштабе. Приблизь карту, чтобы рассмотреть контуры домов и дорожки. В «Слоях карты» можно отдельно показать дороги, здания и природные объекты. Отдых восстанавливает выносливость.</p>
         </section>
@@ -213,27 +215,28 @@
           <div class="layers-heading help-heading"><div><p class="eyebrow">ВИД КАРТЫ</p><h2>Слои карты</h2></div><button id="layers-close" class="icon-button" type="button" aria-label="Закрыть слои карты">×</button></div>
           <div class="layers-content">
             <div class="layer-options">
-              <label class="layer-option" for="layer-elevation"><input id="layer-elevation" type="checkbox" checked /><span>Карта высот</span><span class="layer-count">USGS</span></label>
+              <label class="layer-option" for="layer-elevation"><input id="layer-elevation" type="checkbox" checked /><span>Рельеф · светотень</span><span class="layer-count">USGS</span></label>
               <p id="elevation-unavailable" class="layers-note" hidden>Для этого участка данные высот ещё не загружены.</p>
               <label class="layer-option" for="layer-landscape"><input id="layer-landscape" type="checkbox" /><span>Ландшафт</span><span class="layer-count">× скорость</span></label>
               <p id="landscape-unavailable" class="layers-note" hidden>Для классификации ландшафта нужны данные высот этого участка.</p>
               <div id="landscape-legend" class="landscape-legend" aria-label="Типы ландшафта и множители скорости"></div>
               <label class="layer-option" for="layer-biomes"><input id="layer-biomes" type="checkbox" checked /><span>Биомы</span><span id="count-biomes" class="layer-count">—</span></label>
               <div id="biome-key" class="biome-key" aria-label="Обозначения биомов"><span><i class="biome-swatch city-swatch" aria-hidden="true"></i>Город</span><span><i class="biome-swatch seasonal-river-swatch" aria-hidden="true"></i>Сезонное русло</span><span><i class="biome-swatch water-swatch" aria-hidden="true"></i>Постоянная вода</span></div>
+              <div class="biome-speed-key" aria-label="Множители скорости биомов"><span>Город <b id="factor-biome-city"></b></span><span>Пустошь <b id="factor-biome-wasteland"></b></span><span>Пески <b id="factor-biome-sand"></b></span></div>
               <label class="layer-option" for="layer-roads"><input id="layer-roads" type="checkbox" checked /><span>Дороги и тропы</span><span id="count-roads" class="layer-count">—</span></label>
               <fieldset id="road-classes" class="road-classes"><legend>Типы дорог</legend>
-                <label class="road-class-option" for="road-class-highway"><input id="road-class-highway" type="checkbox" checked /><span class="road-swatch road-swatch-highway" aria-hidden="true"></span><span>Магистрали</span><span id="count-road-class-highway" class="layer-count">—</span></label>
-                <label class="road-class-option" for="road-class-road"><input id="road-class-road" type="checkbox" checked /><span class="road-swatch road-swatch-road" aria-hidden="true"></span><span>Дороги</span><span id="count-road-class-road" class="layer-count">—</span></label>
-                <label class="road-class-option" for="road-class-street"><input id="road-class-street" type="checkbox" checked /><span class="road-swatch road-swatch-street" aria-hidden="true"></span><span>Улицы и проезды</span><span id="count-road-class-street" class="layer-count">—</span></label>
-                <label class="road-class-option" for="road-class-track"><input id="road-class-track" type="checkbox" checked /><span class="road-swatch road-swatch-track" aria-hidden="true"></span><span>Грунтовки</span><span id="count-road-class-track" class="layer-count">—</span></label>
-                <label class="road-class-option" for="road-class-trail"><input id="road-class-trail" type="checkbox" checked /><span class="road-swatch road-swatch-trail" aria-hidden="true"></span><span>Тропы</span><span id="count-road-class-trail" class="layer-count">—</span></label>
-                <label class="road-class-option" for="road-class-railway"><input id="road-class-railway" type="checkbox" checked /><span class="road-swatch road-swatch-railway" aria-hidden="true"></span><span>Железная дорога</span><span id="count-road-class-railway" class="layer-count">—</span></label>
+                <label class="road-class-option" for="road-class-highway"><input id="road-class-highway" type="checkbox" checked /><span class="road-swatch road-swatch-highway" aria-hidden="true"></span><span>Магистрали</span><span id="factor-road-class-highway" class="road-bonus"></span><span id="count-road-class-highway" class="layer-count">—</span></label>
+                <label class="road-class-option" for="road-class-road"><input id="road-class-road" type="checkbox" checked /><span class="road-swatch road-swatch-road" aria-hidden="true"></span><span>Дороги</span><span id="factor-road-class-road" class="road-bonus"></span><span id="count-road-class-road" class="layer-count">—</span></label>
+                <label class="road-class-option" for="road-class-street"><input id="road-class-street" type="checkbox" checked /><span class="road-swatch road-swatch-street" aria-hidden="true"></span><span>Улицы и проезды</span><span id="factor-road-class-street" class="road-bonus"></span><span id="count-road-class-street" class="layer-count">—</span></label>
+                <label class="road-class-option" for="road-class-track"><input id="road-class-track" type="checkbox" checked /><span class="road-swatch road-swatch-track" aria-hidden="true"></span><span>Грунтовки</span><span id="factor-road-class-track" class="road-bonus"></span><span id="count-road-class-track" class="layer-count">—</span></label>
+                <label class="road-class-option" for="road-class-trail"><input id="road-class-trail" type="checkbox" checked /><span class="road-swatch road-swatch-trail" aria-hidden="true"></span><span>Тропы</span><span id="factor-road-class-trail" class="road-bonus"></span><span id="count-road-class-trail" class="layer-count">—</span></label>
+                <label class="road-class-option" for="road-class-railway"><input id="road-class-railway" type="checkbox" checked /><span class="road-swatch road-swatch-railway" aria-hidden="true"></span><span>Железная дорога</span><span id="factor-road-class-railway" class="road-bonus"></span><span id="count-road-class-railway" class="layer-count">—</span></label>
               </fieldset>
               <label class="layer-option" for="layer-power"><input id="layer-power" type="checkbox" checked /><span>Электросеть</span><span id="count-power" class="layer-count">—</span></label>
               <label class="layer-option" for="layer-buildings"><input id="layer-buildings" type="checkbox" checked /><span>Здания</span><span id="count-buildings" class="layer-count">—</span></label>
               <label class="layer-option" for="layer-details"><input id="layer-details" type="checkbox" checked /><span>Остальные объекты</span><span id="count-details" class="layer-count">—</span></label>
             </div>
-            <p class="layers-note" id="layers-note">Биом × ландшафт × уклон задают темп ходьбы. Здания и сезонные русла дают сильный штраф. Слой «Ландшафт» показывает формы местности цветом поверх биомов. Переключение слоёв не меняет физику.</p>
+            <p class="layers-note" id="layers-note">Биом × ландшафт × дорога × уклон задают темп ходьбы. Без дороги её множитель ×1, с дорогой — выше ×1; покрытие уточняет бонус. Здания и сезонные русла дают сильный штраф. Слой «Ландшафт» показывает формы местности цветом поверх биомов. Переключение слоёв не меняет физику.</p>
           </div>
         </section>
       </div>
@@ -580,24 +583,24 @@ function createLandscape(world = {}, { elevationAt } = {}) {
 
 return {LANDSCAPE_TYPES,classifyLandscape,createLandscape};
 })();
-const {BASE_WALK_METERS_PER_MINUTE,MAX_MOVEMENT_MULTIPLIER,biomeSpeedMultiplier,roadSpeedMultiplier,cellMovementMultiplier,movementAt,segmentTravel,advanceAlongRoute} = (() => {
+const {MOVEMENT_FACTORS,BASE_WALK_METERS_PER_MINUTE,MAX_MOVEMENT_MULTIPLIER,biomeSpeedMultiplier,roadSpeedMultiplier,cellMovementMultiplier,movementAt,segmentTravel,advanceAlongRoute} = (() => {
 // Shared travel-time model for route search, smoothing, ETA and the moving actor.
 // Multipliers describe a walking game character, not a real-world hiking forecast.
 const BASE_WALK_METERS_PER_MINUTE = 4000 / 60;
-const MAX_MOVEMENT_MULTIPLIER = 1.5;
+const MAX_MOVEMENT_MULTIPLIER = 2;
 const mmClamp = (value, low, high) => Math.max(low, Math.min(high, value));
 const mmDistance = (a, b) => Math.hypot(b.x - a.x, b.y - a.y);
 const mmScale = world => Number(world.metersPerUnit) > 0 ? Number(world.metersPerUnit) : 1;
 const mmCell = (world, x, y) => Number.isFinite(x) && Number.isFinite(y) && x >= 0 && y >= 0 && x < world.width && y < world.height
   ? world.cells[Math.floor(y / world.cellSize) * world.cols + Math.floor(x / world.cellSize)] : null;
 const mmBiomes = Object.freeze({
-  plain: 1, wasteland: 1, city: 1, desert: .94, grassland: .94, park: .94, recreation: .94,
+  plain: 1, wasteland: 1, city: 1.05, desert: .94, grassland: .94, park: .94, recreation: .94,
   garden: .9, farmland: .84, orchard: .82, vineyard: .82, cemetery: .88,
   sand: .67, beach: .67, scrub: .75, forest: .65, rock: .58, hill: .72, quarry: .58,
   wetland: .44, swamp: .44, glacier: .5, landfill: .65, construction: .72, brownfield: .82,
-  seasonal_river: .12, dry_riverbed: .12, gully: .7, valley: 1, water: 0,
+  seasonal_river: 1, dry_riverbed: 1, gully: .7, valley: 1, water: 0,
 });
-const mmRoads = Object.freeze({ highway: 1.28, road: 1.22, street: 1.18, track: .98, trail: 1.04, railway: .8 });
+const mmRoads = Object.freeze({ highway: 1.5, road: 1.35, street: 1.25, track: 1.16, trail: 1.12, railway: 1.08 });
 const mmSurfaces = Object.freeze({
   asphalt: 1, concrete: 1, 'concrete:plates': .97, 'concrete:lanes': .97, paved: 1,
   paving_stones: .94, sett: .88, cobblestone: .84, metal: .91, wood: .9,
@@ -605,33 +608,48 @@ const mmSurfaces = Object.freeze({
   ground: .77, dirt: .77, earth: .77, grass: .74, sand: .58, mud: .44, rock: .62,
 });
 
+// Biome and road bonuses are independent. A poor surface reduces the bonus
+// supplied by a road; it never turns the road layer itself into a penalty.
+// Seasonal rivers are charged once by the exact ribbon factor below.
+const MOVEMENT_FACTORS = Object.freeze({
+  baseSpeedKmh: 4, minimumMultiplier: .005, maximumMultiplier: MAX_MOVEMENT_MULTIPLIER,
+  biomes: mmBiomes, roads: mmRoads, surfaceQuality: mmSurfaces,
+  buildingMultiplier: .08, seasonalRiverMultiplier: .12,
+});
+
 function biomeSpeedMultiplier(biome) { return mmBiomes[biome] ?? 1; }
 
 function roadSpeedMultiplier(roadClass, surface) {
+  if (!roadClass) return 1;
   const base = mmRoads[roadClass] ?? 1.16;
   const material = typeof surface === 'string' ? surface.split(';')[0].trim().toLowerCase() : '';
-  // Track/trail defaults already represent a maintained unpaved path. Explicit
-  // loose surfaces still slow them down, without applying the dirt default twice.
-  const correction = material ? mmSurfaces[material] ?? 1 : 1;
-  return mmClamp(base * correction, .12, MAX_MOVEMENT_MULTIPLIER);
+  const quality = material ? mmClamp(mmSurfaces[material] ?? 1, .05, 1) : 1;
+  return 1 + (base - 1) * quality;
 }
 
 const mmLandscapeMultiplier = cell => Number.isFinite(cell?.landscapeMultiplier) && cell.landscapeMultiplier > 0 ? cell.landscapeMultiplier : 1;
 const mmDryBiome = biome => biome === 'seasonal_river' || biome === 'dry_riverbed';
+const mmCellRoadMultiplier = cell => roadSpeedMultiplier(cell?.roadClass || (cell?.type === 'bridge' && cell.biome !== undefined ? 'road' : null), cell?.surface);
 
-function mmSurfaceMultiplier(cell, separateSeasonal = false) {
+function mmBiomeMultiplier(cell, bridge = false) {
   if (!cell?.walkable) return 0;
-  if (cell.roadClass || cell.type === 'bridge' && cell.biome !== undefined) return roadSpeedMultiplier(cell.roadClass || 'road', cell.surface);
-  if (cell.biome !== undefined) return separateSeasonal && mmDryBiome(cell.biome) ? 1 : Math.max(.01, biomeSpeedMultiplier(cell.biome));
-  // Historic fixtures/imports can supply their own weighted grid without a DEM.
+  // A mapped bridge has a dry deck. Its underlying water biome cannot veto it;
+  // exact bridge geometry limits this exception to the real bridge corridor.
+  if (bridge && cell.biome === 'water') return 1;
+  if (cell.biome !== undefined) return Math.max(0, biomeSpeedMultiplier(cell.biome));
+  // Historic fixtures/imports can supply a weighted grid without explicit
+  // biomes/roads. Their original cost stays a neutral-road ground coefficient.
   if (Number.isFinite(cell.cost) && cell.cost > 0) return mmClamp(1 / cell.cost, .01, MAX_MOVEMENT_MULTIPLIER);
-  return Math.max(.01, biomeSpeedMultiplier(cell.type));
+  return Math.max(0, biomeSpeedMultiplier(cell.type));
 }
 
 function cellMovementMultiplier(cell) {
   if (!cell?.walkable) return 0;
-  const seasonalMultiplier = mmDryBiome(cell.biome) && cell.type !== 'bridge' ? .12 : 1;
-  return mmSurfaceMultiplier(cell, true) * mmLandscapeMultiplier(cell) * seasonalMultiplier;
+  const bridge = cell.type === 'bridge';
+  const biomeMultiplier = mmBiomeMultiplier(cell, bridge);
+  if (!(biomeMultiplier > 0)) return 0;
+  const seasonalMultiplier = mmDryBiome(cell.biome) && !bridge ? MOVEMENT_FACTORS.seasonalRiverMultiplier : 1;
+  return mmClamp(biomeMultiplier * mmCellRoadMultiplier(cell) * mmLandscapeMultiplier(cell) * seasonalMultiplier, MOVEMENT_FACTORS.minimumMultiplier, MAX_MOVEMENT_MULTIPLIER);
 }
 
 function mmSlopeMultiplier(grade) {
@@ -665,19 +683,24 @@ function mmElevation(world, x, y) {
 }
 
 function mmFactors(cell, grade = 0, geometry = null, exactSeasonal = false) {
-  const terrainMultiplier = mmSurfaceMultiplier(cell, true);
-  const landscapeMultiplier = mmLandscapeMultiplier(cell);
-  const slopeMultiplier = mmSlopeMultiplier(grade);
   const building = Boolean(geometry?.building);
   const bridge = geometry ? Boolean(geometry.bridge) : cell?.type === 'bridge';
+  const biomeMultiplier = mmBiomeMultiplier(cell, bridge);
+  const roadMultiplier = mmCellRoadMultiplier(cell);
+  const landscapeMultiplier = mmLandscapeMultiplier(cell);
+  const slopeMultiplier = mmSlopeMultiplier(grade);
   // Exact ribbons take precedence over centre-cell approximations: a narrow
   // wash cannot vanish between grid samples or be bypassed by road paint.
   const seasonal = exactSeasonal ? Boolean(geometry?.seasonal) : mmDryBiome(cell?.biome);
-  const buildingMultiplier = building ? .08 : 1;
-  const seasonalMultiplier = seasonal && !bridge ? .12 : 1;
-  if (!(terrainMultiplier > 0)) return { multiplier: 0, terrainMultiplier: 0, landscapeMultiplier, buildingMultiplier, seasonalMultiplier, slopeMultiplier, grade, building, seasonal, bridge, walkable: false };
-  const multiplier = mmClamp(terrainMultiplier * landscapeMultiplier * slopeMultiplier * buildingMultiplier * seasonalMultiplier, .005, MAX_MOVEMENT_MULTIPLIER);
-  return { multiplier, terrainMultiplier, landscapeMultiplier, buildingMultiplier, seasonalMultiplier, slopeMultiplier, grade, building, seasonal, bridge, walkable: true };
+  const buildingMultiplier = building ? MOVEMENT_FACTORS.buildingMultiplier : 1;
+  const seasonalMultiplier = seasonal && !bridge ? MOVEMENT_FACTORS.seasonalRiverMultiplier : 1;
+  // terrainMultiplier remains an alias for existing diagnostics. The road
+  // multiplier is always separate and never replaces the underlying biome.
+  const terrainMultiplier = biomeMultiplier;
+  const factors = { biomeMultiplier, terrainMultiplier, roadMultiplier, landscapeMultiplier, buildingMultiplier, seasonalMultiplier, slopeMultiplier, grade, building, seasonal, bridge };
+  if (!(biomeMultiplier > 0)) return { multiplier: 0, ...factors, walkable: false };
+  const multiplier = mmClamp(biomeMultiplier * roadMultiplier * landscapeMultiplier * slopeMultiplier * buildingMultiplier * seasonalMultiplier, MOVEMENT_FACTORS.minimumMultiplier, MAX_MOVEMENT_MULTIPLIER);
+  return { multiplier, ...factors, walkable: true };
 }
 
 function movementAt(world, x, y, toward = null) {
@@ -800,7 +823,7 @@ function advanceAlongRoute(world, route, player, gameMinutes) {
     remainingDistance: cache.remainingDistance, currentMultiplier, arrived, blocked: false };
 }
 
-return {BASE_WALK_METERS_PER_MINUTE,MAX_MOVEMENT_MULTIPLIER,biomeSpeedMultiplier,roadSpeedMultiplier,cellMovementMultiplier,movementAt,segmentTravel,advanceAlongRoute};
+return {MOVEMENT_FACTORS,BASE_WALK_METERS_PER_MINUTE,MAX_MOVEMENT_MULTIPLIER,biomeSpeedMultiplier,roadSpeedMultiplier,cellMovementMultiplier,movementAt,segmentTravel,advanceAlongRoute};
 })();
 const {findPath,terrainAt,nearestWalkable} = (() => {
 /** Weighted, water-aware navigation shared by imported real maps. */
@@ -899,9 +922,18 @@ function landscapeLowerBound(world, target, destination, scale) {
   if (!graph || graph.revision !== revision || graph.cells !== world.cells) {
     const points = world.cells.map((cell, id) => navigationPoint(world, id));
     const weights = new Float32Array(world.cells.length * 8);
+    // Biome and road bonuses multiply. Bound both independently; using only
+    // the road maximum would overestimate the remaining time in a fast city.
+    // Historic weighted grids can also supply a custom biome-like ground cost.
+    let bestBiome = Math.max(1, ...Object.values(MOVEMENT_FACTORS.biomes));
+    for (const cell of world.cells) if (cell.biome === undefined) {
+      const legacy = Number.isFinite(cell.cost) && cell.cost > 0 ? Math.min(MAX_MOVEMENT_MULTIPLIER, Math.max(.01, 1 / cell.cost)) : biomeSpeedMultiplier(cell.type);
+      bestBiome = Math.max(bestBiome, legacy);
+    }
+    const bestRoad = Math.max(1, ...Object.values(MOVEMENT_FACTORS.roads));
     // exp(.016) is the maximum of exp(.8*d - 10*d*d). The floor is
     // respected even for custom tiny landscape multipliers.
-    const bestSurfaceAndSlope = MAX_MOVEMENT_MULTIPLIER * Math.exp(.016);
+    const bestSurfaceAndSlope = bestBiome * bestRoad * Math.exp(.016);
     const fastest = landscape => Math.min(MAX_MOVEMENT_MULTIPLIER, Math.max(.005, bestSurfaceAndSlope * landscape));
     for (let id = 0; id < world.cells.length; id++) {
       if (!world.cells[id].walkable) continue;
@@ -3965,21 +3997,25 @@ function createDetailRenderer(world) {
   }
 
   function waterWidth(record, zoom) {
-    const dry = drDry(record.feature);
-    // Seasonal ink is a cartographic symbol. Its size must not turn into a
-    // stripe across a whole channel at close zoom; the physical ribbon below
-    // keeps its genuine width for biomes and travel costs.
-    if (dry) return (record.width >= 3 || record.feature.tags?.waterway === 'river' ? 3.2 : record.width >= 1.5 ? 2.4 : 1.8) / zoom;
+    // Seasonal punctuation is native geometry, just like the river biome. No
+    // minimum screen width or zoom compensation may detach it from its banks.
+    if (drDry(record.feature)) return record.width;
     return Math.max(record.width, 2.4 / zoom) + 1 / zoom;
   }
 
-  function waterDash(record, zoom) {
-    // Compact rectangular marks keep one screen-space rhythm at every zoom.
-    // Butt caps leave the full gap open even when the native river is wide.
-    return [6 / zoom, 5 / zoom];
+  function waterDash(record) {
+    // The complete rhythm lives in map coordinates and is fixed for this
+    // channel. The ordinary camera transform scales it with all other geometry.
+    return [record.width * 2.4, record.width * 1.6];
   }
 
   function clipRiverInk(ctx, record) {
+    if (drDry(record.feature)) {
+      // The exclusive physical ribbon supplies the banks, holes and clipped
+      // overlaps. Even curved joins cannot leak blue ink into another biome.
+      ctx.clip(record.path, record.fillRule);
+      return;
+    }
     const masks = record.feature.inkExclusionParts;
     if (!masks?.length) return;
     if (!record.inkClipPath) {
@@ -3991,8 +4027,8 @@ function createDetailRenderer(world) {
       };
       append([{ x: 0, y: 0 }, { x: world.width, y: 0 }, { x: world.width, y: world.height }, { x: 0, y: world.height }], true);
       // Higher priority water regions are already exclusive, so opposite winding
-      // cuts their union while restoring their islands. The river's lateral
-      // ribbon is deliberately not a clip: screen readability retains v12 width.
+      // cuts their union while restoring their islands. Only permanent-water
+      // ink keeps the cartographic minimum beyond its lateral physical ribbon.
       for (const part of masks) part.forEach((ring, index) => append(ring, index !== 0));
       record.inkClipPath = path;
     }
@@ -4004,11 +4040,15 @@ function createDetailRenderer(world) {
     if (!record.inkPath) return;
     const hovered = drAllowsHighlight(record) && hoveredId === feature.id, dry = drDry(feature);
     ctx.save(); clipRiverInk(ctx, record);
-    ctx.lineJoin = 'round'; ctx.lineCap = dry ? 'butt' : 'round';
-    ctx.setLineDash(dry ? waterDash(record, zoom) : []);
-    if (hovered) { ctx.strokeStyle = 'rgba(233,236,172,.55)'; ctx.lineWidth = waterWidth(record, zoom) + 3 / zoom; ctx.stroke(record.inkPath); }
-    ctx.strokeStyle = '#85abc4'; ctx.lineWidth = waterWidth(record, zoom); ctx.stroke(record.inkPath);
-    ctx.strokeStyle = dry ? '#4c91bd' : '#3f7eaa'; ctx.lineWidth = dry ? Math.max(1.1 / zoom, waterWidth(record, zoom) - 1 / zoom) : Math.max(record.width, 1.1 / zoom); ctx.stroke(record.inkPath);
+    ctx.lineJoin = 'round'; ctx.lineCap = dry ? 'butt' : 'round'; ctx.lineDashOffset = 0;
+    ctx.setLineDash(dry ? waterDash(record) : []);
+    if (dry) {
+      ctx.strokeStyle = '#4c91bd'; ctx.lineWidth = record.width; ctx.stroke(record.inkPath);
+    } else {
+      if (hovered) { ctx.strokeStyle = 'rgba(233,236,172,.55)'; ctx.lineWidth = waterWidth(record, zoom) + 3 / zoom; ctx.stroke(record.inkPath); }
+      ctx.strokeStyle = '#85abc4'; ctx.lineWidth = waterWidth(record, zoom); ctx.stroke(record.inkPath);
+      ctx.strokeStyle = '#3f7eaa'; ctx.lineWidth = Math.max(record.width, 1.1 / zoom); ctx.stroke(record.inkPath);
+    }
     ctx.setLineDash([]); ctx.restore();
   }
 
@@ -4078,6 +4118,11 @@ function createDetailRenderer(world) {
       try { view.landscapeOverlay(ctx, view); } finally { ctx.restore(); }
       ctx.globalAlpha = 1;
     }
+    if (typeof view.reliefOverlay === 'function') {
+      ctx.save();
+      try { view.reliefOverlay(ctx, view); } finally { ctx.restore(); }
+      ctx.globalAlpha = 1;
+    }
     for (const record of visible) if (record.layer === 'biomes' && record.inkPath) paintWater(ctx, record, view.zoom, hoveredId);
     let roadsPainted = false, powerPainted = false;
     for (const record of visible) {
@@ -4116,7 +4161,7 @@ function createDetailRenderer(world) {
     else if (record.inkPath) {
       clipRiverInk(ctx, record);
       ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-      ctx.setLineDash(drDry(record.feature) ? waterDash(record, view.zoom) : []);
+      ctx.setLineDash(drDry(record.feature) ? waterDash(record) : []);
       const width = waterWidth(record, view.zoom);
       ctx.strokeStyle = 'rgba(238,238,169,.65)'; ctx.lineWidth = width + 4 / view.zoom; ctx.stroke(record.inkPath);
       ctx.strokeStyle = '#f2efb5'; ctx.lineWidth = Math.max(1.25 / view.zoom, width * .28); ctx.stroke(record.inkPath);
@@ -4195,10 +4240,10 @@ function createDetailRenderer(world) {
   }
 
   function riverInkHit(record, x, y, tolerance) {
-    if (!record.inkPaths || (record.feature.inkExclusionParts || []).some(rings => drInPolygon(x, y, rings))) return null;
+    if (!record.inkPaths || (drDry(record.feature) ? !drPartContains(record, x, y) : (record.feature.inkExclusionParts || []).some(rings => drInPolygon(x, y, rings)))) return null;
     let best = null, score = Infinity;
     const halfWidth = waterWidth(record, lastZoom) / 2;
-    const [dashLength, gapLength] = waterDash(record, lastZoom), period = dashLength + gapLength, dry = drDry(record.feature);
+    const [dashLength, gapLength] = waterDash(record), period = dashLength + gapLength, dry = drDry(record.feature);
     for (const path of record.inkPaths) {
       let offset = 0;
       for (let i = 1; i < path.length; i++) {
@@ -4279,8 +4324,8 @@ function createDetailRenderer(world) {
       if (!isEnabled(record) || record.layer === 'biomes' || record.geometry !== 'polygon' || record.outlineOnly) continue;
       if (record.ellipse ? ((x - feature.x) / feature.rx) ** 2 + ((y - feature.y) / feature.ry) ** 2 <= 1 : drPartContains(record, x, y)) return describe(record);
     }
-    // Water's cartographic minimum width can exceed its physical ground ribbon.
-    // Select that visible ink too; area membership still uses the exact partition.
+    // Permanent water may have a cartographic minimum width; seasonal marks
+    // stay strictly within their physical biome. Select visible ink accordingly.
     for (let i = candidates.length - 1; i >= 0; i--) {
       const record = candidates[i];
       if (!isEnabled(record) || !record.inkPath) continue;
@@ -4353,18 +4398,9 @@ const {createElevationRenderer} = (() => {
 const erClamp = (value, low, high) => Math.max(low, Math.min(high, value));
 const erValidBbox = bbox => Array.isArray(bbox) && bbox.length === 4 && bbox.every(Number.isFinite)
   && bbox[0] >= -180 && bbox[2] <= 180 && bbox[1] >= -90 && bbox[3] <= 90 && bbox[0] < bbox[2] && bbox[1] < bbox[3];
-const erPalette = [
-  [0, '#8f9d73'], [.24, '#b4b984'], [.5, '#c9be95'], [.7, '#b7a080'], [.88, '#9b8d7e'], [1, '#c2bdb7'],
-];
-const erRGB = color => [1, 3, 5].map(offset => parseInt(color.slice(offset, offset + 2), 16));
-const erColors = erPalette.map(([position, color]) => ({ position, color, rgb: erRGB(color) }));
-function erColor(height, min, max) {
-  const position = max > min ? erClamp((height - min) / (max - min), 0, 1) : .5;
-  const right = erColors.findIndex(stop => stop.position >= position);
-  const b = erColors[Math.max(1, right)], a = erColors[Math.max(0, right - 1)];
-  const fraction = (position - a.position) / (b.position - a.position);
-  return a.rgb.map((value, channel) => value + (b.rgb[channel] - value) * fraction);
-}
+// Compatibility metadata for the neutral illumination legend. These stops no
+// longer colour elevation: the raster contains illumination only.
+const erPalette = [[0, '#545454'], [.5, '#808080'], [1, '#bdbdbd']];
 function erCanvas(width, height) {
   let canvas;
   if (typeof OffscreenCanvas !== 'undefined') canvas = new OffscreenCanvas(width, height);
@@ -4423,7 +4459,7 @@ function erStroke(ctx, contour) {
 function createElevationRenderer(world = {}, data) {
   const width = Number(world.width), height = Number(world.height), mapBbox = world.bbox;
   const columns = Number(data?.columns), rows = Number(data?.rows), bbox = data?.bbox;
-  const stats = { rasterBuilds: 0, contourBuilds: 0, drawCount: 0, contourLevels: 0, contourSegments: 0, labelsDrawn: 0, pixelCount: 0 };
+  const stats = { rasterBuilds: 0, contourBuilds: 0, drawCount: 0, maskDrawCount: 0, contourLevels: 0, contourSegments: 0, labelsDrawn: 0, pixelCount: 0 };
   let reason = !data ? 'missing-data' : null;
   if (!reason && (!(width > 0 && height > 0) || !Number.isFinite(width + height) || !erValidBbox(mapBbox))) reason = 'map-no-geography';
   if (!reason && (!erValidBbox(bbox) || !Number.isInteger(columns) || !Number.isInteger(rows) || columns < 2 || rows < 2
@@ -4447,11 +4483,11 @@ function createElevationRenderer(world = {}, data) {
   const getInfo = () => ({
     available, reason, min: available ? min : null, max: available ? max : null, units: 'm',
     columns: available ? columns : 0, rows: available ? rows : 0, bbox: erValidBbox(bbox) ? [...bbox] : null,
-    contourInterval, majorContourInterval,
+    contourInterval, majorContourInterval, renderMode: 'neutral-relief-mask',
     palette: available ? erPalette.map(([position, color]) => ({ height: min + (max - min) * position, position, color })) : [],
     source: source ? structuredClone(source) : null,
   });
-  if (!available) return { available, sampleAt: () => null, draw: () => false, getInfo, getStats: () => ({ ...stats, available }) };
+  if (!available) return { available, sampleAt: () => null, draw: () => false, drawMask: () => false, getInfo, getStats: () => ({ ...stats, available }) };
   const longitudeScale = (columns - 1) / (bbox[2] - bbox[0]), latitudeScale = (rows - 1) / (bbox[3] - bbox[1]);
   const worldX = column => (bbox[0] + column / longitudeScale - mapBbox[0]) / (mapBbox[2] - mapBbox[0]) * width;
   const worldY = row => (mapBbox[3] - (bbox[3] - row / latitudeScale)) / (mapBbox[3] - mapBbox[1]) * height;
@@ -4499,8 +4535,13 @@ function createElevationRenderer(world = {}, data) {
       const sx = slope(index, row * columns + Math.max(0, column - 1), row * columns + Math.min(columns - 1, column + 1), stepX) * 1.6;
       const sy = slope(index, Math.max(0, row - 1) * columns + column, Math.min(rows - 1, row + 1) * columns + column, stepY) * 1.6;
       const normal = Math.hypot(sx, sy, 1), dot = erClamp((-sx * light[0] - sy * light[1] + light[2]) / normal, 0, 1);
-      const brightness = .7 + dot * .44, color = erColor(value, min, max);
-      for (let channel = 0; channel < 3; channel++) pixels[pixel + channel] = erClamp(Math.round(color[channel] * brightness), 0, 255);
+      // Flat ground is the neutral midpoint of soft-light. Absolute elevation
+      // never enters this illumination: identical shapes at different altitudes
+      // produce the same mask. All channels are equal, so no terrain hue leaks
+      // into the independent biome/landscape colours beneath it.
+      const illumination = erClamp(.5 + (dot - light[2]) * .88, .08, .90);
+      const gray = Math.round(illumination * 255);
+      for (let channel = 0; channel < 3; channel++) pixels[pixel + channel] = gray;
       pixels[pixel + 3] = 255;
     }
     context.putImageData(image, 0, 0); raster = canvas;
@@ -4568,7 +4609,7 @@ function createElevationRenderer(world = {}, data) {
         let angle = point.angle; if (angle > Math.PI / 2 || angle < -Math.PI / 2) angle += Math.PI;
         ctx.save(); ctx.translate(point.x, point.y); ctx.rotate(angle); ctx.scale(1 / zoom, 1 / zoom);
         ctx.font = '500 10px "Segoe UI", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.lineJoin = 'round'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(216,211,183,.86)'; ctx.fillStyle = '#4e4b3d';
+        ctx.lineJoin = 'round'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(238,238,238,.68)'; ctx.fillStyle = '#484848';
         ctx.strokeText(`${contour.height} м`, 0, 0); ctx.fillText(`${contour.height} м`, 0, 0); ctx.restore();
         boxes.push({ x, y }); count++; break;
       }
@@ -4576,27 +4617,39 @@ function createElevationRenderer(world = {}, data) {
     stats.labelsDrawn = count;
   }
 
-  function draw(ctx, view = {}) {
+  function paint(ctx, view, mask) {
     buildRaster(); buildContours();
     if (!raster) return false;
     const zoom = Number(view.zoom) > 0 ? Number(view.zoom) : 1;
     ctx.save(); ctx.globalAlpha = 1;
     ctx.beginPath(); ctx.rect(0, 0, width, height); ctx.clip();
     ctx.imageSmoothingEnabled = true;
+    // The biome ground is already opaque when this is used as a mask. A
+    // neutral soft-light transfer adds shading without painting a grey matte.
+    ctx.globalCompositeOperation = mask ? 'soft-light' : 'source-over';
     // Pixel centres correspond to DEM sample vertices, including bbox edges.
     ctx.drawImage(raster, .5, .5, columns - 1, rows - 1, left, top, rasterWidth, rasterHeight);
+    // Contours and their measured labels are ordinary neutral ink above relief.
+    ctx.globalCompositeOperation = 'source-over';
     if (view.elevationContours !== false) {
       ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.setLineDash([]);
       for (const contour of contours) {
-        ctx.strokeStyle = contour.major ? 'rgba(84,76,57,.44)' : 'rgba(84,76,57,.25)';
+        ctx.strokeStyle = contour.major ? 'rgba(55,55,55,.32)' : 'rgba(55,55,55,.18)';
         ctx.lineWidth = (contour.major ? 1.05 : .65) / zoom; erStroke(ctx, contour);
       }
       drawLabels(ctx, view, zoom);
     } else stats.labelsDrawn = 0;
     ctx.restore(); stats.drawCount++;
+    if (mask) stats.maskDrawCount++;
     return true;
   }
-  return { available, sampleAt, draw, getInfo, getStats: () => ({ ...stats, available }) };
+
+  // Standalone height view uses neutral grey relief; the normal map composites
+  // the same cached raster onto biome/landscape colours with drawMask().
+  const draw = (ctx, view = {}) => paint(ctx, view, false);
+  const drawMask = (ctx, view = {}) => paint(ctx, view, true);
+
+  return { available, sampleAt, draw, drawMask, getInfo, getStats: () => ({ ...stats, available }) };
 }
 
 return {createElevationRenderer};
@@ -5232,6 +5285,7 @@ const poiTitle = poi => {
   return type.typeId !== 'building.unknown' ? type.typeName : kindNames[poi.kind] || 'Объект';
 };
 const formatDistance = d => d >= 1000 ? `${(d / 1000).toFixed(1).replace('.', ',')} км` : `${Math.max(0, Math.round(d / 10) * 10)} м`;
+const formatFactor = value => `×${Number(value).toFixed(value < .1 ? 3 : 2).replace('.', ',')}`;
 const screenToWorld = (x, y) => ({ x: (x - vw / 2) / camera.zoom + camera.x, y: (y - vh / 2) / camera.zoom + camera.y });
 const worldToScreen = p => ({ x: (p.x - camera.x) * camera.zoom + vw / 2, y: (p.y - camera.y) * camera.zoom + vh / 2 });
 
@@ -5371,10 +5425,13 @@ function syncLayerUI() {
   for (const key of Object.keys(roadClasses)) {
     const input = $('road-class-' + key);
     input.checked = roadClasses[key]; input.disabled = !layers.roads;
+    $('factor-road-class-' + key).textContent = formatFactor(MOVEMENT_FACTORS.roads[key]);
+    $('factor-road-class-' + key).title = 'Бонус дороги; покрытие уточняет значение';
     $('count-road-class-' + key).textContent = features.filter(feature => feature.layer === 'roads' && feature.roadClass === key).length;
   }
   $('road-classes').classList.toggle('is-disabled', !layers.roads);
   $('biome-key').classList.toggle('is-disabled', !layers.biomes);
+  for (const biome of ['city', 'wasteland', 'sand']) $('factor-biome-' + biome).textContent = formatFactor(MOVEMENT_FACTORS.biomes[biome]);
   syncElevationUI();
   syncLandscapeUI();
   syncBuildingLegend(features);
@@ -5389,11 +5446,11 @@ function syncElevationUI() {
   $('elevation-key').hidden = !active;
   $('elevation-unavailable').hidden = available;
   if (!available) return;
-  $('elevation-min').textContent = `${Math.floor(info.min)} м`;
-  $('elevation-max').textContent = `${Math.ceil(info.max)} м`;
-  $('elevation-mid').textContent = `${Math.round((info.min + info.max) / 2)} м`;
-  $('elevation-gradient').style.background = `linear-gradient(90deg,${info.palette.map(stop => `${stop.color} ${100 * (stop.height - info.min) / (info.max - info.min || 1)}%`).join(',')})`;
-  $('elevation-source').textContent = `USGS 3DEP · горизонтали ${info.contourInterval} м`;
+  $('elevation-min').textContent = 'ТЕНИ';
+  $('elevation-max').textContent = 'СВЕТ';
+  $('elevation-mid').textContent = 'НЕЙТРАЛЬНО';
+  $('elevation-gradient').style.background = 'linear-gradient(90deg,#454545,#808080,#c5c5c5)';
+  $('elevation-source').textContent = `USGS 3DEP · ${Math.floor(info.min)}–${Math.ceil(info.max)} м · горизонтали ${info.contourInterval} м`;
 }
 
 function syncLandscapeUI() {
@@ -5498,7 +5555,10 @@ function showMapTooltip(label, screenX, screenY) {
   const height = layers.elevation && elevationRenderer.available ? elevationRenderer.sampleAt(position.x, position.y) : null;
   const land = landscape.getAt(position.x, position.y);
   const landscapeLabel = land ? `${land.name} ×${land.multiplier.toFixed(2).replace('.', ',')}` : '';
-  tooltip.textContent = [label, landscapeLabel, Number.isFinite(height) ? `${Math.round(height)} м` : ''].filter(Boolean).join(' · ');
+  const movement = movementAt(world, position.x, position.y);
+  const biomeFactor = `Биом ${formatFactor(movement.biomeMultiplier)}`;
+  const roadFactor = movement.roadMultiplier > 1 ? `Дорога ${formatFactor(movement.roadMultiplier)}` : '';
+  tooltip.textContent = [label, biomeFactor, landscapeLabel, roadFactor, Number.isFinite(height) ? `${Math.round(height)} м` : ''].filter(Boolean).join(' · ');
   tooltip.hidden = false;
   const bounds = tooltip.getBoundingClientRect();
   const left = screenX + 14 + bounds.width > vw - 8 ? screenX - bounds.width - 14 : screenX + 14;
@@ -5811,8 +5871,9 @@ function drawStaticObjects(time) {
     objectCacheCtx.setTransform(scale, 0, 0, scale, 0, 0);
     objectCacheCtx.save(); objectCacheCtx.translate(width / 2, height / 2); objectCacheCtx.scale(camera.zoom, camera.zoom); objectCacheCtx.translate(-camera.x, -camera.y);
     detailRenderer.draw(objectCacheCtx, { zoom: camera.zoom, cameraX: camera.x, cameraY: camera.y, width, height, time, hoveredId: null,
-      groundOverlay: layers.elevation && elevationRenderer.available ? (context, view) => elevationRenderer.draw(context, view) : null,
-      landscapeOverlay: layers.landscape && landscape.available ? (context, view) => landscape.draw(context, view) : null });
+      groundOverlay: layers.elevation && elevationRenderer.available && !layers.biomes ? (context, view) => elevationRenderer.draw(context, view) : null,
+      landscapeOverlay: layers.landscape && landscape.available ? (context, view) => landscape.draw(context, view) : null,
+      reliefOverlay: layers.elevation && elevationRenderer.available && layers.biomes ? (context, view) => elevationRenderer.drawMask(context, view) : null });
     objectCacheCtx.restore();
     objectCacheState = { key, x: camera.x, y: camera.y, margin, scale, width, height };
     renderStats.staticRebuilds++; renderStats.lastStaticMs = performance.now() - started;
@@ -5922,7 +5983,10 @@ function updateUI() {
   const slope = toward ? Math.abs(movement.slopePercent) < .5 ? 'Почти ровно' : `${movement.slopePercent > 0 ? 'Подъём +' : 'Спуск −'}${Math.round(Math.abs(movement.slopePercent))}%` : '';
   const obstacles = [movement.buildingMultiplier < 1 ? 'Через здание' : '', movement.seasonalMultiplier < 1 ? 'Сезонное русло' : ''].filter(Boolean);
   $('movement-factors').textContent = [footing, slope, ...obstacles].filter(Boolean).join(' · ');
-  $('movement-multiplier').title = `Поверхность ×${movement.terrainMultiplier.toFixed(2)} · Ландшафт ×${(movement.landscapeMultiplier ?? 1).toFixed(2)} · Уклон ×${movement.slopeMultiplier.toFixed(2)} · Здание ×${(movement.buildingMultiplier ?? 1).toFixed(2)} · Русло ×${(movement.seasonalMultiplier ?? 1).toFixed(2)}`;
+  $('biome-label').textContent = biomes.length ? `Биом: ${biomes.join(' + ')} ${formatFactor(movement.biomeMultiplier)}` : '';
+  $('biome-label').title = $('biome-label').textContent;
+  $('movement-products').textContent = `Биом ${formatFactor(movement.biomeMultiplier)} × ландшафт ${formatFactor(movement.landscapeMultiplier).slice(1)} × дорога ${formatFactor(movement.roadMultiplier).slice(1)}`;
+  $('movement-multiplier').title = `Биом ${formatFactor(movement.biomeMultiplier)} · Ландшафт ${formatFactor(movement.landscapeMultiplier)} · Дорога ${formatFactor(movement.roadMultiplier)} · Уклон ${formatFactor(movement.slopeMultiplier)} · Здание ${formatFactor(movement.buildingMultiplier)} · Русло ${formatFactor(movement.seasonalMultiplier)}`;
   if (world.geographic) {
     const [west, south, east, north] = world.bbox;
     const degree = 6371008.8 * Math.PI / 180, cosine = Math.cos((south + north) * Math.PI / 360);
@@ -5947,6 +6011,7 @@ function updateUI() {
 window.__DAY_NEXT__ = {
   getState: () => ({ player: { ...player }, camera: { ...camera }, moving: !!route && !paused, paused, speed, stamina, water, minutes, totalDistance, destination: route ? { ...route.destination } : null, remaining: route?.remaining || 0, discovered: [...discovered] }),
   getRoute: () => route ? { points: route.points.map(point => ({ ...point })), distance: route.distance, durationMinutes: route.durationMinutes, remaining: route.remaining, remainingDurationMinutes: route.remainingDurationMinutes, index: route.index, destination: { ...route.destination }, search: { ...route.search } } : null,
+  getMovementFactors: () => structuredClone(MOVEMENT_FACTORS),
   getMovementAt: (x, y, toward = null) => movementAt(world, x, y, toward),
   getWorld: () => world,
   worldToScreen: position => worldToScreen(position),

@@ -1,20 +1,20 @@
 // Shared travel-time model for route search, smoothing, ETA and the moving actor.
 // Multipliers describe a walking game character, not a real-world hiking forecast.
 export const BASE_WALK_METERS_PER_MINUTE = 4000 / 60;
-export const MAX_MOVEMENT_MULTIPLIER = 1.5;
+export const MAX_MOVEMENT_MULTIPLIER = 2;
 const mmClamp = (value, low, high) => Math.max(low, Math.min(high, value));
 const mmDistance = (a, b) => Math.hypot(b.x - a.x, b.y - a.y);
 const mmScale = world => Number(world.metersPerUnit) > 0 ? Number(world.metersPerUnit) : 1;
 const mmCell = (world, x, y) => Number.isFinite(x) && Number.isFinite(y) && x >= 0 && y >= 0 && x < world.width && y < world.height
   ? world.cells[Math.floor(y / world.cellSize) * world.cols + Math.floor(x / world.cellSize)] : null;
 const mmBiomes = Object.freeze({
-  plain: 1, wasteland: 1, city: 1, desert: .94, grassland: .94, park: .94, recreation: .94,
+  plain: 1, wasteland: 1, city: 1.05, desert: .94, grassland: .94, park: .94, recreation: .94,
   garden: .9, farmland: .84, orchard: .82, vineyard: .82, cemetery: .88,
   sand: .67, beach: .67, scrub: .75, forest: .65, rock: .58, hill: .72, quarry: .58,
   wetland: .44, swamp: .44, glacier: .5, landfill: .65, construction: .72, brownfield: .82,
-  seasonal_river: .12, dry_riverbed: .12, gully: .7, valley: 1, water: 0,
+  seasonal_river: 1, dry_riverbed: 1, gully: .7, valley: 1, water: 0,
 });
-const mmRoads = Object.freeze({ highway: 1.28, road: 1.22, street: 1.18, track: .98, trail: 1.04, railway: .8 });
+const mmRoads = Object.freeze({ highway: 1.5, road: 1.35, street: 1.25, track: 1.16, trail: 1.12, railway: 1.08 });
 const mmSurfaces = Object.freeze({
   asphalt: 1, concrete: 1, 'concrete:plates': .97, 'concrete:lanes': .97, paved: 1,
   paving_stones: .94, sett: .88, cobblestone: .84, metal: .91, wood: .9,
@@ -22,33 +22,48 @@ const mmSurfaces = Object.freeze({
   ground: .77, dirt: .77, earth: .77, grass: .74, sand: .58, mud: .44, rock: .62,
 });
 
+// Biome and road bonuses are independent. A poor surface reduces the bonus
+// supplied by a road; it never turns the road layer itself into a penalty.
+// Seasonal rivers are charged once by the exact ribbon factor below.
+export const MOVEMENT_FACTORS = Object.freeze({
+  baseSpeedKmh: 4, minimumMultiplier: .005, maximumMultiplier: MAX_MOVEMENT_MULTIPLIER,
+  biomes: mmBiomes, roads: mmRoads, surfaceQuality: mmSurfaces,
+  buildingMultiplier: .08, seasonalRiverMultiplier: .12,
+});
+
 export function biomeSpeedMultiplier(biome) { return mmBiomes[biome] ?? 1; }
 
 export function roadSpeedMultiplier(roadClass, surface) {
+  if (!roadClass) return 1;
   const base = mmRoads[roadClass] ?? 1.16;
   const material = typeof surface === 'string' ? surface.split(';')[0].trim().toLowerCase() : '';
-  // Track/trail defaults already represent a maintained unpaved path. Explicit
-  // loose surfaces still slow them down, without applying the dirt default twice.
-  const correction = material ? mmSurfaces[material] ?? 1 : 1;
-  return mmClamp(base * correction, .12, MAX_MOVEMENT_MULTIPLIER);
+  const quality = material ? mmClamp(mmSurfaces[material] ?? 1, .05, 1) : 1;
+  return 1 + (base - 1) * quality;
 }
 
 const mmLandscapeMultiplier = cell => Number.isFinite(cell?.landscapeMultiplier) && cell.landscapeMultiplier > 0 ? cell.landscapeMultiplier : 1;
 const mmDryBiome = biome => biome === 'seasonal_river' || biome === 'dry_riverbed';
+const mmCellRoadMultiplier = cell => roadSpeedMultiplier(cell?.roadClass || (cell?.type === 'bridge' && cell.biome !== undefined ? 'road' : null), cell?.surface);
 
-function mmSurfaceMultiplier(cell, separateSeasonal = false) {
+function mmBiomeMultiplier(cell, bridge = false) {
   if (!cell?.walkable) return 0;
-  if (cell.roadClass || cell.type === 'bridge' && cell.biome !== undefined) return roadSpeedMultiplier(cell.roadClass || 'road', cell.surface);
-  if (cell.biome !== undefined) return separateSeasonal && mmDryBiome(cell.biome) ? 1 : Math.max(.01, biomeSpeedMultiplier(cell.biome));
-  // Historic fixtures/imports can supply their own weighted grid without a DEM.
+  // A mapped bridge has a dry deck. Its underlying water biome cannot veto it;
+  // exact bridge geometry limits this exception to the real bridge corridor.
+  if (bridge && cell.biome === 'water') return 1;
+  if (cell.biome !== undefined) return Math.max(0, biomeSpeedMultiplier(cell.biome));
+  // Historic fixtures/imports can supply a weighted grid without explicit
+  // biomes/roads. Their original cost stays a neutral-road ground coefficient.
   if (Number.isFinite(cell.cost) && cell.cost > 0) return mmClamp(1 / cell.cost, .01, MAX_MOVEMENT_MULTIPLIER);
-  return Math.max(.01, biomeSpeedMultiplier(cell.type));
+  return Math.max(0, biomeSpeedMultiplier(cell.type));
 }
 
 export function cellMovementMultiplier(cell) {
   if (!cell?.walkable) return 0;
-  const seasonalMultiplier = mmDryBiome(cell.biome) && cell.type !== 'bridge' ? .12 : 1;
-  return mmSurfaceMultiplier(cell, true) * mmLandscapeMultiplier(cell) * seasonalMultiplier;
+  const bridge = cell.type === 'bridge';
+  const biomeMultiplier = mmBiomeMultiplier(cell, bridge);
+  if (!(biomeMultiplier > 0)) return 0;
+  const seasonalMultiplier = mmDryBiome(cell.biome) && !bridge ? MOVEMENT_FACTORS.seasonalRiverMultiplier : 1;
+  return mmClamp(biomeMultiplier * mmCellRoadMultiplier(cell) * mmLandscapeMultiplier(cell) * seasonalMultiplier, MOVEMENT_FACTORS.minimumMultiplier, MAX_MOVEMENT_MULTIPLIER);
 }
 
 function mmSlopeMultiplier(grade) {
@@ -82,19 +97,24 @@ function mmElevation(world, x, y) {
 }
 
 function mmFactors(cell, grade = 0, geometry = null, exactSeasonal = false) {
-  const terrainMultiplier = mmSurfaceMultiplier(cell, true);
-  const landscapeMultiplier = mmLandscapeMultiplier(cell);
-  const slopeMultiplier = mmSlopeMultiplier(grade);
   const building = Boolean(geometry?.building);
   const bridge = geometry ? Boolean(geometry.bridge) : cell?.type === 'bridge';
+  const biomeMultiplier = mmBiomeMultiplier(cell, bridge);
+  const roadMultiplier = mmCellRoadMultiplier(cell);
+  const landscapeMultiplier = mmLandscapeMultiplier(cell);
+  const slopeMultiplier = mmSlopeMultiplier(grade);
   // Exact ribbons take precedence over centre-cell approximations: a narrow
   // wash cannot vanish between grid samples or be bypassed by road paint.
   const seasonal = exactSeasonal ? Boolean(geometry?.seasonal) : mmDryBiome(cell?.biome);
-  const buildingMultiplier = building ? .08 : 1;
-  const seasonalMultiplier = seasonal && !bridge ? .12 : 1;
-  if (!(terrainMultiplier > 0)) return { multiplier: 0, terrainMultiplier: 0, landscapeMultiplier, buildingMultiplier, seasonalMultiplier, slopeMultiplier, grade, building, seasonal, bridge, walkable: false };
-  const multiplier = mmClamp(terrainMultiplier * landscapeMultiplier * slopeMultiplier * buildingMultiplier * seasonalMultiplier, .005, MAX_MOVEMENT_MULTIPLIER);
-  return { multiplier, terrainMultiplier, landscapeMultiplier, buildingMultiplier, seasonalMultiplier, slopeMultiplier, grade, building, seasonal, bridge, walkable: true };
+  const buildingMultiplier = building ? MOVEMENT_FACTORS.buildingMultiplier : 1;
+  const seasonalMultiplier = seasonal && !bridge ? MOVEMENT_FACTORS.seasonalRiverMultiplier : 1;
+  // terrainMultiplier remains an alias for existing diagnostics. The road
+  // multiplier is always separate and never replaces the underlying biome.
+  const terrainMultiplier = biomeMultiplier;
+  const factors = { biomeMultiplier, terrainMultiplier, roadMultiplier, landscapeMultiplier, buildingMultiplier, seasonalMultiplier, slopeMultiplier, grade, building, seasonal, bridge };
+  if (!(biomeMultiplier > 0)) return { multiplier: 0, ...factors, walkable: false };
+  const multiplier = mmClamp(biomeMultiplier * roadMultiplier * landscapeMultiplier * slopeMultiplier * buildingMultiplier * seasonalMultiplier, MOVEMENT_FACTORS.minimumMultiplier, MAX_MOVEMENT_MULTIPLIER);
+  return { multiplier, ...factors, walkable: true };
 }
 
 export function movementAt(world, x, y, toward = null) {

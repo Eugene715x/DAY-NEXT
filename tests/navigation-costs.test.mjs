@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { findPath, terrainAt } from '../world.js';
 import { prepareMovementGeometry } from '../movement-geometry.js';
 import {
-  BASE_WALK_METERS_PER_MINUTE, biomeSpeedMultiplier, roadSpeedMultiplier,
+  BASE_WALK_METERS_PER_MINUTE, MOVEMENT_FACTORS, biomeSpeedMultiplier, roadSpeedMultiplier,
   cellMovementMultiplier, movementAt, segmentTravel, advanceAlongRoute,
 } from '../movement-model.js';
 
@@ -76,10 +76,65 @@ test('paved surfaces and difficult ground contribute distinct, bounded walking m
   assert(biomeSpeedMultiplier('wasteland') > biomeSpeedMultiplier('wetland'));
   const paved = { type: 'road', walkable: true, biome: 'sand', roadClass: 'road', surface: 'asphalt' };
   const loose = { type: 'plain', walkable: true, biome: 'sand' };
-  assert(cellMovementMultiplier(paved) > cellMovementMultiplier(loose), 'A real road supplies the traversed surface over a sandy biome');
+  assert(cellMovementMultiplier(paved) > cellMovementMultiplier(loose), 'A road adds its bonus while retaining the underlying sandy biome');
   const world = fixture(2, 2);
   const movement = movementAt(world, 10, 10, point(30, 10));
   assert(Number.isFinite(movement.multiplier) && movement.multiplier > 0 && movement.multiplier < 2);
+});
+
+test('every road class adds a positive bonus and absent roads contribute exactly one', () => {
+  assert.equal(roadSpeedMultiplier(null), 1);
+  assert.equal(roadSpeedMultiplier(undefined, 'asphalt'), 1);
+  assert.equal(roadSpeedMultiplier('', 'mud'), 1);
+  for (const roadClass of ['highway', 'road', 'street', 'track', 'trail', 'railway']) {
+    const base = MOVEMENT_FACTORS.roads[roadClass];
+    assert(base > 1);
+    assert.equal(roadSpeedMultiplier(roadClass), base);
+    for (const surface of Object.keys(MOVEMENT_FACTORS.surfaceQuality)) {
+      const multiplier = roadSpeedMultiplier(roadClass, surface);
+      assert(multiplier > 1, `${roadClass}/${surface} must preserve a positive road bonus`);
+      assert(multiplier <= base, 'Loose material weakens the road bonus without replacing the biome');
+    }
+  }
+});
+
+test('road, biome and landscape factors multiply independently without clipping a normal city highway', () => {
+  assert.equal(biomeSpeedMultiplier('city'), 1.05);
+  assert.equal(biomeSpeedMultiplier('wasteland'), 1);
+  assert.equal(biomeSpeedMultiplier('sand'), .67);
+  const make = biome => fixture(2, 2, () => ({ biome, roadClass: 'road', surface: 'asphalt', landscapeMultiplier: .52 }));
+  const sand = movementAt(make('sand'), 10, 10), city = movementAt(make('city'), 10, 10);
+  assert.equal(sand.biomeMultiplier, .67); assert.equal(city.biomeMultiplier, 1.05);
+  assert.equal(sand.roadMultiplier, 1.35); assert.equal(city.roadMultiplier, 1.35);
+  assert.equal(sand.landscapeMultiplier, .52);
+  assert(Math.abs(sand.multiplier - .67 * 1.35 * .52) < 1e-12);
+  assert(Math.abs(city.multiplier - 1.05 * 1.35 * .52) < 1e-12);
+  assert(Math.abs(city.multiplier / sand.multiplier - 1.05 / .67) < 1e-12, 'The same road cannot erase the city/sand difference');
+  const highway = movementAt(fixture(2, 2, () => ({ biome: 'city', roadClass: 'highway', surface: 'asphalt' })), 10, 10);
+  assert(Math.abs(highway.multiplier - 1.05 * 1.5) < 1e-12, 'Independent regular bonuses must not hit the old ×1.5 cap');
+  const absent = movementAt(fixture(2, 2, () => ({ biome: 'sand', landscapeMultiplier: .52 })), 10, 10);
+  assert.equal(absent.roadMultiplier, 1);
+  assert(Math.abs(sand.multiplier / absent.multiplier - 1.35) < 1e-12);
+});
+
+test('one road crossing city and sand retains both analytic biome times during actual walking', () => {
+  const make = road => fixture(10, 1, x => ({ biome: x < 5 ? 'city' : 'sand', landscapeMultiplier: .52,
+    ...(road ? { type: 'road', roadClass: 'road', surface: 'asphalt' } : {}),
+  }));
+  const world = make(true), from = point(10, 10), to = point(190, 10);
+  const cityMinutes = 90 / (BASE_WALK_METERS_PER_MINUTE * 1.05 * 1.35 * .52);
+  const sandMinutes = 90 / (BASE_WALK_METERS_PER_MINUTE * .67 * 1.35 * .52);
+  const plan = findPath(world, from, to), direct = segmentTravel(world, from, to);
+  assert(plan); assert(Math.abs(plan.durationMinutes - cityMinutes - sandMinutes) < 1e-10);
+  assert(Math.abs(direct.durationMinutes - plan.durationMinutes) < 1e-10);
+  assert(Math.abs(segmentTravel(make(false), from, to).durationMinutes / plan.durationMinutes - 1.35) < 1e-10);
+  const player = { ...from }, route = { ...plan, index: 1 };
+  const first = advanceAlongRoute(world, route, player, cityMinutes);
+  assert(Math.abs(player.x - 100) < 1e-8, 'The full city budget must stop at the biome boundary on the same road');
+  assert(Math.abs(first.remainingDurationMinutes - sandMinutes) < 1e-8);
+  const last = advanceAlongRoute(world, route, player, sandMinutes + 1);
+  assert(last.arrived); assert.deepEqual(player, to);
+  assert(Math.abs(first.elapsedMinutes + last.elapsedMinutes - plan.durationMinutes) < 1e-8);
 });
 
 test('grade is directional, steep descent is slower than level walking, and missing elevations stay neutral', () => {
@@ -218,7 +273,7 @@ test('landscape multiplies biome and road speed while uphill penalties are subst
   assert(Math.abs(uphill.multiplier - .52 * Math.exp(-1.5)) < 1e-10);
   assert(uphill.speedKmh < .5, 'A 20% uphill hill route must be a slow climb');
   const road = fixture(2, 2, () => ({ roadClass: 'road', surface: 'asphalt', landscapeMultiplier: .52 }));
-  assert(Math.abs(movementAt(road, 10, 10).multiplier - 1.22 * .52) < 1e-12);
+  assert(Math.abs(movementAt(road, 10, 10).multiplier - 1.35 * .52) < 1e-12);
 });
 
 test('a narrow building between navigation centres contributes its full exact crossing time', () => {
@@ -250,19 +305,35 @@ test('building courtyard holes are free of the footprint penalty and targeted bu
 
 test('a narrow seasonal river retains its huge penalty over road paint, with an exact bridge exception', () => {
   const seasonal = [[[costRing(65, 0, 67, 100)]]];
-  const make = roads => attachGeometry(fixture(8, 5, () => ({ roadClass: 'road', surface: 'asphalt', landscapeMultiplier: .52 })), [], seasonal, roads);
+  const make = roads => attachGeometry(fixture(8, 5, x => ({ biome: x === 3 ? 'seasonal_river' : 'wasteland', roadClass: 'road', surface: 'asphalt', landscapeMultiplier: .52 })), [], seasonal, roads);
   const from = point(10, 50), to = point(150, 50);
   const unbridged = make([]), crossing = segmentTravel(unbridged, from, to);
-  const expected = (138 + 2 / .12) / (BASE_WALK_METERS_PER_MINUTE * 1.22 * .52);
+  const expected = (138 + 2 / .12) / (BASE_WALK_METERS_PER_MINUTE * 1.35 * .52);
   assert(Math.abs(crossing.durationMinutes - expected) < 1e-9);
+  assert.equal(movementAt(unbridged, 66, 50).biomeMultiplier, 1, 'The dry-river biome must not charge the same seasonal penalty twice');
   assert.equal(movementAt(unbridged, 66, 50).seasonalMultiplier, .12);
+  assert.equal(movementAt(unbridged, 70, 50).seasonalMultiplier, 1, 'A coarse river cell cannot enlarge its exact physical penalty');
   const bridged = make([{ id: 'bridge', bridge: true, width: 4, points: [point(60, 50), point(72, 50)] }]);
   assert.equal(movementAt(bridged, 66, 50).seasonalMultiplier, 1);
   assert.equal(movementAt(bridged, 66, 55).seasonalMultiplier, .12, 'A bridge cannot erase river difficulty across an entire coarse navigation cell');
-  assert(Math.abs(segmentTravel(bridged, from, to).durationMinutes - 140 / (BASE_WALK_METERS_PER_MINUTE * 1.22 * .52)) < 1e-9);
+  assert(Math.abs(segmentTravel(bridged, from, to).durationMinutes - 140 / (BASE_WALK_METERS_PER_MINUTE * 1.35 * .52)) < 1e-9);
   const plan = findPath(unbridged, from, to), actor = { ...from }, route = { ...plan, index: 1 };
   const step = advanceAlongRoute(unbridged, route, actor, plan.durationMinutes + 1);
   assert(step.arrived); assert(Math.abs(step.elapsedMinutes - plan.durationMinutes) < 1e-8);
+});
+
+test('independent city and road bonuses retain exact building and seasonal penalties once each', () => {
+  const world = attachGeometry(fixture(8, 5, () => ({ biome: 'city', roadClass: 'road', surface: 'asphalt', landscapeMultiplier: .52 })),
+    [{ id: 'small', points: costRing(65, 45, 67, 55) }], [[[costRing(95, 0, 97, 100)]]]);
+  const from = point(10, 50), to = point(150, 50);
+  const crossing = segmentTravel(world, from, to);
+  const expected = (136 + 2 / .08 + 2 / .12) / (BASE_WALK_METERS_PER_MINUTE * 1.05 * 1.35 * .52);
+  assert(Math.abs(crossing.durationMinutes - expected) < 1e-9, 'Road and city benefits must not overwrite exact narrow obstacles');
+  const building = movementAt(world, 66, 50), wash = movementAt(world, 96, 50);
+  assert.equal(building.biomeMultiplier, 1.05); assert.equal(building.roadMultiplier, 1.35); assert.equal(building.buildingMultiplier, .08);
+  assert.equal(wash.biomeMultiplier, 1.05); assert.equal(wash.roadMultiplier, 1.35); assert.equal(wash.seasonalMultiplier, .12);
+  assert.equal(wash.buildingMultiplier, 1);
+  assert(Math.abs(wash.multiplier - 1.05 * 1.35 * .52 * .12) < 1e-12);
 });
 
 
