@@ -19,16 +19,9 @@
       <symbol id="i-water" viewBox="0 0 24 24"><path d="M12 2S5 10 5 15a7 7 0 0 0 14 0c0-5-7-13-7-13Z"/><path d="M9 15a3 3 0 0 0 3 3"/></symbol>
       <symbol id="i-person" viewBox="0 0 24 24"><circle cx="12" cy="6" r="3"/><path d="M8 22v-6H6v-5h12v5h-2v6m-4-7v7"/></symbol>
       <symbol id="i-reset" viewBox="0 0 24 24"><path d="M4 10a8 8 0 1 1 1 7M4 4v6h6"/></symbol>
-      <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h16m-6-6 6 6-6 6"/></symbol>
       <symbol id="i-route" viewBox="0 0 24 24"><circle cx="5" cy="5" r="2"/><circle cx="19" cy="19" r="2"/><path d="M5 7v7a5 5 0 0 0 5 5h7M10 5h5a4 4 0 0 1 0 8h-3"/></symbol>
-      <symbol id="i-map" viewBox="0 0 24 24"><path d="m3 5 6-2 6 2 6-2v16l-6 2-6-2-6 2V5Zm6-2v16m6-14v16"/></symbol>
-      <symbol id="i-house" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7M5 9v12h14V9M10 21v-7h4v7M8 10h2m4 0h2"/></symbol>
       <symbol id="i-layers" viewBox="0 0 24 24"><path d="m3 7 9-5 9 5-9 5-9-5Zm0 5 9 5 9-5M3 17l9 5 9-5"/></symbol>
-      <symbol id="i-types" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
       <symbol id="i-elevation" viewBox="0 0 24 24"><path d="m2 20 8-15 6 10 3-5 3 10H2Zm5-9 3 2 2-2M5 20l5-8 5 8"/></symbol>
-      <symbol id="i-landscape" viewBox="0 0 24 24"><path d="M2 20h20M2 16l5-4 4 2 5-9 6 11M2 9l5-3 3 1"/></symbol>
-      <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V3m-5 5 5-5 5 5M4 15v6h16v-6"/></symbol>
-      <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v13m-5-5 5 5 5-5M4 15v6h16v-6"/></symbol>
     </svg>
 
     <main class="expedition" aria-label="Карта одиночной экспедиции">
@@ -37,8 +30,8 @@
       <div class="hud">
         <header class="top-bar">
           <div class="brand-block">
-            <div class="brand" aria-label="DAY NEXT"><span>DAY</span><span class="brand-divider">/</span><span class="brand-next">NEXT</span><span class="prototype">ПРОТОТИП <b>18</b></span></div>
-            <div class="brand-caption"><span class="live-dot"></span> ОДИНОЧНАЯ ЭКСПЕДИЦИЯ</div>
+            <div class="brand" aria-label="DAY NEXT"><span>DAY</span><span class="brand-divider">/</span><span class="brand-next">NEXT</span></div>
+            <p id="sector-label" class="region-label">США · Невада · Битти</p>
           </div>
           <div class="world-status glass">
             <div class="world-clock"><span id="day-label">ДЕНЬ 01</span><strong id="time-label">08:30</strong></div>
@@ -48,13 +41,6 @@
           </div>
         </header>
 
-        <section class="mission" aria-label="Экспедиция">
-          <p class="eyebrow"><span class="short-line"></span><span id="sector-label">РЕАЛЬНАЯ МЕСТНОСТЬ / США</span></p>
-          <h1>За пределами<br /><span>тишины.</span></h1>
-          <p class="mission-caption">Найди дорогу. Остальное — потом.</p>
-          <div class="mission-tag"><span class="tiny-cross">+</span> СВОБОДНОЕ ИССЛЕДОВАНИЕ</div>
-        </section>
-
         <nav class="map-controls" aria-label="Управление картой">
           <div class="map-navigation">
             <div class="zoom-controls glass">
@@ -63,16 +49,11 @@
               <button id="zoom-out" class="icon-button zoom-button" type="button" aria-label="Отдалить карту" title="Отдалить">−</button>
             </div>
             <span id="zoom-label" class="zoom-label">100%</span>
-            <span id="map-detail-label" class="map-detail-label">ОБЗОР</span>
             <button id="center-button" class="icon-button glass center-button" type="button" aria-label="Вернуться к путнику" title="Вернуться к путнику · F"><svg class="icon"><use href="#i-crosshair" /></svg></button>
             <span class="control-caption">К ПУТНИКУ</span>
           </div>
           <div class="map-tool-cluster">
-            <div class="map-tool"><button id="maps-button" class="icon-button glass maps-button" type="button" aria-label="Карты и импорт" aria-controls="maps-panel" aria-expanded="false" title="Карты и импорт"><svg class="icon"><use href="#i-map" /></svg></button><span class="control-caption">КАРТЫ</span></div>
             <div class="map-tool"><button id="elevation-button" class="icon-button glass elevation-button" type="button" aria-label="Показать или скрыть карту высот" aria-pressed="true" title="Рельеф: светотень без высотной окраски"><svg class="icon"><use href="#i-elevation" /></svg></button><span class="control-caption">ВЫСОТЫ</span></div>
-            <div class="map-tool"><button id="landscape-button" class="icon-button glass landscape-button" type="button" aria-label="Показать или скрыть типы ландшафта" aria-pressed="false" title="Ландшафт: равнины, холмы и горы"><svg class="icon"><use href="#i-landscape" /></svg></button><span class="control-caption">ЛАНДШАФТ</span></div>
-            <div class="map-tool"><button id="detail-button" class="icon-button glass detail-button" type="button" aria-label="Показать застройку · B" title="Показать застройку · B"><svg class="icon"><use href="#i-house" /></svg></button><span class="control-caption">ЗАСТРОЙКА</span></div>
-            <div class="map-tool"><button id="building-types-button" class="icon-button glass building-types-button" type="button" aria-label="Типы зданий" aria-controls="building-types-panel" aria-expanded="false" title="Типы зданий"><svg class="icon"><use href="#i-types" /></svg></button><span class="control-caption">ТИПЫ</span></div>
             <div class="map-tool"><button id="layers-button" class="icon-button glass layers-button" type="button" aria-label="Слои карты" aria-controls="layers-panel" aria-expanded="false" title="Слои карты"><svg class="icon"><use href="#i-layers" /></svg></button><span class="control-caption">СЛОИ</span></div>
           </div>
         </nav>
@@ -104,18 +85,12 @@
         </aside>
 
         <footer class="bottom-bar">
-          <div class="controls-hint"><span class="keycap mouse-key"></span><span class="desktop-hint">Клик — идти <i>·</i> Потяни — сдвинуть карту <i>·</i> Колесо — масштаб <i>·</i> B — застройка</span><span class="mobile-hint">Касание — идти · Потяни — двигать карту</span></div>
+          <div class="controls-hint"><span class="keycap mouse-key"></span><span class="desktop-hint">Клик — идти <i>·</i> Потяни — сдвинуть карту <i>·</i> Колесо — масштаб</span><span class="mobile-hint">Касание — идти · Потяни — двигать карту</span></div>
           <span id="coords" class="coordinates">N 58° 21′ · E 42° 06′</span>
           <button id="reset-button" class="reset-button" type="button" title="Начать экспедицию заново"><svg class="icon"><use href="#i-reset" /></svg><span>Заново</span></button>
         </footer>
 
         <div id="map-attribution" class="attribution"><a id="map-source-link" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">© OpenStreetMap contributors · ODbL</a></div>
-        <aside id="elevation-key" class="elevation-key glass" aria-label="Светотень рельефа">
-          <div class="elevation-heading"><span class="eyebrow">РЕЛЬЕФ · СВЕТОТЕНЬ</span><span class="elevation-source-mark">USGS</span></div>
-          <div id="elevation-gradient" class="elevation-gradient" aria-hidden="true"></div>
-          <div class="elevation-ticks"><span id="elevation-min">—</span><span id="elevation-mid">—</span><span id="elevation-max">—</span></div>
-          <p id="elevation-source" class="elevation-source">USGS 3DEP</p>
-        </aside>
 
         <div id="toast" class="toast glass" role="status" hidden></div>
 
@@ -128,63 +103,41 @@
 
         <section id="help-panel" class="help-panel glass" role="dialog" aria-label="Как играть" aria-modal="false" hidden>
           <div class="help-heading"><div><p class="eyebrow">ПОЛЕВОЙ СПРАВОЧНИК</p><h2>Сначала — первый шаг.</h2></div><button id="help-close" class="icon-button" type="button" aria-label="Закрыть справку">×</button></div>
-          <p>Выбери точку на суше. Путник перемножает коэффициенты биома, ландшафта, дороги и уклона. Дорога ускоряет и сохраняет действие биома под ней. Здания и сезонные русла сильно замедляют: маршрут старается обойти их. Постоянная вода пересекается по мостам. Кнопка «Ландшафт» показывает равнины, холмы и горы; множители сочетаются с биомами.</p>
-          <dl><div><dt>Клик / касание</dt><dd>Идти в выбранную точку</dd></div><div><dt>Перетаскивание</dt><dd>Осмотреть карту</dd></div><div><dt>Колесо / щипок / + −</dt><dd>Приблизить улицы и дома</dd></div><div><dt>B / кнопка дома</dt><dd>Показать застройку</dd></div><div><dt>Слои карты</dt><dd>Выбрать, что показывать</dd></div><div><dt>Пробел</dt><dd>Пауза в пути</dd></div><div><dt>F</dt><dd>Вернуться к путнику</dd></div><div><dt>Esc</dt><dd>Закрыть окно / отменить путь</dd></div></dl>
+          <p>Выбери точку на суше. Путник перемножает коэффициенты биома, ландшафта, дороги и уклона. Дорога ускоряет и сохраняет действие биома под ней. Здания и сезонные русла сильно замедляют: маршрут старается обойти их. Постоянная вода пересекается по мостам. В «Слоях» можно включить разметку равнин, холмов и гор; множители сочетаются с биомами.</p>
+          <dl><div><dt>Клик / касание</dt><dd>Идти в выбранную точку</dd></div><div><dt>Перетаскивание</dt><dd>Осмотреть карту</dd></div><div><dt>Колесо / щипок / + −</dt><dd>Приблизить улицы и дома</dd></div><div><dt>Слои карты</dt><dd>Выбрать, что показывать</dd></div><div><dt>Пробел</dt><dd>Пауза в пути</dd></div><div><dt>F</dt><dd>Вернуться к путнику</dd></div><div><dt>Esc</dt><dd>Закрыть окно / отменить путь</dd></div></dl>
           <p class="help-note">Наведи на объект, а на телефоне коснись его, чтобы узнать детали на любом масштабе. Приблизь карту, чтобы рассмотреть контуры домов и дорожки. В «Слоях карты» можно отдельно показать дороги, здания и природные объекты. Отдых восстанавливает выносливость.</p>
-        </section>
-
-        <section id="maps-panel" class="maps-panel help-panel glass" role="dialog" aria-label="Карты и импорт" aria-modal="false" hidden>
-          <div class="maps-heading help-heading"><div><p class="eyebrow">ПОЛЕВОЙ АТЛАС</p><h2>Выбери территорию</h2></div><button id="maps-close" class="icon-button" type="button" aria-label="Закрыть выбор карт">×</button></div>
-          <div class="maps-content">
-            <div class="map-choices" aria-label="Доступные территории">
-              <button id="map-usa" class="map-choice" type="button" data-map="usa" aria-pressed="true"><span class="map-choice-icon"><svg class="icon"><use href="#i-map" /></svg></span><span class="map-choice-copy"><strong>Реальная местность · США</strong><span id="usa-map-title">Подготовленная территория</span></span><span class="map-choice-dot" aria-hidden="true"></span></button>
-            </div>
-            <p id="map-summary" class="map-summary">Местность, дороги и вода на основе открытых данных.</p>
-            <p id="coverage-summary" class="coverage-summary">Проверка полноты исходных данных…</p>
-            <div class="map-import-section">
-              <p class="eyebrow"><span class="short-line"></span> СВОЯ КАРТА</p>
-              <p class="map-import-intro">Скачай актуальный участок OpenStreetMap, затем выбери файл ниже — получишь игровую карту.</p>
-              <div class="map-field"><label for="map-name">Название территории</label><input id="map-name" type="text" maxlength="80" placeholder="Название территории" autocomplete="off" /></div>
-              <div class="map-field"><label for="map-bbox">Границы: запад, юг, восток, север</label><input id="map-bbox" class="bbox-input" type="text" placeholder="-121.87, 47.49, -121.75, 47.56" autocomplete="off" spellcheck="false" /></div>
-              <a id="map-source-download" class="map-source-download" target="_blank" rel="noopener noreferrer" aria-describedby="map-source-status"><svg class="icon"><use href="#i-download" /></svg>Скачать исходник OSM</a>
-              <p id="map-source-status" class="map-source-status" role="status">Укажи границы участка для скачивания.</p>
-              <div class="map-file-picker"><input id="map-file" type="file" accept=".osm,.xml,.json,application/json,application/xml,text/xml" /><label for="map-file"><svg class="icon"><use href="#i-upload" /></svg><span id="map-file-label">Выбрать файл карты</span></label><span class="file-formats">OSM XML · Overpass JSON · JSON карты</span></div>
-              <button id="map-import" class="map-primary-button" type="button" disabled>Создать карту<svg class="icon"><use href="#i-arrow" /></svg></button>
-              <p id="map-import-status" class="map-import-status" role="status">Выбери файл. Для исходного OSM укажи границы; готовый JSON карты содержит их сам.</p>
-            </div>
-            <button id="map-export" class="map-export-button" type="button"><svg class="icon"><use href="#i-download" /></svg>Скачать JSON карты</button>
-          </div>
-        </section>
-
-        <section id="building-types-panel" class="building-types-panel help-panel glass" role="dialog" aria-label="Типы зданий" aria-describedby="building-types-note" aria-modal="false" hidden>
-          <div class="layers-heading help-heading"><div><p class="eyebrow">ЛЕГЕНДА КАРТЫ</p><h2>Назначение зданий</h2></div><button id="building-types-close" class="icon-button" type="button" aria-label="Закрыть типы зданий">×</button></div>
-          <div class="building-types-content"><div id="building-type-legend" class="building-type-legend" role="list"></div><p class="layers-note" id="building-types-note">Наведи на дом, чтобы узнать его тип. Игровое назначение отмечено в карточке здания.</p></div>
         </section>
 
         <section id="layers-panel" class="layers-panel help-panel glass" role="dialog" aria-label="Слои карты" aria-describedby="layers-note" aria-modal="false" hidden>
           <div class="layers-heading help-heading"><div><p class="eyebrow">ВИД КАРТЫ</p><h2>Слои карты</h2></div><button id="layers-close" class="icon-button" type="button" aria-label="Закрыть слои карты">×</button></div>
           <div class="layers-content">
             <div class="layer-options">
-              <label class="layer-option" for="layer-elevation"><input id="layer-elevation" type="checkbox" checked /><span>Рельеф · светотень</span><span class="layer-count">USGS</span></label>
+              <label class="layer-option" for="layer-elevation"><input id="layer-elevation" type="checkbox" checked /><span>Рельеф · светотень</span></label>
               <p id="elevation-unavailable" class="layers-note" hidden>Для этого участка данные высот ещё не загружены.</p>
-              <label class="layer-option" for="layer-landscape"><input id="layer-landscape" type="checkbox" /><span>Ландшафт</span><span class="layer-count">× скорость</span></label>
+              <div id="elevation-key" class="elevation-key glass" aria-label="Светотень рельефа">
+          <div class="elevation-heading"><span class="eyebrow">РЕЛЬЕФ · СВЕТОТЕНЬ</span><span class="elevation-source-mark">USGS</span></div>
+          <div id="elevation-gradient" class="elevation-gradient" aria-hidden="true"></div>
+          <div class="elevation-ticks"><span id="elevation-min">—</span><span id="elevation-mid">—</span><span id="elevation-max">—</span></div>
+          <p id="elevation-source" class="elevation-source">USGS 3DEP</p>
+        </div>
+              <label class="layer-option" for="layer-landscape"><input id="layer-landscape" type="checkbox" /><span>Ландшафт</span></label>
               <p id="landscape-unavailable" class="layers-note" hidden>Для классификации ландшафта нужны данные высот этого участка.</p>
               <div id="landscape-legend" class="landscape-legend" aria-label="Типы ландшафта и множители скорости"></div>
-              <label class="layer-option" for="layer-biomes"><input id="layer-biomes" type="checkbox" checked /><span>Биомы</span><span id="count-biomes" class="layer-count">—</span></label>
+              <label class="layer-option" for="layer-biomes"><input id="layer-biomes" type="checkbox" checked /><span>Биомы</span></label>
               <div id="biome-key" class="biome-key" aria-label="Обозначения биомов"><span><i class="biome-swatch city-swatch" aria-hidden="true"></i>Город</span><span><i class="biome-swatch seasonal-river-swatch" aria-hidden="true"></i>Сезонное русло</span><span><i class="biome-swatch water-swatch" aria-hidden="true"></i>Постоянная вода</span></div>
               <div class="biome-speed-key" aria-label="Множители скорости биомов"><span>Город <b id="factor-biome-city"></b></span><span>Пустошь <b id="factor-biome-wasteland"></b></span><span>Пески <b id="factor-biome-sand"></b></span></div>
-              <label class="layer-option" for="layer-roads"><input id="layer-roads" type="checkbox" checked /><span>Дороги и тропы</span><span id="count-roads" class="layer-count">—</span></label>
+              <label class="layer-option" for="layer-roads"><input id="layer-roads" type="checkbox" checked /><span>Дороги и тропы</span></label>
               <fieldset id="road-classes" class="road-classes"><legend>Типы дорог</legend>
-                <label class="road-class-option" for="road-class-highway"><input id="road-class-highway" type="checkbox" checked /><span class="road-swatch road-swatch-highway" aria-hidden="true"></span><span>Магистрали</span><span id="factor-road-class-highway" class="road-bonus"></span><span id="count-road-class-highway" class="layer-count">—</span></label>
-                <label class="road-class-option" for="road-class-road"><input id="road-class-road" type="checkbox" checked /><span class="road-swatch road-swatch-road" aria-hidden="true"></span><span>Дороги</span><span id="factor-road-class-road" class="road-bonus"></span><span id="count-road-class-road" class="layer-count">—</span></label>
-                <label class="road-class-option" for="road-class-street"><input id="road-class-street" type="checkbox" checked /><span class="road-swatch road-swatch-street" aria-hidden="true"></span><span>Улицы и проезды</span><span id="factor-road-class-street" class="road-bonus"></span><span id="count-road-class-street" class="layer-count">—</span></label>
-                <label class="road-class-option" for="road-class-track"><input id="road-class-track" type="checkbox" checked /><span class="road-swatch road-swatch-track" aria-hidden="true"></span><span>Грунтовки</span><span id="factor-road-class-track" class="road-bonus"></span><span id="count-road-class-track" class="layer-count">—</span></label>
-                <label class="road-class-option" for="road-class-trail"><input id="road-class-trail" type="checkbox" checked /><span class="road-swatch road-swatch-trail" aria-hidden="true"></span><span>Тропы</span><span id="factor-road-class-trail" class="road-bonus"></span><span id="count-road-class-trail" class="layer-count">—</span></label>
-                <label class="road-class-option" for="road-class-railway"><input id="road-class-railway" type="checkbox" checked /><span class="road-swatch road-swatch-railway" aria-hidden="true"></span><span>Железная дорога</span><span id="factor-road-class-railway" class="road-bonus"></span><span id="count-road-class-railway" class="layer-count">—</span></label>
+                <label class="road-class-option" for="road-class-highway"><input id="road-class-highway" type="checkbox" checked /><span class="road-swatch road-swatch-highway" aria-hidden="true"></span><span>Магистрали</span><span id="factor-road-class-highway" class="road-bonus"></span></label>
+                <label class="road-class-option" for="road-class-road"><input id="road-class-road" type="checkbox" checked /><span class="road-swatch road-swatch-road" aria-hidden="true"></span><span>Дороги</span><span id="factor-road-class-road" class="road-bonus"></span></label>
+                <label class="road-class-option" for="road-class-street"><input id="road-class-street" type="checkbox" checked /><span class="road-swatch road-swatch-street" aria-hidden="true"></span><span>Улицы и проезды</span><span id="factor-road-class-street" class="road-bonus"></span></label>
+                <label class="road-class-option" for="road-class-track"><input id="road-class-track" type="checkbox" checked /><span class="road-swatch road-swatch-track" aria-hidden="true"></span><span>Грунтовки</span><span id="factor-road-class-track" class="road-bonus"></span></label>
+                <label class="road-class-option" for="road-class-trail"><input id="road-class-trail" type="checkbox" checked /><span class="road-swatch road-swatch-trail" aria-hidden="true"></span><span>Тропы</span><span id="factor-road-class-trail" class="road-bonus"></span></label>
+                <label class="road-class-option" for="road-class-railway"><input id="road-class-railway" type="checkbox" checked /><span class="road-swatch road-swatch-railway" aria-hidden="true"></span><span>Железная дорога</span><span id="factor-road-class-railway" class="road-bonus"></span></label>
               </fieldset>
-              <label class="layer-option" for="layer-power"><input id="layer-power" type="checkbox" checked /><span>Электросеть</span><span id="count-power" class="layer-count">—</span></label>
-              <label class="layer-option" for="layer-buildings"><input id="layer-buildings" type="checkbox" checked /><span>Здания</span><span id="count-buildings" class="layer-count">—</span></label>
-              <label class="layer-option" for="layer-details"><input id="layer-details" type="checkbox" checked /><span>Остальные объекты</span><span id="count-details" class="layer-count">—</span></label>
+              <label class="layer-option" for="layer-power"><input id="layer-power" type="checkbox" checked /><span>Электросеть</span></label>
+              <label class="layer-option" for="layer-buildings"><input id="layer-buildings" type="checkbox" checked /><span>Здания</span></label>
+              <label class="layer-option" for="layer-details"><input id="layer-details" type="checkbox" checked /><span>Остальные объекты</span></label>
             </div>
             <p class="layers-note" id="layers-note">Биом × ландшафт × дорога × уклон задают темп ходьбы. Без дороги её множитель ×1, с дорогой — выше ×1; покрытие уточняет бонус. Здания и сезонные русла дают сильный штраф. Слой «Ландшафт» показывает формы местности цветом поверх биомов. Переключение слоёв не меняет физику.</p>
           </div>

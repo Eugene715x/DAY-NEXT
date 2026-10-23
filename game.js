@@ -1,8 +1,7 @@
-import { findPath, terrainAt, nearestWalkable } from './world.js';
+import { findPath, terrainAt } from './world.js';
 import { createRealWorld, prepareTravelWorld } from './real-world.js';
 import { MOVEMENT_FACTORS, advanceAlongRoute, movementAt } from './movement-model.js';
 import { LANDSCAPE_TYPES, createLandscape } from './landscape.js';
-import { convertOSM, validateBbox } from './scripts/lib/osm-converter.mjs';
 import usaMap from './maps/usa.js';
 import beattyElevation from './maps/beatty-elevation.js';
 import { createElevationRenderer } from './elevation-renderer.js';
@@ -19,17 +18,19 @@ const ctx = canvas.getContext('2d');
 const objectCache = document.createElement('canvas');
 const objectCacheCtx = objectCache.getContext('2d');
 const createGameWorld = map => createRealWorld(map, { navigationCellSize: map.cellSize / 4 });
-let world = createGameWorld(usaMap);
-let currentMap = usaMap;
-let overviewMarkers = [];
+const world = createGameWorld(usaMap);
 const layers = { biomes: true, elevation: true, landscape: false, roads: true, power: true, buildings: true, details: true };
 const roadClasses = Object.fromEntries(Object.keys(ROAD_CLASSES).map(key => [key, true]));
-let detailRenderer = createDetailRenderer(world);
-let elevationRenderer = createElevationRenderer(world, beattyElevation);
-let landscape = createLandscape(world, { elevationAt: elevationRenderer.available ? elevationRenderer.sampleAt : null });
+const detailRenderer = createDetailRenderer(world);
+const elevationRenderer = createElevationRenderer(world, beattyElevation);
+const landscape = createLandscape(world, { elevationAt: elevationRenderer.available ? elevationRenderer.sampleAt : null });
 prepareTravelWorld(world, { landscape, elevationAt: elevationRenderer.available ? elevationRenderer.sampleAt : null, biomeFeatures: detailRenderer.getFeatures().filter(feature => feature.exclusive) });
-overviewMarkers = createOverviewMarkers(world);
-let typedBuildingSources = new Set();
+const overviewMarkers = createOverviewMarkers(world);
+const typedBuildingSources = new Set(detailRenderer.getFeatures().filter(feature => feature.gameplayAssignment).flatMap(feature => [feature.sourceId || feature.id, ...(feature.gameplayAssignment.evidenceIds || [])]));
+const countryLabel = usaMap.country === 'US' ? 'США' : usaMap.country;
+const regionLabel = String(usaMap.region || '').split(',').map(part => part.trim()).filter(part => part && part !== countryLabel && part !== usaMap.country).join(', ');
+const placeLabels = { Beatty: 'Битти', Rhyolite: 'Райолит', Bullfrog: 'Буллфрог', 'Gold Center': 'Голд-Сентер' };
+const regionPlaces = overviewMarkers.filter(marker => marker.tags?.place);
 let hoveredObject = null;
 const maximumZoom = () => 24;
 const metersPerUnit = () => world.metersPerUnit || 5;
@@ -143,67 +144,19 @@ function reset() {
   log('Новый день. Впереди — неизвестность.', true); toast('Вернулись к началу экспедиции.'); updateUI();
 }
 
-function updateMapDetails() {
-  $('usa-map-title').textContent = `${usaMap.name} · ${usaMap.region || 'США'}`;
-  $('map-usa').setAttribute('aria-pressed', String(currentMap === usaMap));
-  $('sector-label').textContent = `${currentMap.region || currentMap.country || 'OPENSTREETMAP'} / РЕАЛЬНАЯ МЕСТНОСТЬ`;
-  $('map-summary').textContent = `${currentMap.name} · ${(world.width * metersPerUnit() / 1000).toFixed(1)} × ${(world.height * metersPerUnit() / 1000).toFixed(1)} км. ${world.roads.length} исходных участков дорог, ${world.buildings.length} зданий, ${world.pois.length} мест. ${currentMap.source?.snapshotAt ? `Снимок OSM: ${currentMap.source.snapshotAt.slice(0, 10)}` : 'Данные OpenStreetMap'}.`;
-  $('map-attribution').hidden = !currentMap;
-  // Keep source attribution permanent and link only to the known source copyright page.
-  $('map-source-link').href = 'https://www.openstreetmap.org/copyright';
-  $('map-source-link').textContent = '© OpenStreetMap contributors · ODbL';
-  $('map-export').disabled = !currentMap;
-  $('detail-button').disabled = !world.buildings?.length;
-  syncLayerUI();
-  const coverage = world.coverage;
-  $('coverage-summary').textContent = coverage ? formatCoverage(coverage) : 'Этот файл не содержит отчёта полноты. Геометрия отображается без замены источника.';
-  $('map-bbox').value = (currentMap?.bbox || usaMap.bbox).join(', ');
-  updateSourceDownload();
-}
-
-function updateSourceDownload() {
-  const link = $('map-source-download');
-  try {
-    const bbox = validateBbox($('map-bbox').value.trim());
-    if ((bbox[2] - bbox[0]) * (bbox[3] - bbox[1]) > .25) throw new Error('api-area');
-    const url = new URL('https://api.openstreetmap.org/api/0.6/map');
-    url.searchParams.set('bbox', bbox.join(','));
-    link.href = url.href;
-    link.removeAttribute('aria-disabled'); link.removeAttribute('tabindex');
-    $('map-source-status').textContent = 'Откроется скачивание свежего map.osm. Выбери его ниже. Нужен интернет; загружаются объекты, нанесённые в OSM.';
-  } catch (error) {
-    link.removeAttribute('href'); link.setAttribute('aria-disabled', 'true'); link.setAttribute('tabindex', '-1');
-    $('map-source-status').textContent = error.message === 'api-area'
-      ? 'Для скачивания уменьши участок: API OSM допускает до 0,25 квадратного градуса.'
-      : 'Укажи корректные границы: запад, юг, восток, север. Участок — до 400 км² и 60 км по стороне.';
-  }
-}
-
-function formatCoverage(coverage) {
-  const represented = coverage.representedSourceElements;
-  const eligible = coverage.eligibleInBounds;
-  const partial = coverage.partialRelations?.length || 0;
-  const missing = (coverage.omittedCounts?.incompleteGeometry || 0) + (coverage.omittedCounts?.invalidCoordinate || 0);
-  return `${Number.isFinite(represented) ? `Сохранено элементов исходника в границах: ${represented}${Number.isFinite(eligible) ? ` из ${eligible}` : ''}. ` : ''}${missing ? `Не хватает геометрии для ${missing} элементов. ` : ''}${partial ? `Составных объектов с неполной геометрией в исходнике: ${partial}. ` : ''}Снимок: ${world.source?.snapshotAt?.slice(0, 10) || 'дата не указана'}.`;
-}
-
 function syncLayerUI() {
-  const features = detailRenderer.getFeatures();
   for (const key of Object.keys(layers)) $('layer-' + key).checked = layers[key];
-  for (const key of ['biomes', 'roads', 'power', 'buildings', 'details']) $('count-' + key).textContent = features.filter(feature => feature.layer === key).length;
   for (const key of Object.keys(roadClasses)) {
     const input = $('road-class-' + key);
     input.checked = roadClasses[key]; input.disabled = !layers.roads;
     $('factor-road-class-' + key).textContent = formatFactor(MOVEMENT_FACTORS.roads[key]);
     $('factor-road-class-' + key).title = 'Бонус дороги; покрытие уточняет значение';
-    $('count-road-class-' + key).textContent = features.filter(feature => feature.layer === 'roads' && feature.roadClass === key).length;
   }
   $('road-classes').classList.toggle('is-disabled', !layers.roads);
   $('biome-key').classList.toggle('is-disabled', !layers.biomes);
   for (const biome of ['city', 'wasteland', 'sand']) $('factor-biome-' + biome).textContent = formatFactor(MOVEMENT_FACTORS.biomes[biome]);
   syncElevationUI();
   syncLandscapeUI();
-  syncBuildingLegend(features);
 }
 
 function syncElevationUI() {
@@ -225,8 +178,6 @@ function syncElevationUI() {
 function syncLandscapeUI() {
   const available = landscape.available;
   $('layer-landscape').disabled = !available;
-  $('landscape-button').disabled = !available;
-  $('landscape-button').setAttribute('aria-pressed', String(available && layers.landscape));
   $('landscape-unavailable').hidden = available;
   $('landscape-legend').classList.toggle('is-disabled', !available || !layers.landscape);
   $('landscape-legend').replaceChildren(...Object.entries(LANDSCAPE_TYPES).map(([id, type]) => {
@@ -238,26 +189,6 @@ function syncLandscapeUI() {
   }));
 }
 
-function syncBuildingLegend(features = detailRenderer.getFeatures()) {
-  const counts = new Map();
-  typedBuildingSources = new Set(features.filter(feature => feature.gameplayAssignment).flatMap(feature => [feature.sourceId || feature.id, ...(feature.gameplayAssignment.evidenceIds || [])]));
-  for (const feature of features) if (feature.gameplayAssignment) counts.set(feature.gameplayAssignment.categoryId, (counts.get(feature.gameplayAssignment.categoryId) || 0) + 1);
-  const rows = Object.values(BUILDING_CATEGORIES).map(category => {
-    const row = document.createElement('div'); row.className = 'building-type-row'; row.setAttribute('role', 'listitem'); row.dataset.categoryId = category.id;
-    const swatch = document.createElement('span'); swatch.className = 'building-type-swatch'; swatch.style.backgroundColor = category.color || category.fill; swatch.setAttribute('aria-hidden', 'true');
-    const name = document.createElement('span'); name.className = 'building-type-name'; name.textContent = category.name;
-    const count = document.createElement('span'); count.className = 'building-type-count'; count.textContent = counts.get(category.id) || 0;
-    row.append(swatch, name, count); return row;
-  });
-  $('building-type-legend').replaceChildren(...rows);
-}
-function closeBuildingTypes() { $('building-types-panel').hidden = true; $('building-types-button').setAttribute('aria-expanded', 'false'); }
-$('building-types-button').addEventListener('click', () => {
-  const open = $('building-types-panel').hidden;
-  closeLayers(); $('maps-close').click(); $('help-close').click(); hideObjectCard();
-  $('building-types-panel').hidden = !open; $('building-types-button').setAttribute('aria-expanded', String(open));
-});
-$('building-types-close').addEventListener('click', closeBuildingTypes);
 function closeLayers() { $('layers-panel').hidden = true; $('layers-button').setAttribute('aria-expanded', 'false'); }
 for (const key of Object.keys(layers)) $('layer-' + key).addEventListener('change', e => {
   layers[key] = e.target.checked; detailRenderer.setLayers(layers);
@@ -270,7 +201,7 @@ for (const key of Object.keys(roadClasses)) $('road-class-' + key).addEventListe
 });
 $('layers-button').addEventListener('click', () => {
   const open = $('layers-panel').hidden;
-  closeBuildingTypes(); $('maps-close').click(); $('help-close').click(); hideObjectCard();
+  $('help-close').click(); hideObjectCard();
   $('layers-panel').hidden = !open; $('layers-button').setAttribute('aria-expanded', String(open));
 });
 $('layers-close').addEventListener('click', closeLayers);
@@ -279,34 +210,6 @@ $('elevation-button').addEventListener('click', () => {
   $('layer-elevation').checked = !layers.elevation;
   $('layer-elevation').dispatchEvent(new Event('change'));
 });
-
-$('landscape-button').addEventListener('click', () => {
-  if (!landscape.available) return;
-  $('layer-landscape').checked = !layers.landscape;
-  $('layer-landscape').dispatchEvent(new Event('change'));
-});
-
-function switchMap(map) {
-  const next = createGameWorld(map);
-  const nextDetailRenderer = createDetailRenderer(next);
-  const nextElevationRenderer = createElevationRenderer(next, beattyElevation);
-  const nextLandscape = createLandscape(next, { elevationAt: nextElevationRenderer.available ? nextElevationRenderer.sampleAt : null });
-  prepareTravelWorld(next, { landscape: nextLandscape, elevationAt: nextElevationRenderer.available ? nextElevationRenderer.sampleAt : null, biomeFeatures: nextDetailRenderer.getFeatures().filter(feature => feature.exclusive) });
-  world = next; currentMap = map;
-  closeBuildingTypes();
-  overviewMarkers = createOverviewMarkers(world);
-  detailRenderer = nextDetailRenderer;
-  elevationRenderer = nextElevationRenderer;
-  landscape = nextLandscape;
-  objectCacheState = null; objectRevision++;
-  detailRenderer.setLayers(layers);
-  detailRenderer.setRoadClasses(roadClasses);
-  camera.zoom = innerWidth < 640 ? .68 : .85;
-  hover = null; hoveredPoi = null;
-  reset(); updateMapDetails();
-  $('maps-panel').hidden = true; $('maps-button').setAttribute('aria-expanded', 'false');
-  toast(`Территория: ${map.name}. Выбери точку на карте.`);
-}
 
 function hideObjectCard() {
   hoveredObject = null;
@@ -392,78 +295,12 @@ function inspectObject(point, screenX, screenY, touch = false, pickedFeature) {
   $('object-card').style.top = `${clamp(screenY + 20 + bounds.height > vh - 60 ? screenY - bounds.height - 18 : screenY + 20, 90, vh - bounds.height - 45)}px`;
 }
 
-function focusBuildings() {
-  const focus = detailRenderer.focus();
-  if (!focus) { toast('На этом участке нет нанесённых контуров домов.'); return; }
-  following = false; camera.x = focus.x; camera.y = focus.y;
-  camera.zoom = innerWidth < 640 ? Math.max(focus.zoom, 7) : focus.zoom;
-  hideObjectCard(); updateUI();
-  toast(`${currentMap === usaMap ? 'Застройка Битти' : 'Застройка на карте'}. Приближай карту и наводи на отдельные дома.`);
-}
-$('detail-button').addEventListener('click', focusBuildings);
-
-function downloadJSON(map) {
-  const blob = new Blob([JSON.stringify(map, null, 2)], { type: 'application/json;charset=utf-8' });
-  const url = URL.createObjectURL(blob), a = document.createElement('a');
-  a.href = url; a.download = `day-next-${String(map.id || 'map').replace(/[^a-z0-9_-]/gi, '-')}.json`;
-  a.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-$('maps-button').addEventListener('click', () => {
-  closeBuildingTypes();
-  hideObjectCard();
-  closeLayers();
-  $('maps-panel').hidden = !$('maps-panel').hidden;
-  $('maps-button').setAttribute('aria-expanded', String(!$('maps-panel').hidden));
-  $('help-panel').hidden = true; $('help-button').setAttribute('aria-expanded', 'false');
-});
-$('maps-close').addEventListener('click', () => { $('maps-panel').hidden = true; $('maps-button').setAttribute('aria-expanded', 'false'); });
-$('map-usa').addEventListener('click', () => switchMap(usaMap));
-$('map-export').addEventListener('click', () => { if (currentMap) downloadJSON(currentMap); });
-$('map-bbox').addEventListener('input', updateSourceDownload);
-$('map-source-download').addEventListener('click', event => { if (event.currentTarget.getAttribute('aria-disabled') === 'true') event.preventDefault(); });
-$('map-file').addEventListener('change', () => {
-  const file = $('map-file').files[0];
-  $('map-file-label').textContent = file ? file.name : 'OSM XML / Overpass JSON / DAY NEXT JSON';
-  $('map-import').disabled = !file;
-  $('map-import-status').textContent = file ? 'Файл выбран. Для исходных OSM-данных укажи границы участка.' : 'Выбери файл с географическими данными.';
-  $('map-import-status').classList.remove('is-error', 'is-success');
-});
-$('map-import').addEventListener('click', async () => {
-  const file = $('map-file').files[0]; if (!file) return;
-  $('map-import').disabled = true;
-  $('map-import-status').textContent = 'Читаю данные и строю карту…';
-  $('map-import-status').classList.remove('is-error', 'is-success');
-  try {
-    if (file.size > 20 * 1024 * 1024) throw new Error('Для прототипа выбери файл меньше 20 МБ.');
-    const text = await file.text();
-    let parsed = null;
-    if (text.trimStart().startsWith('{')) {
-      try { parsed = JSON.parse(text); } catch { throw new Error('JSON повреждён. Проверь экспорт исходных данных.'); }
-    }
-    let map;
-    if (parsed?.version === 1 && Array.isArray(parsed.bbox) && Array.isArray(parsed.roads)) map = parsed;
-    else {
-      const bboxText = $('map-bbox').value.trim();
-      if (!bboxText) throw new Error('Укажи границы участка: запад, юг, восток, север (долгота, широта).');
-      map = convertOSM(parsed || text, { bbox: bboxText, name: $('map-name').value.trim() || file.name.replace(/\.[^.]+$/, ''), id: 'custom-map', dataUrl: `Local file: ${file.name}` });
-    }
-    // Validate before touching the current expedition; failed imports leave it intact.
-    createRealWorld(map);
-    switchMap(map);
-    $('map-import-status').textContent = 'Карта готова. Её можно сохранить кнопкой «Скачать JSON карты».';
-    $('map-import-status').classList.add('is-success');
-  } catch (error) {
-    $('map-import-status').textContent = `Не получилось импортировать: ${error.message}`;
-    $('map-import-status').classList.add('is-error');
-  } finally { $('map-import').disabled = !$('map-file').files.length; }
-});
-
 $('pause-button').addEventListener('click', togglePause);
 $('cancel-button').addEventListener('click', cancelRoute);
 $('center-button').addEventListener('click', () => { hideObjectCard(); following = true; camera.x = player.x; camera.y = player.y; updateUI(); });
 $('reset-button').addEventListener('click', reset);
 $('speed-button').addEventListener('click', () => { speed = speed === 1 ? 3 : 1; $('speed-button').textContent = `${speed}×`; toast(`Темп времени: ${speed}×`); });
-$('help-button').addEventListener('click', () => { closeLayers(); closeBuildingTypes(); hideObjectCard(); $('help-panel').hidden = !$('help-panel').hidden; $('help-button').setAttribute('aria-expanded', String(!$('help-panel').hidden)); $('maps-close').click(); });
+$('help-button').addEventListener('click', () => { closeLayers(); hideObjectCard(); $('help-panel').hidden = !$('help-panel').hidden; $('help-button').setAttribute('aria-expanded', String(!$('help-panel').hidden)); });
 $('help-close').addEventListener('click', () => { $('help-panel').hidden = true; $('help-button').setAttribute('aria-expanded', 'false'); });
 function zoomBy(factor, point = { x: vw / 2, y: vh / 2 }) {
   const before = screenToWorld(point.x, point.y);
@@ -534,12 +371,11 @@ addEventListener('keydown', e => {
   if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement) return;
   if (e.target instanceof HTMLButtonElement && [' ', 'Enter'].includes(e.key)) return;
   if ([' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) e.preventDefault();
-  if (e.repeat && [' ', 'f', 'F', 'r', 'R', 'b', 'B'].includes(e.key)) return;
+  if (e.repeat && [' ', 'f', 'F', 'r', 'R'].includes(e.key)) return;
   if (e.key === ' ') togglePause();
-  if (e.key === 'Escape') { if (!$('help-panel').hidden) $('help-close').click(); else if (!$('maps-panel').hidden) $('maps-close').click(); else if (!$('layers-panel').hidden) closeLayers(); else if (!$('building-types-panel').hidden) closeBuildingTypes(); else cancelRoute(); }
+  if (e.key === 'Escape') { if (!$('help-panel').hidden) $('help-close').click(); else if (!$('layers-panel').hidden) closeLayers(); else cancelRoute(); }
   if (e.key.toLowerCase() === 'f') $('center-button').click();
   if (e.key.toLowerCase() === 'r') reset();
-  if (e.key.toLowerCase() === 'b') focusBuildings();
   if (e.key === '+' || e.key === '=') zoomBy(1.2);
   if (e.key === '-') zoomBy(1 / 1.2);
   keys.add(e.key.toLowerCase());
@@ -724,6 +560,8 @@ function draw(time) {
 }
 
 function updateUI() {
+  const nearestPlace = regionPlaces.reduce((nearest, place) => !nearest || dist(player, place) < dist(player, nearest) ? place : nearest, null);
+  $('sector-label').textContent = [countryLabel, regionLabel, placeLabels[nearestPlace?.name] || nearestPlace?.name || usaMap.name].filter(Boolean).join(' · ');
   const minute = Math.floor(minutes);
   $('day-label').textContent = `ДЕНЬ ${Math.floor(minute / 1440) + 1}`;
   $('time-label').textContent = `${String(Math.floor(minute / 60) % 24).padStart(2, '0')}:${String(minute % 60).padStart(2, '0')}`;
@@ -763,10 +601,8 @@ function updateUI() {
     $('coords').textContent = `${Math.abs(lat).toFixed(4)}° ${lat >= 0 ? 'С' : 'Ю'} · ${Math.abs(lon).toFixed(4)}° ${lon >= 0 ? 'В' : 'З'}`;
   } else $('coords').textContent = `${(58 + player.y / 10000).toFixed(3)}° С · ${(38 + player.x / 10000).toFixed(3)}° В`;
   $('zoom-label').textContent = `${Math.round(camera.zoom * 100)}%`;
-  $('map-detail-label').textContent = camera.zoom >= 6 ? 'ДЕТАЛИ' : camera.zoom >= 2 ? 'УЛИЦЫ' : 'ОБЗОР';
   $('zoom-in').disabled = camera.zoom >= maximumZoom() - .001;
   $('zoom-out').disabled = camera.zoom <= .321;
-  $('detail-button').classList.toggle('active', camera.zoom >= 4 && !following);
   $('center-button').classList.toggle('active', following);
   $('center-button').setAttribute('aria-pressed', String(following));
   if (route) {
@@ -799,7 +635,7 @@ window.__DAY_NEXT__ = {
   getTypeCatalogs: () => structuredClone({ buildingTypes: BUILDING_TYPES, buildingRoles: BUILDING_ROLES, buildingCategories: BUILDING_CATEGORIES, biomeTypes: BIOME_TYPES, landscapeTypes: LANDSCAPE_TYPES, resourceProfiles: RESOURCE_PROFILES, resourceKinds: RESOURCE_KINDS }),
   getResourceCandidatesAt: (x, y) => { const feature = detailRenderer.pick(x, y, 1); return collectResourceCandidates(feature?.gameplayAssignment || feature, detailRenderer.zonesAt(x, y)); },
 };
-log('Невада. На карте — следы прежней жизни.', true); updateMapDetails(); updateUI();
+log('Невада. На карте — следы прежней жизни.', true); syncLayerUI(); updateUI();
 function frame(now) {
   const dt = Math.min((now - last) / 1000, .08); last = now;
   update(dt); draw(now / 1000);

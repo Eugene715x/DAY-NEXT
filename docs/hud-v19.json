@@ -1,0 +1,213 @@
+{
+  "version": "0.19.0",
+  "checkedAt": "2026-10-23T12:28:38.557019+00:00",
+  "status": "PASS",
+  "environment": {
+    "browser": "Chromium",
+    "viewports": [
+      {
+        "width": 1440,
+        "height": 960
+      },
+      {
+        "width": 1280,
+        "height": 720
+      }
+    ]
+  },
+  "offline": {
+    "errors": [],
+    "requests": 0
+  },
+  "layout": {
+    "brand": "DAY\n/\nNEXT",
+    "region": "США · Невада · Битти",
+    "bounds": {
+      "vw": 1440,
+      "vh": 960,
+      "documentWidth": 1440,
+      "brand": {
+        "x": 32,
+        "y": 27,
+        "width": 173.015625,
+        "height": 33
+      },
+      "region": {
+        "x": 32,
+        "y": 72,
+        "width": 173.015625,
+        "height": 16
+      },
+      "card": {
+        "x": 32,
+        "y": 527.015625,
+        "width": 246,
+        "height": 359.984375
+      }
+    },
+    "deleted": [
+      "detail-button",
+      "landscape-button",
+      "maps-button",
+      "building-types-button",
+      "maps-panel",
+      "building-types-panel",
+      "map-detail-label"
+    ]
+  },
+  "preservation": {
+    "buildings": 893,
+    "roads": 83,
+    "power": 6,
+    "rolesAndColorsUnchanged": true
+  },
+  "layerKeys": [
+    "biomes",
+    "elevation",
+    "landscape",
+    "roads",
+    "power",
+    "buildings",
+    "details"
+  ],
+  "roadClassKeys": [
+    "highway",
+    "road",
+    "street",
+    "track",
+    "trail",
+    "railway"
+  ],
+  "layerVisibilityDoesNotChangePhysics": true,
+  "removedBShortcut": true,
+  "tooltip": "Город · Beatty · Биом ×1,05 · Неровная местность ×0,78 · Дорога ×1,25 · 1012 м",
+  "buildingCard": "ЖИЛЬЁ\n\nЖилой дом\n\nИгровое назначение\nБиом: Город\nВысота: 1011 м\nЛандшафт: Неровная местность ×0,78\nПрофили ресурсов: Бытовые припасы, Строительные материалы",
+  "controls": {
+    "zoom": true,
+    "center": true,
+    "route": true,
+    "pauseSpace": true,
+    "pauseButton": true,
+    "speedModes": true,
+    "cancelButton": true,
+    "cancelEscape": true,
+    "reset": true,
+    "helpEscape": true,
+    "heightToolbarToggle": true,
+    "reliefLegendInsideLayers": true
+  },
+  "route": {
+    "clickToRouteMs": 645,
+    "points": 7,
+    "durationMinutes": 66.58909011651761
+  },
+  "performance": {
+    "idle": {
+      "frames": 90,
+      "fps": 60.00400026668446,
+      "maxFrameMs": 16.80000000000109
+    },
+    "moving": {
+      "frames": 60,
+      "fps": 59.99999999999999,
+      "maxFrameMs": 16.799999999999272
+    }
+  },
+  "compactLayout": {
+    "brand": "DAY\n/\nNEXT",
+    "region": "США · Невада · Битти",
+    "bounds": {
+      "vw": 1280,
+      "vh": 720,
+      "documentWidth": 1280,
+      "brand": {
+        "x": 32,
+        "y": 27,
+        "width": 173.015625,
+        "height": 33
+      },
+      "region": {
+        "x": 32,
+        "y": 72,
+        "width": 173.015625,
+        "height": 16
+      },
+      "card": {
+        "x": 32,
+        "y": 287.015625,
+        "width": 246,
+        "height": 359.984375
+      }
+    },
+    "deleted": [
+      "detail-button",
+      "landscape-button",
+      "maps-button",
+      "building-types-button",
+      "maps-panel",
+      "building-types-panel",
+      "map-detail-label"
+    ]
+  },
+  "sourceHashes": {
+    "beatty.osm": "44f3641860c1e3966edf259c5487b89f1997699aec77cff783360f8c66414d99",
+    "beatty-sand.osm": "a11681c538c5d897758cfafdadfaf325fab4cd1bc529acbaeb5766b098fed297",
+    "beatty-elevation.tif": "907063fbe4009343df30c29595f4ed5433b8abd6bc1463575c7f334c7c6ccc24"
+  },
+  "htmlSha256": "c7ca19375a0f6a9b6996e6cec0e039ad76a91a46ee8f5a198b01add8dbc5f22d",
+  "coreFilesUnchangedFromV18": {
+    "detail-renderer.js": "18cd73db620c01c2678909248aae72959ef69e708622eccb46fadf9bc3694e4d",
+    "elevation-renderer.js": "d10dbd089ad7cdb64361f73ba8151c0390332b2c9eb895725d2f06bcdf0c7df4",
+    "landscape.js": "590778ab062fb8730feec2105b079ebf5135119964bf88ca35b183a6c4df52a2",
+    "movement-geometry.js": "f4efda25f0d15fb05bdcc951ad362a5763987e10c7bf73b40220f2ede68a71e1",
+    "real-world.js": "2c66e7f0c1831f1205622da5fed746b45b36a9a7bd11985493de600fdfc8d7dd",
+    "world.js": "96a4db4b28a18c6d4f1921aaefd42931a5daf3311e7a47b1da63feb697abea6f",
+    "movement-model.js": "d53ebf151d1731e4e5f4e46c6c90d9a73090d967ce0bb651a6a2041adf31f984",
+    "maps/usa.js": "ab20b2ee633736db13675db5e56ddb4cfd669842eb367cd1df09e827a11ab20a",
+    "maps/beatty-elevation.js": "1d867f70be4a8a7ae741b3ec539979440212563d12eb3ed6795cc378d5df51f4"
+  },
+  "tests": {
+    "total": 243,
+    "passed": 243,
+    "failed": 0
+  },
+  "visualReview": {
+    "primary1440x960": "PASS",
+    "compact1280x720": "PASS",
+    "toolbarLegendOverlapResolved": true,
+    "reliefLegendInsideLayers": true,
+    "screenshots": [
+      ".local/v19-overview.png",
+      ".local/v19-layers.png",
+      ".local/v19-1280x720.png",
+      ".local/v19-layers-1280x720.png",
+      ".local/v19-city.png"
+    ]
+  },
+  "artifactValidation": {
+    "status": "PASS",
+    "zipCRC": "PASS",
+    "htmlMatchesDist": true,
+    "coreFilesUnchangedFromV18": {
+      "world.js": "96a4db4b28a18c6d4f1921aaefd42931a5daf3311e7a47b1da63feb697abea6f",
+      "real-world.js": "2c66e7f0c1831f1205622da5fed746b45b36a9a7bd11985493de600fdfc8d7dd",
+      "movement-model.js": "d53ebf151d1731e4e5f4e46c6c90d9a73090d967ce0bb651a6a2041adf31f984",
+      "movement-geometry.js": "f4efda25f0d15fb05bdcc951ad362a5763987e10c7bf73b40220f2ede68a71e1",
+      "landscape.js": "590778ab062fb8730feec2105b079ebf5135119964bf88ca35b183a6c4df52a2",
+      "detail-renderer.js": "18cd73db620c01c2678909248aae72959ef69e708622eccb46fadf9bc3694e4d",
+      "elevation-renderer.js": "d10dbd089ad7cdb64361f73ba8151c0390332b2c9eb895725d2f06bcdf0c7df4",
+      "maps/usa.js": "ab20b2ee633736db13675db5e56ddb4cfd669842eb367cd1df09e827a11ab20a",
+      "maps/beatty-elevation.js": "1d867f70be4a8a7ae741b3ec539979440212563d12eb3ed6795cc378d5df51f4"
+    },
+    "artifacts": {
+      "downloads/day-next.html": {
+        "bytes": 5024196,
+        "sha256": "c7ca19375a0f6a9b6996e6cec0e039ad76a91a46ee8f5a198b01add8dbc5f22d"
+      },
+      "downloads/day-next.zip": {
+        "bytes": 1322646,
+        "sha256": "14b209bb2edb17e2a017fa154825079ce7bb34d2d980b8ccf1902e833a2af1fd"
+      }
+    }
+  }
+}
