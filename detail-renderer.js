@@ -353,7 +353,9 @@ export function createDetailRenderer(world) {
   const queryZones = drSpatialIndex(zonePolygons);
   const layers = { biomes: true, roads: true, power: true, buildings: true, details: true };
   const roadClasses = Object.fromEntries(Object.keys(ROAD_CLASSES).map(key => [key, true]));
-  const isEnabled = record => layers[record.layer] && (record.layer !== 'roads' || roadClasses[record.roadClass] !== false);
+  let suppressedSourceIds = null;
+  const isEnabled = record => layers[record.layer] && (record.layer !== 'roads' || roadClasses[record.roadClass] !== false)
+    && !(record.geometry === 'point' && suppressedSourceIds?.has(record.feature.sourceId || record.feature.id));
   const stats = { features: registry.length, inputFeatures, filteredFeatures, coalescedFeatures: detailSources.length - coalescedDetails.length,
     sourceRoads: nativeRoads.size, sourceRailwayLines: roadSources.length - nativeRoads.size, displayRoads: roads.length,
     sourcePowerLines: powerSources.length, displayPowerLines: powerNetwork.features.length,
@@ -746,6 +748,7 @@ export function createDetailRenderer(world) {
   }
 
   function draw(ctx, view) {
+    suppressedSourceIds = view.suppressedSourceIds || null;
     lastZoom = view.zoom;
     const hoverIdentity = view.hoveredKey || view.hoveredId;
     const hoverRecord = recordsByKey.get(hoverIdentity) || recordsById.get(hoverIdentity);

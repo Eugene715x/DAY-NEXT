@@ -1,0 +1,509 @@
+{
+  "version": "0.20.0",
+  "checkedAt": "2026-10-23T14:12:21.845842+00:00",
+  "status": "PASS",
+  "environment": {
+    "browser": "Chromium",
+    "viewports": [
+      {
+        "width": 1440,
+        "height": 960
+      },
+      {
+        "width": 1280,
+        "height": 720
+      }
+    ]
+  },
+  "htmlSha256": "58bef851ae662b68abb98d8af4c49b306b171fe1e31eda5eb43ed4f6266c94e4",
+  "offline": {
+    "errors": [],
+    "requests": 0
+  },
+  "tests": {
+    "total": 256,
+    "passed": 256,
+    "failed": 0
+  },
+  "preservation": {
+    "buildings": 893,
+    "roads": 83,
+    "power": 6,
+    "rolesAndColorsUnchanged": true
+  },
+  "sourceHashes": {
+    "beatty.osm": "44f3641860c1e3966edf259c5487b89f1997699aec77cff783360f8c66414d99",
+    "beatty-sand.osm": "a11681c538c5d897758cfafdadfaf325fab4cd1bc529acbaeb5766b098fed297",
+    "beatty-elevation.tif": "907063fbe4009343df30c29595f4ed5433b8abd6bc1463575c7f334c7c6ccc24"
+  },
+  "landmarks": {
+    "total": 41,
+    "peaks": 14,
+    "mines": 27,
+    "nativeSourceAnchors": true,
+    "uniqueSourceIds": true,
+    "layerVisibility": true,
+    "overview": {
+      "total": 41,
+      "peaks": 14,
+      "mines": 27,
+      "reachable": 41,
+      "drawn": 41,
+      "symbols": 33,
+      "labels": 0,
+      "draws": 129
+    },
+    "withoutPeaks": {
+      "total": 41,
+      "peaks": 14,
+      "mines": 27,
+      "reachable": 41,
+      "drawn": 27,
+      "symbols": 19,
+      "labels": 0,
+      "draws": 145
+    },
+    "hidden": {
+      "total": 41,
+      "peaks": 14,
+      "mines": 27,
+      "reachable": 41,
+      "drawn": 0,
+      "symbols": 0,
+      "labels": 0,
+      "draws": 158
+    }
+  },
+  "landmarkTooltips": {
+    "peak": "Black Peak · Биом ×1,00 · Холмы ×0,52 · 1412 м",
+    "mine": "Шахта · Биом ×1,00 · Горы ×0,28 · 1058 м"
+  },
+  "landmarkRoute": {
+    "sourceId": "node-369160921",
+    "clickToRouteMs": 779,
+    "points": 15,
+    "durationMinutes": 96.33738023315671
+  },
+  "landmarkGhost": {
+    "zoom": 24,
+    "point": {
+      "x": 2095.8799999999296,
+      "y": 1532.614698220193
+    },
+    "screen": {
+      "x": 1001.7199999983168,
+      "y": 628.1527572846298
+    },
+    "picked": {
+      "id": "biome-unmapped-ground",
+      "sourceId": "game-unmapped-ground",
+      "kind": "wasteland_area",
+      "layer": "biomes"
+    },
+    "tooltip": "Пустошь · Биом ×1,00 · Горы ×0,28 · 1057 м"
+  },
+  "clock": {
+    "gameMinutesPerSecond": 1,
+    "checks": {
+      "baseClockOneMinutePerSecond": true,
+      "zoomIndependent": true,
+      "windowsIndependent": true,
+      "acceleration3x": true,
+      "etaExact": true
+    },
+    "normal": {
+      "zoomed": false,
+      "fast": false,
+      "windows": false,
+      "steps": 50,
+      "expectedMinutes": 2,
+      "elapsedGameMinutes": 2.000000000001023,
+      "walkedMeters": 143.92256098968483,
+      "player": {
+        "x": 2311.785250951502,
+        "y": 865.8786355441771
+      },
+      "remainingBefore": 66.58911341829447,
+      "remainingAfter": 64.58911341829433,
+      "errors": [],
+      "requests": 0
+    },
+    "zoomed": {
+      "zoomed": true,
+      "fast": false,
+      "windows": false,
+      "steps": 50,
+      "expectedMinutes": 2,
+      "elapsedGameMinutes": 2.000000000001023,
+      "walkedMeters": 143.92256098968483,
+      "player": {
+        "x": 2311.785250951502,
+        "y": 865.8786355441771
+      },
+      "remainingBefore": 66.58911341829447,
+      "remainingAfter": 64.58911341829433,
+      "errors": [],
+      "requests": 0
+    },
+    "fast": {
+      "zoomed": false,
+      "fast": true,
+      "windows": false,
+      "steps": 50,
+      "expectedMinutes": 6,
+      "elapsedGameMinutes": 6.000000000000227,
+      "walkedMeters": 375.8797447748174,
+      "player": {
+        "x": 2263.6302540097154,
+        "y": 829.7554533094259
+      },
+      "remainingBefore": 66.58911341829447,
+      "remainingAfter": 60.58911341829451,
+      "errors": [],
+      "requests": 0
+    },
+    "normalTriple": {
+      "zoomed": false,
+      "fast": false,
+      "windows": false,
+      "steps": 150,
+      "expectedMinutes": 6,
+      "elapsedGameMinutes": 6.0000000000030695,
+      "walkedMeters": 375.8797447748174,
+      "player": {
+        "x": 2263.6302540097154,
+        "y": 829.7554533094259
+      },
+      "remainingBefore": 66.58911341829447,
+      "remainingAfter": 60.58911341829434,
+      "errors": [],
+      "requests": 0
+    },
+    "windows": {
+      "zoomed": false,
+      "fast": false,
+      "windows": true,
+      "steps": 50,
+      "expectedMinutes": 2,
+      "elapsedGameMinutes": 2.000000000001023,
+      "walkedMeters": 143.92256098968483,
+      "player": {
+        "x": 2311.785250951502,
+        "y": 865.8786355441771
+      },
+      "remainingBefore": 66.58911341829447,
+      "remainingAfter": 64.58911341829433,
+      "errors": [],
+      "requests": 0
+    }
+  },
+  "items": {
+    "transfers": {
+      "seededItems": 12,
+      "operations": [
+        {
+          "kind": "click",
+          "item": "sphere-blue",
+          "to": "equipment:1"
+        },
+        {
+          "kind": "click",
+          "item": "sphere-blue",
+          "to": "ground:2"
+        },
+        {
+          "kind": "click",
+          "item": "sphere-blue",
+          "to": "crafting:0"
+        },
+        {
+          "kind": "click",
+          "item": "sphere-blue",
+          "to": "stats:1"
+        },
+        {
+          "kind": "click",
+          "item": "sphere-blue",
+          "to": "inventory:0"
+        },
+        {
+          "kind": "swap",
+          "item": "sphere-blue",
+          "other": "sphere-teal"
+        },
+        {
+          "kind": "native-drag",
+          "item": "sphere-blue",
+          "to": "crafting:0"
+        }
+      ],
+      "occupiedSwap": true,
+      "outsideDropPreservesState": true,
+      "closeReopenPreservesState": true
+    },
+    "windowControls": {
+      "headerDragClamped": true,
+      "windowInputIsolated": true,
+      "escapeClosesFront": true,
+      "opened": true
+    },
+    "layout1440": [
+      {
+        "id": "equipment",
+        "x": 265,
+        "y": 160,
+        "width": 246,
+        "height": 620,
+        "right": 511,
+        "bottom": 780,
+        "header": {
+          "x": 266,
+          "y": 162,
+          "width": 244,
+          "height": 61
+        }
+      },
+      {
+        "id": "inventory",
+        "x": 525,
+        "y": 160,
+        "width": 337,
+        "height": 341,
+        "right": 862,
+        "bottom": 501,
+        "header": {
+          "x": 526,
+          "y": 162,
+          "width": 335,
+          "height": 61
+        }
+      },
+      {
+        "id": "ground",
+        "x": 876,
+        "y": 160,
+        "width": 299,
+        "height": 310,
+        "right": 1175,
+        "bottom": 470,
+        "header": {
+          "x": 877,
+          "y": 162,
+          "width": 297,
+          "height": 61
+        }
+      },
+      {
+        "id": "crafting",
+        "x": 525,
+        "y": 515,
+        "width": 337,
+        "height": 265,
+        "right": 862,
+        "bottom": 780,
+        "header": {
+          "x": 526,
+          "y": 517,
+          "width": 335,
+          "height": 61
+        }
+      },
+      {
+        "id": "stats",
+        "x": 876,
+        "y": 484,
+        "width": 299,
+        "height": 296,
+        "right": 1175,
+        "bottom": 780,
+        "header": {
+          "x": 877,
+          "y": 486,
+          "width": 297,
+          "height": 61
+        }
+      }
+    ],
+    "layout1280": [
+      {
+        "id": "equipment",
+        "x": 185,
+        "y": 88,
+        "width": 246,
+        "height": 550,
+        "right": 431,
+        "bottom": 638,
+        "header": {
+          "x": 186,
+          "y": 90,
+          "width": 244,
+          "height": 51
+        }
+      },
+      {
+        "id": "inventory",
+        "x": 445,
+        "y": 88,
+        "width": 337,
+        "height": 303,
+        "right": 782,
+        "bottom": 391,
+        "header": {
+          "x": 446,
+          "y": 90,
+          "width": 335,
+          "height": 51
+        }
+      },
+      {
+        "id": "ground",
+        "x": 796,
+        "y": 88,
+        "width": 299,
+        "height": 275,
+        "right": 1095,
+        "bottom": 363,
+        "header": {
+          "x": 797,
+          "y": 90,
+          "width": 297,
+          "height": 51
+        }
+      },
+      {
+        "id": "crafting",
+        "x": 445,
+        "y": 405,
+        "width": 337,
+        "height": 233,
+        "right": 782,
+        "bottom": 638,
+        "header": {
+          "x": 446,
+          "y": 407,
+          "width": 335,
+          "height": 51
+        }
+      },
+      {
+        "id": "stats",
+        "x": 796,
+        "y": 377,
+        "width": 299,
+        "height": 261,
+        "right": 1095,
+        "bottom": 638,
+        "header": {
+          "x": 797,
+          "y": 379,
+          "width": 297,
+          "height": 51
+        }
+      }
+    ],
+    "resetReseeds": true,
+    "keyboardFocusChecks": {
+      "status": "PASS",
+      "htmlSha256": "58bef851ae662b68abb98d8af4c49b306b171fe1e31eda5eb43ed4f6266c94e4",
+      "openingClearsHeldMovement": true,
+      "heldKeyIsolated": true,
+      "keyboardItemTransfer": true,
+      "resetShortcutIsolated": true,
+      "errors": []
+    }
+  },
+  "performance": {
+    "map": {
+      "frames": 90,
+      "fps": 60.00000000000002,
+      "maxFrameMs": 16.800000000000182
+    },
+    "fiveWindowsOpen": {
+      "frames": 90,
+      "fps": 60.00400026668443,
+      "maxFrameMs": 16.800000000000182
+    }
+  },
+  "checkedModules": {
+    "inventory-model.js": "4527993366311a3d00a848aa240dd7cc88ff036db4f53c1381f057ad19622326",
+    "inventory-ui.js": "704e55a07c7830de6e606c6c3db527272787192a4f65b3884f250336a81afd13",
+    "landmark-markers.js": "205407b517ef37ae7b64ed354f0d87243eeaab12bdf837eaf0a4a111a2ddeac3",
+    "inventory-ui.css": "7fd7bb818c87974208ae36cd2ac545acbbff563dac62d22f04e34abfeccfadd4"
+  },
+  "coreFilesUnchanged": {
+    "world.js": "96a4db4b28a18c6d4f1921aaefd42931a5daf3311e7a47b1da63feb697abea6f",
+    "real-world.js": "2c66e7f0c1831f1205622da5fed746b45b36a9a7bd11985493de600fdfc8d7dd",
+    "movement-model.js": "d53ebf151d1731e4e5f4e46c6c90d9a73090d967ce0bb651a6a2041adf31f984",
+    "movement-geometry.js": "f4efda25f0d15fb05bdcc951ad362a5763987e10c7bf73b40220f2ede68a71e1",
+    "landscape.js": "590778ab062fb8730feec2105b079ebf5135119964bf88ca35b183a6c4df52a2",
+    "elevation-renderer.js": "d10dbd089ad7cdb64361f73ba8151c0390332b2c9eb895725d2f06bcdf0c7df4",
+    "maps/usa.js": "ab20b2ee633736db13675db5e56ddb4cfd669842eb367cd1df09e827a11ab20a",
+    "maps/beatty-elevation.js": "1d867f70be4a8a7ae741b3ec539979440212563d12eb3ed6795cc378d5df51f4"
+  },
+  "visualReview": {
+    "map": true,
+    "itemWindows1440": true,
+    "itemWindows1280": true,
+    "markerClose": true
+  },
+  "artifactValidation": {
+    "status": "PASS",
+    "zipCRC": "PASS",
+    "htmlMatchesDist": true,
+    "rawSourceHashes": {
+      "beatty.osm": "44f3641860c1e3966edf259c5487b89f1997699aec77cff783360f8c66414d99",
+      "beatty-sand.osm": "a11681c538c5d897758cfafdadfaf325fab4cd1bc529acbaeb5766b098fed297",
+      "beatty-elevation.tif": "907063fbe4009343df30c29595f4ed5433b8abd6bc1463575c7f334c7c6ccc24"
+    },
+    "physicsAndMapFilesUnchangedFromV19": [
+      "world.js",
+      "real-world.js",
+      "movement-model.js",
+      "movement-geometry.js",
+      "landscape.js",
+      "elevation-renderer.js",
+      "maps/usa.js",
+      "maps/beatty-elevation.js"
+    ],
+    "buildingAssignments": 893,
+    "exclusiveBiomePolygons": 281,
+    "artifacts": {
+      "downloads/day-next.html": {
+        "bytes": 5077547,
+        "sha256": "58bef851ae662b68abb98d8af4c49b306b171fe1e31eda5eb43ed4f6266c94e4"
+      },
+      "downloads/day-next.zip": {
+        "bytes": 1338943,
+        "sha256": "c156c6cacc86a55039045b91cff99848c43e7ee3c8e4186d51316684a789df10"
+      }
+    }
+  },
+  "scope": {
+    "windows": [
+      "equipment",
+      "inventory",
+      "ground",
+      "crafting",
+      "stats"
+    ],
+    "demoItems": 12,
+    "defaultWindowsClosed": true,
+    "atomicMoveAndSwap": true,
+    "groundLinkedToGeographicLocation": false,
+    "realCraftingImplemented": false,
+    "realProgressionImplemented": false,
+    "persistentSaveImplemented": false,
+    "gameMinutesPerRealSecondAt1x": 1,
+    "timeAccelerationModes": [
+      1,
+      3
+    ],
+    "markers": {
+      "total": 41,
+      "peaks": 14,
+      "historicMines": 7,
+      "adits": 8,
+      "mineshafts": 12
+    }
+  }
+}

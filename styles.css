@@ -41,3 +41,5 @@
 .region-label{margin:12px 0 0;color:#a8b698;font:10px/1.6 monospace;letter-spacing:1px;text-shadow:0 1px 8px #142016}.brand-block{min-width:0}
 
 .layers-content .elevation-key{position:static;right:auto;bottom:auto;width:auto;margin:9px 0;padding:10px 12px;pointer-events:auto}.layers-content .elevation-heading{margin-bottom:7px}
+
+.items-button{width:44px;height:44px;min-width:44px;min-height:44px}.items-button[aria-expanded="true"]{color:var(--accent);border-color:rgba(209,223,135,.55)}

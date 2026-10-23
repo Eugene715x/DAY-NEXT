@@ -563,3 +563,19 @@ test('neutral relief mask overlays opaque biome and landscape colors below river
   assert.equal(masks, 1, 'The renderer hook remains independent of biome visibility');
   assert(after.strokes.some(stroke => stroke.color === '#45494b'));
 });
+
+
+test('replaced landmark point glyphs cannot retain invisible selection boxes or highlights', () => {
+  const original = { id: 'mine-point', geometry: 'point', kind: 'mineshaft', points: [{ x: 120, y: 100 }], tags: { man_made: 'mineshaft' } };
+  const renderer = createDetailRenderer(world({ width: 400, height: 300, details: [original] }));
+  const view = { ...fullView, zoom: 24 };
+  renderer.draw(recordingContext(), view);
+  assert.equal(renderer.pick(120.6, 100, 0).sourceId, 'mine-point', 'The original generic square has a physical hitbox');
+  const feature = renderer.getFeatures().find(value => value.sourceId === 'mine-point');
+  renderer.draw(recordingContext(), { ...view, suppressedSourceIds: new Set(['mine-point']) });
+  assert.notEqual(renderer.pick(120.6, 100, 0)?.sourceId, 'mine-point', 'The replacement marker must own interaction outside its icon');
+  assert.equal(renderer.drawHighlight(recordingContext(), view, feature), null);
+  assert(renderer.getFeatures().some(value => value.sourceId === 'mine-point'), 'Original source descriptors remain available');
+  renderer.draw(recordingContext(), view);
+  assert.equal(renderer.pick(120.6, 100, 0).sourceId, 'mine-point', 'The optional replacement does not permanently change the source registry');
+});

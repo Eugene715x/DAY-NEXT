@@ -2,6 +2,9 @@ import { findPath, terrainAt } from './world.js';
 import { createRealWorld, prepareTravelWorld } from './real-world.js';
 import { MOVEMENT_FACTORS, advanceAlongRoute, movementAt } from './movement-model.js';
 import { LANDSCAPE_TYPES, createLandscape } from './landscape.js';
+import { createLandmarkMarkers } from './landmark-markers.js';
+import { createInventoryModel } from './inventory-model.js';
+import { createInventoryUI } from './inventory-ui.js';
 import usaMap from './maps/usa.js';
 import beattyElevation from './maps/beatty-elevation.js';
 import { createElevationRenderer } from './elevation-renderer.js';
@@ -26,6 +29,8 @@ const elevationRenderer = createElevationRenderer(world, beattyElevation);
 const landscape = createLandscape(world, { elevationAt: elevationRenderer.available ? elevationRenderer.sampleAt : null });
 prepareTravelWorld(world, { landscape, elevationAt: elevationRenderer.available ? elevationRenderer.sampleAt : null, biomeFeatures: detailRenderer.getFeatures().filter(feature => feature.exclusive) });
 const overviewMarkers = createOverviewMarkers(world);
+const landmarkRenderer = createLandmarkMarkers(world, { elevationAt: elevationRenderer.available ? elevationRenderer.sampleAt : null });
+const landmarkSourceIds = new Set(landmarkRenderer.getMarkers().map(marker => marker.sourceId));
 const typedBuildingSources = new Set(detailRenderer.getFeatures().filter(feature => feature.gameplayAssignment).flatMap(feature => [feature.sourceId || feature.id, ...(feature.gameplayAssignment.evidenceIds || [])]));
 const countryLabel = usaMap.country === 'US' ? 'США' : usaMap.country;
 const regionLabel = String(usaMap.region || '').split(',').map(part => part.trim()).filter(part => part && part !== countryLabel && part !== usaMap.country).join(', ');
@@ -40,15 +45,25 @@ let vw = innerWidth, vh = innerHeight, dpr = Math.min(devicePixelRatio || 1, 2);
 let player = { ...world.start };
 let camera = { x: world.width / 2, y: world.height / 2, zoom: Math.max(.32, Math.min(.85, (innerWidth - 360) / world.width, (innerHeight - 210) / world.height)) };
 let route = null, paused = false, following = false, speed = 1;
-const GAME_MINUTES_PER_SECOND = 2;
+const GAME_MINUTES_PER_SECOND = 1;
 let stamina = 100, water = 100, minutes = 7 * 60 + 42, totalDistance = 0;
 let pointer = null, hover = null, hoveredPoi = null, trail = [];
 let discovered = new Set(world.pois.filter(p => p.discovered).map(p => p.id));
 let last = performance.now(), uiTick = 0, hintTimer, arrivalMarker = null, keys = new Set();
+const inventoryModel = createInventoryModel();
+let itemWindows = null;
+itemWindows = createInventoryUI({ root: $('game-windows'), model: inventoryModel, onVisibilityChange: () => {
+  keys.clear();
+  const open = itemWindows?.hasOpenWindows() || false;
+  $('items-button').setAttribute('aria-expanded', String(open));
+  if (open) { closeLayers(); $('help-close').click(); hideObjectCard(); }
+} });
+$('items-button').addEventListener('click', () => itemWindows.toggleWorkspace());
 let mapLabelBoxes = [];
 const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const poiTitle = poi => {
+  if (poi.landmark || landmarkSourceIds.has(poi.sourceId || poi.id)) return poi.name;
   const tags = poi.tags || {};
   if (poi.overview || tags.place || tags['abandoned:place'] || tags.natural) return String(poi.name || 'Местность').replace(/\s*· OSM\s+\S+$/, '');
   const type = classifyBuilding(poi);
@@ -92,7 +107,7 @@ function toast(message) {
 
 function displayedPois() {
   if (world.geographic && camera.zoom <= OVERVIEW_MAX_ZOOM) return overviewMarkers;
-  return world.pois.filter(p => !typedBuildingSources.has(p.sourceId || p.id) && (!world.geographic || !overviewMarkers.some(marker => marker.sourceId === (p.sourceId || p.id))));
+  return world.pois.filter(p => !landmarkSourceIds.has(p.sourceId || p.id) && !typedBuildingSources.has(p.sourceId || p.id) && (!world.geographic || !overviewMarkers.some(marker => marker.sourceId === (p.sourceId || p.id))));
 }
 function poiEnabled(poi) {
   const sourceLayer = mapFeatureLayer(poi, 'poi');
@@ -104,7 +119,7 @@ function pickPoi(position, radius = 35) {
 }
 
 function setDestination(position) {
-  const poi = pickPoi(position, 34);
+  const poi = landmarkRenderer.pick(position.x, position.y, 10 / camera.zoom, { zoom: camera.zoom, layers }) || pickPoi(position, 34);
   const target = poi ? { x: poi.x, y: poi.y } : position;
   if (target.x < 0 || target.y < 0 || target.x >= world.width || target.y >= world.height) { toast('Здесь заканчивается лист карты.'); return; }
   if (!terrainAt(world, target.x, target.y)?.walkable) { toast('Вода непроходима. Ищи мост или обойди берег.'); return; }
@@ -139,6 +154,7 @@ function reset() {
   route = null; paused = false; following = true; speed = 1;
   stamina = water = 100; minutes = 7 * 60 + 42; totalDistance = 0; trail = []; arrivalMarker = null;
   discovered = new Set(world.pois.filter(p => p.discovered).map(p => p.id));
+  itemWindows.reset();
   hideObjectCard();
   $('travel-panel').hidden = true; $('speed-button').textContent = '1×'; $('activity-log').replaceChildren();
   log('Новый день. Впереди — неизвестность.', true); toast('Вернулись к началу экспедиции.'); updateUI();
@@ -201,6 +217,7 @@ for (const key of Object.keys(roadClasses)) $('road-class-' + key).addEventListe
 });
 $('layers-button').addEventListener('click', () => {
   const open = $('layers-panel').hidden;
+  if (open) itemWindows.closeAll();
   $('help-close').click(); hideObjectCard();
   $('layers-panel').hidden = !open; $('layers-button').setAttribute('aria-expanded', String(open));
 });
@@ -300,7 +317,7 @@ $('cancel-button').addEventListener('click', cancelRoute);
 $('center-button').addEventListener('click', () => { hideObjectCard(); following = true; camera.x = player.x; camera.y = player.y; updateUI(); });
 $('reset-button').addEventListener('click', reset);
 $('speed-button').addEventListener('click', () => { speed = speed === 1 ? 3 : 1; $('speed-button').textContent = `${speed}×`; toast(`Темп времени: ${speed}×`); });
-$('help-button').addEventListener('click', () => { closeLayers(); hideObjectCard(); $('help-panel').hidden = !$('help-panel').hidden; $('help-button').setAttribute('aria-expanded', String(!$('help-panel').hidden)); });
+$('help-button').addEventListener('click', () => { itemWindows.closeAll(); closeLayers(); hideObjectCard(); $('help-panel').hidden = !$('help-panel').hidden; $('help-button').setAttribute('aria-expanded', String(!$('help-panel').hidden)); });
 $('help-close').addEventListener('click', () => { $('help-panel').hidden = true; $('help-button').setAttribute('aria-expanded', 'false'); });
 function zoomBy(factor, point = { x: vw / 2, y: vh / 2 }) {
   const before = screenToWorld(point.x, point.y);
@@ -331,11 +348,11 @@ canvas.addEventListener('pointerdown', e => {
 canvas.addEventListener('pointermove', e => {
   hover = screenToWorld(e.clientX, e.clientY);
   const pickedFeature = !pointer && !pinch ? detailRenderer.pick(hover.x, hover.y, 5 / camera.zoom) : null;
-  hoveredPoi = pickedFeature?.gameplayAssignment ? null : pickPoi(hover);
+  hoveredPoi = landmarkRenderer.pick(hover.x, hover.y, 10 / camera.zoom, { zoom: camera.zoom, layers }) || (pickedFeature?.gameplayAssignment ? null : pickPoi(hover));
   if (!pointer && !pinch) {
     if (hoveredPoi) {
       hideObjectCard();
-      showMapTooltip(`${kindNames[hoveredPoi.kind] || 'Место'} · ${poiTitle(hoveredPoi)}`, e.clientX, e.clientY);
+      showMapTooltip(landmarkSourceIds.has(hoveredPoi.sourceId) ? `${poiTitle(hoveredPoi)}` : `${kindNames[hoveredPoi.kind] || 'Место'} · ${poiTitle(hoveredPoi)}`, e.clientX, e.clientY);
     } else inspectObject(hover, e.clientX, e.clientY, false, pickedFeature);
   }
   canvas.style.cursor = pointer?.moved ? 'grabbing' : hoveredPoi || hoveredObject && !quietHoverLayers.has(hoveredObject.layer) ? 'pointer' : 'crosshair';
@@ -368,6 +385,7 @@ function pointerUp(e) {
 canvas.addEventListener('pointerup', pointerUp); canvas.addEventListener('pointercancel', pointerUp);
 canvas.addEventListener('pointerleave', e => { hover = null; hoveredPoi = null; if (e.pointerType !== 'touch') hideObjectCard(); });
 addEventListener('keydown', e => {
+  if (e.defaultPrevented || e.target instanceof Element && e.target.closest('#game-windows')) return;
   if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement) return;
   if (e.target instanceof HTMLButtonElement && [' ', 'Enter'].includes(e.key)) return;
   if ([' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) e.preventDefault();
@@ -475,7 +493,7 @@ function drawStaticObjects(time) {
     objectCacheCtx.clearRect(0, 0, pixelWidth, pixelHeight);
     objectCacheCtx.setTransform(scale, 0, 0, scale, 0, 0);
     objectCacheCtx.save(); objectCacheCtx.translate(width / 2, height / 2); objectCacheCtx.scale(camera.zoom, camera.zoom); objectCacheCtx.translate(-camera.x, -camera.y);
-    detailRenderer.draw(objectCacheCtx, { zoom: camera.zoom, cameraX: camera.x, cameraY: camera.y, width, height, time, hoveredId: null,
+    detailRenderer.draw(objectCacheCtx, { zoom: camera.zoom, cameraX: camera.x, cameraY: camera.y, width, height, time, hoveredId: null, suppressedSourceIds: landmarkSourceIds,
       groundOverlay: layers.elevation && elevationRenderer.available && !layers.biomes ? (context, view) => elevationRenderer.draw(context, view) : null,
       landscapeOverlay: layers.landscape && landscape.available ? (context, view) => landscape.draw(context, view) : null,
       reliefOverlay: layers.elevation && elevationRenderer.available && layers.biomes ? (context, view) => elevationRenderer.drawMask(context, view) : null });
@@ -512,6 +530,9 @@ function draw(time) {
   const availablePois = displayedPois();
   const pois = world.geographic ? [...availablePois].sort((a, b) => Number(b.id === hoveredPoi?.id) - Number(a.id === hoveredPoi?.id) || Number(b.kind === 'settlement' || b.kind === 'airport') - Number(a.kind === 'settlement' || a.kind === 'airport') || Number(discovered.has(b.id)) - Number(discovered.has(a.id))) : availablePois;
   for (const poi of pois) if (poiEnabled(poi) && (camera.zoom < 4 || hoveredPoi?.id === poi.id || poi.kind === 'town')) drawPoi(poi, time);
+  ctx.save(); ctx.translate(vw / 2, vh / 2); ctx.scale(camera.zoom, camera.zoom); ctx.translate(-camera.x, -camera.y);
+  landmarkRenderer.draw(ctx, { zoom: camera.zoom, cameraX: camera.x, cameraY: camera.y, width: vw, height: vh, layers, hoveredId: hoveredPoi?.id, labelBoxes: mapLabelBoxes });
+  ctx.restore();
   if (arrivalMarker && route) {
     const p = worldToScreen(arrivalMarker);
     ctx.beginPath(); ctx.arc(p.x, p.y, 12 + Math.sin(time * 3) * 2, 0, Math.PI * 2); ctx.strokeStyle = '#f3edb3'; ctx.lineWidth = 1.5; ctx.stroke();
@@ -614,7 +635,11 @@ function updateUI() {
 
 // Small read-only diagnostics for automated smoke checks and future iteration.
 window.__DAY_NEXT__ = {
-  getState: () => ({ player: { ...player }, camera: { ...camera }, moving: !!route && !paused, paused, speed, stamina, water, minutes, totalDistance, destination: route ? { ...route.destination } : null, remaining: route?.remaining || 0, discovered: [...discovered] }),
+  getState: () => ({ gameMinutesPerSecond: GAME_MINUTES_PER_SECOND, player: { ...player }, camera: { ...camera }, moving: !!route && !paused, paused, speed, stamina, water, minutes, totalDistance, destination: route ? { ...route.destination } : null, remaining: route?.remaining || 0, discovered: [...discovered] }),
+  getInventoryState: () => inventoryModel.getState(),
+  getItemWindowsState: () => itemWindows.getState(),
+  getLandmarkMarkers: () => landmarkRenderer.getMarkers(),
+  getLandmarkStats: () => landmarkRenderer.getStats(),
   getRoute: () => route ? { points: route.points.map(point => ({ ...point })), distance: route.distance, durationMinutes: route.durationMinutes, remaining: route.remaining, remainingDurationMinutes: route.remainingDurationMinutes, index: route.index, destination: { ...route.destination }, search: { ...route.search } } : null,
   getMovementFactors: () => structuredClone(MOVEMENT_FACTORS),
   getMovementAt: (x, y, toward = null) => movementAt(world, x, y, toward),

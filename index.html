@@ -8,6 +8,7 @@
     <title>DAY NEXT — За пределами тишины</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23141d18'/%3E%3Cpath d='M8 25V7h5l8 11V7h4v18h-5L12 14v11z' fill='%23d1df87'/%3E%3C/svg%3E" />
     <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./inventory-ui.css" />
   </head>
   <body>
     <svg class="icon-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -20,6 +21,7 @@
       <symbol id="i-person" viewBox="0 0 24 24"><circle cx="12" cy="6" r="3"/><path d="M8 22v-6H6v-5h12v5h-2v6m-4-7v7"/></symbol>
       <symbol id="i-reset" viewBox="0 0 24 24"><path d="M4 10a8 8 0 1 1 1 7M4 4v6h6"/></symbol>
       <symbol id="i-route" viewBox="0 0 24 24"><circle cx="5" cy="5" r="2"/><circle cx="19" cy="19" r="2"/><path d="M5 7v7a5 5 0 0 0 5 5h7M10 5h5a4 4 0 0 1 0 8h-3"/></symbol>
+      <symbol id="i-items" viewBox="0 0 24 24"><path d="M7 7V5a5 5 0 0 1 10 0v2M6 6h12l2 15H4L6 6Zm2 6h8v6H8v-6ZM4 10H2v8h2m16-8h2v8h-2"/></symbol>
       <symbol id="i-layers" viewBox="0 0 24 24"><path d="m3 7 9-5 9 5-9 5-9-5Zm0 5 9 5 9-5M3 17l9 5 9-5"/></symbol>
       <symbol id="i-elevation" viewBox="0 0 24 24"><path d="m2 20 8-15 6 10 3-5 3 10H2Zm5-9 3 2 2-2M5 20l5-8 5 8"/></symbol>
     </svg>
@@ -54,6 +56,7 @@
           </div>
           <div class="map-tool-cluster">
             <div class="map-tool"><button id="elevation-button" class="icon-button glass elevation-button" type="button" aria-label="Показать или скрыть карту высот" aria-pressed="true" title="Рельеф: светотень без высотной окраски"><svg class="icon"><use href="#i-elevation" /></svg></button><span class="control-caption">ВЫСОТЫ</span></div>
+            <div class="map-tool"><button id="items-button" class="icon-button glass items-button" type="button" aria-label="Снаряжение и вещи" aria-controls="game-windows" aria-expanded="false" title="Снаряжение, инвентарь, земля, крафт и характеристики"><svg class="icon"><use href="#i-items" /></svg></button><span class="control-caption">ВЕЩИ</span></div>
             <div class="map-tool"><button id="layers-button" class="icon-button glass layers-button" type="button" aria-label="Слои карты" aria-controls="layers-panel" aria-expanded="false" title="Слои карты"><svg class="icon"><use href="#i-layers" /></svg></button><span class="control-caption">СЛОИ</span></div>
           </div>
         </nav>
@@ -103,9 +106,9 @@
 
         <section id="help-panel" class="help-panel glass" role="dialog" aria-label="Как играть" aria-modal="false" hidden>
           <div class="help-heading"><div><p class="eyebrow">ПОЛЕВОЙ СПРАВОЧНИК</p><h2>Сначала — первый шаг.</h2></div><button id="help-close" class="icon-button" type="button" aria-label="Закрыть справку">×</button></div>
-          <p>Выбери точку на суше. Путник перемножает коэффициенты биома, ландшафта, дороги и уклона. Дорога ускоряет и сохраняет действие биома под ней. Здания и сезонные русла сильно замедляют: маршрут старается обойти их. Постоянная вода пересекается по мостам. В «Слоях» можно включить разметку равнин, холмов и гор; множители сочетаются с биомами.</p>
+          <p>Выбери точку на суше. Путник перемножает коэффициенты биома, ландшафта, дороги и уклона. Дорога ускоряет и сохраняет действие биома под ней. Здания и сезонные русла сильно замедляют: маршрут старается обойти их. Постоянная вода пересекается по мостам. В обычном темпе одна игровая минута в пути занимает одну реальную секунду; кнопка 1×/3× ускоряет время. В «Слоях» можно включить разметку равнин, холмов и гор; множители сочетаются с биомами.</p>
           <dl><div><dt>Клик / касание</dt><dd>Идти в выбранную точку</dd></div><div><dt>Перетаскивание</dt><dd>Осмотреть карту</dd></div><div><dt>Колесо / щипок / + −</dt><dd>Приблизить улицы и дома</dd></div><div><dt>Слои карты</dt><dd>Выбрать, что показывать</dd></div><div><dt>Пробел</dt><dd>Пауза в пути</dd></div><div><dt>F</dt><dd>Вернуться к путнику</dd></div><div><dt>Esc</dt><dd>Закрыть окно / отменить путь</dd></div></dl>
-          <p class="help-note">Наведи на объект, а на телефоне коснись его, чтобы узнать детали на любом масштабе. Приблизь карту, чтобы рассмотреть контуры домов и дорожки. В «Слоях карты» можно отдельно показать дороги, здания и природные объекты. Отдых восстанавливает выносливость.</p>
+          <p class="help-note">Наведи на объект, а на телефоне коснись его, чтобы узнать детали на любом масштабе. Приблизь карту, чтобы рассмотреть контуры домов и дорожки. В «Слоях карты» можно отдельно показать дороги, здания и природные объекты. Кнопка «Вещи» открывает отдельные окна персонажа: E — снаряжение, I — инвентарь, G — земля, C — крафт, P — характеристики. Перетаскивай предметы между ячейками; окна можно двигать за заголовок. Отдых восстанавливает выносливость.</p>
         </section>
 
         <section id="layers-panel" class="layers-panel help-panel glass" role="dialog" aria-label="Слои карты" aria-describedby="layers-note" aria-modal="false" hidden>
@@ -143,6 +146,7 @@
           </div>
         </section>
       </div>
+      <div id="game-windows" aria-label="Снаряжение, инвентарь и персонаж"></div>
     </main>
     <script type="module" src="./game.js"></script>
   </body>
