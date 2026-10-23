@@ -12,7 +12,7 @@ const mmBiomes = Object.freeze({
   garden: .9, farmland: .84, orchard: .82, vineyard: .82, cemetery: .88,
   sand: .67, beach: .67, scrub: .75, forest: .65, rock: .58, hill: .72, quarry: .58,
   wetland: .44, swamp: .44, glacier: .5, landfill: .65, construction: .72, brownfield: .82,
-  seasonal_river: .66, dry_riverbed: .66, gully: .7, valley: 1, water: 0,
+  seasonal_river: .12, dry_riverbed: .12, gully: .7, valley: 1, water: 0,
 });
 const mmRoads = Object.freeze({ highway: 1.28, road: 1.22, street: 1.18, track: .98, trail: 1.04, railway: .8 });
 const mmSurfaces = Object.freeze({
@@ -33,21 +33,30 @@ export function roadSpeedMultiplier(roadClass, surface) {
   return mmClamp(base * correction, .12, MAX_MOVEMENT_MULTIPLIER);
 }
 
-export function cellMovementMultiplier(cell) {
+const mmLandscapeMultiplier = cell => Number.isFinite(cell?.landscapeMultiplier) && cell.landscapeMultiplier > 0 ? cell.landscapeMultiplier : 1;
+const mmDryBiome = biome => biome === 'seasonal_river' || biome === 'dry_riverbed';
+
+function mmSurfaceMultiplier(cell, separateSeasonal = false) {
   if (!cell?.walkable) return 0;
   if (cell.roadClass || cell.type === 'bridge' && cell.biome !== undefined) return roadSpeedMultiplier(cell.roadClass || 'road', cell.surface);
-  if (cell.biome !== undefined) return Math.max(.12, biomeSpeedMultiplier(cell.biome));
+  if (cell.biome !== undefined) return separateSeasonal && mmDryBiome(cell.biome) ? 1 : Math.max(.01, biomeSpeedMultiplier(cell.biome));
   // Historic fixtures/imports can supply their own weighted grid without a DEM.
   if (Number.isFinite(cell.cost) && cell.cost > 0) return mmClamp(1 / cell.cost, .01, MAX_MOVEMENT_MULTIPLIER);
-  return Math.max(.12, biomeSpeedMultiplier(cell.type));
+  return Math.max(.01, biomeSpeedMultiplier(cell.type));
+}
+
+export function cellMovementMultiplier(cell) {
+  if (!cell?.walkable) return 0;
+  const seasonalMultiplier = mmDryBiome(cell.biome) && cell.type !== 'bridge' ? .12 : 1;
+  return mmSurfaceMultiplier(cell, true) * mmLandscapeMultiplier(cell) * seasonalMultiplier;
 }
 
 function mmSlopeMultiplier(grade) {
   if (!Number.isFinite(grade)) return 1;
-  if (grade >= 0) return Math.exp(-3.5 * Math.min(grade, 2));
+  if (grade >= 0) return Math.exp(-7.5 * Math.min(grade, 2));
   const descent = Math.min(-grade, 2);
-  // A gentle descent helps slightly; a steep descent requires slower footing.
-  return Math.exp(1.5 * descent - 7 * descent * descent);
+  // Even modest uphill grades now matter; steep descents also require care.
+  return Math.exp(.8 * descent - 10 * descent * descent);
 }
 
 function mmElevation(world, x, y) {
@@ -72,12 +81,20 @@ function mmElevation(world, x, y) {
   return weight > 0 ? height / weight : null;
 }
 
-function mmFactors(cell, grade = 0) {
-  const terrainMultiplier = cellMovementMultiplier(cell);
-  if (!(terrainMultiplier > 0)) return { multiplier: 0, terrainMultiplier: 0, slopeMultiplier: 1, grade, walkable: false };
+function mmFactors(cell, grade = 0, geometry = null, exactSeasonal = false) {
+  const terrainMultiplier = mmSurfaceMultiplier(cell, true);
+  const landscapeMultiplier = mmLandscapeMultiplier(cell);
   const slopeMultiplier = mmSlopeMultiplier(grade);
-  const multiplier = mmClamp(terrainMultiplier * slopeMultiplier, .08, MAX_MOVEMENT_MULTIPLIER);
-  return { multiplier, terrainMultiplier, slopeMultiplier, grade, walkable: true };
+  const building = Boolean(geometry?.building);
+  const bridge = geometry ? Boolean(geometry.bridge) : cell?.type === 'bridge';
+  // Exact ribbons take precedence over centre-cell approximations: a narrow
+  // wash cannot vanish between grid samples or be bypassed by road paint.
+  const seasonal = exactSeasonal ? Boolean(geometry?.seasonal) : mmDryBiome(cell?.biome);
+  const buildingMultiplier = building ? .08 : 1;
+  const seasonalMultiplier = seasonal && !bridge ? .12 : 1;
+  if (!(terrainMultiplier > 0)) return { multiplier: 0, terrainMultiplier: 0, landscapeMultiplier, buildingMultiplier, seasonalMultiplier, slopeMultiplier, grade, building, seasonal, bridge, walkable: false };
+  const multiplier = mmClamp(terrainMultiplier * landscapeMultiplier * slopeMultiplier * buildingMultiplier * seasonalMultiplier, .005, MAX_MOVEMENT_MULTIPLIER);
+  return { multiplier, terrainMultiplier, landscapeMultiplier, buildingMultiplier, seasonalMultiplier, slopeMultiplier, grade, building, seasonal, bridge, walkable: true };
 }
 
 export function movementAt(world, x, y, toward = null) {
@@ -93,8 +110,9 @@ export function movementAt(world, x, y, toward = null) {
       if (a !== null && b !== null && meters > 1e-6) grade = (b - a) / meters;
     }
   }
-  const factors = mmFactors(cell, grade);
-  return { ...factors, speedKmh: factors.multiplier * 4,
+  const geometry = world.movementGeometry?.queryPoint(x, y) || null;
+  const factors = mmFactors(cell, grade, geometry, Boolean(world.movementGeometry?.hasSeasonalGeometry));
+  return { ...factors, landscape: cell?.landscape || null, speedKmh: factors.multiplier * 4,
     biome: cell?.biome || cell?.type || null, roadClass: cell?.roadClass || null, surface: cell?.surface || null,
     elevationMeters: mmElevation(world, x, y), slopePercent: grade * 100,
   };
@@ -107,7 +125,8 @@ export function segmentTravel(world, from, to, options = {}) {
   if (!from || !to || !mmCell(world, from.x, from.y)?.walkable || !mmCell(world, to.x, to.y)?.walkable || !Number.isFinite(distance)) return invalid();
   if (distance <= 1e-10) return { walkable: true, distance: 0, meters: 0, durationMinutes: 0, cost: 0, pieces: [] };
   const detailed = options.detailed !== false, size = world.cellSize, dx = to.x - from.x, dy = to.y - from.y;
-  const cuts = [0, 1];
+  const regions = world.movementGeometry?.segmentRegions(from, to) || null;
+  const cuts = regions ? [...regions.cuts] : [0, 1];
   if (Math.abs(dx) > 1e-12) for (let edge = (Math.floor(Math.min(from.x, to.x) / size) + 1) * size; edge < Math.max(from.x, to.x) - 1e-9; edge += size) cuts.push((edge - from.x) / dx);
   if (Math.abs(dy) > 1e-12) for (let edge = (Math.floor(Math.min(from.y, to.y) / size) + 1) * size; edge < Math.max(from.y, to.y) - 1e-9; edge += size) cuts.push((edge - from.y) / dy);
   cuts.sort((a, b) => a - b);
@@ -133,12 +152,12 @@ export function segmentTravel(world, from, to, options = {}) {
       const length = distance * (b - a), physical = length * scale;
       const ha = mmElevation(world, ax, ay), hb = mmElevation(world, bx, by);
       const grade = ha !== null && hb !== null && physical > 1e-8 ? (hb - ha) / physical : 0;
-      const factors = mmFactors(cell, grade);
+      const factors = mmFactors(cell, grade, regions ? regions.at(middle) : null, Boolean(world.movementGeometry?.hasSeasonalGeometry));
       if (!factors.walkable) return invalid();
       const duration = physical / (BASE_WALK_METERS_PER_MINUTE * factors.multiplier);
       durationMinutes += duration;
       if (detailed) pieces.push({ from: { x: ax, y: ay }, to: { x: bx, y: by }, distance: length, meters: physical, durationMinutes: duration, ...factors,
-        biome: cell.biome || cell.type, roadClass: cell.roadClass || null, surface: cell.surface || null });
+        biome: cell.biome || cell.type, landscape: cell.landscape || null, roadClass: cell.roadClass || null, surface: cell.surface || null });
     }
   }
   return { walkable: true, distance, meters, durationMinutes, cost: durationMinutes, pieces };

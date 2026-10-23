@@ -245,26 +245,28 @@ test('building fills use functional category colors at overview as well as detai
   assert.equal(renderer.pick(40, 40), null);
 });
 
-test('seasonal river ink keeps native widths with smooth rounded dashes and open gaps at every map scale', () => {
+test('seasonal river rectangular punctuation stays fixed in every screen dimension without changing its physical biome', () => {
   const renderer = createDetailRenderer(world({ width: 400, height: 300, rivers: [
     { id: 'dry', width: .8, points: [{ x: 20, y: 50 }, { x: 380, y: 50 }], tags: { waterway: 'stream', intermittent: 'yes' } },
     { id: 'wet', width: 2, points: [{ x: 20, y: 100 }, { x: 380, y: 100 }], tags: { waterway: 'stream' } },
   ] }));
+  const physicalBefore = renderer.zonesAt(100, 50).map(zone => [zone.id, zone.biome]);
   for (const zoom of [.32, .5, 1, 2, 6, 12, 24]) {
     const context = recordingContext();
     renderer.draw(context, { ...fullView, zoom, width: 400 * zoom, height: 300 * zoom });
     const dry = context.strokes.filter(stroke => stroke.dash.length), wet = context.strokes.filter(stroke => !stroke.dash.length);
     assert.equal(dry.length, 2); assert.equal(wet.length, 2);
-    assert(dry.every(stroke => stroke.cap === 'round'));
+    assert(dry.every(stroke => stroke.cap === 'butt'));
     assert.deepEqual(dry[0].dash, dry[1].dash, 'Casing and centre share the same dash phase and openings');
-    assert(dry[0].dash[0] >= dry[0].width * 2, 'At close scale dashes remain longer than the river is wide');
-    assert(dry[0].dash[0] * zoom >= 7, 'Dashes retain a readable screen minimum at overview');
-    assert((dry[0].dash[1] - dry[0].width) * zoom >= 4 - 1e-10, 'Rounded caps cannot close the visible gap');
+    assert(Math.abs(dry[0].dash[0] * zoom - 6) < 1e-10, 'Rectangular marks remain six screen pixels long');
+    assert(Math.abs(dry[0].dash[1] * zoom - 5) < 1e-10, 'The complete five-pixel gap stays open at close scales');
+    assert(wet.every(stroke => stroke.cap === 'round'), 'Permanent water keeps its continuous round-ended line');
     assert.equal(dry[1].color, '#4c91bd'); assert.equal(wet[1].color, '#3f7eaa');
-    assert(Math.abs(dry[0].width - (Math.max(.8, 2 / zoom) + 1.5 / zoom)) < 1e-12);
-    assert(Math.abs(dry[1].width - Math.max(.8, 1.1 / zoom)) < 1e-12);
+    assert(Math.abs(dry[0].width * zoom - 1.8) < 1e-12, 'Small watercourse marks have a fixed screen width');
+    assert(Math.abs(dry[1].width * zoom - 1.1) < 1e-12, 'Blue core width also remains fixed');
     assert(Math.abs(wet[0].width - (Math.max(2, 2.4 / zoom) + 1 / zoom)) < 1e-12);
     assert.equal(wet[1].width, Math.max(2, 1.1 / zoom));
+    assert.deepEqual(renderer.zonesAt(100, 50).map(zone => [zone.id, zone.biome]), physicalBefore, 'Visual symbol size never changes the river biome');
   }
 });
 
@@ -274,12 +276,12 @@ test('river information follows visible dash ink outside the native ribbon witho
     { id: 'branch', width: .8, points: [{ x: 200, y: 50 }, { x: 380, y: 50 }], tags: { waterway: 'stream', intermittent: 'yes' } },
   ], details: [{ id: 'lake', geometry: 'polygon', points: ring(140, 40, 180, 60), tags: { natural: 'water' } }] }));
   const painted = recordingContext(); renderer.draw(painted, fullView);
-  assert.equal(renderer.zonesAt(22, 51)[0].biome, 'wasteland', 'Physical membership uses native width');
-  const selected = renderer.pick(22, 51, 0);
+  assert.equal(renderer.zonesAt(22, 50.7)[0].biome, 'wasteland', 'Physical membership uses native width');
+  const selected = renderer.pick(22, 50.7, 0);
   assert.equal(selected.waterKind, 'seasonal_river', 'The wider visible ink remains selectable');
   const [dashLength, gapLength] = painted.strokes.find(stroke => stroke.dash.length).dash;
-  assert.equal(renderer.pick(20 + dashLength + gapLength / 2, 51, 0).biome, 'wasteland', 'A visual dash gap adds no expanded hit footprint');
-  assert.equal(renderer.pick(20 + dashLength + .8, 51, 0).waterKind, 'seasonal_river', 'The round painted cap also supplies the correct hit target');
+  assert.equal(renderer.pick(20 + dashLength + gapLength / 2, 50.7, 0).biome, 'wasteland', 'A visual dash gap adds no expanded hit footprint');
+  assert.equal(renderer.pick(20 + dashLength + .8, 50.7, 0).biome, 'wasteland', 'The rectangular cap cannot extend beyond its visible end');
   assert.equal(renderer.pick(152, 50, 0).biome, 'water', 'A higher priority lake clips river selection and ink');
   assert.equal(selected.paths.length, 2);
   const context = recordingContext();
@@ -288,7 +290,7 @@ test('river information follows visible dash ink outside the native ribbon witho
   assert.equal(context.strokes.length, 0);
   renderer.setLayers({ biomes: false });
   assert.equal(renderer.drawHighlight(context, fullView, selected), null);
-  assert.equal(renderer.pick(22, 51, 0), null);
+  assert.equal(renderer.pick(22, 50.7, 0), null);
 });
 
 test('city ground is opaque gray with an opaque biome matte and the biome switch removes every ground fill', () => {
@@ -449,12 +451,16 @@ test('elevation ground hook paints below water ink and objects independently of 
     { id: 'building', points: ring(260, 30, 300, 70), tags: { building: 'house' } },
   ] });
   const before = structuredClone(input), renderer = createDetailRenderer(input);
-  const capture = () => {
+  const capture = (height = true) => {
     const events = [], context = recordingContext();
     context.fill = function(path) { events.push({ type: 'fill', color: this.fillStyle, alpha: this.globalAlpha, path }); };
     context.stroke = function(path) { events.push({ type: 'stroke', color: this.strokeStyle, path }); };
     context.fillRect = function() { events.push({ type: 'matte', color: this.fillStyle }); };
-    const view = { ...fullView, groundOverlay(ctx, passedView) { assert.equal(ctx, context); assert.equal(passedView, view); events.push({ type: 'elevation' }); } };
+    const view = {
+      ...fullView,
+      groundOverlay: height ? (ctx, passedView) => { assert.equal(ctx, context); assert.equal(passedView, view); events.push({ type: 'elevation' }); } : null,
+      landscapeOverlay(ctx, passedView) { assert.equal(ctx, context); assert.equal(passedView, view); events.push({ type: 'landscape' }); },
+    };
     renderer.draw(context, view);
     return events;
   };
@@ -463,12 +469,20 @@ test('elevation ground hook paints below water ink and objects independently of 
   assert.equal(visible.filter(event => event.type === 'elevation').length, 1);
   assert(visible.slice(overlay + 1).some(event => event.type === 'fill' && event.color === '#3f7eaa'), 'Lake water remains visible above the opaque height surface');
   assert(visible.slice(overlay + 1).some(event => event.type === 'fill' && event.alpha > 0 && event.alpha < 1), 'Biome colors tint the relief rather than hide it');
+  const landscape = visible.findIndex(event => event.type === 'landscape');
+  assert.equal(visible.filter(event => event.type === 'landscape').length, 1);
+  assert(landscape > overlay, 'Landscape tint lies above the height map');
+  assert(visible.slice(landscape + 1).every(event => event.type !== 'fill' || event.color !== '#3f7eaa'), 'Ground biome fills lie beneath the landscape overlay');
   for (const color of ['#4c91bd', '#62686a', '#c3b88e']) assert(visible.slice(overlay + 1).some(event => event.color === color), `${color} object ink stays above elevation`);
+  for (const color of ['#4c91bd', '#62686a', '#c3b88e']) assert(visible.slice(landscape + 1).some(event => event.color === color), `${color} object ink stays above the landscape overlay`);
   renderer.setLayers({ biomes: false });
   const hidden = capture();
   assert.equal(hidden[0].type, 'elevation', 'The height layer does not depend on biome visibility');
   assert(!hidden.some(event => ['#4c91bd', '#3f7eaa'].includes(event.color)), 'Hiding biomes still hides river and lake ink');
   assert(hidden.some(event => event.color === '#62686a'));
+  const landscapeOnly = capture(false);
+  assert.equal(landscapeOnly[0].type, 'landscape', 'Landscape has its own independent hook when both heights and biomes are hidden');
+  assert(landscapeOnly.some(event => event.color === '#62686a'), 'Roads stay above the standalone landscape overlay');
   assert.deepEqual(input, before);
 });
 

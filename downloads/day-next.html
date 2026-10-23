@@ -53,6 +53,8 @@
 .elevation-button{width:44px;height:44px;min-width:44px;min-height:44px}.elevation-button[aria-pressed="true"]{color:var(--accent);border-color:rgba(209,223,135,.55)}.elevation-button:disabled{opacity:.35;cursor:default}.elevation-key{position:absolute;right:32px;bottom:185px;width:260px;padding:13px 15px;pointer-events:none}.elevation-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.elevation-heading .eyebrow{font-size:8px;letter-spacing:1.5px}.elevation-source-mark{font:8px monospace;letter-spacing:1.3px;color:#8d9f7e}.elevation-gradient{height:9px;border:1px solid rgba(211,224,184,.22);background:linear-gradient(90deg,#779475,#bbba8e,#bc9d72,#d0c8b2)}.elevation-ticks{display:flex;justify-content:space-between;margin-top:6px;font:9px monospace;color:#c5d0b5}.elevation-source{font-size:8px;line-height:1.7;color:#94a783;margin:8px 0 0}@media(max-height:800px){.elevation-key{bottom:125px;width:225px;padding:10px 12px}}
 
 .road-swatch-highway{border-top-color:#45494b}.road-swatch-road{border-top-color:#747a7c}.road-swatch-street{border-top-color:#858b8c}.road-swatch-track{border-top-color:#b4a582}.movement-status{margin-top:12px;padding-top:11px;border-top:1px solid var(--line)}.movement-heading{display:flex;gap:9px;align-items:center;font:8px monospace;letter-spacing:.6px;color:#91a27e}.movement-heading strong{margin-left:auto;font-size:11px;font-weight:500;letter-spacing:0;color:#d2dfb8}.movement-heading #movement-multiplier{color:var(--accent);font-size:10px;letter-spacing:0}.movement-factors{display:block;margin-top:6px;color:#91a27e;font-size:8px;line-height:1.7}
+
+.landscape-button{width:44px;height:44px;min-width:44px;min-height:44px}.landscape-button[aria-pressed="true"]{color:var(--accent);border-color:rgba(209,223,135,.55)}.landscape-button:disabled{opacity:.35;cursor:default}.landscape-label{display:block!important;max-width:190px;white-space:normal!important;line-height:1.5;margin-top:5px;color:#b8c58f!important}.landscape-label[hidden]{display:none!important}.landscape-legend{padding:8px 0 10px;border-bottom:1px solid var(--line)}.landscape-legend.is-disabled{opacity:.5}.landscape-legend-row{display:flex;align-items:center;gap:9px;padding:4px 0;font-size:10px;line-height:1.5;color:#b8c7a8}.landscape-legend-row i{display:block;width:15px;height:8px;border:1px solid rgba(220,229,190,.25)}.landscape-factor{margin-left:auto;color:var(--accent);font:10px monospace}.map-tooltip{max-width:min(410px,calc(100vw - 16px))}
 </style>
   </head>
   <body>
@@ -72,6 +74,7 @@
       <symbol id="i-layers" viewBox="0 0 24 24"><path d="m3 7 9-5 9 5-9 5-9-5Zm0 5 9 5 9-5M3 17l9 5 9-5"/></symbol>
       <symbol id="i-types" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></symbol>
       <symbol id="i-elevation" viewBox="0 0 24 24"><path d="m2 20 8-15 6 10 3-5 3 10H2Zm5-9 3 2 2-2M5 20l5-8 5 8"/></symbol>
+      <symbol id="i-landscape" viewBox="0 0 24 24"><path d="M2 20h20M2 16l5-4 4 2 5-9 6 11M2 9l5-3 3 1"/></symbol>
       <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V3m-5 5 5-5 5 5M4 15v6h16v-6"/></symbol>
       <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v13m-5-5 5 5 5-5M4 15v6h16v-6"/></symbol>
     </svg>
@@ -82,7 +85,7 @@
       <div class="hud">
         <header class="top-bar">
           <div class="brand-block">
-            <div class="brand" aria-label="DAY NEXT"><span>DAY</span><span class="brand-divider">/</span><span class="brand-next">NEXT</span><span class="prototype">ПРОТОТИП <b>16</b></span></div>
+            <div class="brand" aria-label="DAY NEXT"><span>DAY</span><span class="brand-divider">/</span><span class="brand-next">NEXT</span><span class="prototype">ПРОТОТИП <b>17</b></span></div>
             <div class="brand-caption"><span class="live-dot"></span> ОДИНОЧНАЯ ЭКСПЕДИЦИЯ</div>
           </div>
           <div class="world-status glass">
@@ -115,6 +118,7 @@
           <div class="map-tool-cluster">
             <div class="map-tool"><button id="maps-button" class="icon-button glass maps-button" type="button" aria-label="Карты и импорт" aria-controls="maps-panel" aria-expanded="false" title="Карты и импорт"><svg class="icon"><use href="#i-map" /></svg></button><span class="control-caption">КАРТЫ</span></div>
             <div class="map-tool"><button id="elevation-button" class="icon-button glass elevation-button" type="button" aria-label="Показать или скрыть карту высот" aria-pressed="true" title="Карта высот"><svg class="icon"><use href="#i-elevation" /></svg></button><span class="control-caption">ВЫСОТЫ</span></div>
+            <div class="map-tool"><button id="landscape-button" class="icon-button glass landscape-button" type="button" aria-label="Показать или скрыть типы ландшафта" aria-pressed="false" title="Ландшафт: равнины, холмы и горы"><svg class="icon"><use href="#i-landscape" /></svg></button><span class="control-caption">ЛАНДШАФТ</span></div>
             <div class="map-tool"><button id="detail-button" class="icon-button glass detail-button" type="button" aria-label="Показать застройку · B" title="Показать застройку · B"><svg class="icon"><use href="#i-house" /></svg></button><span class="control-caption">ЗАСТРОЙКА</span></div>
             <div class="map-tool"><button id="building-types-button" class="icon-button glass building-types-button" type="button" aria-label="Типы зданий" aria-controls="building-types-panel" aria-expanded="false" title="Типы зданий"><svg class="icon"><use href="#i-types" /></svg></button><span class="control-caption">ТИПЫ</span></div>
             <div class="map-tool"><button id="layers-button" class="icon-button glass layers-button" type="button" aria-label="Слои карты" aria-controls="layers-panel" aria-expanded="false" title="Слои карты"><svg class="icon"><use href="#i-layers" /></svg></button><span class="control-caption">СЛОИ</span></div>
@@ -132,7 +136,7 @@
             <div class="stat stat-stamina"><div class="stat-label"><svg class="icon"><use href="#i-bolt" /></svg><span>Выносливость</span><strong id="stamina-value">100</strong></div><div class="stat-track"><span id="stamina-bar" style="width:100%"></span></div></div>
             <div class="stat stat-water"><div class="stat-label"><svg class="icon"><use href="#i-water" /></svg><span>Вода</span><strong id="water-value">100</strong></div><div class="stat-track"><span id="water-bar" style="width:100%"></span></div></div>
           </div>
-          <div class="location"><svg class="icon"><use href="#i-pin" /></svg><div><strong id="location-name">Местность</strong><span id="terrain-label">Открытая местность</span><span id="biome-label" class="biome-label" hidden></span></div></div>
+          <div class="location"><svg class="icon"><use href="#i-pin" /></svg><div><strong id="location-name">Местность</strong><span id="terrain-label">Открытая местность</span><span id="biome-label" class="biome-label" hidden></span><span id="landscape-label" class="landscape-label" hidden></span></div></div>
           <div class="movement-status"><div class="movement-heading"><span>ХОДЬБА</span><strong id="movement-speed">4,0 км/ч</strong><span id="movement-multiplier">×1,00</span></div><span id="movement-factors" class="movement-factors">Ровная местность</span></div>
         </section>
 
@@ -172,7 +176,7 @@
 
         <section id="help-panel" class="help-panel glass" role="dialog" aria-label="Как играть" aria-modal="false" hidden>
           <div class="help-heading"><div><p class="eyebrow">ПОЛЕВОЙ СПРАВОЧНИК</p><h2>Сначала — первый шаг.</h2></div><button id="help-close" class="icon-button" type="button" aria-label="Закрыть справку">×</button></div>
-          <p>Выбери точку на суше. Путник проложит путь с учётом дорог, биомов и уклона: удобный обход может оказаться быстрее прямого подъёма. Вода пересекается по мостам.</p>
+          <p>Выбери точку на суше. Путник учитывает биом, ландшафт, покрытие и уклон. Здания и сезонные русла сильно замедляют: маршрут старается обойти их. Постоянная вода пересекается по мостам. Кнопка «Ландшафт» показывает равнины, холмы и горы; множители сочетаются с биомами.</p>
           <dl><div><dt>Клик / касание</dt><dd>Идти в выбранную точку</dd></div><div><dt>Перетаскивание</dt><dd>Осмотреть карту</dd></div><div><dt>Колесо / щипок / + −</dt><dd>Приблизить улицы и дома</dd></div><div><dt>B / кнопка дома</dt><dd>Показать застройку</dd></div><div><dt>Слои карты</dt><dd>Выбрать, что показывать</dd></div><div><dt>Пробел</dt><dd>Пауза в пути</dd></div><div><dt>F</dt><dd>Вернуться к путнику</dd></div><div><dt>Esc</dt><dd>Закрыть окно / отменить путь</dd></div></dl>
           <p class="help-note">Наведи на объект, а на телефоне коснись его, чтобы узнать детали на любом масштабе. Приблизь карту, чтобы рассмотреть контуры домов и дорожки. В «Слоях карты» можно отдельно показать дороги, здания и природные объекты. Отдых восстанавливает выносливость.</p>
         </section>
@@ -211,6 +215,9 @@
             <div class="layer-options">
               <label class="layer-option" for="layer-elevation"><input id="layer-elevation" type="checkbox" checked /><span>Карта высот</span><span class="layer-count">USGS</span></label>
               <p id="elevation-unavailable" class="layers-note" hidden>Для этого участка данные высот ещё не загружены.</p>
+              <label class="layer-option" for="layer-landscape"><input id="layer-landscape" type="checkbox" /><span>Ландшафт</span><span class="layer-count">× скорость</span></label>
+              <p id="landscape-unavailable" class="layers-note" hidden>Для классификации ландшафта нужны данные высот этого участка.</p>
+              <div id="landscape-legend" class="landscape-legend" aria-label="Типы ландшафта и множители скорости"></div>
               <label class="layer-option" for="layer-biomes"><input id="layer-biomes" type="checkbox" checked /><span>Биомы</span><span id="count-biomes" class="layer-count">—</span></label>
               <div id="biome-key" class="biome-key" aria-label="Обозначения биомов"><span><i class="biome-swatch city-swatch" aria-hidden="true"></i>Город</span><span><i class="biome-swatch seasonal-river-swatch" aria-hidden="true"></i>Сезонное русло</span><span><i class="biome-swatch water-swatch" aria-hidden="true"></i>Постоянная вода</span></div>
               <label class="layer-option" for="layer-roads"><input id="layer-roads" type="checkbox" checked /><span>Дороги и тропы</span><span id="count-roads" class="layer-count">—</span></label>
@@ -226,12 +233,354 @@
               <label class="layer-option" for="layer-buildings"><input id="layer-buildings" type="checkbox" checked /><span>Здания</span><span id="count-buildings" class="layer-count">—</span></label>
               <label class="layer-option" for="layer-details"><input id="layer-details" type="checkbox" checked /><span>Остальные объекты</span><span id="count-details" class="layer-count">—</span></label>
             </div>
-            <p class="layers-note" id="layers-note">Полупрозрачные биомы окрашивают рельеф, сохраняя видимость склонов. Асфальт серый, грунтовки песочные. Видимость слоёв не меняет скорость и построение маршрута.</p>
+            <p class="layers-note" id="layers-note">Биом × ландшафт × уклон задают темп ходьбы. Здания и сезонные русла дают сильный штраф. Слой «Ландшафт» показывает формы местности цветом поверх биомов. Переключение слоёв не меняет физику.</p>
           </div>
         </section>
       </div>
     </main>
-    <script type="module">const {BASE_WALK_METERS_PER_MINUTE,MAX_MOVEMENT_MULTIPLIER,biomeSpeedMultiplier,roadSpeedMultiplier,cellMovementMultiplier,movementAt,segmentTravel,advanceAlongRoute} = (() => {
+    <script type="module">const {prepareMovementGeometry} = (() => {
+/** Exact travel effects over indexed, unchanged source footprints and river ribbons. */
+const mgEpsilon = 1e-9;
+const mgCross = (ax, ay, bx, by) => ax * by - ay * bx;
+const mgValidPoint = p => p && Number.isFinite(p.x) && Number.isFinite(p.y);
+const mgInBounds = (x, y, bounds) => x >= bounds.minX - mgEpsilon && x <= bounds.maxX + mgEpsilon && y >= bounds.minY - mgEpsilon && y <= bounds.maxY + mgEpsilon;
+const mgOverlap = (a, b) => a.minX <= b.maxX + mgEpsilon && a.maxX >= b.minX - mgEpsilon && a.minY <= b.maxY + mgEpsilon && a.maxY >= b.minY - mgEpsilon;
+const mgBounds = (a, b) => ({ minX: Math.min(a.x, b.x), minY: Math.min(a.y, b.y), maxX: Math.max(a.x, b.x), maxY: Math.max(a.y, b.y) });
+
+function mgIndex(bucketSize) {
+  const buckets = new Map();
+  const each = (bounds, callback) => {
+    const left = Math.floor((bounds.minX - mgEpsilon) / bucketSize), right = Math.floor((bounds.maxX + mgEpsilon) / bucketSize);
+    const top = Math.floor((bounds.minY - mgEpsilon) / bucketSize), bottom = Math.floor((bounds.maxY + mgEpsilon) / bucketSize);
+    for (let y = top; y <= bottom; y++) for (let x = left; x <= right; x++) callback(`${x},${y}`);
+  };
+  return {
+    insert(item) { each(item.bounds, key => { if (!buckets.has(key)) buckets.set(key, []); buckets.get(key).push(item); }); },
+    query(bounds) {
+      const found = new Set();
+      each(bounds, key => { for (const item of buckets.get(key) || []) if (mgOverlap(item.bounds, bounds)) found.add(item); });
+      return [...found];
+    },
+    bucketCount: () => buckets.size,
+  };
+}
+
+function mgPolygon(rings, kind, bucketSize) {
+  const valid = rings.filter(ring => Array.isArray(ring) && ring.length >= 3 && ring.every(mgValidPoint));
+  if (!valid.length) return null;
+  const bounds = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity }, edges = [], bands = new Map();
+  for (const ring of valid) {
+    for (let i = 0; i < ring.length; i++) {
+      const a = ring[i], b = ring[(i + 1) % ring.length];
+      if (a.x === b.x && a.y === b.y) continue;
+      const edge = { a, b, bounds: mgBounds(a, b) };
+      edges.push(edge);
+      bounds.minX = Math.min(bounds.minX, edge.bounds.minX); bounds.minY = Math.min(bounds.minY, edge.bounds.minY);
+      bounds.maxX = Math.max(bounds.maxX, edge.bounds.maxX); bounds.maxY = Math.max(bounds.maxY, edge.bounds.maxY);
+      for (let band = Math.floor((edge.bounds.minY - mgEpsilon) / bucketSize); band <= Math.floor((edge.bounds.maxY + mgEpsilon) / bucketSize); band++) {
+        if (!bands.has(band)) bands.set(band, []);
+        bands.get(band).push(edge);
+      }
+    }
+  }
+  if (!edges.length) return null;
+  return { kind, bounds, edges, contains(x, y) {
+    if (!mgInBounds(x, y, bounds)) return false;
+    let inside = false;
+    // Only edges crossing this horizontal band can participate in the ray test.
+    // Even/odd parity preserves courtyard holes and nested rings.
+    for (const { a, b, bounds: edgeBounds } of bands.get(Math.floor(y / bucketSize)) || []) {
+      const dx = b.x - a.x, dy = b.y - a.y;
+      if (mgInBounds(x, y, edgeBounds) && Math.abs(mgCross(x - a.x, y - a.y, dx, dy)) <= mgEpsilon * Math.max(1, Math.hypot(dx, dy))) return true;
+      if ((a.y > y) !== (b.y > y) && x < a.x + (y - a.y) * dx / dy) inside = !inside;
+    }
+    return inside;
+  } };
+}
+
+function mgParts(feature) {
+  if (Array.isArray(feature.parts) && feature.parts.length) return feature.parts;
+  if (Array.isArray(feature.rings) && feature.rings.length) return [feature.rings];
+  if (Array.isArray(feature.points) && feature.points.length >= 3) return [[feature.points]];
+  return [];
+}
+
+function mgEdgeCuts(from, dx, dy, edge, cuts) {
+  const ex = edge.b.x - edge.a.x, ey = edge.b.y - edge.a.y;
+  const ax = edge.a.x - from.x, ay = edge.a.y - from.y, denominator = mgCross(dx, dy, ex, ey);
+  if (Math.abs(denominator) > 1e-12) {
+    const t = mgCross(ax, ay, ex, ey) / denominator, u = mgCross(ax, ay, dx, dy) / denominator;
+    if (t > 0 && t < 1 && u >= -mgEpsilon && u <= 1 + mgEpsilon) cuts.push(t);
+  } else if (Math.abs(mgCross(ax, ay, dx, dy)) < mgEpsilon * Math.max(1, Math.hypot(dx, dy))) {
+    const lengthSquared = dx * dx + dy * dy;
+    if (!lengthSquared) return;
+    for (const p of [edge.a, edge.b]) {
+      const t = ((p.x - from.x) * dx + (p.y - from.y) * dy) / lengthSquared;
+      if (t > 0 && t < 1) cuts.push(t);
+    }
+  }
+}
+
+function mgBridge(a, b, radius) {
+  const dx = b.x - a.x, dy = b.y - a.y, lengthSquared = dx * dx + dy * dy, length = Math.sqrt(lengthSquared);
+  if (!(length > 0) || !(radius > 0)) return null;
+  const bounds = { minX: Math.min(a.x, b.x) - radius, minY: Math.min(a.y, b.y) - radius, maxX: Math.max(a.x, b.x) + radius, maxY: Math.max(a.y, b.y) + radius };
+  return { kind: 'bridge', bounds, contains(x, y) {
+    if (!mgInBounds(x, y, bounds)) return false;
+    const t = Math.max(0, Math.min(1, ((x - a.x) * dx + (y - a.y) * dy) / lengthSquared));
+    return (x - a.x - t * dx) ** 2 + (y - a.y - t * dy) ** 2 <= radius ** 2 + mgEpsilon;
+  }, cuts(from, travelX, travelY, target) {
+    // A native bridge has its actual width, with round joins/caps. Splitting at
+    // both parallel sides and endpoint circles exactly partitions the capsule.
+    const crossStart = mgCross(dx, dy, from.x - a.x, from.y - a.y), crossTravel = mgCross(dx, dy, travelX, travelY);
+    if (Math.abs(crossTravel) > 1e-12) for (const side of [-1, 1]) {
+      const t = (side * radius * length - crossStart) / crossTravel;
+      if (t <= 0 || t >= 1) continue;
+      const projection = ((from.x + travelX * t - a.x) * dx + (from.y + travelY * t - a.y) * dy) / lengthSquared;
+      if (projection >= -mgEpsilon && projection <= 1 + mgEpsilon) target.push(t);
+    }
+    const quadratic = travelX * travelX + travelY * travelY;
+    if (!(quadratic > 0)) return;
+    for (const endpoint of [a, b]) {
+      const ox = from.x - endpoint.x, oy = from.y - endpoint.y;
+      const linear = 2 * (ox * travelX + oy * travelY), constant = ox * ox + oy * oy - radius * radius;
+      const discriminant = linear * linear - 4 * quadratic * constant;
+      if (discriminant < 0) continue;
+      const root = Math.sqrt(Math.max(0, discriminant));
+      for (const t of [(-linear - root) / (2 * quadratic), (-linear + root) / (2 * quadratic)]) if (t > 0 && t < 1) target.push(t);
+    }
+  } };
+}
+
+function mgEffects(records, x, y) {
+  let building = false, seasonal = false, bridge = false;
+  for (const record of records) {
+    if (record.kind === 'building' && building || record.kind === 'seasonal' && seasonal || record.kind === 'bridge' && bridge) continue;
+    if (!record.contains(x, y)) continue;
+    if (record.kind === 'building') building = true;
+    else if (record.kind === 'seasonal') seasonal = true;
+    else bridge = true;
+  }
+  return { building, seasonal, bridge };
+}
+
+/** Build once per world; point and line queries never scan every source object. */
+function prepareMovementGeometry(world, { biomeFeatures = [] } = {}) {
+  const bucketSize = Math.max(12, Number(world.cellSize) * 8 || 48);
+  const recordsIndex = mgIndex(bucketSize), edgesIndex = mgIndex(bucketSize), records = [];
+  const add = record => {
+    if (!record) return;
+    records.push(record); recordsIndex.insert(record);
+    for (const edge of record.edges || []) edgesIndex.insert(edge);
+  };
+  for (const building of world.buildings || []) for (const rings of mgParts(building)) add(mgPolygon(rings, 'building', bucketSize));
+  for (const biome of biomeFeatures) {
+    if (!['seasonal_river', 'dry_riverbed'].includes(biome.biome || biome.type) && biome.waterKind !== 'seasonal_river') continue;
+    for (const rings of mgParts(biome)) add(mgPolygon(rings, 'seasonal', bucketSize));
+  }
+  for (const road of world.roads || []) {
+    const flag = road.bridge ?? road.tags?.bridge;
+    if (!(flag === true || flag === 1 || typeof flag === 'string' && !['', 'no', 'false', '0'].includes(flag.toLowerCase()))) continue;
+    const metersPerUnit = Number(world.metersPerUnit) > 0 ? Number(world.metersPerUnit) : 1;
+    const width = Number(road.widthMeters) > 0 ? Number(road.widthMeters) / metersPerUnit : Number(road.width) > 0 ? Number(road.width) : 2;
+    const paths = road.paths?.length ? road.paths : [road.points || []];
+    for (const points of paths) for (let i = 1; i < points.length; i++) if (mgValidPoint(points[i - 1]) && mgValidPoint(points[i])) add(mgBridge(points[i - 1], points[i], width / 2));
+  }
+  const segmentRegions = (from, to) => {
+    if (!mgValidPoint(from) || !mgValidPoint(to)) return { cuts: [0, 1], at: () => ({ building: false, seasonal: false, bridge: false }) };
+    const bounds = mgBounds(from, to), local = recordsIndex.query(bounds), cuts = [0, 1];
+    const dx = to.x - from.x, dy = to.y - from.y;
+    if (local.length) {
+      for (const edge of edgesIndex.query(bounds)) mgEdgeCuts(from, dx, dy, edge, cuts);
+      for (const record of local) if (record.cuts) record.cuts(from, dx, dy, cuts);
+    }
+    cuts.sort((a, b) => a - b);
+    return { cuts: cuts.filter((t, i) => !i || t - cuts[i - 1] > 1e-10), at: t => mgEffects(local, from.x + dx * t, from.y + dy * t) };
+  };
+  const counts = { buildings: 0, seasonalParts: 0, bridgeSegments: 0, edges: 0, buckets: recordsIndex.bucketCount(), bucketSize };
+  for (const record of records) { counts[record.kind === 'building' ? 'buildings' : record.kind === 'seasonal' ? 'seasonalParts' : 'bridgeSegments']++; counts.edges += record.edges?.length || 0; }
+  return {
+    hasSeasonalGeometry: counts.seasonalParts > 0,
+    queryPoint(x, y) { return Number.isFinite(x) && Number.isFinite(y) ? mgEffects(recordsIndex.query({ minX: x, minY: y, maxX: x, maxY: y }), x, y) : { building: false, seasonal: false, bridge: false }; },
+    segmentRegions,
+    segmentCuts: (from, to) => segmentRegions(from, to).cuts,
+    getStats: () => ({ ...counts }),
+  };
+}
+
+return {prepareMovementGeometry};
+})();
+const {LANDSCAPE_TYPES,classifyLandscape,createLandscape} = (() => {
+// Game landscape classes derived from genuine DEM samples. Biomes remain a
+// separate classification; absolute altitude alone never makes a mountain.
+const LANDSCAPE_TYPES = Object.freeze({
+  plain: Object.freeze({ id: 'plain', name: 'Равнина', multiplier: 1, color: '#a8bb87' }),
+  uneven: Object.freeze({ id: 'uneven', name: 'Неровная местность', multiplier: .78, color: '#c6bb78' }),
+  hills: Object.freeze({ id: 'hills', name: 'Холмы', multiplier: .52, color: '#c39865' }),
+  mountains: Object.freeze({ id: 'mountains', name: 'Горы', multiplier: .28, color: '#9b7b79' }),
+  high_mountains: Object.freeze({ id: 'high_mountains', name: 'Высокие горы', multiplier: .14, color: '#887ba3' }),
+});
+const lsTypes = [null, ...Object.values(LANDSCAPE_TYPES)];
+const lsCodes = Object.fromEntries(lsTypes.slice(1).map((type, index) => [type.id, index + 1]));
+const lsClamp = (value, low, high) => Math.max(low, Math.min(high, value));
+const lsThresholds = Object.freeze({
+  gradientRadiusMeters: 75, localReliefRadiusMeters: 200, reliefRadiusMeters: 400,
+  uneven: { slopePercent: 3, localReliefMeters: 20 },
+  hills: { slopePercent: 9, slopeWithLocalReliefPercent: 4, localReliefMeters: 55, reliefMeters: 95 },
+  mountains: { slopePercent: 20, reliefMeters: 100, broadSlopePercent: 12, broadReliefMeters: 180, localReliefMeters: 100 },
+  high_mountains: { slopePercent: 38, reliefMeters: 180, broadSlopePercent: 22, broadReliefMeters: 260, localReliefMeters: 180, summitReliefMeters: 300 },
+});
+
+/** Classification thresholds are gameplay settings, not a geological survey. */
+function classifyLandscape({ slopePercent, reliefMeters, localReliefMeters } = {}) {
+  if (!Number.isFinite(slopePercent) || slopePercent < 0 || !Number.isFinite(reliefMeters) || reliefMeters < 0 || !Number.isFinite(localReliefMeters) || localReliefMeters < 0) return null;
+  if (slopePercent >= 38 && reliefMeters >= 180 || slopePercent >= 22 && reliefMeters >= 260 || localReliefMeters >= 180 && reliefMeters >= 300) return 'high_mountains';
+  if (slopePercent >= 20 && reliefMeters >= 100 || slopePercent >= 12 && reliefMeters >= 180 || localReliefMeters >= 100 && reliefMeters >= 180) return 'mountains';
+  if (slopePercent >= 9 || slopePercent >= 4 && localReliefMeters >= 55 || localReliefMeters >= 55 && reliefMeters >= 95) return 'hills';
+  if (slopePercent >= 3 || localReliefMeters >= 20) return 'uneven';
+  return 'plain';
+}
+
+// Separable monotonic queues calculate a full neighbourhood range in O(n),
+// avoiding hundreds of DEM lookups per navigation cell on the 24 m grid.
+function lsExtrema(values, columns, rows, radius, maximum) {
+  const horizontal = new Float32Array(values.length), output = new Float32Array(values.length);
+  const line = (count, read, write) => {
+    const queue = new Int32Array(count);
+    let head = 0, tail = 0, added = -1;
+    for (let index = 0; index < count; index++) {
+      const right = Math.min(count - 1, index + radius);
+      while (added < right) {
+        added++;
+        const value = read(added);
+        if (!Number.isFinite(value)) continue;
+        while (tail > head && (maximum ? read(queue[tail - 1]) <= value : read(queue[tail - 1]) >= value)) tail--;
+        queue[tail++] = added;
+      }
+      const left = Math.max(0, index - radius);
+      while (head < tail && queue[head] < left) head++;
+      write(index, head < tail ? read(queue[head]) : NaN);
+    }
+  };
+  for (let row = 0; row < rows; row++) line(columns, column => values[row * columns + column], (column, value) => { horizontal[row * columns + column] = value; });
+  for (let column = 0; column < columns; column++) line(rows, row => horizontal[row * columns + column], (row, value) => { output[row * columns + column] = value; });
+  return output;
+}
+
+function lsCanvas(width, height) {
+  if (typeof OffscreenCanvas !== 'undefined') return new OffscreenCanvas(width, height);
+  if (typeof document === 'undefined') return null;
+  const canvas = document.createElement('canvas'); canvas.width = width; canvas.height = height;
+  return canvas;
+}
+
+/**
+ * Build a second, independent ground classification once per map. getAt() is
+ * cell-exact for movement preparation; the optional cached overlay interpolates
+ * metrics at twice this resolution to avoid painting square navigation cells.
+ * No input geometry, source DEM or navigation fields are modified here.
+ */
+function createLandscape(world = {}, { elevationAt } = {}) {
+  const width = Number(world.width), height = Number(world.height), size = Number(world.cellSize);
+  const columns = Number(world.cols), rows = Number(world.rows), scale = Number(world.metersPerUnit) > 0 ? Number(world.metersPerUnit) : 1;
+  const stats = { sampleCount: 0, validSamples: 0, rasterBuilds: 0, pixelCount: 0, drawCount: 0 };
+  let reason = typeof elevationAt !== 'function' ? 'missing-elevation' : null;
+  if (!reason && (!(width > 0 && height > 0 && size > 0) || !Number.isFinite(width + height + size)
+    || !Number.isInteger(columns) || !Number.isInteger(rows) || columns < 1 || rows < 1 || columns * rows > 250000)) reason = 'invalid-world';
+  let codes = new Uint8Array(reason ? 0 : columns * rows), slope, localRelief, relief;
+  const counts = Object.fromEntries(Object.keys(LANDSCAPE_TYPES).map(id => [id, 0]));
+  if (!reason) {
+    const elevations = new Float32Array(codes.length);
+    for (let row = 0; row < rows; row++) for (let column = 0; column < columns; column++) {
+      const value = elevationAt(Math.min(width, (column + .5) * size), Math.min(height, (row + .5) * size));
+      stats.sampleCount++;
+      elevations[row * columns + column] = Number.isFinite(value) ? value : NaN;
+      if (Number.isFinite(value)) stats.validSamples++;
+    }
+    if (!stats.validSamples) reason = 'no-valid-elevations';
+    else {
+      const spacing = size * scale;
+      const gradientStep = Math.max(1, Math.round(lsThresholds.gradientRadiusMeters / spacing));
+      const localRadius = Math.max(1, Math.ceil(lsThresholds.localReliefRadiusMeters / spacing));
+      const broadRadius = Math.max(1, Math.ceil(lsThresholds.reliefRadiusMeters / spacing));
+      const localMin = lsExtrema(elevations, columns, rows, localRadius, false), localMax = lsExtrema(elevations, columns, rows, localRadius, true);
+      const broadMin = lsExtrema(elevations, columns, rows, broadRadius, false), broadMax = lsExtrema(elevations, columns, rows, broadRadius, true);
+      slope = new Float32Array(codes.length); localRelief = new Float32Array(codes.length); relief = new Float32Array(codes.length);
+      slope.fill(NaN); localRelief.fill(NaN); relief.fill(NaN);
+      for (let row = 0; row < rows; row++) for (let column = 0; column < columns; column++) {
+        const index = row * columns + column;
+        if (!Number.isFinite(elevations[index])) continue;
+        const left = Math.max(0, column - gradientStep), right = Math.min(columns - 1, column + gradientStep);
+        const top = Math.max(0, row - gradientStep), bottom = Math.min(rows - 1, row + gradientStep);
+        const a = elevations[row * columns + left], b = elevations[row * columns + right];
+        const c = elevations[top * columns + column], d = elevations[bottom * columns + column];
+        // Missing neighbour data does not become invented flat terrain.
+        if (![a, b, c, d].every(Number.isFinite)) continue;
+        const gx = right > left ? (b - a) / ((right - left) * spacing) : 0;
+        const gy = bottom > top ? (d - c) / ((bottom - top) * spacing) : 0;
+        slope[index] = Math.hypot(gx, gy) * 100;
+        localRelief[index] = localMax[index] - localMin[index];
+        relief[index] = broadMax[index] - broadMin[index];
+        const id = classifyLandscape({ slopePercent: slope[index], localReliefMeters: localRelief[index], reliefMeters: relief[index] });
+        if (id) { codes[index] = lsCodes[id]; counts[id]++; }
+      }
+    }
+  }
+  const available = !reason && codes.some(Boolean);
+  if (!available && !reason) reason = 'insufficient-neighbour-elevations';
+  const getInfo = () => ({ available, reason, source: 'real-dem-derived-game-landscape',
+    columns: available ? columns : 0, rows: available ? rows : 0, resolutionMeters: available ? size * scale : null,
+    counts: { ...counts }, unknownCells: codes.length - Object.values(counts).reduce((sum, count) => sum + count, 0),
+    types: Object.values(LANDSCAPE_TYPES).map(type => ({ ...type })), thresholds: structuredClone(lsThresholds),
+  });
+  const getStats = () => ({ ...stats, available, classifiedCells: Object.values(counts).reduce((sum, count) => sum + count, 0) });
+  function getAt(x, y) {
+    if (!available || !Number.isFinite(x) || !Number.isFinite(y) || x < 0 || y < 0 || x >= width || y >= height) return null;
+    const index = Math.floor(y / size) * columns + Math.floor(x / size), type = lsTypes[codes[index]];
+    return type ? { ...type, slopePercent: slope[index], localReliefMeters: localRelief[index], reliefMeters: relief[index] } : null;
+  }
+
+  let raster = null;
+  function buildRaster() {
+    if (raster || !available) return;
+    const rasterColumns = columns * 2, rasterRows = rows * 2;
+    const canvas = lsCanvas(rasterColumns, rasterRows), context = canvas?.getContext('2d');
+    if (!context) return;
+    const image = context.createImageData(rasterColumns, rasterRows);
+    const colors = lsTypes.map(type => type && [1, 3, 5].map(offset => parseInt(type.color.slice(offset, offset + 2), 16)));
+    const metric = (values, a, b, c, d, wa, wb, wc, wd) => {
+      const first = wa > 1e-12 ? values[a] * wa : 0, second = wb > 1e-12 ? values[b] * wb : 0;
+      const third = wc > 1e-12 ? values[c] * wc : 0, fourth = wd > 1e-12 ? values[d] * wd : 0;
+      return first + second + third + fourth;
+    };
+    for (let row = 0; row < rasterRows; row++) for (let column = 0; column < rasterColumns; column++) {
+      const gx = lsClamp((column + .5) / 2 - .5, 0, columns - 1), gy = lsClamp((row + .5) / 2 - .5, 0, rows - 1);
+      const x0 = Math.floor(gx), y0 = Math.floor(gy), x1 = Math.min(columns - 1, x0 + 1), y1 = Math.min(rows - 1, y0 + 1), dx = gx - x0, dy = gy - y0;
+      const a = y0 * columns + x0, b = y0 * columns + x1, c = y1 * columns + x0, d = y1 * columns + x1;
+      const wa = (1 - dx) * (1 - dy), wb = dx * (1 - dy), wc = (1 - dx) * dy, wd = dx * dy;
+      const id = classifyLandscape({ slopePercent: metric(slope, a, b, c, d, wa, wb, wc, wd), localReliefMeters: metric(localRelief, a, b, c, d, wa, wb, wc, wd), reliefMeters: metric(relief, a, b, c, d, wa, wb, wc, wd) });
+      if (!id) continue;
+      const color = colors[lsCodes[id]], pixel = (row * rasterColumns + column) * 4;
+      image.data[pixel] = color[0]; image.data[pixel + 1] = color[1]; image.data[pixel + 2] = color[2]; image.data[pixel + 3] = 255;
+    }
+    context.putImageData(image, 0, 0); raster = canvas;
+    stats.rasterBuilds++; stats.pixelCount = rasterColumns * rasterRows;
+  }
+  function draw(ctx, view = {}) {
+    if (!available || !ctx) return false;
+    buildRaster();
+    if (!raster) return false;
+    ctx.save(); ctx.beginPath(); ctx.rect(0, 0, width, height); ctx.clip();
+    ctx.globalAlpha = Number.isFinite(view.landscapeAlpha) ? lsClamp(view.landscapeAlpha, 0, 1) : .32;
+    ctx.imageSmoothingEnabled = true; ctx.drawImage(raster, 0, 0, width, height); ctx.restore();
+    stats.drawCount++; return true;
+  }
+  return { available, getAt, sampleAt: getAt, draw, getInfo, getStats };
+}
+
+return {LANDSCAPE_TYPES,classifyLandscape,createLandscape};
+})();
+const {BASE_WALK_METERS_PER_MINUTE,MAX_MOVEMENT_MULTIPLIER,biomeSpeedMultiplier,roadSpeedMultiplier,cellMovementMultiplier,movementAt,segmentTravel,advanceAlongRoute} = (() => {
 // Shared travel-time model for route search, smoothing, ETA and the moving actor.
 // Multipliers describe a walking game character, not a real-world hiking forecast.
 const BASE_WALK_METERS_PER_MINUTE = 4000 / 60;
@@ -246,7 +595,7 @@ const mmBiomes = Object.freeze({
   garden: .9, farmland: .84, orchard: .82, vineyard: .82, cemetery: .88,
   sand: .67, beach: .67, scrub: .75, forest: .65, rock: .58, hill: .72, quarry: .58,
   wetland: .44, swamp: .44, glacier: .5, landfill: .65, construction: .72, brownfield: .82,
-  seasonal_river: .66, dry_riverbed: .66, gully: .7, valley: 1, water: 0,
+  seasonal_river: .12, dry_riverbed: .12, gully: .7, valley: 1, water: 0,
 });
 const mmRoads = Object.freeze({ highway: 1.28, road: 1.22, street: 1.18, track: .98, trail: 1.04, railway: .8 });
 const mmSurfaces = Object.freeze({
@@ -267,21 +616,30 @@ function roadSpeedMultiplier(roadClass, surface) {
   return mmClamp(base * correction, .12, MAX_MOVEMENT_MULTIPLIER);
 }
 
-function cellMovementMultiplier(cell) {
+const mmLandscapeMultiplier = cell => Number.isFinite(cell?.landscapeMultiplier) && cell.landscapeMultiplier > 0 ? cell.landscapeMultiplier : 1;
+const mmDryBiome = biome => biome === 'seasonal_river' || biome === 'dry_riverbed';
+
+function mmSurfaceMultiplier(cell, separateSeasonal = false) {
   if (!cell?.walkable) return 0;
   if (cell.roadClass || cell.type === 'bridge' && cell.biome !== undefined) return roadSpeedMultiplier(cell.roadClass || 'road', cell.surface);
-  if (cell.biome !== undefined) return Math.max(.12, biomeSpeedMultiplier(cell.biome));
+  if (cell.biome !== undefined) return separateSeasonal && mmDryBiome(cell.biome) ? 1 : Math.max(.01, biomeSpeedMultiplier(cell.biome));
   // Historic fixtures/imports can supply their own weighted grid without a DEM.
   if (Number.isFinite(cell.cost) && cell.cost > 0) return mmClamp(1 / cell.cost, .01, MAX_MOVEMENT_MULTIPLIER);
-  return Math.max(.12, biomeSpeedMultiplier(cell.type));
+  return Math.max(.01, biomeSpeedMultiplier(cell.type));
+}
+
+function cellMovementMultiplier(cell) {
+  if (!cell?.walkable) return 0;
+  const seasonalMultiplier = mmDryBiome(cell.biome) && cell.type !== 'bridge' ? .12 : 1;
+  return mmSurfaceMultiplier(cell, true) * mmLandscapeMultiplier(cell) * seasonalMultiplier;
 }
 
 function mmSlopeMultiplier(grade) {
   if (!Number.isFinite(grade)) return 1;
-  if (grade >= 0) return Math.exp(-3.5 * Math.min(grade, 2));
+  if (grade >= 0) return Math.exp(-7.5 * Math.min(grade, 2));
   const descent = Math.min(-grade, 2);
-  // A gentle descent helps slightly; a steep descent requires slower footing.
-  return Math.exp(1.5 * descent - 7 * descent * descent);
+  // Even modest uphill grades now matter; steep descents also require care.
+  return Math.exp(.8 * descent - 10 * descent * descent);
 }
 
 function mmElevation(world, x, y) {
@@ -306,12 +664,20 @@ function mmElevation(world, x, y) {
   return weight > 0 ? height / weight : null;
 }
 
-function mmFactors(cell, grade = 0) {
-  const terrainMultiplier = cellMovementMultiplier(cell);
-  if (!(terrainMultiplier > 0)) return { multiplier: 0, terrainMultiplier: 0, slopeMultiplier: 1, grade, walkable: false };
+function mmFactors(cell, grade = 0, geometry = null, exactSeasonal = false) {
+  const terrainMultiplier = mmSurfaceMultiplier(cell, true);
+  const landscapeMultiplier = mmLandscapeMultiplier(cell);
   const slopeMultiplier = mmSlopeMultiplier(grade);
-  const multiplier = mmClamp(terrainMultiplier * slopeMultiplier, .08, MAX_MOVEMENT_MULTIPLIER);
-  return { multiplier, terrainMultiplier, slopeMultiplier, grade, walkable: true };
+  const building = Boolean(geometry?.building);
+  const bridge = geometry ? Boolean(geometry.bridge) : cell?.type === 'bridge';
+  // Exact ribbons take precedence over centre-cell approximations: a narrow
+  // wash cannot vanish between grid samples or be bypassed by road paint.
+  const seasonal = exactSeasonal ? Boolean(geometry?.seasonal) : mmDryBiome(cell?.biome);
+  const buildingMultiplier = building ? .08 : 1;
+  const seasonalMultiplier = seasonal && !bridge ? .12 : 1;
+  if (!(terrainMultiplier > 0)) return { multiplier: 0, terrainMultiplier: 0, landscapeMultiplier, buildingMultiplier, seasonalMultiplier, slopeMultiplier, grade, building, seasonal, bridge, walkable: false };
+  const multiplier = mmClamp(terrainMultiplier * landscapeMultiplier * slopeMultiplier * buildingMultiplier * seasonalMultiplier, .005, MAX_MOVEMENT_MULTIPLIER);
+  return { multiplier, terrainMultiplier, landscapeMultiplier, buildingMultiplier, seasonalMultiplier, slopeMultiplier, grade, building, seasonal, bridge, walkable: true };
 }
 
 function movementAt(world, x, y, toward = null) {
@@ -327,8 +693,9 @@ function movementAt(world, x, y, toward = null) {
       if (a !== null && b !== null && meters > 1e-6) grade = (b - a) / meters;
     }
   }
-  const factors = mmFactors(cell, grade);
-  return { ...factors, speedKmh: factors.multiplier * 4,
+  const geometry = world.movementGeometry?.queryPoint(x, y) || null;
+  const factors = mmFactors(cell, grade, geometry, Boolean(world.movementGeometry?.hasSeasonalGeometry));
+  return { ...factors, landscape: cell?.landscape || null, speedKmh: factors.multiplier * 4,
     biome: cell?.biome || cell?.type || null, roadClass: cell?.roadClass || null, surface: cell?.surface || null,
     elevationMeters: mmElevation(world, x, y), slopePercent: grade * 100,
   };
@@ -341,7 +708,8 @@ function segmentTravel(world, from, to, options = {}) {
   if (!from || !to || !mmCell(world, from.x, from.y)?.walkable || !mmCell(world, to.x, to.y)?.walkable || !Number.isFinite(distance)) return invalid();
   if (distance <= 1e-10) return { walkable: true, distance: 0, meters: 0, durationMinutes: 0, cost: 0, pieces: [] };
   const detailed = options.detailed !== false, size = world.cellSize, dx = to.x - from.x, dy = to.y - from.y;
-  const cuts = [0, 1];
+  const regions = world.movementGeometry?.segmentRegions(from, to) || null;
+  const cuts = regions ? [...regions.cuts] : [0, 1];
   if (Math.abs(dx) > 1e-12) for (let edge = (Math.floor(Math.min(from.x, to.x) / size) + 1) * size; edge < Math.max(from.x, to.x) - 1e-9; edge += size) cuts.push((edge - from.x) / dx);
   if (Math.abs(dy) > 1e-12) for (let edge = (Math.floor(Math.min(from.y, to.y) / size) + 1) * size; edge < Math.max(from.y, to.y) - 1e-9; edge += size) cuts.push((edge - from.y) / dy);
   cuts.sort((a, b) => a - b);
@@ -367,12 +735,12 @@ function segmentTravel(world, from, to, options = {}) {
       const length = distance * (b - a), physical = length * scale;
       const ha = mmElevation(world, ax, ay), hb = mmElevation(world, bx, by);
       const grade = ha !== null && hb !== null && physical > 1e-8 ? (hb - ha) / physical : 0;
-      const factors = mmFactors(cell, grade);
+      const factors = mmFactors(cell, grade, regions ? regions.at(middle) : null, Boolean(world.movementGeometry?.hasSeasonalGeometry));
       if (!factors.walkable) return invalid();
       const duration = physical / (BASE_WALK_METERS_PER_MINUTE * factors.multiplier);
       durationMinutes += duration;
       if (detailed) pieces.push({ from: { x: ax, y: ay }, to: { x: bx, y: by }, distance: length, meters: physical, durationMinutes: duration, ...factors,
-        biome: cell.biome || cell.type, roadClass: cell.roadClass || null, surface: cell.surface || null });
+        biome: cell.biome || cell.type, landscape: cell.landscape || null, roadClass: cell.roadClass || null, surface: cell.surface || null });
     }
   }
   return { walkable: true, distance, meters, durationMinutes, cost: durationMinutes, pieces };
@@ -517,6 +885,69 @@ function describeRoute(world, points, search = {}) {
   return { points: compact, distance, durationMinutes, segments, search };
 }
 
+const navigationDirections = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]];
+const landscapeLowerBoundGraphs = new WeakMap();
+
+// Expensive exact DEM/footprint edges should only be expanded when promising.
+// This cheap relaxed graph ignores those penalties and assumes the fastest
+// surface and downhill factor in every crossed cell. Its reverse distance field
+// is therefore an admissible, consistent heuristic for the exact directed A*.
+function landscapeLowerBound(world, target, destination, scale) {
+  if (!(world.metadata?.movement?.landscapeSamples > 0) || world.cells.length < 1024) return null;
+  let graph = landscapeLowerBoundGraphs.get(world);
+  const revision = world.movementRevision || 0;
+  if (!graph || graph.revision !== revision || graph.cells !== world.cells) {
+    const points = world.cells.map((cell, id) => navigationPoint(world, id));
+    const weights = new Float32Array(world.cells.length * 8);
+    // exp(.016) is the maximum of exp(.8*d - 10*d*d). The floor is
+    // respected even for custom tiny landscape multipliers.
+    const bestSurfaceAndSlope = MAX_MOVEMENT_MULTIPLIER * Math.exp(.016);
+    const fastest = landscape => Math.min(MAX_MOVEMENT_MULTIPLIER, Math.max(.005, bestSurfaceAndSlope * landscape));
+    for (let id = 0; id < world.cells.length; id++) {
+      if (!world.cells[id].walkable) continue;
+      const x = id % world.cols, y = Math.floor(id / world.cols), a = points[id];
+      const landscape = Number(world.cells[id].landscapeMultiplier) > 0 ? world.cells[id].landscapeMultiplier : 1;
+      for (let direction = 0; direction < 8; direction++) {
+        const [dx, dy] = navigationDirections[direction], nx = x + dx, ny = y + dy;
+        if (nx < 0 || ny < 0 || nx >= world.cols || ny >= world.rows) continue;
+        const next = ny * world.cols + nx;
+        if (!world.cells[next].walkable) continue;
+        if (dx && dy && (!world.cells[y * world.cols + nx].walkable || !world.cells[ny * world.cols + x].walkable)) continue;
+        let fastestLandscape = Math.max(landscape, Number(world.cells[next].landscapeMultiplier) > 0 ? world.cells[next].landscapeMultiplier : 1);
+        // Adjacent anchors may pass through either orthogonal cell. Include
+        // both, rather than incorrectly charging only their endpoint samples.
+        if (dx && dy) for (const cross of [y * world.cols + nx, ny * world.cols + x]) fastestLandscape = Math.max(fastestLandscape, Number(world.cells[cross].landscapeMultiplier) > 0 ? world.cells[cross].landscapeMultiplier : 1);
+        const cost = routeDistance(a, points[next]) * scale / (BASE_WALK_METERS_PER_MINUTE * fastest(fastestLandscape));
+        // Float32 is deliberately rounded down to preserve the lower bound.
+        weights[id * 8 + direction] = Math.fround(cost * (1 - 1e-6));
+      }
+    }
+    const exactWeights = new Float64Array(world.cells.length * 8); exactWeights.fill(NaN);
+    graph = { revision, cells: world.cells, points, weights, fastest, exactWeights };
+    landscapeLowerBoundGraphs.set(world, graph);
+  }
+  const distances = new Float64Array(world.cells.length); distances.fill(Infinity);
+  const heap = new MinHeap();
+  const targetLandscape = Number(world.cells[target].landscapeMultiplier) > 0 ? world.cells[target].landscapeMultiplier : 1;
+  distances[target] = routeDistance(graph.points[target], destination) * scale / (BASE_WALK_METERS_PER_MINUTE * graph.fastest(targetLandscape));
+  heap.push({ id: target, f: distances[target] });
+  let visited = 0;
+  while (heap.items.length) {
+    const current = heap.pop();
+    if (current.f > distances[current.id] + 1e-12) continue;
+    visited++;
+    const x = current.id % world.cols, y = Math.floor(current.id / world.cols);
+    for (let direction = 0; direction < 8; direction++) {
+      const edge = graph.weights[current.id * 8 + direction];
+      if (!(edge > 0)) continue;
+      const [dx, dy] = navigationDirections[direction], next = (y + dy) * world.cols + x + dx;
+      const score = current.f + edge;
+      if (score + 1e-12 < distances[next]) { distances[next] = score; heap.push({ id: next, f: score }); }
+    }
+  }
+  return { points: graph.points, distances, visited, exactWeights: graph.exactWeights };
+}
+
 function smoothRoute(world, points) {
   if (points.length < 3) return points;
   const prefix = [0];
@@ -552,14 +983,15 @@ function findPath(world, from, to) {
   const scores = new Float64Array(world.cells.length); scores.fill(Infinity);
   const parents = new Int32Array(world.cells.length); parents.fill(-1);
   const closed = new Uint8Array(world.cells.length), heap = new MinHeap();
-  const nodePoints = new Map();
-  const pointAt = id => { if (!nodePoints.has(id)) nodePoints.set(id, navigationPoint(world, id)); return nodePoints.get(id); };
   const scale = Number(world.metersPerUnit) > 0 ? Number(world.metersPerUnit) : 1;
-  const lowerBound = point => routeDistance(point, to) * scale / (BASE_WALK_METERS_PER_MINUTE * MAX_MOVEMENT_MULTIPLIER);
+  const relaxed = landscapeLowerBound(world, target, to, scale);
+  const nodePoints = new Map();
+  const pointAt = id => { if (relaxed) return relaxed.points[id]; if (!nodePoints.has(id)) nodePoints.set(id, navigationPoint(world, id)); return nodePoints.get(id); };
+  const lowerBound = id => relaxed ? relaxed.distances[id] : routeDistance(pointAt(id), to) * scale / (BASE_WALK_METERS_PER_MINUTE * MAX_MOVEMENT_MULTIPLIER);
   const beginning = segmentTravel(world, from, pointAt(start), { detailed: false });
   if (!beginning.walkable) return null;
   scores[start] = beginning.durationMinutes;
-  heap.push({ id: start, f: scores[start] + lowerBound(pointAt(start)) });
+  heap.push({ id: start, f: scores[start] + lowerBound(start) });
   const directions = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
   let visited = 0;
   while (heap.items.length) {
@@ -572,22 +1004,29 @@ function findPath(world, from, to) {
       const raw = [{ x: from.x, y: from.y }, ...ids.map(pointAt), { x: to.x, y: to.y }]
         .filter((point, index, all) => !index || routeDistance(point, all[index - 1]) > 1e-8);
       const smooth = smoothRoute(world, raw);
-      return describeRoute(world, smooth, { visited, rawPoints: raw.length, smoothedPoints: smooth.length, gridCellMeters: size * scale });
+      return describeRoute(world, smooth, { visited, rawPoints: raw.length, smoothedPoints: smooth.length, gridCellMeters: size * scale, heuristic: relaxed ? 'landscape-lower-bound' : 'straight-line', lowerBoundVisited: relaxed?.visited || 0 });
     }
     closed[current] = 1; visited++;
     const cx = current % world.cols, cy = Math.floor(current / world.cols), here = pointAt(current);
-    for (const [dx, dy] of directions) {
+    for (let direction = 0; direction < navigationDirections.length; direction++) {
+      const [dx, dy] = navigationDirections[direction];
       const nx = cx + dx, ny = cy + dy;
       if (nx < 0 || ny < 0 || nx >= world.cols || ny >= world.rows) continue;
       const next = ny * world.cols + nx;
       if (closed[next] || !world.cells[next].walkable) continue;
       if (dx && dy && (!world.cells[cy * world.cols + nx].walkable || !world.cells[ny * world.cols + cx].walkable)) continue;
-      const edge = segmentTravel(world, here, pointAt(next), { detailed: false });
-      if (!edge.walkable) continue;
-      const score = scores[current] + edge.durationMinutes;
+      const edgeId = current * 8 + direction;
+      let duration = relaxed?.exactWeights[edgeId] ?? NaN;
+      if (Number.isNaN(duration)) {
+        const edge = segmentTravel(world, here, pointAt(next), { detailed: false });
+        duration = edge.walkable ? edge.durationMinutes : Infinity;
+        if (relaxed) relaxed.exactWeights[edgeId] = duration;
+      }
+      if (!Number.isFinite(duration)) continue;
+      const score = scores[current] + duration;
       if (score < scores[next]) {
         parents[next] = current; scores[next] = score;
-        heap.push({ id: next, f: score + lowerBound(pointAt(next)) });
+        heap.push({ id: next, f: score + lowerBound(next) });
       }
     }
   }
@@ -863,7 +1302,7 @@ const rwGroundBiome = cell => ({ forest: 'forest', swamp: 'wetland', hill: 'rock
  * per loaded map and never consults layer visibility. Input geometry and DEM
  * samples are retained as source facts; only runtime navigation cells change.
  */
-function prepareTravelWorld(world, { elevationAt, biomeFeatures = [] } = {}) {
+function prepareTravelWorld(world, { elevationAt, biomeFeatures = [], landscape = null } = {}) {
   if (!world || !Array.isArray(world.cells) || !Number.isFinite(world.cellSize) || world.cellSize <= 0) throw new Error('Invalid travel world');
   const ground = world.terrainCells || world.cells;
   for (let index = 0; index < world.cells.length; index++) {
@@ -872,6 +1311,7 @@ function prepareTravelWorld(world, { elevationAt, biomeFeatures = [] } = {}) {
     cell.roadClass = null; cell.surface = null; cell.roadDistanceMeters = null; cell.roadWidthMeters = null; cell.roadId = null;
     delete cell.roadAnchor;
     cell.elevationMeters = null;
+    cell.landscape = null; cell.landscapeMultiplier = 1; cell.landscapeSlopePercent = null; cell.landscapeReliefMeters = null;
   }
   const polygons = biomeFeatures.filter(feature => feature?.geometry === 'polygon' && feature.exclusive !== false);
   const fallback = polygons.find(feature => feature.fallback);
@@ -927,12 +1367,19 @@ function prepareTravelWorld(world, { elevationAt, biomeFeatures = [] } = {}) {
       });
     }
   }
-  let elevationSamples = 0, roadCells = 0;
-  const biomeCounts = {};
+  let elevationSamples = 0, roadCells = 0, landscapeSamples = 0;
+  const biomeCounts = {}, landscapeCounts = {};
   for (let index = 0; index < world.cells.length; index++) {
     const cell = world.cells[index], x = (index % world.cols + .5) * size, y = (Math.floor(index / world.cols) + .5) * size;
     const height = typeof elevationAt === 'function' ? elevationAt(x, y) : null;
     if (Number.isFinite(height)) { cell.elevationMeters = height; elevationSamples++; }
+    const landform = typeof landscape?.getAt === 'function' ? landscape.getAt(x, y) : null;
+    if (landform?.id && Number.isFinite(landform.multiplier) && landform.multiplier > 0) {
+      cell.landscape = landform.id; cell.landscapeMultiplier = landform.multiplier;
+      cell.landscapeSlopePercent = Number.isFinite(landform.slopePercent) ? landform.slopePercent : null;
+      cell.landscapeReliefMeters = Number.isFinite(landform.reliefMeters) ? landform.reliefMeters : null;
+      landscapeSamples++; landscapeCounts[landform.id] = (landscapeCounts[landform.id] || 0) + 1;
+    }
     if (cell.roadClass) roadCells++;
     if (!cell.walkable) permanentWaterCells++;
     biomeCounts[cell.biome] = (biomeCounts[cell.biome] || 0) + 1;
@@ -940,7 +1387,9 @@ function prepareTravelWorld(world, { elevationAt, biomeFeatures = [] } = {}) {
     cell.cost = cell.walkable && Number.isFinite(multiplier) && multiplier > 0 ? 1 / multiplier : Infinity;
     if (!Number.isFinite(cell.cost)) cell.walkable = false;
   }
+  world.movementGeometry = prepareMovementGeometry(world, { biomeFeatures: polygons });
   world.movementPrepared = true;
+  world.movementRevision = (world.movementRevision || 0) + 1;
   world.movementElevationAt = typeof elevationAt === 'function' ? elevationAt : null;
   world.relief = elevationSamples > 0;
   const components = rwFindComponents(world);
@@ -961,6 +1410,7 @@ function prepareTravelWorld(world, { elevationAt, biomeFeatures = [] } = {}) {
   const report = {
     cells: world.cells.length, cellSize: size, resolutionMeters: size * metersPerUnit,
     elevationSamples, roadCells, roadSources: roads.size, permanentWaterCells, biomeCounts,
+    landscapeSamples, landscapeCounts, geometry: world.movementGeometry.getStats(),
     components: components.components.length, unreachablePois: (world.pois || []).filter(poi => !poi.reachable).length,
   };
   world.metadata = { ...(world.metadata || {}), relief: world.relief, movement: report, componentCount: components.components.length,
@@ -3516,14 +3966,17 @@ function createDetailRenderer(world) {
 
   function waterWidth(record, zoom) {
     const dry = drDry(record.feature);
-    return Math.max(record.width, (dry ? 2 : 2.4) / zoom) + (dry ? 1.5 : 1) / zoom;
+    // Seasonal ink is a cartographic symbol. Its size must not turn into a
+    // stripe across a whole channel at close zoom; the physical ribbon below
+    // keeps its genuine width for biomes and travel costs.
+    if (dry) return (record.width >= 3 || record.feature.tags?.waterway === 'river' ? 3.2 : record.width >= 1.5 ? 2.4 : 1.8) / zoom;
+    return Math.max(record.width, 2.4 / zoom) + 1 / zoom;
   }
 
   function waterDash(record, zoom) {
-    // Readable screen minima blend continuously into native-width proportions.
-    // The gap includes both round caps, leaving a real opening at every zoom.
-    const width = waterWidth(record, zoom);
-    return [Math.hypot(7 / zoom, width * 2.2), width + Math.hypot(4 / zoom, width * .8)];
+    // Compact rectangular marks keep one screen-space rhythm at every zoom.
+    // Butt caps leave the full gap open even when the native river is wide.
+    return [6 / zoom, 5 / zoom];
   }
 
   function clipRiverInk(ctx, record) {
@@ -3551,11 +4004,11 @@ function createDetailRenderer(world) {
     if (!record.inkPath) return;
     const hovered = drAllowsHighlight(record) && hoveredId === feature.id, dry = drDry(feature);
     ctx.save(); clipRiverInk(ctx, record);
-    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    ctx.lineJoin = 'round'; ctx.lineCap = dry ? 'butt' : 'round';
     ctx.setLineDash(dry ? waterDash(record, zoom) : []);
     if (hovered) { ctx.strokeStyle = 'rgba(233,236,172,.55)'; ctx.lineWidth = waterWidth(record, zoom) + 3 / zoom; ctx.stroke(record.inkPath); }
     ctx.strokeStyle = '#85abc4'; ctx.lineWidth = waterWidth(record, zoom); ctx.stroke(record.inkPath);
-    ctx.strokeStyle = dry ? '#4c91bd' : '#3f7eaa'; ctx.lineWidth = Math.max(record.width, 1.1 / zoom); ctx.stroke(record.inkPath);
+    ctx.strokeStyle = dry ? '#4c91bd' : '#3f7eaa'; ctx.lineWidth = dry ? Math.max(1.1 / zoom, waterWidth(record, zoom) - 1 / zoom) : Math.max(record.width, 1.1 / zoom); ctx.stroke(record.inkPath);
     ctx.setLineDash([]); ctx.restore();
   }
 
@@ -3620,6 +4073,11 @@ function createDetailRenderer(world) {
     // never accumulates from overlapping source zones. Without relief they form
     // the same complete opaque ground plane used by the ordinary map.
     for (const record of visible) if (record.layer === 'biomes' && record.geometry === 'polygon') paintBiome(ctx, record, view.zoom, hoveredId, relief);
+    if (typeof view.landscapeOverlay === 'function') {
+      ctx.save();
+      try { view.landscapeOverlay(ctx, view); } finally { ctx.restore(); }
+      ctx.globalAlpha = 1;
+    }
     for (const record of visible) if (record.layer === 'biomes' && record.inkPath) paintWater(ctx, record, view.zoom, hoveredId);
     let roadsPainted = false, powerPainted = false;
     for (const record of visible) {
@@ -3756,12 +4214,18 @@ function createDetailRenderer(world) {
           if (end < start) continue;
           const nearest = drClamp(offset + along, start, end) - offset;
           const px = a.x + nearest / length * dx, py = a.y + nearest / length * dy;
-          // Match the round dash caps used by the paint pass. The shared gap
-          // formula reserves their full diameter, so the centre of a gap stays
-          // ground rather than acquiring an expanded river hit footprint.
+          // Seasonal marks end exactly at their rectangular cap. Round joins
+          // still follow a bend when an uninterrupted mark crosses a vertex.
           const longitudinal = Math.abs(along - nearest);
           const perpendicular = Math.abs((x - a.x) * dy - (y - a.y) * dx) / length;
-          const distance = Math.max(0, Math.hypot(perpendicular, longitudinal) - halfWidth);
+          const phase = value => ((value % period) + period) % period;
+          const atJoinedStart = i > 1 && Math.abs(start - offset) < 1e-10 && along < nearest
+            && phase(offset) > 1e-10 && phase(offset) < dashLength - 1e-10;
+          const atJoinedEnd = i < path.length - 1 && Math.abs(end - offset - length) < 1e-10 && along > nearest
+            && phase(offset + length) > 1e-10 && phase(offset + length) < dashLength - 1e-10;
+          const distance = !dry || atJoinedStart || atJoinedEnd
+            ? Math.max(0, Math.hypot(perpendicular, longitudinal) - halfWidth)
+            : Math.hypot(Math.max(0, perpendicular - halfWidth), longitudinal);
           if (distance <= tolerance && distance < score) { score = distance; best = { x: px, y: py }; }
         }
         offset += length;
@@ -4736,11 +5200,12 @@ const createGameWorld = map => createRealWorld(map, { navigationCellSize: map.ce
 let world = createGameWorld(usaMap);
 let currentMap = usaMap;
 let overviewMarkers = [];
-const layers = { biomes: true, elevation: true, roads: true, power: true, buildings: true, details: true };
+const layers = { biomes: true, elevation: true, landscape: false, roads: true, power: true, buildings: true, details: true };
 const roadClasses = Object.fromEntries(Object.keys(ROAD_CLASSES).map(key => [key, true]));
 let detailRenderer = createDetailRenderer(world);
 let elevationRenderer = createElevationRenderer(world, beattyElevation);
-prepareTravelWorld(world, { elevationAt: elevationRenderer.available ? elevationRenderer.sampleAt : null, biomeFeatures: detailRenderer.getFeatures().filter(feature => feature.exclusive) });
+let landscape = createLandscape(world, { elevationAt: elevationRenderer.available ? elevationRenderer.sampleAt : null });
+prepareTravelWorld(world, { landscape, elevationAt: elevationRenderer.available ? elevationRenderer.sampleAt : null, biomeFeatures: detailRenderer.getFeatures().filter(feature => feature.exclusive) });
 overviewMarkers = createOverviewMarkers(world);
 let typedBuildingSources = new Set();
 let hoveredObject = null;
@@ -4911,6 +5376,7 @@ function syncLayerUI() {
   $('road-classes').classList.toggle('is-disabled', !layers.roads);
   $('biome-key').classList.toggle('is-disabled', !layers.biomes);
   syncElevationUI();
+  syncLandscapeUI();
   syncBuildingLegend(features);
 }
 
@@ -4928,6 +5394,22 @@ function syncElevationUI() {
   $('elevation-mid').textContent = `${Math.round((info.min + info.max) / 2)} м`;
   $('elevation-gradient').style.background = `linear-gradient(90deg,${info.palette.map(stop => `${stop.color} ${100 * (stop.height - info.min) / (info.max - info.min || 1)}%`).join(',')})`;
   $('elevation-source').textContent = `USGS 3DEP · горизонтали ${info.contourInterval} м`;
+}
+
+function syncLandscapeUI() {
+  const available = landscape.available;
+  $('layer-landscape').disabled = !available;
+  $('landscape-button').disabled = !available;
+  $('landscape-button').setAttribute('aria-pressed', String(available && layers.landscape));
+  $('landscape-unavailable').hidden = available;
+  $('landscape-legend').classList.toggle('is-disabled', !available || !layers.landscape);
+  $('landscape-legend').replaceChildren(...Object.entries(LANDSCAPE_TYPES).map(([id, type]) => {
+    const row = document.createElement('div'); row.className = 'landscape-legend-row';
+    const swatch = document.createElement('i'); swatch.style.backgroundColor = type.color; swatch.setAttribute('aria-hidden', 'true');
+    const label = document.createElement('span'); label.textContent = type.name;
+    const factor = document.createElement('span'); factor.className = 'landscape-factor'; factor.textContent = `×${type.multiplier.toFixed(2).replace('.', ',')}`;
+    row.dataset.landscape = id; row.append(swatch, label, factor); return row;
+  }));
 }
 
 function syncBuildingLegend(features = detailRenderer.getFeatures()) {
@@ -4972,16 +5454,24 @@ $('elevation-button').addEventListener('click', () => {
   $('layer-elevation').dispatchEvent(new Event('change'));
 });
 
+$('landscape-button').addEventListener('click', () => {
+  if (!landscape.available) return;
+  $('layer-landscape').checked = !layers.landscape;
+  $('layer-landscape').dispatchEvent(new Event('change'));
+});
+
 function switchMap(map) {
   const next = createGameWorld(map);
   const nextDetailRenderer = createDetailRenderer(next);
   const nextElevationRenderer = createElevationRenderer(next, beattyElevation);
-  prepareTravelWorld(next, { elevationAt: nextElevationRenderer.available ? nextElevationRenderer.sampleAt : null, biomeFeatures: nextDetailRenderer.getFeatures().filter(feature => feature.exclusive) });
+  const nextLandscape = createLandscape(next, { elevationAt: nextElevationRenderer.available ? nextElevationRenderer.sampleAt : null });
+  prepareTravelWorld(next, { landscape: nextLandscape, elevationAt: nextElevationRenderer.available ? nextElevationRenderer.sampleAt : null, biomeFeatures: nextDetailRenderer.getFeatures().filter(feature => feature.exclusive) });
   world = next; currentMap = map;
   closeBuildingTypes();
   overviewMarkers = createOverviewMarkers(world);
   detailRenderer = nextDetailRenderer;
   elevationRenderer = nextElevationRenderer;
+  landscape = nextLandscape;
   objectCacheState = null; objectRevision++;
   detailRenderer.setLayers(layers);
   detailRenderer.setRoadClasses(roadClasses);
@@ -5006,7 +5496,9 @@ function showMapTooltip(label, screenX, screenY) {
   $('object-card').hidden = true;
   const position = screenToWorld(screenX, screenY);
   const height = layers.elevation && elevationRenderer.available ? elevationRenderer.sampleAt(position.x, position.y) : null;
-  tooltip.textContent = Number.isFinite(height) ? `${label} · ${Math.round(height)} м` : label;
+  const land = landscape.getAt(position.x, position.y);
+  const landscapeLabel = land ? `${land.name} ×${land.multiplier.toFixed(2).replace('.', ',')}` : '';
+  tooltip.textContent = [label, landscapeLabel, Number.isFinite(height) ? `${Math.round(height)} м` : ''].filter(Boolean).join(' · ');
   tooltip.hidden = false;
   const bounds = tooltip.getBoundingClientRect();
   const left = screenX + 14 + bounds.width > vw - 8 ? screenX - bounds.width - 14 : screenX + 14;
@@ -5029,7 +5521,7 @@ function inspectObject(point, screenX, screenY, touch = false, pickedFeature) {
   const feature = pickedFeature === undefined ? detailRenderer.pick(point.x, point.y, 5 / camera.zoom) : pickedFeature;
   if (!feature) {
     hideObjectCard();
-    if (layers.elevation && elevationRenderer.available && Number.isFinite(elevationRenderer.sampleAt(point.x, point.y))) showMapTooltip('Высота', screenX, screenY);
+    if ((layers.elevation && elevationRenderer.available) || (layers.landscape && landscape.available)) showMapTooltip(layers.landscape ? 'Ландшафт' : 'Высота', screenX, screenY);
     return;
   }
   hoveredObject = feature;
@@ -5057,6 +5549,8 @@ function inspectObject(point, screenX, screenY, touch = false, pickedFeature) {
   if (zones.length) $('object-meta').textContent += `\nБиом: ${[...new Set(zones.map(zone => zone.biomeName || zone.name))].join(' + ')}`;
   const elevation = layers.elevation && elevationRenderer.available ? elevationRenderer.sampleAt(point.x, point.y) : null;
   if (Number.isFinite(elevation)) $('object-meta').textContent += `\nВысота: ${Math.round(elevation)} м`;
+  const land = landscape.getAt(point.x, point.y);
+  if (land) $('object-meta').textContent += `\nЛандшафт: ${land.name} ×${land.multiplier.toFixed(2).replace('.', ',')}`;
   if (feature.typeName && !assignment) $('object-meta').textContent += `\nИгровой тип: ${feature.typeName}`;
   const profiles = collectResourceProfiles(assignment || feature, zones);
   if (profiles.length) $('object-meta').textContent += `\nПрофили ресурсов: ${profiles.map(id => RESOURCE_PROFILES[id]?.name || id).join(', ')}`;
@@ -5317,7 +5811,8 @@ function drawStaticObjects(time) {
     objectCacheCtx.setTransform(scale, 0, 0, scale, 0, 0);
     objectCacheCtx.save(); objectCacheCtx.translate(width / 2, height / 2); objectCacheCtx.scale(camera.zoom, camera.zoom); objectCacheCtx.translate(-camera.x, -camera.y);
     detailRenderer.draw(objectCacheCtx, { zoom: camera.zoom, cameraX: camera.x, cameraY: camera.y, width, height, time, hoveredId: null,
-      groundOverlay: layers.elevation && elevationRenderer.available ? (context, view) => elevationRenderer.draw(context, view) : null });
+      groundOverlay: layers.elevation && elevationRenderer.available ? (context, view) => elevationRenderer.draw(context, view) : null,
+      landscapeOverlay: layers.landscape && landscape.available ? (context, view) => landscape.draw(context, view) : null });
     objectCacheCtx.restore();
     objectCacheState = { key, x: camera.x, y: camera.y, margin, scale, width, height };
     renderStats.staticRebuilds++; renderStats.lastStaticMs = performance.now() - started;
@@ -5417,13 +5912,17 @@ function updateUI() {
   $('biome-label').title = $('biome-label').textContent;
   const toward = route?.points[route.index] || null;
   const movement = movementAt(world, player.x, player.y, toward);
-  $('movement-speed').textContent = `${movement.speedKmh.toFixed(1).replace('.', ',')} км/ч`;
-  $('movement-multiplier').textContent = `×${movement.multiplier.toFixed(2).replace('.', ',')}`;
+  $('movement-speed').textContent = `${movement.speedKmh.toFixed(movement.speedKmh < 1 ? 2 : 1).replace('.', ',')} км/ч`;
+  const land = landscape.getAt(player.x, player.y);
+  $('landscape-label').hidden = !land;
+  $('landscape-label').textContent = land ? `Ландшафт: ${land.name} ×${land.multiplier.toFixed(2).replace('.', ',')}` : '';
+  $('movement-multiplier').textContent = `×${movement.multiplier.toFixed(movement.multiplier < .1 ? 3 : 2).replace('.', ',')}`;
   const surfaceNames = { asphalt: 'Асфальт', concrete: 'Бетон', paved: 'Твёрдое покрытие', paving_stones: 'Брусчатка', gravel: 'Щебень', fine_gravel: 'Мелкий гравий', compacted: 'Уплотнённый грунт', dirt: 'Грунт', earth: 'Грунт', ground: 'Грунт', unpaved: 'Грунтовая дорога', sand: 'Песок', mud: 'Грязь', grass: 'Трава', rock: 'Камни' };
   const footing = movement.roadClass ? [ROAD_CLASSES[movement.roadClass]?.name || 'Дорога', surfaceNames[movement.surface]].filter(Boolean).join(' · ') : biomes[0] || 'Пустошь';
   const slope = toward ? Math.abs(movement.slopePercent) < .5 ? 'Почти ровно' : `${movement.slopePercent > 0 ? 'Подъём +' : 'Спуск −'}${Math.round(Math.abs(movement.slopePercent))}%` : '';
-  $('movement-factors').textContent = [footing, slope].filter(Boolean).join(' · ');
-  $('movement-multiplier').title = `Покрытие ×${movement.terrainMultiplier.toFixed(2)} · Уклон ×${movement.slopeMultiplier.toFixed(2)}`;
+  const obstacles = [movement.buildingMultiplier < 1 ? 'Через здание' : '', movement.seasonalMultiplier < 1 ? 'Сезонное русло' : ''].filter(Boolean);
+  $('movement-factors').textContent = [footing, slope, ...obstacles].filter(Boolean).join(' · ');
+  $('movement-multiplier').title = `Поверхность ×${movement.terrainMultiplier.toFixed(2)} · Ландшафт ×${(movement.landscapeMultiplier ?? 1).toFixed(2)} · Уклон ×${movement.slopeMultiplier.toFixed(2)} · Здание ×${(movement.buildingMultiplier ?? 1).toFixed(2)} · Русло ×${(movement.seasonalMultiplier ?? 1).toFixed(2)}`;
   if (world.geographic) {
     const [west, south, east, north] = world.bbox;
     const degree = 6371008.8 * Math.PI / 180, cosine = Math.cos((south + north) * Math.PI / 360);
@@ -5458,10 +5957,12 @@ window.__DAY_NEXT__ = {
   getRoadClasses: () => ({ ...roadClasses }),
   getOverviewMarkers: () => overviewMarkers.map(marker => ({ ...structuredClone(marker), visible: world.geographic && camera.zoom <= OVERVIEW_MAX_ZOOM && poiEnabled(marker) })),
   getFeatures: () => detailRenderer.getFeatures(),
-  getRenderStats: () => ({ ...renderStats, meanFrameMs: renderStats.totalFrameMs / Math.max(1, renderStats.frames), cachePixels: objectCache.width * objectCache.height, cacheBytes: objectCache.width * objectCache.height * 4, renderer: detailRenderer.getStats(), elevation: elevationRenderer.getStats(), navigation: structuredClone(world.metadata?.movement || {}) }),
+  getRenderStats: () => ({ ...renderStats, meanFrameMs: renderStats.totalFrameMs / Math.max(1, renderStats.frames), cachePixels: objectCache.width * objectCache.height, cacheBytes: objectCache.width * objectCache.height * 4, renderer: detailRenderer.getStats(), elevation: elevationRenderer.getStats(), landscape: landscape.getStats(), navigation: structuredClone(world.metadata?.movement || {}) }),
+  getLandscapeInfo: () => landscape.getInfo(),
+  landscapeAt: (x, y) => landscape.getAt(x, y),
   getElevationInfo: () => elevationRenderer.getInfo(),
   elevationAt: (x, y) => elevationRenderer.sampleAt(x, y),
-  getTypeCatalogs: () => structuredClone({ buildingTypes: BUILDING_TYPES, buildingRoles: BUILDING_ROLES, buildingCategories: BUILDING_CATEGORIES, biomeTypes: BIOME_TYPES, resourceProfiles: RESOURCE_PROFILES, resourceKinds: RESOURCE_KINDS }),
+  getTypeCatalogs: () => structuredClone({ buildingTypes: BUILDING_TYPES, buildingRoles: BUILDING_ROLES, buildingCategories: BUILDING_CATEGORIES, biomeTypes: BIOME_TYPES, landscapeTypes: LANDSCAPE_TYPES, resourceProfiles: RESOURCE_PROFILES, resourceKinds: RESOURCE_KINDS }),
   getResourceCandidatesAt: (x, y) => { const feature = detailRenderer.pick(x, y, 1); return collectResourceCandidates(feature?.gameplayAssignment || feature, detailRenderer.zonesAt(x, y)); },
 };
 log('Невада. На карте — следы прежней жизни.', true); updateMapDetails(); updateUI();

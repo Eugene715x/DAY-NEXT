@@ -82,6 +82,69 @@ function describeRoute(world, points, search = {}) {
   return { points: compact, distance, durationMinutes, segments, search };
 }
 
+const navigationDirections = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]];
+const landscapeLowerBoundGraphs = new WeakMap();
+
+// Expensive exact DEM/footprint edges should only be expanded when promising.
+// This cheap relaxed graph ignores those penalties and assumes the fastest
+// surface and downhill factor in every crossed cell. Its reverse distance field
+// is therefore an admissible, consistent heuristic for the exact directed A*.
+function landscapeLowerBound(world, target, destination, scale) {
+  if (!(world.metadata?.movement?.landscapeSamples > 0) || world.cells.length < 1024) return null;
+  let graph = landscapeLowerBoundGraphs.get(world);
+  const revision = world.movementRevision || 0;
+  if (!graph || graph.revision !== revision || graph.cells !== world.cells) {
+    const points = world.cells.map((cell, id) => navigationPoint(world, id));
+    const weights = new Float32Array(world.cells.length * 8);
+    // exp(.016) is the maximum of exp(.8*d - 10*d*d). The floor is
+    // respected even for custom tiny landscape multipliers.
+    const bestSurfaceAndSlope = MAX_MOVEMENT_MULTIPLIER * Math.exp(.016);
+    const fastest = landscape => Math.min(MAX_MOVEMENT_MULTIPLIER, Math.max(.005, bestSurfaceAndSlope * landscape));
+    for (let id = 0; id < world.cells.length; id++) {
+      if (!world.cells[id].walkable) continue;
+      const x = id % world.cols, y = Math.floor(id / world.cols), a = points[id];
+      const landscape = Number(world.cells[id].landscapeMultiplier) > 0 ? world.cells[id].landscapeMultiplier : 1;
+      for (let direction = 0; direction < 8; direction++) {
+        const [dx, dy] = navigationDirections[direction], nx = x + dx, ny = y + dy;
+        if (nx < 0 || ny < 0 || nx >= world.cols || ny >= world.rows) continue;
+        const next = ny * world.cols + nx;
+        if (!world.cells[next].walkable) continue;
+        if (dx && dy && (!world.cells[y * world.cols + nx].walkable || !world.cells[ny * world.cols + x].walkable)) continue;
+        let fastestLandscape = Math.max(landscape, Number(world.cells[next].landscapeMultiplier) > 0 ? world.cells[next].landscapeMultiplier : 1);
+        // Adjacent anchors may pass through either orthogonal cell. Include
+        // both, rather than incorrectly charging only their endpoint samples.
+        if (dx && dy) for (const cross of [y * world.cols + nx, ny * world.cols + x]) fastestLandscape = Math.max(fastestLandscape, Number(world.cells[cross].landscapeMultiplier) > 0 ? world.cells[cross].landscapeMultiplier : 1);
+        const cost = routeDistance(a, points[next]) * scale / (BASE_WALK_METERS_PER_MINUTE * fastest(fastestLandscape));
+        // Float32 is deliberately rounded down to preserve the lower bound.
+        weights[id * 8 + direction] = Math.fround(cost * (1 - 1e-6));
+      }
+    }
+    const exactWeights = new Float64Array(world.cells.length * 8); exactWeights.fill(NaN);
+    graph = { revision, cells: world.cells, points, weights, fastest, exactWeights };
+    landscapeLowerBoundGraphs.set(world, graph);
+  }
+  const distances = new Float64Array(world.cells.length); distances.fill(Infinity);
+  const heap = new MinHeap();
+  const targetLandscape = Number(world.cells[target].landscapeMultiplier) > 0 ? world.cells[target].landscapeMultiplier : 1;
+  distances[target] = routeDistance(graph.points[target], destination) * scale / (BASE_WALK_METERS_PER_MINUTE * graph.fastest(targetLandscape));
+  heap.push({ id: target, f: distances[target] });
+  let visited = 0;
+  while (heap.items.length) {
+    const current = heap.pop();
+    if (current.f > distances[current.id] + 1e-12) continue;
+    visited++;
+    const x = current.id % world.cols, y = Math.floor(current.id / world.cols);
+    for (let direction = 0; direction < 8; direction++) {
+      const edge = graph.weights[current.id * 8 + direction];
+      if (!(edge > 0)) continue;
+      const [dx, dy] = navigationDirections[direction], next = (y + dy) * world.cols + x + dx;
+      const score = current.f + edge;
+      if (score + 1e-12 < distances[next]) { distances[next] = score; heap.push({ id: next, f: score }); }
+    }
+  }
+  return { points: graph.points, distances, visited, exactWeights: graph.exactWeights };
+}
+
 function smoothRoute(world, points) {
   if (points.length < 3) return points;
   const prefix = [0];
@@ -117,14 +180,15 @@ export function findPath(world, from, to) {
   const scores = new Float64Array(world.cells.length); scores.fill(Infinity);
   const parents = new Int32Array(world.cells.length); parents.fill(-1);
   const closed = new Uint8Array(world.cells.length), heap = new MinHeap();
-  const nodePoints = new Map();
-  const pointAt = id => { if (!nodePoints.has(id)) nodePoints.set(id, navigationPoint(world, id)); return nodePoints.get(id); };
   const scale = Number(world.metersPerUnit) > 0 ? Number(world.metersPerUnit) : 1;
-  const lowerBound = point => routeDistance(point, to) * scale / (BASE_WALK_METERS_PER_MINUTE * MAX_MOVEMENT_MULTIPLIER);
+  const relaxed = landscapeLowerBound(world, target, to, scale);
+  const nodePoints = new Map();
+  const pointAt = id => { if (relaxed) return relaxed.points[id]; if (!nodePoints.has(id)) nodePoints.set(id, navigationPoint(world, id)); return nodePoints.get(id); };
+  const lowerBound = id => relaxed ? relaxed.distances[id] : routeDistance(pointAt(id), to) * scale / (BASE_WALK_METERS_PER_MINUTE * MAX_MOVEMENT_MULTIPLIER);
   const beginning = segmentTravel(world, from, pointAt(start), { detailed: false });
   if (!beginning.walkable) return null;
   scores[start] = beginning.durationMinutes;
-  heap.push({ id: start, f: scores[start] + lowerBound(pointAt(start)) });
+  heap.push({ id: start, f: scores[start] + lowerBound(start) });
   const directions = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]];
   let visited = 0;
   while (heap.items.length) {
@@ -137,22 +201,29 @@ export function findPath(world, from, to) {
       const raw = [{ x: from.x, y: from.y }, ...ids.map(pointAt), { x: to.x, y: to.y }]
         .filter((point, index, all) => !index || routeDistance(point, all[index - 1]) > 1e-8);
       const smooth = smoothRoute(world, raw);
-      return describeRoute(world, smooth, { visited, rawPoints: raw.length, smoothedPoints: smooth.length, gridCellMeters: size * scale });
+      return describeRoute(world, smooth, { visited, rawPoints: raw.length, smoothedPoints: smooth.length, gridCellMeters: size * scale, heuristic: relaxed ? 'landscape-lower-bound' : 'straight-line', lowerBoundVisited: relaxed?.visited || 0 });
     }
     closed[current] = 1; visited++;
     const cx = current % world.cols, cy = Math.floor(current / world.cols), here = pointAt(current);
-    for (const [dx, dy] of directions) {
+    for (let direction = 0; direction < navigationDirections.length; direction++) {
+      const [dx, dy] = navigationDirections[direction];
       const nx = cx + dx, ny = cy + dy;
       if (nx < 0 || ny < 0 || nx >= world.cols || ny >= world.rows) continue;
       const next = ny * world.cols + nx;
       if (closed[next] || !world.cells[next].walkable) continue;
       if (dx && dy && (!world.cells[cy * world.cols + nx].walkable || !world.cells[ny * world.cols + cx].walkable)) continue;
-      const edge = segmentTravel(world, here, pointAt(next), { detailed: false });
-      if (!edge.walkable) continue;
-      const score = scores[current] + edge.durationMinutes;
+      const edgeId = current * 8 + direction;
+      let duration = relaxed?.exactWeights[edgeId] ?? NaN;
+      if (Number.isNaN(duration)) {
+        const edge = segmentTravel(world, here, pointAt(next), { detailed: false });
+        duration = edge.walkable ? edge.durationMinutes : Infinity;
+        if (relaxed) relaxed.exactWeights[edgeId] = duration;
+      }
+      if (!Number.isFinite(duration)) continue;
+      const score = scores[current] + duration;
       if (score < scores[next]) {
         parents[next] = current; scores[next] = score;
-        heap.push({ id: next, f: score + lowerBound(pointAt(next)) });
+        heap.push({ id: next, f: score + lowerBound(next) });
       }
     }
   }

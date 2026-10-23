@@ -660,14 +660,17 @@ export function createDetailRenderer(world) {
 
   function waterWidth(record, zoom) {
     const dry = drDry(record.feature);
-    return Math.max(record.width, (dry ? 2 : 2.4) / zoom) + (dry ? 1.5 : 1) / zoom;
+    // Seasonal ink is a cartographic symbol. Its size must not turn into a
+    // stripe across a whole channel at close zoom; the physical ribbon below
+    // keeps its genuine width for biomes and travel costs.
+    if (dry) return (record.width >= 3 || record.feature.tags?.waterway === 'river' ? 3.2 : record.width >= 1.5 ? 2.4 : 1.8) / zoom;
+    return Math.max(record.width, 2.4 / zoom) + 1 / zoom;
   }
 
   function waterDash(record, zoom) {
-    // Readable screen minima blend continuously into native-width proportions.
-    // The gap includes both round caps, leaving a real opening at every zoom.
-    const width = waterWidth(record, zoom);
-    return [Math.hypot(7 / zoom, width * 2.2), width + Math.hypot(4 / zoom, width * .8)];
+    // Compact rectangular marks keep one screen-space rhythm at every zoom.
+    // Butt caps leave the full gap open even when the native river is wide.
+    return [6 / zoom, 5 / zoom];
   }
 
   function clipRiverInk(ctx, record) {
@@ -695,11 +698,11 @@ export function createDetailRenderer(world) {
     if (!record.inkPath) return;
     const hovered = drAllowsHighlight(record) && hoveredId === feature.id, dry = drDry(feature);
     ctx.save(); clipRiverInk(ctx, record);
-    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    ctx.lineJoin = 'round'; ctx.lineCap = dry ? 'butt' : 'round';
     ctx.setLineDash(dry ? waterDash(record, zoom) : []);
     if (hovered) { ctx.strokeStyle = 'rgba(233,236,172,.55)'; ctx.lineWidth = waterWidth(record, zoom) + 3 / zoom; ctx.stroke(record.inkPath); }
     ctx.strokeStyle = '#85abc4'; ctx.lineWidth = waterWidth(record, zoom); ctx.stroke(record.inkPath);
-    ctx.strokeStyle = dry ? '#4c91bd' : '#3f7eaa'; ctx.lineWidth = Math.max(record.width, 1.1 / zoom); ctx.stroke(record.inkPath);
+    ctx.strokeStyle = dry ? '#4c91bd' : '#3f7eaa'; ctx.lineWidth = dry ? Math.max(1.1 / zoom, waterWidth(record, zoom) - 1 / zoom) : Math.max(record.width, 1.1 / zoom); ctx.stroke(record.inkPath);
     ctx.setLineDash([]); ctx.restore();
   }
 
@@ -764,6 +767,11 @@ export function createDetailRenderer(world) {
     // never accumulates from overlapping source zones. Without relief they form
     // the same complete opaque ground plane used by the ordinary map.
     for (const record of visible) if (record.layer === 'biomes' && record.geometry === 'polygon') paintBiome(ctx, record, view.zoom, hoveredId, relief);
+    if (typeof view.landscapeOverlay === 'function') {
+      ctx.save();
+      try { view.landscapeOverlay(ctx, view); } finally { ctx.restore(); }
+      ctx.globalAlpha = 1;
+    }
     for (const record of visible) if (record.layer === 'biomes' && record.inkPath) paintWater(ctx, record, view.zoom, hoveredId);
     let roadsPainted = false, powerPainted = false;
     for (const record of visible) {
@@ -900,12 +908,18 @@ export function createDetailRenderer(world) {
           if (end < start) continue;
           const nearest = drClamp(offset + along, start, end) - offset;
           const px = a.x + nearest / length * dx, py = a.y + nearest / length * dy;
-          // Match the round dash caps used by the paint pass. The shared gap
-          // formula reserves their full diameter, so the centre of a gap stays
-          // ground rather than acquiring an expanded river hit footprint.
+          // Seasonal marks end exactly at their rectangular cap. Round joins
+          // still follow a bend when an uninterrupted mark crosses a vertex.
           const longitudinal = Math.abs(along - nearest);
           const perpendicular = Math.abs((x - a.x) * dy - (y - a.y) * dx) / length;
-          const distance = Math.max(0, Math.hypot(perpendicular, longitudinal) - halfWidth);
+          const phase = value => ((value % period) + period) % period;
+          const atJoinedStart = i > 1 && Math.abs(start - offset) < 1e-10 && along < nearest
+            && phase(offset) > 1e-10 && phase(offset) < dashLength - 1e-10;
+          const atJoinedEnd = i < path.length - 1 && Math.abs(end - offset - length) < 1e-10 && along > nearest
+            && phase(offset + length) > 1e-10 && phase(offset + length) < dashLength - 1e-10;
+          const distance = !dry || atJoinedStart || atJoinedEnd
+            ? Math.max(0, Math.hypot(perpendicular, longitudinal) - halfWidth)
+            : Math.hypot(Math.max(0, perpendicular - halfWidth), longitudinal);
           if (distance <= tolerance && distance < score) { score = distance; best = { x: px, y: py }; }
         }
         offset += length;

@@ -1,6 +1,7 @@
 import { findPath, terrainAt, nearestWalkable } from './world.js';
 import { createRealWorld, prepareTravelWorld } from './real-world.js';
-import { BASE_WALK_METERS_PER_MINUTE, advanceAlongRoute, movementAt } from './movement-model.js';
+import { advanceAlongRoute, movementAt } from './movement-model.js';
+import { LANDSCAPE_TYPES, createLandscape } from './landscape.js';
 import { convertOSM, validateBbox } from './scripts/lib/osm-converter.mjs';
 import usaMap from './maps/usa.js';
 import beattyElevation from './maps/beatty-elevation.js';
@@ -21,11 +22,12 @@ const createGameWorld = map => createRealWorld(map, { navigationCellSize: map.ce
 let world = createGameWorld(usaMap);
 let currentMap = usaMap;
 let overviewMarkers = [];
-const layers = { biomes: true, elevation: true, roads: true, power: true, buildings: true, details: true };
+const layers = { biomes: true, elevation: true, landscape: false, roads: true, power: true, buildings: true, details: true };
 const roadClasses = Object.fromEntries(Object.keys(ROAD_CLASSES).map(key => [key, true]));
 let detailRenderer = createDetailRenderer(world);
 let elevationRenderer = createElevationRenderer(world, beattyElevation);
-prepareTravelWorld(world, { elevationAt: elevationRenderer.available ? elevationRenderer.sampleAt : null, biomeFeatures: detailRenderer.getFeatures().filter(feature => feature.exclusive) });
+let landscape = createLandscape(world, { elevationAt: elevationRenderer.available ? elevationRenderer.sampleAt : null });
+prepareTravelWorld(world, { landscape, elevationAt: elevationRenderer.available ? elevationRenderer.sampleAt : null, biomeFeatures: detailRenderer.getFeatures().filter(feature => feature.exclusive) });
 overviewMarkers = createOverviewMarkers(world);
 let typedBuildingSources = new Set();
 let hoveredObject = null;
@@ -196,6 +198,7 @@ function syncLayerUI() {
   $('road-classes').classList.toggle('is-disabled', !layers.roads);
   $('biome-key').classList.toggle('is-disabled', !layers.biomes);
   syncElevationUI();
+  syncLandscapeUI();
   syncBuildingLegend(features);
 }
 
@@ -213,6 +216,22 @@ function syncElevationUI() {
   $('elevation-mid').textContent = `${Math.round((info.min + info.max) / 2)} м`;
   $('elevation-gradient').style.background = `linear-gradient(90deg,${info.palette.map(stop => `${stop.color} ${100 * (stop.height - info.min) / (info.max - info.min || 1)}%`).join(',')})`;
   $('elevation-source').textContent = `USGS 3DEP · горизонтали ${info.contourInterval} м`;
+}
+
+function syncLandscapeUI() {
+  const available = landscape.available;
+  $('layer-landscape').disabled = !available;
+  $('landscape-button').disabled = !available;
+  $('landscape-button').setAttribute('aria-pressed', String(available && layers.landscape));
+  $('landscape-unavailable').hidden = available;
+  $('landscape-legend').classList.toggle('is-disabled', !available || !layers.landscape);
+  $('landscape-legend').replaceChildren(...Object.entries(LANDSCAPE_TYPES).map(([id, type]) => {
+    const row = document.createElement('div'); row.className = 'landscape-legend-row';
+    const swatch = document.createElement('i'); swatch.style.backgroundColor = type.color; swatch.setAttribute('aria-hidden', 'true');
+    const label = document.createElement('span'); label.textContent = type.name;
+    const factor = document.createElement('span'); factor.className = 'landscape-factor'; factor.textContent = `×${type.multiplier.toFixed(2).replace('.', ',')}`;
+    row.dataset.landscape = id; row.append(swatch, label, factor); return row;
+  }));
 }
 
 function syncBuildingLegend(features = detailRenderer.getFeatures()) {
@@ -257,16 +276,24 @@ $('elevation-button').addEventListener('click', () => {
   $('layer-elevation').dispatchEvent(new Event('change'));
 });
 
+$('landscape-button').addEventListener('click', () => {
+  if (!landscape.available) return;
+  $('layer-landscape').checked = !layers.landscape;
+  $('layer-landscape').dispatchEvent(new Event('change'));
+});
+
 function switchMap(map) {
   const next = createGameWorld(map);
   const nextDetailRenderer = createDetailRenderer(next);
   const nextElevationRenderer = createElevationRenderer(next, beattyElevation);
-  prepareTravelWorld(next, { elevationAt: nextElevationRenderer.available ? nextElevationRenderer.sampleAt : null, biomeFeatures: nextDetailRenderer.getFeatures().filter(feature => feature.exclusive) });
+  const nextLandscape = createLandscape(next, { elevationAt: nextElevationRenderer.available ? nextElevationRenderer.sampleAt : null });
+  prepareTravelWorld(next, { landscape: nextLandscape, elevationAt: nextElevationRenderer.available ? nextElevationRenderer.sampleAt : null, biomeFeatures: nextDetailRenderer.getFeatures().filter(feature => feature.exclusive) });
   world = next; currentMap = map;
   closeBuildingTypes();
   overviewMarkers = createOverviewMarkers(world);
   detailRenderer = nextDetailRenderer;
   elevationRenderer = nextElevationRenderer;
+  landscape = nextLandscape;
   objectCacheState = null; objectRevision++;
   detailRenderer.setLayers(layers);
   detailRenderer.setRoadClasses(roadClasses);
@@ -291,7 +318,9 @@ function showMapTooltip(label, screenX, screenY) {
   $('object-card').hidden = true;
   const position = screenToWorld(screenX, screenY);
   const height = layers.elevation && elevationRenderer.available ? elevationRenderer.sampleAt(position.x, position.y) : null;
-  tooltip.textContent = Number.isFinite(height) ? `${label} · ${Math.round(height)} м` : label;
+  const land = landscape.getAt(position.x, position.y);
+  const landscapeLabel = land ? `${land.name} ×${land.multiplier.toFixed(2).replace('.', ',')}` : '';
+  tooltip.textContent = [label, landscapeLabel, Number.isFinite(height) ? `${Math.round(height)} м` : ''].filter(Boolean).join(' · ');
   tooltip.hidden = false;
   const bounds = tooltip.getBoundingClientRect();
   const left = screenX + 14 + bounds.width > vw - 8 ? screenX - bounds.width - 14 : screenX + 14;
@@ -314,7 +343,7 @@ function inspectObject(point, screenX, screenY, touch = false, pickedFeature) {
   const feature = pickedFeature === undefined ? detailRenderer.pick(point.x, point.y, 5 / camera.zoom) : pickedFeature;
   if (!feature) {
     hideObjectCard();
-    if (layers.elevation && elevationRenderer.available && Number.isFinite(elevationRenderer.sampleAt(point.x, point.y))) showMapTooltip('Высота', screenX, screenY);
+    if ((layers.elevation && elevationRenderer.available) || (layers.landscape && landscape.available)) showMapTooltip(layers.landscape ? 'Ландшафт' : 'Высота', screenX, screenY);
     return;
   }
   hoveredObject = feature;
@@ -342,6 +371,8 @@ function inspectObject(point, screenX, screenY, touch = false, pickedFeature) {
   if (zones.length) $('object-meta').textContent += `\nБиом: ${[...new Set(zones.map(zone => zone.biomeName || zone.name))].join(' + ')}`;
   const elevation = layers.elevation && elevationRenderer.available ? elevationRenderer.sampleAt(point.x, point.y) : null;
   if (Number.isFinite(elevation)) $('object-meta').textContent += `\nВысота: ${Math.round(elevation)} м`;
+  const land = landscape.getAt(point.x, point.y);
+  if (land) $('object-meta').textContent += `\nЛандшафт: ${land.name} ×${land.multiplier.toFixed(2).replace('.', ',')}`;
   if (feature.typeName && !assignment) $('object-meta').textContent += `\nИгровой тип: ${feature.typeName}`;
   const profiles = collectResourceProfiles(assignment || feature, zones);
   if (profiles.length) $('object-meta').textContent += `\nПрофили ресурсов: ${profiles.map(id => RESOURCE_PROFILES[id]?.name || id).join(', ')}`;
@@ -602,7 +633,8 @@ function drawStaticObjects(time) {
     objectCacheCtx.setTransform(scale, 0, 0, scale, 0, 0);
     objectCacheCtx.save(); objectCacheCtx.translate(width / 2, height / 2); objectCacheCtx.scale(camera.zoom, camera.zoom); objectCacheCtx.translate(-camera.x, -camera.y);
     detailRenderer.draw(objectCacheCtx, { zoom: camera.zoom, cameraX: camera.x, cameraY: camera.y, width, height, time, hoveredId: null,
-      groundOverlay: layers.elevation && elevationRenderer.available ? (context, view) => elevationRenderer.draw(context, view) : null });
+      groundOverlay: layers.elevation && elevationRenderer.available ? (context, view) => elevationRenderer.draw(context, view) : null,
+      landscapeOverlay: layers.landscape && landscape.available ? (context, view) => landscape.draw(context, view) : null });
     objectCacheCtx.restore();
     objectCacheState = { key, x: camera.x, y: camera.y, margin, scale, width, height };
     renderStats.staticRebuilds++; renderStats.lastStaticMs = performance.now() - started;
@@ -702,13 +734,17 @@ function updateUI() {
   $('biome-label').title = $('biome-label').textContent;
   const toward = route?.points[route.index] || null;
   const movement = movementAt(world, player.x, player.y, toward);
-  $('movement-speed').textContent = `${movement.speedKmh.toFixed(1).replace('.', ',')} км/ч`;
-  $('movement-multiplier').textContent = `×${movement.multiplier.toFixed(2).replace('.', ',')}`;
+  $('movement-speed').textContent = `${movement.speedKmh.toFixed(movement.speedKmh < 1 ? 2 : 1).replace('.', ',')} км/ч`;
+  const land = landscape.getAt(player.x, player.y);
+  $('landscape-label').hidden = !land;
+  $('landscape-label').textContent = land ? `Ландшафт: ${land.name} ×${land.multiplier.toFixed(2).replace('.', ',')}` : '';
+  $('movement-multiplier').textContent = `×${movement.multiplier.toFixed(movement.multiplier < .1 ? 3 : 2).replace('.', ',')}`;
   const surfaceNames = { asphalt: 'Асфальт', concrete: 'Бетон', paved: 'Твёрдое покрытие', paving_stones: 'Брусчатка', gravel: 'Щебень', fine_gravel: 'Мелкий гравий', compacted: 'Уплотнённый грунт', dirt: 'Грунт', earth: 'Грунт', ground: 'Грунт', unpaved: 'Грунтовая дорога', sand: 'Песок', mud: 'Грязь', grass: 'Трава', rock: 'Камни' };
   const footing = movement.roadClass ? [ROAD_CLASSES[movement.roadClass]?.name || 'Дорога', surfaceNames[movement.surface]].filter(Boolean).join(' · ') : biomes[0] || 'Пустошь';
   const slope = toward ? Math.abs(movement.slopePercent) < .5 ? 'Почти ровно' : `${movement.slopePercent > 0 ? 'Подъём +' : 'Спуск −'}${Math.round(Math.abs(movement.slopePercent))}%` : '';
-  $('movement-factors').textContent = [footing, slope].filter(Boolean).join(' · ');
-  $('movement-multiplier').title = `Покрытие ×${movement.terrainMultiplier.toFixed(2)} · Уклон ×${movement.slopeMultiplier.toFixed(2)}`;
+  const obstacles = [movement.buildingMultiplier < 1 ? 'Через здание' : '', movement.seasonalMultiplier < 1 ? 'Сезонное русло' : ''].filter(Boolean);
+  $('movement-factors').textContent = [footing, slope, ...obstacles].filter(Boolean).join(' · ');
+  $('movement-multiplier').title = `Поверхность ×${movement.terrainMultiplier.toFixed(2)} · Ландшафт ×${(movement.landscapeMultiplier ?? 1).toFixed(2)} · Уклон ×${movement.slopeMultiplier.toFixed(2)} · Здание ×${(movement.buildingMultiplier ?? 1).toFixed(2)} · Русло ×${(movement.seasonalMultiplier ?? 1).toFixed(2)}`;
   if (world.geographic) {
     const [west, south, east, north] = world.bbox;
     const degree = 6371008.8 * Math.PI / 180, cosine = Math.cos((south + north) * Math.PI / 360);
@@ -743,10 +779,12 @@ window.__DAY_NEXT__ = {
   getRoadClasses: () => ({ ...roadClasses }),
   getOverviewMarkers: () => overviewMarkers.map(marker => ({ ...structuredClone(marker), visible: world.geographic && camera.zoom <= OVERVIEW_MAX_ZOOM && poiEnabled(marker) })),
   getFeatures: () => detailRenderer.getFeatures(),
-  getRenderStats: () => ({ ...renderStats, meanFrameMs: renderStats.totalFrameMs / Math.max(1, renderStats.frames), cachePixels: objectCache.width * objectCache.height, cacheBytes: objectCache.width * objectCache.height * 4, renderer: detailRenderer.getStats(), elevation: elevationRenderer.getStats(), navigation: structuredClone(world.metadata?.movement || {}) }),
+  getRenderStats: () => ({ ...renderStats, meanFrameMs: renderStats.totalFrameMs / Math.max(1, renderStats.frames), cachePixels: objectCache.width * objectCache.height, cacheBytes: objectCache.width * objectCache.height * 4, renderer: detailRenderer.getStats(), elevation: elevationRenderer.getStats(), landscape: landscape.getStats(), navigation: structuredClone(world.metadata?.movement || {}) }),
+  getLandscapeInfo: () => landscape.getInfo(),
+  landscapeAt: (x, y) => landscape.getAt(x, y),
   getElevationInfo: () => elevationRenderer.getInfo(),
   elevationAt: (x, y) => elevationRenderer.sampleAt(x, y),
-  getTypeCatalogs: () => structuredClone({ buildingTypes: BUILDING_TYPES, buildingRoles: BUILDING_ROLES, buildingCategories: BUILDING_CATEGORIES, biomeTypes: BIOME_TYPES, resourceProfiles: RESOURCE_PROFILES, resourceKinds: RESOURCE_KINDS }),
+  getTypeCatalogs: () => structuredClone({ buildingTypes: BUILDING_TYPES, buildingRoles: BUILDING_ROLES, buildingCategories: BUILDING_CATEGORIES, biomeTypes: BIOME_TYPES, landscapeTypes: LANDSCAPE_TYPES, resourceProfiles: RESOURCE_PROFILES, resourceKinds: RESOURCE_KINDS }),
   getResourceCandidatesAt: (x, y) => { const feature = detailRenderer.pick(x, y, 1); return collectResourceCandidates(feature?.gameplayAssignment || feature, detailRenderer.zonesAt(x, y)); },
 };
 log('Невада. На карте — следы прежней жизни.', true); updateMapDetails(); updateUI();

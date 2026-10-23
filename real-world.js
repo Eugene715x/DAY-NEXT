@@ -1,6 +1,7 @@
 /** Raster navigation over imported OSM geometry. No terrain or elevation is invented. */
 import { roadClass } from './map-presentation.js';
 import { cellMovementMultiplier, roadSpeedMultiplier } from './movement-model.js';
+import { prepareMovementGeometry } from './movement-geometry.js';
 
 function rwPointInRing(x, y, ring) {
   let inside = false;
@@ -267,7 +268,7 @@ const rwGroundBiome = cell => ({ forest: 'forest', swamp: 'wetland', hill: 'rock
  * per loaded map and never consults layer visibility. Input geometry and DEM
  * samples are retained as source facts; only runtime navigation cells change.
  */
-export function prepareTravelWorld(world, { elevationAt, biomeFeatures = [] } = {}) {
+export function prepareTravelWorld(world, { elevationAt, biomeFeatures = [], landscape = null } = {}) {
   if (!world || !Array.isArray(world.cells) || !Number.isFinite(world.cellSize) || world.cellSize <= 0) throw new Error('Invalid travel world');
   const ground = world.terrainCells || world.cells;
   for (let index = 0; index < world.cells.length; index++) {
@@ -276,6 +277,7 @@ export function prepareTravelWorld(world, { elevationAt, biomeFeatures = [] } = 
     cell.roadClass = null; cell.surface = null; cell.roadDistanceMeters = null; cell.roadWidthMeters = null; cell.roadId = null;
     delete cell.roadAnchor;
     cell.elevationMeters = null;
+    cell.landscape = null; cell.landscapeMultiplier = 1; cell.landscapeSlopePercent = null; cell.landscapeReliefMeters = null;
   }
   const polygons = biomeFeatures.filter(feature => feature?.geometry === 'polygon' && feature.exclusive !== false);
   const fallback = polygons.find(feature => feature.fallback);
@@ -331,12 +333,19 @@ export function prepareTravelWorld(world, { elevationAt, biomeFeatures = [] } = 
       });
     }
   }
-  let elevationSamples = 0, roadCells = 0;
-  const biomeCounts = {};
+  let elevationSamples = 0, roadCells = 0, landscapeSamples = 0;
+  const biomeCounts = {}, landscapeCounts = {};
   for (let index = 0; index < world.cells.length; index++) {
     const cell = world.cells[index], x = (index % world.cols + .5) * size, y = (Math.floor(index / world.cols) + .5) * size;
     const height = typeof elevationAt === 'function' ? elevationAt(x, y) : null;
     if (Number.isFinite(height)) { cell.elevationMeters = height; elevationSamples++; }
+    const landform = typeof landscape?.getAt === 'function' ? landscape.getAt(x, y) : null;
+    if (landform?.id && Number.isFinite(landform.multiplier) && landform.multiplier > 0) {
+      cell.landscape = landform.id; cell.landscapeMultiplier = landform.multiplier;
+      cell.landscapeSlopePercent = Number.isFinite(landform.slopePercent) ? landform.slopePercent : null;
+      cell.landscapeReliefMeters = Number.isFinite(landform.reliefMeters) ? landform.reliefMeters : null;
+      landscapeSamples++; landscapeCounts[landform.id] = (landscapeCounts[landform.id] || 0) + 1;
+    }
     if (cell.roadClass) roadCells++;
     if (!cell.walkable) permanentWaterCells++;
     biomeCounts[cell.biome] = (biomeCounts[cell.biome] || 0) + 1;
@@ -344,7 +353,9 @@ export function prepareTravelWorld(world, { elevationAt, biomeFeatures = [] } = 
     cell.cost = cell.walkable && Number.isFinite(multiplier) && multiplier > 0 ? 1 / multiplier : Infinity;
     if (!Number.isFinite(cell.cost)) cell.walkable = false;
   }
+  world.movementGeometry = prepareMovementGeometry(world, { biomeFeatures: polygons });
   world.movementPrepared = true;
+  world.movementRevision = (world.movementRevision || 0) + 1;
   world.movementElevationAt = typeof elevationAt === 'function' ? elevationAt : null;
   world.relief = elevationSamples > 0;
   const components = rwFindComponents(world);
@@ -365,6 +376,7 @@ export function prepareTravelWorld(world, { elevationAt, biomeFeatures = [] } = 
   const report = {
     cells: world.cells.length, cellSize: size, resolutionMeters: size * metersPerUnit,
     elevationSamples, roadCells, roadSources: roads.size, permanentWaterCells, biomeCounts,
+    landscapeSamples, landscapeCounts, geometry: world.movementGeometry.getStats(),
     components: components.components.length, unreachablePois: (world.pois || []).filter(poi => !poi.reachable).length,
   };
   world.metadata = { ...(world.metadata || {}), relief: world.relief, movement: report, componentCount: components.components.length,

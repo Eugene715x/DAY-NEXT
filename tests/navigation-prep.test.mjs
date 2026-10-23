@@ -111,3 +111,21 @@ test('the real Nevada map prepares 24 metre navigation from exact source biomes 
   assert.equal(world.metadata.startSnapDistanceMeters, 0);
   assert.equal(JSON.stringify(map), sourceBefore);
 });
+
+
+test('independent landscape samples enter navigation multiplicatively while unknown coverage stays neutral', () => {
+  const source = fixture({ buildings: [{ id: 'tiny-building', points: ring(23, 23, 24, 24) }] });
+  const world = createRealWorld(source), before = JSON.stringify(source);
+  const landscape = { getAt: (x, y) => x < 150 ? { id: 'hills', multiplier: .52, slopePercent: 12, reliefMeters: 100 } : null };
+  const report = prepareTravelWorld(world, { landscape });
+  const hills = byPosition(world, 25, 25), unknown = byPosition(world, 225, 25);
+  assert.equal(hills.landscape, 'hills'); assert.equal(hills.landscapeMultiplier, .52);
+  assert.equal(hills.landscapeSlopePercent, 12); assert.equal(hills.landscapeReliefMeters, 100);
+  assert.equal(unknown.landscape, null); assert.equal(unknown.landscapeMultiplier, 1);
+  assert(Math.abs(hills.cost - 1 / .52) < 1e-10);
+  assert.equal(report.landscapeSamples, world.cells.length / 2);
+  assert.equal(report.geometry.buildings, 1);
+  assert.equal(world.movementGeometry.queryPoint(23.5, 23.5).building, true);
+  assert.equal(world.movementGeometry.queryPoint(25, 25).building, false);
+  assert.equal(JSON.stringify(source), before);
+});

@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { findPath, terrainAt } from '../world.js';
+import { prepareMovementGeometry } from '../movement-geometry.js';
 import {
   BASE_WALK_METERS_PER_MINUTE, biomeSpeedMultiplier, roadSpeedMultiplier,
   cellMovementMultiplier, movementAt, segmentTravel, advanceAlongRoute,
@@ -196,4 +197,91 @@ test('splitting the same walking-time budget into frames does not change arrival
   assert.deepEqual(a, to); assert.deepEqual(b, to);
   assert(Math.abs(elapsed - once.elapsedMinutes) < 1e-3);
   assert(Math.abs(distance - once.walkedDistance) < 1e-4);
+});
+
+const costRing = (left, top, right, bottom) => [point(left, top), point(right, top), point(right, bottom), point(left, bottom), point(left, top)];
+const attachGeometry = (world, buildings = [], seasonalParts = [], roads = []) => {
+  world.buildings = buildings; world.roads = roads;
+  world.movementGeometry = prepareMovementGeometry(world, { biomeFeatures: seasonalParts.map((parts, index) => ({ id: `wash-${index}`, biome: 'seasonal_river', geometry: 'polygon', parts })) });
+  return world;
+};
+
+test('landscape multiplies biome and road speed while uphill penalties are substantially stronger', () => {
+  const world = fixture(10, 2, () => ({ biome: 'sand', landscape: 'mountains', landscapeMultiplier: .28 }));
+  const flat = movementAt(world, 30, 10);
+  assert(Math.abs(flat.multiplier - .67 * .28) < 1e-12);
+  assert.equal(flat.landscape, 'mountains'); assert.equal(flat.landscapeMultiplier, .28);
+  assert(Math.abs(cellMovementMultiplier(world.cells[0]) - .67 * .28) < 1e-12);
+  const rising = fixture(10, 2, () => ({ landscape: 'hills', landscapeMultiplier: .52 }), { elevationAt: x => 1000 + x * .2 });
+  const uphill = movementAt(rising, 50, 10, point(190, 10));
+  assert(Math.abs(uphill.slopeMultiplier - Math.exp(-7.5 * .2)) < 1e-10);
+  assert(Math.abs(uphill.multiplier - .52 * Math.exp(-1.5)) < 1e-10);
+  assert(uphill.speedKmh < .5, 'A 20% uphill hill route must be a slow climb');
+  const road = fixture(2, 2, () => ({ roadClass: 'road', surface: 'asphalt', landscapeMultiplier: .52 }));
+  assert(Math.abs(movementAt(road, 10, 10).multiplier - 1.22 * .52) < 1e-12);
+});
+
+test('a narrow building between navigation centres contributes its full exact crossing time', () => {
+  const world = attachGeometry(fixture(8, 5), [{ id: 'small', points: costRing(65, 45, 67, 55) }]);
+  const from = point(10, 50), to = point(150, 50), direct = segmentTravel(world, from, to);
+  const expected = (138 + 2 / .08) / BASE_WALK_METERS_PER_MINUTE;
+  assert(Math.abs(direct.durationMinutes - expected) < 1e-9, 'A 2m footprint cannot disappear between 20m grid centres');
+  assert.equal(movementAt(world, 66, 50).buildingMultiplier, .08);
+  assert.equal(movementAt(world, 64, 50).buildingMultiplier, 1);
+  const route = findPath(world, from, to);
+  assert(route && route.durationMinutes < direct.durationMinutes);
+  assert(route.points.some(p => p.y !== 50));
+  assert(route.segments.every(segment => segment.pieces.every(piece => !piece.building)), 'Smoothing cannot restore a cut through the expensive roof');
+});
+
+test('building courtyard holes are free of the footprint penalty and targeted buildings remain reachable', () => {
+  const world = attachGeometry(fixture(10, 5), [{ id: 'courtyard', rings: [costRing(50, 30, 130, 70), costRing(70, 40, 110, 60)] }]);
+  const from = point(10, 50), to = point(190, 50), direct = segmentTravel(world, from, to);
+  const expected = (140 + 40 / .08) / BASE_WALK_METERS_PER_MINUTE;
+  assert(Math.abs(direct.durationMinutes - expected) < 1e-9);
+  assert.equal(movementAt(world, 90, 50).building, false);
+  assert.equal(movementAt(world, 60, 50).building, true);
+  const targetInside = findPath(world, from, point(60, 50));
+  assert(targetInside && Number.isFinite(targetInside.durationMinutes), 'Building penalties must not make entrances or loot targets unreachable');
+  const actor = { ...from }, route = { ...targetInside, index: 1 };
+  const result = advanceAlongRoute(world, route, actor, targetInside.durationMinutes + 1);
+  assert(result.arrived); assert.deepEqual(actor, point(60, 50));
+});
+
+test('a narrow seasonal river retains its huge penalty over road paint, with an exact bridge exception', () => {
+  const seasonal = [[[costRing(65, 0, 67, 100)]]];
+  const make = roads => attachGeometry(fixture(8, 5, () => ({ roadClass: 'road', surface: 'asphalt', landscapeMultiplier: .52 })), [], seasonal, roads);
+  const from = point(10, 50), to = point(150, 50);
+  const unbridged = make([]), crossing = segmentTravel(unbridged, from, to);
+  const expected = (138 + 2 / .12) / (BASE_WALK_METERS_PER_MINUTE * 1.22 * .52);
+  assert(Math.abs(crossing.durationMinutes - expected) < 1e-9);
+  assert.equal(movementAt(unbridged, 66, 50).seasonalMultiplier, .12);
+  const bridged = make([{ id: 'bridge', bridge: true, width: 4, points: [point(60, 50), point(72, 50)] }]);
+  assert.equal(movementAt(bridged, 66, 50).seasonalMultiplier, 1);
+  assert.equal(movementAt(bridged, 66, 55).seasonalMultiplier, .12, 'A bridge cannot erase river difficulty across an entire coarse navigation cell');
+  assert(Math.abs(segmentTravel(bridged, from, to).durationMinutes - 140 / (BASE_WALK_METERS_PER_MINUTE * 1.22 * .52)) < 1e-9);
+  const plan = findPath(unbridged, from, to), actor = { ...from }, route = { ...plan, index: 1 };
+  const step = advanceAlongRoute(unbridged, route, actor, plan.durationMinutes + 1);
+  assert(step.arrived); assert(Math.abs(step.elapsedMinutes - plan.durationMinutes) < 1e-8);
+});
+
+
+test('landscape lower-bound search and its edge cache preserve the independent weighted optimum', () => {
+  const world = fixture(32, 32, (x, y) => ({
+    landscape: x >= 10 && x <= 21 && y >= 2 && y <= 29 ? 'mountains' : 'plain',
+    landscapeMultiplier: x >= 10 && x <= 21 && y >= 2 && y <= 29 ? .28 : 1,
+    ...(x === 18 && y === 30 ? { walkable: false, type: 'water', cost: Infinity } : {}),
+  }));
+  world.metadata = { movement: { landscapeSamples: world.cells.length } }; world.movementRevision = 1;
+  const from = center(world, 0, 16), to = center(world, 31, 16);
+  for (const destination of [to, center(world, 31, 7), to]) {
+    const optimum = gridDijkstra(world, from, destination), route = findPath(world, from, destination);
+    assert(route); assert.equal(route.search.heuristic, 'landscape-lower-bound');
+    assert(route.durationMinutes <= optimum * 1.001 + 1e-8);
+    assert(Math.abs(measuredRoute(world, route.points).durationMinutes - route.durationMinutes) < 1e-8);
+  }
+  for (const cell of world.cells) cell.landscapeMultiplier = 1;
+  world.movementRevision++;
+  const revised = findPath(world, from, to), optimum = gridDijkstra(world, from, to);
+  assert(revised.durationMinutes <= optimum * 1.001 + 1e-8, 'Map preparation revision invalidates cached costs');
 });
