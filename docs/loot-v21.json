@@ -1,0 +1,463 @@
+{
+  "version": "0.21.0",
+  "feature": "Persistent local ground piles and instantly accessible building loot",
+  "tests": {
+    "node": {
+      "passed": 272,
+      "failed": 0
+    },
+    "browser": {
+      "status": "PASS",
+      "htmlSha256": "12a4f0fdc61a7f1fd44d9061401fdada81a4b5b1c66df2348957d0c0863a5f21",
+      "offline": {
+        "requests": 0,
+        "errors": []
+      },
+      "catalog": {
+        "items": 3149,
+        "buildings": 893,
+        "initialAllUnvisited": true,
+        "sourceRolesUnchanged": true,
+        "roads": 83,
+        "power": 6
+      },
+      "ground": {
+        "initialCircle": true,
+        "actualAnchor": {
+          "x": 2341.664,
+          "y": 888.292
+        },
+        "nearbyDropMerges": true,
+        "lastItemRemovesCircle": true
+      },
+      "building": {
+        "id": "way-1102275283",
+        "initialItems": 4,
+        "walkFrames": 40,
+        "remoteClickCannotLoot": true,
+        "partial": {
+          "id": "way-1102275283",
+          "sourceId": "way-1102275283",
+          "visited": true,
+          "itemCount": 3,
+          "empty": false,
+          "revision": 7
+        },
+        "emptied": {
+          "id": "way-1102275283",
+          "sourceId": "way-1102275283",
+          "visited": true,
+          "itemCount": 0,
+          "empty": true,
+          "revision": 10
+        },
+        "refilled": {
+          "id": "way-1102275283",
+          "sourceId": "way-1102275283",
+          "visited": true,
+          "itemCount": 1,
+          "empty": false,
+          "revision": 11
+        },
+        "noIndoorPile": true
+      },
+      "capacityLeftovers": {
+        "buildingId": "way-29502886",
+        "count": 1,
+        "beforeCount": 5
+      },
+      "nativeDragOccupiedSwap": true,
+      "worldConservation": true,
+      "persistence": {
+        "keys": [
+          "day-next:world-loot:v1:beatty-rhyolite"
+        ],
+        "reloadExact": true,
+        "playerPosition": true,
+        "corruptFallback": true,
+        "resetExact": true
+      },
+      "travel": [
+        {
+          "id": "way-29502886",
+          "frames": 80
+        }
+      ]
+    },
+    "outdoor": {
+      "status": "PASS",
+      "htmlSha256": "12a4f0fdc61a7f1fd44d9061401fdada81a4b5b1c66df2348957d0c0863a5f21",
+      "offline": {
+        "requests": 0,
+        "errors": []
+      },
+      "initialAnchor": {
+        "x": 2341.664,
+        "y": 888.292
+      },
+      "newAnchor": {
+        "x": 2445.47275390625,
+        "y": 888.2920013427733
+      },
+      "distinctPiles": 2,
+      "remoteClickRoutesFirst": true,
+      "returnSameSlots": true,
+      "lastItemRemovesOnlyItsCircle": true,
+      "reloadExact": true,
+      "GpausesAtActualPosition": true,
+      "gameMinutesPerSecond": 1
+    },
+    "independentLedger": {
+      "status": "PASS",
+      "fixtures": {
+        "ground": {
+          "nearbyMerge": true,
+          "remoteSeparation": true,
+          "returnRetainsItems": true,
+          "lastItemRemovesPile": true,
+          "positions": [
+            {
+              "id": "pile-1",
+              "x": 40,
+              "y": 40,
+              "itemCount": 3,
+              "preview": [
+                {
+                  "id": "sphere-teal",
+                  "shape": "sphere",
+                  "color": "#68c2bc"
+                },
+                {
+                  "id": "cube-amber",
+                  "shape": "cube",
+                  "color": "#e4b964"
+                },
+                {
+                  "id": "sphere-violet",
+                  "shape": "sphere",
+                  "color": "#b295da"
+                }
+              ]
+            },
+            {
+              "id": "pile-2",
+              "x": 550,
+              "y": 500,
+              "itemCount": 1,
+              "preview": [
+                {
+                  "id": "sphere-blue",
+                  "shape": "sphere",
+                  "color": "#75a7e4"
+                }
+              ]
+            }
+          ]
+        },
+        "buildings": {
+          "exactFootprints": true,
+          "courtyardHole": true,
+          "visitedPartialEmptyRefilled": true,
+          "noRegeneration": true,
+          "noIndoorPile": true,
+          "staleTransferRejected": true
+        },
+        "capacity": {
+          "fullTransferSafe": true,
+          "occupiedSwapExact": true
+        },
+        "moving": {
+          "groundBlocked": true,
+          "personalAllowed": true
+        }
+      },
+      "randomized": {
+        "operations": 1600,
+        "successes": 1600,
+        "rejections": 0,
+        "allIdsConserved": true
+      },
+      "serialization": {
+        "roundtrip": true,
+        "rejectedCorruptions": [
+          "duplicate-placement",
+          "lost-item",
+          "unknown-item",
+          "foreign-world",
+          "invalid-pile-coordinate",
+          "duplicate-catalog-id"
+        ]
+      },
+      "sourceUnchanged": true,
+      "catalog": {
+        "items": 29,
+        "buildings": 5,
+        "seededBuildingItems": 17
+      },
+      "checkedSourceSha256": {
+        "world-loot.js": "59838268469c4ece8e243a315059f88c5de1a8a8d1b997ebe962cb27848757ba",
+        "inventory-model.js": "4527993366311a3d00a848aa240dd7cc88ff036db4f53c1381f057ad19622326"
+      }
+    },
+    "independentGeometry": {
+      "status": "PASS",
+      "mapBuildings": 893,
+      "items": 3149,
+      "sourceFootprintProbes": 8037,
+      "interior": 5669,
+      "outside": 2368,
+      "overlaps": 0,
+      "visitedBuildings": 893,
+      "initialColorsUntouched": true,
+      "lootDeterministicAcrossSourceOrder": true,
+      "serializationReset": true,
+      "sourceAndAssignmentsUnchanged": true,
+      "sourceSha256": {
+        "world-loot.js": "59838268469c4ece8e243a315059f88c5de1a8a8d1b997ebe962cb27848757ba",
+        "maps/usa.js": "ab20b2ee633736db13675db5e56ddb4cfd669842eb367cd1df09e827a11ab20a",
+        "building-roles.js": "534364d30e05d3d677b77dbedd72731bdc1b5044e5d7fc386e13d745addee695"
+      }
+    },
+    "independentSpatial": {
+      "status": "PASS",
+      "scaledReachMeters": true,
+      "exactBoundaryRange": true,
+      "invalidPositionsAtomic": true,
+      "multipartsAndCourtyard": true,
+      "movingAndStaleOpenNoVisit": true,
+      "allGettersDetached": true,
+      "sourceSha256": "59838268469c4ece8e243a315059f88c5de1a8a8d1b997ebe962cb27848757ba"
+    },
+    "rendererPickerModelInteriorProbes": 6400,
+    "desktopLayoutAndTiming": {
+      "status": "PASS",
+      "htmlSha256": "12a4f0fdc61a7f1fd44d9061401fdada81a4b5b1c66df2348957d0c0863a5f21",
+      "layouts": [
+        {
+          "viewport": {
+            "width": 1440,
+            "height": 960
+          },
+          "windows": [
+            {
+              "id": "equipment",
+              "x": 265,
+              "y": 160,
+              "width": 246,
+              "height": 620,
+              "right": 511,
+              "bottom": 780,
+              "scrollHeight": 521,
+              "clientHeight": 521
+            },
+            {
+              "id": "inventory",
+              "x": 525,
+              "y": 160,
+              "width": 337,
+              "height": 341,
+              "right": 862,
+              "bottom": 501,
+              "scrollHeight": 242,
+              "clientHeight": 242
+            },
+            {
+              "id": "ground",
+              "x": 876,
+              "y": 160,
+              "width": 299,
+              "height": 310,
+              "right": 1175,
+              "bottom": 470,
+              "scrollHeight": 233,
+              "clientHeight": 211
+            },
+            {
+              "id": "crafting",
+              "x": 525,
+              "y": 515,
+              "width": 337,
+              "height": 265,
+              "right": 862,
+              "bottom": 780,
+              "scrollHeight": 166,
+              "clientHeight": 166
+            },
+            {
+              "id": "stats",
+              "x": 876,
+              "y": 484,
+              "width": 299,
+              "height": 296,
+              "right": 1175,
+              "bottom": 780,
+              "scrollHeight": 197,
+              "clientHeight": 197
+            }
+          ]
+        },
+        {
+          "viewport": {
+            "width": 1280,
+            "height": 720
+          },
+          "windows": [
+            {
+              "id": "equipment",
+              "x": 185,
+              "y": 88,
+              "width": 246,
+              "height": 550,
+              "right": 431,
+              "bottom": 638,
+              "scrollHeight": 466,
+              "clientHeight": 466
+            },
+            {
+              "id": "inventory",
+              "x": 445,
+              "y": 88,
+              "width": 337,
+              "height": 303,
+              "right": 782,
+              "bottom": 391,
+              "scrollHeight": 219,
+              "clientHeight": 219
+            },
+            {
+              "id": "ground",
+              "x": 796,
+              "y": 88,
+              "width": 299,
+              "height": 275,
+              "right": 1095,
+              "bottom": 363,
+              "scrollHeight": 218,
+              "clientHeight": 191
+            },
+            {
+              "id": "crafting",
+              "x": 445,
+              "y": 405,
+              "width": 337,
+              "height": 233,
+              "right": 782,
+              "bottom": 638,
+              "scrollHeight": 149,
+              "clientHeight": 149
+            },
+            {
+              "id": "stats",
+              "x": 796,
+              "y": 377,
+              "width": 299,
+              "height": 261,
+              "right": 1095,
+              "bottom": 638,
+              "scrollHeight": 177,
+              "clientHeight": 177
+            }
+          ]
+        }
+      ],
+      "performance": [
+        {
+          "viewport": {
+            "width": 1440,
+            "height": 960
+          },
+          "map": {
+            "frames": 90,
+            "fps": 58.700756587529355,
+            "maxFrameMs": 49.899999999999636
+          },
+          "windows": {
+            "frames": 90,
+            "fps": 59.99999999999999,
+            "maxFrameMs": 16.800000000000182
+          }
+        },
+        {
+          "viewport": {
+            "width": 1280,
+            "height": 720
+          },
+          "map": {
+            "frames": 90,
+            "fps": 59.99999999999999,
+            "maxFrameMs": 16.800000000000182
+          },
+          "windows": {
+            "frames": 90,
+            "fps": 60.00400026668443,
+            "maxFrameMs": 16.799999999999272
+          }
+        }
+      ],
+      "clock": {
+        "normal": {
+          "fast": false,
+          "zoom": false,
+          "elapsed": 2.000000000001023,
+          "player": {
+            "x": 2310.623041668999,
+            "y": 865.0068112191229
+          },
+          "distance": 143.87818209953252
+        },
+        "zoomed": {
+          "fast": false,
+          "zoom": true,
+          "elapsed": 2.000000000001023,
+          "player": {
+            "x": 2310.623041668999,
+            "y": 865.0068112191229
+          },
+          "distance": 143.87818209953252
+        },
+        "fast": {
+          "fast": true,
+          "zoom": false,
+          "elapsed": 6.000000000000227,
+          "player": {
+            "x": 2262.624461537091,
+            "y": 829.0009641164795
+          },
+          "distance": 375.0819237702385
+        },
+        "gameMinutesPerSecond": 1,
+        "zoomIndependent": true
+      },
+      "offline": {
+        "requests": 0,
+        "errors": []
+      },
+      "craftingAndStatsRemainPlaceholders": true
+    }
+  },
+  "browserHarness": "Chromium on PC; autonomous HTML fulfilled from memory under an intercepted offline HTTP origin, all additional network blocked. Route testing uses real clicks and normal simulation steps, no actor teleport. file:// navigation was blocked by the browser environment.",
+  "preservedSourceBytes": {
+    "maps/usa.js": "ab20b2ee633736db13675db5e56ddb4cfd669842eb367cd1df09e827a11ab20a",
+    "maps/beatty-elevation.js": "1d867f70be4a8a7ae741b3ec539979440212563d12eb3ed6795cc378d5df51f4",
+    "maps/source/beatty-elevation.tif": "907063fbe4009343df30c29595f4ed5433b8abd6bc1463575c7f334c7c6ccc24",
+    "building-roles.js": "534364d30e05d3d677b77dbedd72731bdc1b5044e5d7fc386e13d745addee695",
+    "biome-map.js": "20a87a68305f9c26fce889c9aa1caa6ba80f353b615bfac40001658ef9632755",
+    "movement-model.js": "d53ebf151d1731e4e5f4e46c6c90d9a73090d967ce0bb651a6a2041adf31f984",
+    "movement-geometry.js": "f4efda25f0d15fb05bdcc951ad362a5763987e10c7bf73b40220f2ede68a71e1",
+    "world.js": "96a4db4b28a18c6d4f1921aaefd42931a5daf3311e7a47b1da63feb697abea6f",
+    "real-world.js": "2c66e7f0c1831f1205622da5fed746b45b36a9a7bd11985493de600fdfc8d7dd",
+    "landscape.js": "590778ab062fb8730feec2105b079ebf5135119964bf88ca35b183a6c4df52a2"
+  },
+  "artifacts": {
+    "downloads/day-next.html": {
+      "bytes": 5111785,
+      "sha256": "12a4f0fdc61a7f1fd44d9061401fdada81a4b5b1c66df2348957d0c0863a5f21"
+    },
+    "downloads/day-next.zip": {
+      "bytes": 1347271,
+      "sha256": "018b0dd355a93a84b8ffe4d18fe164042b92cdfa26fb32f0116db6ab0b0bf9f8"
+    }
+  },
+  "zipCrc": "PASS",
+  "zipHtmlIdenticalToStandalone": true
+}

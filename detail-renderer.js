@@ -353,7 +353,7 @@ export function createDetailRenderer(world) {
   const queryZones = drSpatialIndex(zonePolygons);
   const layers = { biomes: true, roads: true, power: true, buildings: true, details: true };
   const roadClasses = Object.fromEntries(Object.keys(ROAD_CLASSES).map(key => [key, true]));
-  let suppressedSourceIds = null;
+  let suppressedSourceIds = null, buildingLootStateAt = null;
   const isEnabled = record => layers[record.layer] && (record.layer !== 'roads' || roadClasses[record.roadClass] !== false)
     && !(record.geometry === 'point' && suppressedSourceIds?.has(record.feature.sourceId || record.feature.id));
   const stats = { features: registry.length, inputFeatures, filteredFeatures, coalescedFeatures: detailSources.length - coalescedDetails.length,
@@ -490,13 +490,42 @@ export function createDetailRenderer(world) {
     ctx.setLineDash([10 / zoom, 5 / zoom]); ctx.stroke(record.path); ctx.setLineDash([]);
   }
 
-  function paintBuildingIcon(ctx, record, zoom) {
+  function buildingLootState(record) {
+    return typeof buildingLootStateAt === 'function' ? buildingLootStateAt(drSourceId(record.feature)) : null;
+  }
+
+  function paintEmptyBuildingMark(ctx, record, zoom) {
+    const b = record.bounds, width = b.maxX - b.minX, height = b.maxY - b.minY;
+    const short = Math.min(width, height);
+    if (!(short > 0)) return;
+    // The source footprint clips this loose graphite annotation, including
+    // courtyards. Fixed source-ID jitter makes it a pencil mark, not a UI X.
+    const jitter = ((record.hash >>> 9 & 255) / 255 - .5) * .055;
+    const line = (start, middle, end) => {
+      ctx.beginPath(); ctx.moveTo(b.minX + start[0] * width, b.minY + start[1] * height);
+      ctx.lineTo(b.minX + middle[0] * width, b.minY + middle[1] * height);
+      ctx.lineTo(b.minX + end[0] * width, b.minY + end[1] * height); ctx.stroke();
+    };
+    ctx.save(); ctx.clip(record.path, record.fillRule); ctx.setLineDash([]);
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.strokeStyle = '#454545'; ctx.globalAlpha = .86;
+    ctx.lineWidth = Math.min(Math.max(.045, 1.12 / zoom), short * .16);
+    line([.08, .13 + jitter], [.48, .48 - jitter], [.95, .89 + jitter]);
+    line([.12, .91 - jitter], [.52, .49 + jitter], [.91, .08 - jitter]);
+    ctx.strokeStyle = 'rgba(61,61,61,.32)'; ctx.globalAlpha = 1;
+    ctx.lineWidth = Math.min(Math.max(.025, .48 / zoom), short * .075);
+    line([.07, .16 + jitter], [.47, .50 - jitter], [.96, .92 + jitter]);
+    line([.15, .93 - jitter], [.55, .51 + jitter], [.93, .07 - jitter]);
+    ctx.restore();
+  }
+
+  function paintBuildingIcon(ctx, record, zoom, visited = false) {
     const assignment = record.feature.gameplayAssignment, b = record.bounds;
     if (!assignment || zoom < 3.5 || Math.min(b.maxX - b.minX, b.maxY - b.minY) * zoom < 17) return;
     ctx.save(); ctx.clip(record.path, record.fillRule);
     ctx.translate(record.labelPoint.x, record.labelPoint.y); ctx.scale(1 / zoom, 1 / zoom);
     const icon = assignment.icon || 'house';
-    ctx.strokeStyle = '#25352c'; ctx.fillStyle = '#25352c'; ctx.lineWidth = 1.4; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    ctx.strokeStyle = visited ? '#343434' : '#25352c'; ctx.fillStyle = visited ? '#343434' : '#25352c'; ctx.lineWidth = 1.4; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
     ctx.beginPath();
     if (icon === 'house') {
       ctx.moveTo(-5, 0); ctx.lineTo(0, -4); ctx.lineTo(5, 0); ctx.moveTo(-3.5, -1); ctx.lineTo(-3.5, 4); ctx.lineTo(3.5, 4); ctx.lineTo(3.5, -1); ctx.moveTo(0, 4); ctx.lineTo(0, 1);
@@ -544,34 +573,38 @@ export function createDetailRenderer(world) {
       if (boxes.some(other => box.x < other.x + other.width && box.x + box.width > other.x && box.y < other.y + other.height && box.y + box.height > other.y)) continue;
       ctx.save(); ctx.translate(x, y); ctx.scale(1 / view.zoom, 1 / view.zoom);
       ctx.font = '600 9px "Segoe UI", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-      ctx.strokeStyle = 'rgba(191,181,147,.94)'; ctx.lineWidth = 3; ctx.strokeText(text, 0, 0); ctx.fillStyle = '#263b30'; ctx.fillText(text, 0, 0); ctx.restore();
+      const visited = buildingLootState(record)?.visited === true;
+      ctx.strokeStyle = visited ? 'rgba(207,207,207,.94)' : 'rgba(191,181,147,.94)'; ctx.lineWidth = 3; ctx.strokeText(text, 0, 0); ctx.fillStyle = visited ? '#343434' : '#263b30'; ctx.fillText(text, 0, 0); ctx.restore();
       boxes.push(box);
     }
   }
 
   function paintBuilding(ctx, record, zoom, hoveredId) {
     const { feature, path, bounds: b, center, longest } = record;
-    const assignment = feature.gameplayAssignment;
+    const assignment = feature.gameplayAssignment, loot = buildingLootState(record);
+    const visited = loot?.visited === true, empty = visited && (loot.empty === true || loot.itemCount === 0);
     const high = zoom >= 2.5, hovered = hoveredId === feature.id;
     const ruin = assignment?.condition === 'ruined' || feature.ruins === true || feature.type === 'ruins';
-    const roof = assignment?.roof || assignment?.color || assignment?.fill || '#ad9f79';
+    const roof = visited ? '#a5a5a5' : assignment?.roof || assignment?.color || assignment?.fill || '#ad9f79';
+    const fill = visited ? '#969696' : assignment?.color || assignment?.fill || roof;
+    const edge = visited ? '#5d5d5d' : assignment?.stroke || '#3f503c';
     if (high) {
       ctx.save(); ctx.translate(.55, .8);
-      ctx.fillStyle = 'rgba(39,47,32,.3)'; ctx.fill(path, record.fillRule); ctx.restore();
+      ctx.fillStyle = visited ? 'rgba(38,38,38,.3)' : 'rgba(39,47,32,.3)'; ctx.fill(path, record.fillRule); ctx.restore();
       const gradient = ctx.createLinearGradient(b.minX, b.minY, b.maxX, b.maxY);
-      gradient.addColorStop(0, roof); gradient.addColorStop(.58, assignment?.color || roof); gradient.addColorStop(1, assignment?.stroke || '#59614c');
+      gradient.addColorStop(0, roof); gradient.addColorStop(.58, visited ? fill : assignment?.color || roof); gradient.addColorStop(1, visited ? edge : assignment?.stroke || '#59614c');
       ctx.fillStyle = gradient;
-    } else ctx.fillStyle = assignment?.color || assignment?.fill || roof;
+    } else ctx.fillStyle = fill;
     ctx.fill(path, record.fillRule);
-    ctx.strokeStyle = hovered ? '#eff0be' : assignment?.stroke || '#3f503c'; ctx.lineWidth = high ? Math.max(.26, .9 / zoom) : .8 / zoom;
+    ctx.strokeStyle = hovered ? '#eff0be' : edge; ctx.lineWidth = high ? Math.max(.26, .9 / zoom) : .8 / zoom;
     if (ruin) ctx.setLineDash([.7, .4]);
     ctx.stroke(path); ctx.setLineDash([]);
-    if (!high) return;
+    if (!high) { if (empty) paintEmptyBuildingMark(ctx, record, zoom); return; }
     ctx.save(); ctx.clip(path, record.fillRule);
     const diagonal = Math.hypot(b.maxX - b.minX, b.maxY - b.minY);
     ctx.translate(center.x, center.y); ctx.rotate(longest?.angle || 0);
     if (ruin) {
-      ctx.fillStyle = 'rgba(59,64,43,.25)';
+      ctx.fillStyle = visited ? 'rgba(60,60,60,.25)' : 'rgba(59,64,43,.25)';
       for (let i = 0; i < 8; i++) {
         const x = (((record.hash >>> (i * 3 % 24)) & 15) / 15 - .5) * diagonal;
         const y = (((record.hash >>> (i * 2 % 24)) & 15) / 15 - .5) * diagonal;
@@ -579,22 +612,23 @@ export function createDetailRenderer(world) {
       }
     } else if (feature.roofShape !== 'flat') {
       // Roof shading is an illustration clipped to the source footprint, not new map geometry.
-      ctx.fillStyle = 'rgba(235,224,179,.12)'; ctx.fillRect(-diagonal, -diagonal, diagonal * 2, diagonal);
-      ctx.strokeStyle = 'rgba(51,65,43,.4)'; ctx.lineWidth = Math.max(.1, .65 / zoom);
+      ctx.fillStyle = visited ? 'rgba(235,235,235,.12)' : 'rgba(235,224,179,.12)'; ctx.fillRect(-diagonal, -diagonal, diagonal * 2, diagonal);
+      ctx.strokeStyle = visited ? 'rgba(55,55,55,.4)' : 'rgba(51,65,43,.4)'; ctx.lineWidth = Math.max(.1, .65 / zoom);
       ctx.beginPath(); ctx.moveTo(-diagonal, 0); ctx.lineTo(diagonal, 0); ctx.stroke();
       if (zoom >= 6) {
-        ctx.strokeStyle = 'rgba(44,61,40,.14)'; ctx.lineWidth = .45 / zoom;
+        ctx.strokeStyle = visited ? 'rgba(48,48,48,.14)' : 'rgba(44,61,40,.14)'; ctx.lineWidth = .45 / zoom;
         const spacing = Math.max(.65, diagonal / 18);
         ctx.beginPath();
         for (let x = -diagonal; x < diagonal; x += spacing) { ctx.moveTo(x, -diagonal); ctx.lineTo(x, diagonal); }
         ctx.stroke();
       }
     } else {
-      ctx.strokeStyle = 'rgba(236,224,180,.4)'; ctx.lineWidth = .35;
+      ctx.strokeStyle = visited ? 'rgba(236,236,236,.4)' : 'rgba(236,224,180,.4)'; ctx.lineWidth = .35;
       ctx.strokeRect(-diagonal * .28, -diagonal * .22, diagonal * .56, diagonal * .44);
     }
     ctx.restore();
-    paintBuildingIcon(ctx, record, zoom);
+    paintBuildingIcon(ctx, record, zoom, visited);
+    if (empty) paintEmptyBuildingMark(ctx, record, zoom);
   }
 
   function paintDetail(ctx, record, zoom, hoveredId) {
@@ -749,6 +783,7 @@ export function createDetailRenderer(world) {
 
   function draw(ctx, view) {
     suppressedSourceIds = view.suppressedSourceIds || null;
+    buildingLootStateAt = typeof view.buildingLootState === 'function' ? view.buildingLootState : null;
     lastZoom = view.zoom;
     const hoverIdentity = view.hoveredKey || view.hoveredId;
     const hoverRecord = recordsByKey.get(hoverIdentity) || recordsById.get(hoverIdentity);
@@ -811,6 +846,7 @@ export function createDetailRenderer(world) {
 
   /** Draw only the selection overlay over a previously rendered static map. */
   function drawHighlight(ctx, view, target = view.hoveredKey || view.hoveredId) {
+    if (typeof view.buildingLootState === 'function') buildingLootStateAt = view.buildingLootState;
     lastZoom = view.zoom;
     if (view.layers) setLayers(view.layers);
     if (view.roadClasses) setRoadClasses(view.roadClasses);
@@ -833,7 +869,7 @@ export function createDetailRenderer(world) {
       ctx.setLineDash([]);
     }
     else if (record.geometry === 'polygon' && !record.outlineOnly) {
-      ctx.fillStyle = 'rgba(224,228,161,.16)'; ctx.fill(record.path, record.fillRule);
+      ctx.fillStyle = record.group === 'building' && buildingLootState(record)?.visited === true ? 'rgba(236,236,236,.12)' : 'rgba(224,228,161,.16)'; ctx.fill(record.path, record.fillRule);
       ctx.strokeStyle = '#eff0be'; ctx.lineWidth = Math.max(record.group === 'building' ? .26 : 0, 1.6 / view.zoom);
       if (!(record.feature.merged && record.parts.length > 1)) ctx.stroke(record.path);
     } else {

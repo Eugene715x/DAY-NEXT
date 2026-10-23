@@ -18,14 +18,16 @@ const iuIcons = {
 const iuIcon = name => `<svg viewBox="0 0 24 24" aria-hidden="true">${iuIcons[name] || ''}</svg>`;
 
 /** Independent demo windows. Map/game state is deliberately not owned here. */
-export function createInventoryUI({ root, model, onVisibilityChange = () => {} } = {}) {
+export function createInventoryUI({ root, model, onVisibilityChange = () => {}, onContextOpen = () => {}, onTransfer = () => {} } = {}) {
   if (!root || !model?.getState || !model?.move) throw new Error('Inventory windows need a root and an item model');
   root.classList.add('item-workspace');
   root.setAttribute('aria-label', 'Предметы и персонаж');
   const specs = INVENTORY_CONTAINERS;
-  const windows = new Map(), positions = new Map(), slots = new Map();
+  const windows = new Map(), positions = new Map(), slots = new Map(), grids = new Map(), subtitles = new Map();
   const visible = new Set();
-  let zOrder = [], selectedItemId = null, draggedItemId = null, windowDrag = null, suppressClickUntil = 0, destroyed = false;
+  let zOrder = [], selectedItemId = null, selectedContextId = null, draggedItemId = null, dragContextId = null, renderedContextId = null, windowDrag = null, suppressClickUntil = 0, destroyed = false;
+  let takeAllButton = null, groundSummary = null;
+  const contextId = () => model.getContext?.()?.id ?? null;
 
   const dock = document.createElement('nav'); dock.className = 'item-module-dock'; dock.hidden = true; dock.setAttribute('aria-label', 'Окна персонажа');
   const dockName = document.createElement('span'); dockName.className = 'item-dock-title'; dockName.textContent = 'ПУТНИК'; dock.append(dockName);
@@ -49,7 +51,7 @@ export function createInventoryUI({ root, model, onVisibilityChange = () => {} }
     header.innerHTML = `<span class="item-window-icon">${iuIcon(info.icon)}</span><div class="item-window-heading"><span class="item-window-kicker">${info.kicker}</span><h2 id="item-window-title-${spec.id}">${info.title}</h2></div>`;
     const close = document.createElement('button'); close.type = 'button'; close.dataset.windowClose = spec.id; close.className = 'item-window-close'; close.textContent = '×'; close.title = 'Закрыть окно'; close.setAttribute('aria-label', `Закрыть: ${info.title}`); close.addEventListener('click', () => closeWindow(spec.id)); header.append(close);
     const body = document.createElement('div'); body.className = 'item-window-body';
-    const intro = document.createElement('p'); intro.className = 'item-window-subtitle'; intro.textContent = info.subtitle; body.append(intro);
+    const intro = document.createElement('p'); intro.className = 'item-window-subtitle'; intro.textContent = info.subtitle; body.append(intro); subtitles.set(spec.id, intro);
     if (spec.id === 'equipment') {
       const silhouette = document.createElement('div'); silhouette.className = 'equipment-silhouette'; silhouette.setAttribute('aria-hidden', 'true');
       silhouette.innerHTML = '<svg viewBox="0 0 160 235"><path class="silhouette-ring" d="M80 4v227M10 65h140M16 164h128"/><circle cx="80" cy="34" r="19"/><path d="m61 59-17 8-17 66 16 5 14-42 3 60-7 65 18 3 9-63 9 63 18-3-7-65 3-60 14 42 16-5-17-66-17-8H61Z"/><path class="silhouette-detail" d="M61 66h38l-5 72H66L61 66Zm5 72h28M80 72v60M56 160l24-7 24 7"/></svg><span>СЕВЕР</span>';
@@ -62,17 +64,14 @@ export function createInventoryUI({ root, model, onVisibilityChange = () => {} }
       const label = document.createElement('span'); label.className = 'item-grid-caption'; label.textContent = 'ОБРАЗЦЫ ДЛЯ ИЗУЧЕНИЯ'; body.append(label);
     }
     const grid = document.createElement('div'); grid.className = `item-slot-grid item-slot-grid-${spec.id}`; grid.setAttribute('aria-label', `${info.title}: предметы`);
-    for (let index = 0; index < spec.slotLabels.length; index++) {
-      const cell = document.createElement('button'); cell.type = 'button'; cell.className = 'module-slot'; cell.dataset.containerId = spec.id; cell.dataset.slotIndex = String(index);
-      cell.addEventListener('click', () => slotClick(spec.id, index));
-      cell.addEventListener('dragstart', event => beginItemDrag(event, spec.id, index));
-      cell.addEventListener('dragend', clearDrag);
-      cell.addEventListener('dragover', event => { if (!draggedItemId) return; event.preventDefault(); event.dataTransfer.dropEffect = 'move'; cell.classList.add('is-drag-over'); });
-      cell.addEventListener('dragleave', () => cell.classList.remove('is-drag-over'));
-      cell.addEventListener('drop', event => { event.preventDefault(); event.stopPropagation(); const itemId = draggedItemId || event.dataTransfer.getData('application/x-day-next-item'); clearDrag(); if (itemId) transfer(itemId, spec.id, index); suppressClickUntil = performance.now() + 150; });
-      grid.append(cell); slots.set(`${spec.id}:${index}`, cell);
-    }
+    grids.set(spec.id, grid);
     body.append(grid);
+    if (spec.id === 'ground') {
+      const actions = document.createElement('div'); actions.className = 'world-loot-actions';
+      groundSummary = document.createElement('span'); groundSummary.className = 'world-loot-summary'; groundSummary.setAttribute('aria-live', 'polite');
+      takeAllButton = document.createElement('button'); takeAllButton.type = 'button'; takeAllButton.className = 'world-loot-take-all'; takeAllButton.dataset.lootTakeAll = ''; takeAllButton.textContent = 'Забрать всё'; takeAllButton.addEventListener('click', takeAll);
+      actions.append(groundSummary, takeAllButton); body.append(actions);
+    }
     if (spec.id === 'crafting') {
       const future = document.createElement('div'); future.className = 'item-craft-future'; future.innerHTML = '<span aria-hidden="true">↳</span><span>Результат появится здесь</span><span class="item-future-output" aria-hidden="true">◇</span>'; body.append(future);
     }
@@ -114,6 +113,7 @@ export function createInventoryUI({ root, model, onVisibilityChange = () => {} }
   }
   function openWindow(id, focus = true) {
     if (!windows.has(id)) return false;
+    if (id === 'ground') { onContextOpen(model.getContext?.() || null); render(); }
     if (!positions.has(id)) { const defaults = defaultPositions(); for (const key of Object.keys(defaults)) if (!positions.has(key)) positions.set(key, defaults[key]); }
     visible.add(id); applyPosition(id); bringFront(id); syncVisibility();
     if (focus) windows.get(id).querySelector('.item-window-close').focus({ preventScroll: true });
@@ -128,7 +128,7 @@ export function createInventoryUI({ root, model, onVisibilityChange = () => {} }
   function toggleWorkspace() {
     if (visible.size) { closeAll(); return false; }
     for (const spec of specs) openWindow(spec.id, false);
-    notice.textContent = 'Переноси сферы и кубы между окнами. Заголовки окон можно перетаскивать.';
+    notice.textContent = 'Переноси предметы между окнами. Всё оставленное на земле хранится в этом месте.';
     bringFront('inventory');
     windows.get('inventory')?.querySelector('.item-window-close').focus({ preventScroll: true });
     return true;
@@ -142,46 +142,114 @@ export function createInventoryUI({ root, model, onVisibilityChange = () => {} }
     const name = document.createElement('span'); name.className = 'item-token-name'; name.textContent = item.name;
     token.append(shape, name); return token;
   }
-  function render() {
-    const state = model.getState(), items = new Map(state.items.map(item => [item.id, item]));
-    if (selectedItemId && !items.has(selectedItemId)) selectedItemId = null;
-    for (const container of state.containers) for (let index = 0; index < container.slots.length; index++) {
-      const cell = slots.get(`${container.id}:${index}`); if (!cell) continue;
-      const item = items.get(container.slots[index]); cell.replaceChildren();
-      cell.classList.toggle('has-item', !!item); cell.classList.toggle('is-selected', !!item && item.id === selectedItemId); cell.classList.toggle('can-receive', !!selectedItemId && item?.id !== selectedItemId);
-      cell.draggable = !!item;
-      if (item) { cell.dataset.itemId = item.id; cell.append(itemElement(item)); }
-      else { delete cell.dataset.itemId; const empty = document.createElement('span'); empty.className = 'item-empty-slot'; empty.textContent = container.id === 'equipment' ? '＋' : '·'; empty.setAttribute('aria-hidden', 'true'); cell.append(empty); }
-      const label = document.createElement('span'); label.className = 'item-slot-label'; label.textContent = container.slotLabels[index]; cell.append(label);
-      cell.setAttribute('aria-label', `${iuNames[container.id]?.title || container.name}: ${container.slotLabels[index]}, ${item ? item.name : 'пусто'}`);
-      cell.setAttribute('aria-pressed', String(!!item && item.id === selectedItemId));
-      cell.title = item ? `${item.name} · перетащить или выбрать` : `${container.slotLabels[index]} · положить выбранный предмет`;
+  function ensureGrid(container) {
+    const grid = grids.get(container.id); if (!grid) return;
+    if (grid.children.length === container.slots.length) return;
+    for (const key of [...slots.keys()]) if (key.startsWith(`${container.id}:`)) slots.delete(key);
+    grid.replaceChildren();
+    for (let index = 0; index < container.slots.length; index++) {
+      const cell = document.createElement('button'); cell.type = 'button'; cell.className = 'module-slot'; cell.dataset.containerId = container.id; cell.dataset.slotIndex = String(index);
+      cell.addEventListener('click', () => slotClick(container.id, index));
+      cell.addEventListener('dragstart', event => beginItemDrag(event, container.id, index));
+      cell.addEventListener('dragend', clearDrag);
+      cell.addEventListener('dragover', event => { if (!draggedItemId) return; event.preventDefault(); event.dataTransfer.dropEffect = 'move'; cell.classList.add('is-drag-over'); });
+      cell.addEventListener('dragleave', () => cell.classList.remove('is-drag-over'));
+      cell.addEventListener('drop', event => {
+        event.preventDefault(); event.stopPropagation();
+        const itemId = draggedItemId || event.dataTransfer.getData('application/x-day-next-item'), token = draggedItemId ? dragContextId : contextId();
+        clearDrag(); if (itemId) transfer(itemId, container.id, index, token);
+        suppressClickUntil = performance.now() + 150;
+      });
+      grid.append(cell); slots.set(`${container.id}:${index}`, cell);
     }
+  }
+  function render() {
+    const state = model.getState(), items = new Map(state.items.map(item => [item.id, item])), context = model.getContext?.() || null;
+    if (selectedItemId && !items.has(selectedItemId)) { selectedItemId = null; selectedContextId = null; }
+    if (context && renderedContextId !== null && renderedContextId !== context.id) {
+      selectedItemId = null; selectedContextId = null;
+      // Native drag data outlives a context refresh. Keep its captured token
+      // until drop/dragend so a rebuilt ground grid cannot authorize a remote move.
+    }
+    renderedContextId = context?.id ?? null;
+    for (const container of state.containers) {
+      ensureGrid(container);
+      const info = iuNames[container.id];
+      for (let index = 0; index < container.slots.length; index++) {
+        const cell = slots.get(`${container.id}:${index}`); if (!cell) continue;
+        const item = items.get(container.slots[index]); cell.replaceChildren();
+        cell.classList.toggle('has-item', !!item); cell.classList.toggle('is-selected', !!item && item.id === selectedItemId); cell.classList.toggle('can-receive', !!selectedItemId && item?.id !== selectedItemId);
+        cell.draggable = !!item;
+        if (item) { cell.dataset.itemId = item.id; cell.append(itemElement(item)); }
+        else { delete cell.dataset.itemId; const empty = document.createElement('span'); empty.className = 'item-empty-slot'; empty.textContent = container.id === 'equipment' ? '＋' : '·'; empty.setAttribute('aria-hidden', 'true'); cell.append(empty); }
+        const slotName = container.slotLabels[index] || `Ячейка ${index + 1}`;
+        const label = document.createElement('span'); label.className = 'item-slot-label'; label.textContent = slotName; cell.append(label);
+        cell.setAttribute('aria-label', `${container.name || info?.title}: ${slotName}, ${item ? item.name : 'пусто'}`);
+        cell.setAttribute('aria-pressed', String(!!item && item.id === selectedItemId));
+        cell.title = item ? `${item.name} · перетащить или выбрать` : `${slotName} · положить выбранный предмет`;
+      }
+    }
+    const ground = state.containers.find(container => container.id === 'ground'), count = ground?.slots.filter(Boolean).length || 0;
+    const title = windows.get('ground').querySelector('h2');
+    const isBuilding = context?.kind === 'building';
+    title.textContent = isBuilding ? context.name || ground?.name || 'Здание' : 'На земле';
+    windows.get('ground').dataset.contextKind = context?.kind || 'ground';
+    windows.get('ground').dataset.contextId = context?.id || '';
+    if (isBuilding) subtitles.get('ground').textContent = 'Вещи внутри здания. Оставленное хранится здесь.';
+    else if (context?.kind === 'pile') subtitles.get('ground').textContent = 'Кучка отмечена кругом на карте. Здесь можно оставить вещи.';
+    else subtitles.get('ground').textContent = 'Брось предмет сюда — на карте появится кружок.';
+    groundSummary.textContent = count ? `Предметов: ${count}` : isBuilding ? 'Здание пусто' : 'Здесь ничего нет';
+    takeAllButton.disabled = !count || context?.accessible === false;
+    takeAllButton.title = context?.accessible === false ? 'Сначала остановись рядом с предметами' : 'Перенести предметы в свободные ячейки инвентаря';
+  }
+  function failureNotice(reason) {
+    return reason === 'container-full' ? 'Инвентарь полон. Остальные вещи остаются здесь.'
+      : ['stale-context', 'context-changed', 'out-of-reach', 'moving'].includes(reason) ? 'Место изменилось. Остановись рядом и выбери предмет снова.'
+      : 'Не удалось перенести предмет. Выбери свободное место.';
   }
   function slotClick(containerId, index) {
     if (performance.now() < suppressClickUntil) return;
     const state = model.getState(), container = state.containers.find(value => value.id === containerId), itemId = container?.slots[index];
-    if (selectedItemId && selectedItemId !== itemId) { transfer(selectedItemId, containerId, index); return; }
+    if (selectedItemId && selectedItemId !== itemId) { transfer(selectedItemId, containerId, index, selectedContextId); return; }
     selectedItemId = itemId && selectedItemId !== itemId ? itemId : null;
+    selectedContextId = selectedItemId ? contextId() : null;
     notice.textContent = selectedItemId ? 'Выбери, куда положить предмет. Занятый слот обменяет предметы местами.' : 'Переноси предметы между окнами. Заголовки окон можно перетаскивать.';
     render(); slots.get(`${containerId}:${index}`)?.focus({ preventScroll: true });
   }
-  function transfer(itemId, containerId, index) {
-    const before = model.getState().items.find(item => item.id === itemId), result = model.move(itemId, containerId, index);
-    if (result.ok) { selectedItemId = null; notice.textContent = result.swappedItemId ? 'Предметы поменялись местами.' : `${before?.name || 'Предмет'}: ${iuNames[containerId]?.title || containerId}.`; }
-    else notice.textContent = 'Не удалось перенести предмет. Выбери свободное место.';
+  function transfer(itemId, containerId, index, token = contextId()) {
+    const before = model.getItem?.(itemId) || model.getState().items.find(item => item.id === itemId);
+    const result = model.move(itemId, containerId, index, { contextId: token });
+    if (result.ok) {
+      selectedItemId = null; selectedContextId = null;
+      const destination = containerId === 'ground' ? model.getContext?.()?.name || 'На земле' : iuNames[containerId]?.title || containerId;
+      notice.textContent = result.swappedItemId ? 'Предметы поменялись местами.' : `${before?.name || 'Предмет'}: ${destination}.`;
+      if (result.changed) onTransfer(result);
+    } else notice.textContent = failureNotice(result.reason);
     render(); slots.get(`${containerId}:${index}`)?.focus({ preventScroll: true }); return result;
+  }
+  function takeAll() {
+    const context = model.getContext?.() || null, state = model.getState(), ids = state.containers.find(container => container.id === 'ground')?.slots.filter(Boolean) || [];
+    const moved = []; let failure = null;
+    for (const itemId of ids) {
+      const result = model.move(itemId, 'inventory', null, { contextId: context?.id ?? null });
+      if (!result.ok) { failure = result.reason; break; }
+      if (result.changed) moved.push(itemId);
+    }
+    selectedItemId = null; selectedContextId = null;
+    if (moved.length) onTransfer({ ok: true, changed: true, movedItemIds: moved, from: { containerId: 'ground' }, to: { containerId: 'inventory' } });
+    notice.textContent = failure ? failureNotice(failure) : moved.length ? `Забрано предметов: ${moved.length}.` : 'Здесь больше ничего нет.';
+    render();
   }
   function beginItemDrag(event, containerId, index) {
     const state = model.getState(), itemId = state.containers.find(value => value.id === containerId)?.slots[index];
     if (!itemId || !event.dataTransfer) { event.preventDefault(); return; }
-    draggedItemId = itemId; selectedItemId = null; root.classList.add('is-item-dragging');
+    draggedItemId = itemId; dragContextId = contextId(); selectedItemId = null; selectedContextId = null; root.classList.add('is-item-dragging');
     for (const cell of slots.values()) cell.classList.toggle('can-receive', cell.dataset.itemId !== itemId);
     event.dataTransfer.setData('application/x-day-next-item', itemId); event.dataTransfer.setData('text/plain', itemId); event.dataTransfer.effectAllowed = 'move';
     notice.textContent = 'Отпусти предмет в нужном слоте. Занятый слот обменяет предметы местами.';
   }
   function clearDrag() {
-    draggedItemId = null; root.classList.remove('is-item-dragging');
+    draggedItemId = null; dragContextId = null; root.classList.remove('is-item-dragging');
     for (const cell of slots.values()) { cell.classList.remove('is-drag-over'); cell.classList.remove('can-receive'); }
   }
   function beginWindowDrag(event, id) {
@@ -222,8 +290,8 @@ export function createInventoryUI({ root, model, onVisibilityChange = () => {} }
   window.addEventListener('pointermove', moveWindow); window.addEventListener('pointerup', stopWindowDrag); window.addEventListener('pointercancel', stopWindowDrag); window.addEventListener('resize', resize); window.addEventListener('keydown', keydown, true);
   render();
   return {
-    toggleWorkspace, toggleWindow, closeAll, closeTop, hasOpenWindows: () => visible.size > 0,
-    reset() { model.reset(); selectedItemId = null; clearDrag(); render(); notice.textContent = 'Набор пробных предметов восстановлен.'; },
+    toggleWorkspace, toggleWindow, openWindow, closeAll, closeTop, refresh: render, isWindowOpen: id => visible.has(id), hasOpenWindows: () => visible.size > 0,
+    reset() { model.reset(); selectedItemId = null; selectedContextId = null; renderedContextId = null; clearDrag(); render(); notice.textContent = 'Новая экспедиция. Предметы восстановлены.'; },
     getState: () => ({ openWindows: [...visible], positions: Object.fromEntries([...positions].map(([id, value]) => [id, { ...value }])), selectedItemId, draggedItemId, model: model.getState() }),
     destroy() { if (destroyed) return; destroyed = true; window.removeEventListener('pointermove', moveWindow); window.removeEventListener('pointerup', stopWindowDrag); window.removeEventListener('pointercancel', stopWindowDrag); window.removeEventListener('resize', resize); window.removeEventListener('keydown', keydown, true); root.removeEventListener('pointerdown', stopPointer); root.removeEventListener('focusin', focusIn); root.replaceChildren(); },
   };

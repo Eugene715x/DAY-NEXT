@@ -58,6 +58,8 @@
 .item-slot-grid-inventory .module-slot{aspect-ratio:1.67/1}.item-slot-grid-ground .module-slot{aspect-ratio:1.5/1}.item-slot-grid-stats .module-slot{aspect-ratio:2/1}.item-window-stats .item-window-subtitle{display:none}.item-window-stats .item-stat-preview{gap:8px;margin:4px 0 11px}.item-window-stats .item-grid-caption{margin-bottom:6px}@media(max-height:800px){.item-slot-grid-inventory .module-slot{aspect-ratio:1.85/1}.item-slot-grid-ground .module-slot{aspect-ratio:1.6/1}.item-slot-grid-stats .module-slot{aspect-ratio:2.1/1}}
 
 .item-slot-grid-crafting .module-slot{aspect-ratio:1.25/1}@media(max-height:800px){.item-slot-grid-crafting .module-slot{aspect-ratio:1.3/1}}
+
+.world-loot-actions{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding-top:10px;border-top:1px solid rgba(177,198,153,.13)}.world-loot-summary{color:#91a57e;font-size:8px;line-height:1.5}.world-loot-take-all{padding:7px 10px;border:1px solid rgba(191,213,144,.36);background:rgba(151,179,109,.1);color:#d0dfa6;font:9px "Segoe UI",sans-serif;white-space:nowrap;cursor:pointer}.world-loot-take-all:hover:not(:disabled){background:rgba(171,199,126,.19);border-color:#a2ba75}.world-loot-take-all:disabled{opacity:.35;cursor:default}.item-window-ground .item-window-heading h2{max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.item-window-ground .item-slot-grid-ground{grid-template-columns:repeat(4,minmax(0,1fr))}
 </style>
   </head>
   <body>
@@ -158,7 +160,8 @@
           <div class="help-heading"><div><p class="eyebrow">ПОЛЕВОЙ СПРАВОЧНИК</p><h2>Сначала — первый шаг.</h2></div><button id="help-close" class="icon-button" type="button" aria-label="Закрыть справку">×</button></div>
           <p>Выбери точку на суше. Путник перемножает коэффициенты биома, ландшафта, дороги и уклона. Дорога ускоряет и сохраняет действие биома под ней. Здания и сезонные русла сильно замедляют: маршрут старается обойти их. Постоянная вода пересекается по мостам. В обычном темпе одна игровая минута в пути занимает одну реальную секунду; кнопка 1×/3× ускоряет время. В «Слоях» можно включить разметку равнин, холмов и гор; множители сочетаются с биомами.</p>
           <dl><div><dt>Клик / касание</dt><dd>Идти в выбранную точку</dd></div><div><dt>Перетаскивание</dt><dd>Осмотреть карту</dd></div><div><dt>Колесо / щипок / + −</dt><dd>Приблизить улицы и дома</dd></div><div><dt>Слои карты</dt><dd>Выбрать, что показывать</dd></div><div><dt>Пробел</dt><dd>Пауза в пути</dd></div><div><dt>F</dt><dd>Вернуться к путнику</dd></div><div><dt>Esc</dt><dd>Закрыть окно / отменить путь</dd></div></dl>
-          <p class="help-note">Наведи на объект, а на телефоне коснись его, чтобы узнать детали на любом масштабе. Приблизь карту, чтобы рассмотреть контуры домов и дорожки. В «Слоях карты» можно отдельно показать дороги, здания и природные объекты. Кнопка «Вещи» открывает отдельные окна персонажа: E — снаряжение, I — инвентарь, G — земля, C — крафт, P — характеристики. Перетаскивай предметы между ячейками; окна можно двигать за заголовок. Отдых восстанавливает выносливость.</p>
+          <p class="help-note">Приблизь карту и нажми на дом: путник дойдёт и откроет вещи внутри. Открытый дом сереет, пустой отмечается карандашным крестом. Снаружи оставленные предметы образуют кружок на карте; внутри хранятся в самом здании. G открывает вещи рядом и приостанавливает движение. «Забрать всё» заполняет свободные ячейки инвентаря, остальные вещи остаются на месте.</p>
+          <p class="help-note">«Вещи» открывает окна персонажа: E — снаряжение, I — инвентарь, G — окружение, C — крафт, P — характеристики. Перетаскивай предметы между ячейками; окна двигаются за заголовок. Прогресс сохраняется в этом браузере. «Заново» сбрасывает экспедицию. В «Слоях» можно отдельно показать дороги, здания и природные объекты.</p>
         </section>
 
         <section id="layers-panel" class="layers-panel help-panel glass" role="dialog" aria-label="Слои карты" aria-describedby="layers-note" aria-modal="false" hidden>
@@ -3813,7 +3816,7 @@ function createDetailRenderer(world) {
   const queryZones = drSpatialIndex(zonePolygons);
   const layers = { biomes: true, roads: true, power: true, buildings: true, details: true };
   const roadClasses = Object.fromEntries(Object.keys(ROAD_CLASSES).map(key => [key, true]));
-  let suppressedSourceIds = null;
+  let suppressedSourceIds = null, buildingLootStateAt = null;
   const isEnabled = record => layers[record.layer] && (record.layer !== 'roads' || roadClasses[record.roadClass] !== false)
     && !(record.geometry === 'point' && suppressedSourceIds?.has(record.feature.sourceId || record.feature.id));
   const stats = { features: registry.length, inputFeatures, filteredFeatures, coalescedFeatures: detailSources.length - coalescedDetails.length,
@@ -3950,13 +3953,42 @@ function createDetailRenderer(world) {
     ctx.setLineDash([10 / zoom, 5 / zoom]); ctx.stroke(record.path); ctx.setLineDash([]);
   }
 
-  function paintBuildingIcon(ctx, record, zoom) {
+  function buildingLootState(record) {
+    return typeof buildingLootStateAt === 'function' ? buildingLootStateAt(drSourceId(record.feature)) : null;
+  }
+
+  function paintEmptyBuildingMark(ctx, record, zoom) {
+    const b = record.bounds, width = b.maxX - b.minX, height = b.maxY - b.minY;
+    const short = Math.min(width, height);
+    if (!(short > 0)) return;
+    // The source footprint clips this loose graphite annotation, including
+    // courtyards. Fixed source-ID jitter makes it a pencil mark, not a UI X.
+    const jitter = ((record.hash >>> 9 & 255) / 255 - .5) * .055;
+    const line = (start, middle, end) => {
+      ctx.beginPath(); ctx.moveTo(b.minX + start[0] * width, b.minY + start[1] * height);
+      ctx.lineTo(b.minX + middle[0] * width, b.minY + middle[1] * height);
+      ctx.lineTo(b.minX + end[0] * width, b.minY + end[1] * height); ctx.stroke();
+    };
+    ctx.save(); ctx.clip(record.path, record.fillRule); ctx.setLineDash([]);
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.strokeStyle = '#454545'; ctx.globalAlpha = .86;
+    ctx.lineWidth = Math.min(Math.max(.045, 1.12 / zoom), short * .16);
+    line([.08, .13 + jitter], [.48, .48 - jitter], [.95, .89 + jitter]);
+    line([.12, .91 - jitter], [.52, .49 + jitter], [.91, .08 - jitter]);
+    ctx.strokeStyle = 'rgba(61,61,61,.32)'; ctx.globalAlpha = 1;
+    ctx.lineWidth = Math.min(Math.max(.025, .48 / zoom), short * .075);
+    line([.07, .16 + jitter], [.47, .50 - jitter], [.96, .92 + jitter]);
+    line([.15, .93 - jitter], [.55, .51 + jitter], [.93, .07 - jitter]);
+    ctx.restore();
+  }
+
+  function paintBuildingIcon(ctx, record, zoom, visited = false) {
     const assignment = record.feature.gameplayAssignment, b = record.bounds;
     if (!assignment || zoom < 3.5 || Math.min(b.maxX - b.minX, b.maxY - b.minY) * zoom < 17) return;
     ctx.save(); ctx.clip(record.path, record.fillRule);
     ctx.translate(record.labelPoint.x, record.labelPoint.y); ctx.scale(1 / zoom, 1 / zoom);
     const icon = assignment.icon || 'house';
-    ctx.strokeStyle = '#25352c'; ctx.fillStyle = '#25352c'; ctx.lineWidth = 1.4; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    ctx.strokeStyle = visited ? '#343434' : '#25352c'; ctx.fillStyle = visited ? '#343434' : '#25352c'; ctx.lineWidth = 1.4; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
     ctx.beginPath();
     if (icon === 'house') {
       ctx.moveTo(-5, 0); ctx.lineTo(0, -4); ctx.lineTo(5, 0); ctx.moveTo(-3.5, -1); ctx.lineTo(-3.5, 4); ctx.lineTo(3.5, 4); ctx.lineTo(3.5, -1); ctx.moveTo(0, 4); ctx.lineTo(0, 1);
@@ -4004,34 +4036,38 @@ function createDetailRenderer(world) {
       if (boxes.some(other => box.x < other.x + other.width && box.x + box.width > other.x && box.y < other.y + other.height && box.y + box.height > other.y)) continue;
       ctx.save(); ctx.translate(x, y); ctx.scale(1 / view.zoom, 1 / view.zoom);
       ctx.font = '600 9px "Segoe UI", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
-      ctx.strokeStyle = 'rgba(191,181,147,.94)'; ctx.lineWidth = 3; ctx.strokeText(text, 0, 0); ctx.fillStyle = '#263b30'; ctx.fillText(text, 0, 0); ctx.restore();
+      const visited = buildingLootState(record)?.visited === true;
+      ctx.strokeStyle = visited ? 'rgba(207,207,207,.94)' : 'rgba(191,181,147,.94)'; ctx.lineWidth = 3; ctx.strokeText(text, 0, 0); ctx.fillStyle = visited ? '#343434' : '#263b30'; ctx.fillText(text, 0, 0); ctx.restore();
       boxes.push(box);
     }
   }
 
   function paintBuilding(ctx, record, zoom, hoveredId) {
     const { feature, path, bounds: b, center, longest } = record;
-    const assignment = feature.gameplayAssignment;
+    const assignment = feature.gameplayAssignment, loot = buildingLootState(record);
+    const visited = loot?.visited === true, empty = visited && (loot.empty === true || loot.itemCount === 0);
     const high = zoom >= 2.5, hovered = hoveredId === feature.id;
     const ruin = assignment?.condition === 'ruined' || feature.ruins === true || feature.type === 'ruins';
-    const roof = assignment?.roof || assignment?.color || assignment?.fill || '#ad9f79';
+    const roof = visited ? '#a5a5a5' : assignment?.roof || assignment?.color || assignment?.fill || '#ad9f79';
+    const fill = visited ? '#969696' : assignment?.color || assignment?.fill || roof;
+    const edge = visited ? '#5d5d5d' : assignment?.stroke || '#3f503c';
     if (high) {
       ctx.save(); ctx.translate(.55, .8);
-      ctx.fillStyle = 'rgba(39,47,32,.3)'; ctx.fill(path, record.fillRule); ctx.restore();
+      ctx.fillStyle = visited ? 'rgba(38,38,38,.3)' : 'rgba(39,47,32,.3)'; ctx.fill(path, record.fillRule); ctx.restore();
       const gradient = ctx.createLinearGradient(b.minX, b.minY, b.maxX, b.maxY);
-      gradient.addColorStop(0, roof); gradient.addColorStop(.58, assignment?.color || roof); gradient.addColorStop(1, assignment?.stroke || '#59614c');
+      gradient.addColorStop(0, roof); gradient.addColorStop(.58, visited ? fill : assignment?.color || roof); gradient.addColorStop(1, visited ? edge : assignment?.stroke || '#59614c');
       ctx.fillStyle = gradient;
-    } else ctx.fillStyle = assignment?.color || assignment?.fill || roof;
+    } else ctx.fillStyle = fill;
     ctx.fill(path, record.fillRule);
-    ctx.strokeStyle = hovered ? '#eff0be' : assignment?.stroke || '#3f503c'; ctx.lineWidth = high ? Math.max(.26, .9 / zoom) : .8 / zoom;
+    ctx.strokeStyle = hovered ? '#eff0be' : edge; ctx.lineWidth = high ? Math.max(.26, .9 / zoom) : .8 / zoom;
     if (ruin) ctx.setLineDash([.7, .4]);
     ctx.stroke(path); ctx.setLineDash([]);
-    if (!high) return;
+    if (!high) { if (empty) paintEmptyBuildingMark(ctx, record, zoom); return; }
     ctx.save(); ctx.clip(path, record.fillRule);
     const diagonal = Math.hypot(b.maxX - b.minX, b.maxY - b.minY);
     ctx.translate(center.x, center.y); ctx.rotate(longest?.angle || 0);
     if (ruin) {
-      ctx.fillStyle = 'rgba(59,64,43,.25)';
+      ctx.fillStyle = visited ? 'rgba(60,60,60,.25)' : 'rgba(59,64,43,.25)';
       for (let i = 0; i < 8; i++) {
         const x = (((record.hash >>> (i * 3 % 24)) & 15) / 15 - .5) * diagonal;
         const y = (((record.hash >>> (i * 2 % 24)) & 15) / 15 - .5) * diagonal;
@@ -4039,22 +4075,23 @@ function createDetailRenderer(world) {
       }
     } else if (feature.roofShape !== 'flat') {
       // Roof shading is an illustration clipped to the source footprint, not new map geometry.
-      ctx.fillStyle = 'rgba(235,224,179,.12)'; ctx.fillRect(-diagonal, -diagonal, diagonal * 2, diagonal);
-      ctx.strokeStyle = 'rgba(51,65,43,.4)'; ctx.lineWidth = Math.max(.1, .65 / zoom);
+      ctx.fillStyle = visited ? 'rgba(235,235,235,.12)' : 'rgba(235,224,179,.12)'; ctx.fillRect(-diagonal, -diagonal, diagonal * 2, diagonal);
+      ctx.strokeStyle = visited ? 'rgba(55,55,55,.4)' : 'rgba(51,65,43,.4)'; ctx.lineWidth = Math.max(.1, .65 / zoom);
       ctx.beginPath(); ctx.moveTo(-diagonal, 0); ctx.lineTo(diagonal, 0); ctx.stroke();
       if (zoom >= 6) {
-        ctx.strokeStyle = 'rgba(44,61,40,.14)'; ctx.lineWidth = .45 / zoom;
+        ctx.strokeStyle = visited ? 'rgba(48,48,48,.14)' : 'rgba(44,61,40,.14)'; ctx.lineWidth = .45 / zoom;
         const spacing = Math.max(.65, diagonal / 18);
         ctx.beginPath();
         for (let x = -diagonal; x < diagonal; x += spacing) { ctx.moveTo(x, -diagonal); ctx.lineTo(x, diagonal); }
         ctx.stroke();
       }
     } else {
-      ctx.strokeStyle = 'rgba(236,224,180,.4)'; ctx.lineWidth = .35;
+      ctx.strokeStyle = visited ? 'rgba(236,236,236,.4)' : 'rgba(236,224,180,.4)'; ctx.lineWidth = .35;
       ctx.strokeRect(-diagonal * .28, -diagonal * .22, diagonal * .56, diagonal * .44);
     }
     ctx.restore();
-    paintBuildingIcon(ctx, record, zoom);
+    paintBuildingIcon(ctx, record, zoom, visited);
+    if (empty) paintEmptyBuildingMark(ctx, record, zoom);
   }
 
   function paintDetail(ctx, record, zoom, hoveredId) {
@@ -4209,6 +4246,7 @@ function createDetailRenderer(world) {
 
   function draw(ctx, view) {
     suppressedSourceIds = view.suppressedSourceIds || null;
+    buildingLootStateAt = typeof view.buildingLootState === 'function' ? view.buildingLootState : null;
     lastZoom = view.zoom;
     const hoverIdentity = view.hoveredKey || view.hoveredId;
     const hoverRecord = recordsByKey.get(hoverIdentity) || recordsById.get(hoverIdentity);
@@ -4271,6 +4309,7 @@ function createDetailRenderer(world) {
 
   /** Draw only the selection overlay over a previously rendered static map. */
   function drawHighlight(ctx, view, target = view.hoveredKey || view.hoveredId) {
+    if (typeof view.buildingLootState === 'function') buildingLootStateAt = view.buildingLootState;
     lastZoom = view.zoom;
     if (view.layers) setLayers(view.layers);
     if (view.roadClasses) setRoadClasses(view.roadClasses);
@@ -4293,7 +4332,7 @@ function createDetailRenderer(world) {
       ctx.setLineDash([]);
     }
     else if (record.geometry === 'polygon' && !record.outlineOnly) {
-      ctx.fillStyle = 'rgba(224,228,161,.16)'; ctx.fill(record.path, record.fillRule);
+      ctx.fillStyle = record.group === 'building' && buildingLootState(record)?.visited === true ? 'rgba(236,236,236,.12)' : 'rgba(224,228,161,.16)'; ctx.fill(record.path, record.fillRule);
       ctx.strokeStyle = '#eff0be'; ctx.lineWidth = Math.max(record.group === 'building' ? .26 : 0, 1.6 / view.zoom);
       if (!(record.feature.merged && record.parts.length > 1)) ctx.stroke(record.path);
     } else {
@@ -4901,6 +4940,281 @@ function createInventoryModel({ items = DEMO_ITEMS, containers = INVENTORY_CONTA
 
 return {INVENTORY_CONTAINERS,DEMO_ITEMS,DEMO_PLACEMENTS,createInventoryModel};
 })();
+const {createWorldLoot} = (() => {
+// One item catalogue and canonical placement table back the personal windows,
+// individual buildings and outdoor caches. The UI's "ground" is a local alias.
+const wlClone = value => structuredClone(value);
+const wlCount = container => container?.slots.reduce((count, id) => count + Number(id !== null), 0) || 0;
+const wlHash = value => { let hash = 2166136261; for (const char of String(value)) { hash ^= char.charCodeAt(0); hash = Math.imul(hash, 16777619); } return hash >>> 0; };
+const wlPoint = point => point && Number.isFinite(point.x) && Number.isFinite(point.y);
+const wlParts = feature => feature.parts?.length ? feature.parts : feature.rings?.length ? [feature.rings] : feature.points?.length ? [[feature.points]] : [];
+function wlInRing(x, y, ring) {
+  let inside = false;
+  for (let index = 0, previous = ring.length - 1; index < ring.length; previous = index++) {
+    const a = ring[index], b = ring[previous];
+    const cross = (x - a.x) * (b.y - a.y) - (y - a.y) * (b.x - a.x);
+    if (Math.abs(cross) < 1e-8 && x >= Math.min(a.x, b.x) - 1e-9 && x <= Math.max(a.x, b.x) + 1e-9 && y >= Math.min(a.y, b.y) - 1e-9 && y <= Math.max(a.y, b.y) + 1e-9) return true;
+    if ((a.y > y) !== (b.y > y) && x < (b.x - a.x) * (y - a.y) / (b.y - a.y) + a.x) inside = !inside;
+  }
+  return inside;
+}
+const wlContains = (building, point) => building.parts.some(rings => rings.reduce((inside, ring) => inside !== wlInRing(point.x, point.y, ring), false));
+function wlGrow(container, maximumSlots) {
+  if (container.kind === 'personal') return;
+  const last = container.slots.findLastIndex(Boolean), size = Math.min(maximumSlots, Math.max(12, Math.ceil((last + 5) / 4) * 4));
+  while (container.slots.length < size) container.slots.push(null);
+}
+const wlRejected = reason => ({ ok: false, changed: false, reason });
+
+function createWorldLoot(world = {}, { buildingAssignments = [], start = world.start || { x: 0, y: 0 }, reachMeters = 12 } = {}) {
+  const scale = Number(world.metersPerUnit) > 0 ? world.metersPerUnit : 1;
+  const reach = Number.isFinite(reachMeters) && reachMeters > 0 ? reachMeters : 12;
+  const reachUnits = reach / scale, bucketSize = Math.max(12, Number(world.cellSize) * 8 || 48);
+  const worldId = String(world.id || `world:${world.width || 0}:${world.height || 0}:${world.bbox?.join(',') || ''}`);
+  const assignments = buildingAssignments instanceof Map ? new Map(buildingAssignments) : new Map((Array.isArray(buildingAssignments) ? buildingAssignments : buildingAssignments.assignments || buildingAssignments.features || []).map(value => [value.sourceId || value.id, value.gameplayAssignment || value]));
+  const buildings = new Map(), buildingBuckets = new Map();
+  for (const source of world.buildings || []) {
+    const id = String(source.sourceId || source.id || '');
+    if (!id || buildings.has(id)) continue;
+    const parts = wlParts(source).map(rings => rings.filter(ring => Array.isArray(ring) && ring.length >= 3 && ring.every(wlPoint)).map(ring => ring.map(point => ({ x: point.x, y: point.y })))).filter(rings => rings.length);
+    if (!parts.length) continue;
+    const points = parts.flat(2), minX = Math.min(...points.map(point => point.x)), maxX = Math.max(...points.map(point => point.x));
+    const minY = Math.min(...points.map(point => point.y)), maxY = Math.max(...points.map(point => point.y));
+    const assignment = assignments.get(id) || assignments.get(source.id) || {};
+    const building = { id, parts, bounds: { minX, maxX, minY, maxY }, name: assignment.roleName || assignment.typeName || 'Здание', assignment };
+    buildings.set(id, building);
+    for (let row = Math.floor(minY / bucketSize); row <= Math.floor(maxY / bucketSize); row++) for (let column = Math.floor(minX / bucketSize); column <= Math.floor(maxX / bucketSize); column++) {
+      const key = `${column},${row}`; if (!buildingBuckets.has(key)) buildingBuckets.set(key, []); buildingBuckets.get(key).push(building);
+    }
+  }
+  const buildingAt = position => {
+    const candidates = buildingBuckets.get(`${Math.floor(position.x / bucketSize)},${Math.floor(position.y / bucketSize)}`) || [];
+    return candidates.find(building => wlContains(building, position)) || null;
+  };
+  const validPosition = position => wlPoint(position) && position.x >= 0 && position.y >= 0
+    && (!(world.width > 0) || position.x < world.width) && (!(world.height > 0) || position.y < world.height);
+  let position = validPosition(start) ? { x: start.x, y: start.y } : { x: 0, y: 0 }, moving = false;
+  let items = new Map(), containers = new Map(), locations = new Map(), nextPileId = 1;
+  let revision = 0, contextRevision = 0, lastContextKey = '';
+  // Spare slots support arbitrary manual placement, with a finite ceiling so
+  // dragging into the last cell repeatedly cannot grow a save indefinitely.
+  const maximumWorldSlots = () => Math.max(12, Math.ceil((items.size + 12) / 4) * 4);
+
+  function buildInitialState() {
+    items = new Map(DEMO_ITEMS.map(item => [item.id, { ...item }])); containers = new Map(); locations = new Map(); nextPileId = 1;
+    for (const spec of INVENTORY_CONTAINERS) if (spec.id !== 'ground') containers.set(spec.id, { id: spec.id, kind: 'personal', name: spec.name, slotLabels: [...spec.slotLabels], slots: Array(spec.slotLabels.length).fill(null) });
+    for (const building of buildings.values()) {
+      const seed = wlHash(building.id), count = 2 + seed % 4;
+      const container = { id: `building:${building.id}`, buildingId: building.id, kind: 'building', name: building.name, visited: false, slots: Array(12).fill(null) };
+      for (let index = 0; index < count; index++) {
+        const pick = wlHash(`${building.id}:${index}:${building.assignment.roleId || ''}`), sample = DEMO_ITEMS[pick % DEMO_ITEMS.length];
+        const color = /^#[0-9a-f]{6}$/i.test(building.assignment.color || '') ? building.assignment.color : sample.color;
+        const id = `loot:${building.id}:${index}`, shape = pick & 1 ? 'sphere' : 'cube';
+        items.set(id, { id, name: `${shape === 'sphere' ? 'Сфера' : 'Куб'} · ${building.name}`, shape, color });
+        container.slots[index] = id; locations.set(id, { containerId: container.id, slot: index });
+      }
+      containers.set(container.id, container);
+    }
+    let ground = null;
+    for (const placement of DEMO_PLACEMENTS) {
+      let container = containers.get(placement.containerId);
+      if (placement.containerId === 'ground') {
+        if (!ground) { const building = buildingAt(position); ground = building ? containers.get(`building:${building.id}`) : createPile(position); }
+        container = ground;
+      }
+      let slot = placement.slot;
+      if (container.slots[slot] !== null) slot = container.slots.indexOf(null);
+      if (slot < 0) { slot = container.slots.length; container.slots.push(null); }
+      container.slots[slot] = placement.itemId; locations.set(placement.itemId, { containerId: container.id, slot }); wlGrow(container, maximumWorldSlots());
+    }
+    refreshContextRevision();
+  }
+  function createPile(point) {
+    const id = `pile-${nextPileId++}`;
+    const pile = { id, kind: 'pile', name: 'Предметы на земле', x: point.x, y: point.y, slots: Array(12).fill(null) };
+    containers.set(id, pile); return pile;
+  }
+  function currentContainer() {
+    const building = buildingAt(position);
+    if (building) return containers.get(`building:${building.id}`);
+    let nearest = null, minimum = reachUnits;
+    for (const container of containers.values()) if (container.kind === 'pile' && wlCount(container) > 0) {
+      const distance = Math.hypot(container.x - position.x, container.y - position.y);
+      if (distance <= minimum) { minimum = distance; nearest = container; }
+    }
+    return nearest;
+  }
+  const emptyContextId = () => `ground:${Math.round(position.x / reachUnits)}:${Math.round(position.y / reachUnits)}`;
+  function refreshContextRevision() {
+    const current = currentContainer(), key = `${current?.id || emptyContextId()}:${moving}`;
+    if (key !== lastContextKey) { lastContextKey = key; contextRevision++; }
+  }
+  function getContext() {
+    const current = currentContainer(), kind = current?.kind === 'building' ? 'building' : current ? 'pile' : 'ground';
+    return { id: current?.id || emptyContextId(), kind, name: current?.name || 'На земле', buildingId: current?.buildingId || null,
+      x: current?.kind === 'pile' ? current.x : position.x, y: current?.kind === 'pile' ? current.y : position.y,
+      position: { ...position }, itemCount: wlCount(current), accessible: !moving, moving, reachMeters: reach,
+      revision: contextRevision, worldRevision: revision };
+  }
+  function setPosition(next, options = {}) {
+    if (!validPosition(next)) return wlRejected('invalid-position');
+    position = { x: next.x, y: next.y }; moving = options?.moving === true; refreshContextRevision(); return getContext();
+  }
+  function openContext(expectedId = null) {
+    const context = getContext(), id = typeof expectedId === 'object' ? expectedId?.contextId || expectedId?.id : expectedId;
+    if (id && id !== context.id) return { ...context, ...wlRejected('stale-context') };
+    if (!context.accessible) return { ...context, ...wlRejected('moving') };
+    const container = currentContainer(); let changed = false;
+    if (container?.kind === 'building' && !container.visited) { container.visited = true; revision++; changed = true; }
+    return { ...getContext(), ok: true, changed };
+  }
+  function getBuildingState(id) {
+    const sourceId = String(id || '').replace(/^building:/, ''), container = containers.get(`building:${sourceId}`);
+    if (!container) return null;
+    const itemCount = wlCount(container); return { id: sourceId, sourceId, visited: container.visited, itemCount, empty: itemCount === 0, revision };
+  }
+  const getBuildingStates = () => [...buildings.keys()].map(getBuildingState);
+  const getGroundPiles = () => [...containers.values()].filter(container => container.kind === 'pile' && wlCount(container) > 0).map(container => ({
+    id: container.id, x: container.x, y: container.y, itemCount: wlCount(container),
+    preview: container.slots.filter(Boolean).slice(0, 3).map(id => { const item = items.get(id); return { id, shape: item.shape, color: item.color }; }),
+  }));
+  function getState() {
+    const current = currentContainer(), context = getContext();
+    const localGround = current ? { id: 'ground', name: current.name, slotLabels: current.slots.map((_, index) => `Место ${index + 1}`), slots: [...current.slots], context }
+      : { id: 'ground', name: 'На земле', slotLabels: Array.from({ length: 12 }, (_, index) => `Место ${index + 1}`), slots: Array(12).fill(null), context };
+    return { version: 2, revision, contextRevision, context, items: [...items.values()].map(item => ({ ...item })),
+      containers: INVENTORY_CONTAINERS.map(spec => spec.id === 'ground' ? localGround : wlClone(containers.get(spec.id))) };
+  }
+  function locate(id) {
+    const location = locations.get(id); if (!location) return null;
+    const current = currentContainer(), container = containers.get(location.containerId);
+    return { containerId: container.kind === 'personal' ? container.id : current?.id === container.id ? 'ground' : container.id,
+      storeId: container.id, slot: location.slot, contextId: container.kind === 'personal' ? null : container.id, world: container.kind !== 'personal' };
+  }
+  const getItem = id => items.has(id) ? { ...items.get(id) } : null;
+  function move(itemId, toContainerId, requestedSlot = null, options = {}) {
+    const origin = locations.get(itemId), source = origin && containers.get(origin.containerId);
+    if (!source) return wlRejected('unknown-item');
+    const local = currentContainer(), usesGround = toContainerId === 'ground' || source.kind !== 'personal';
+    if (usesGround && options?.contextId && options.contextId !== getContext().id) return wlRejected('stale-context');
+    if (usesGround && moving) return wlRejected('moving');
+    if (source.kind !== 'personal' && source.id !== local?.id) return wlRejected('not-accessible');
+    let target = toContainerId === 'ground' ? local : containers.get(toContainerId);
+    if (toContainerId !== 'ground' && (!target || target.kind !== 'personal')) return wlRejected('unknown-container');
+    const automatic = requestedSlot === null || requestedSlot === undefined;
+    let slot = automatic ? target ? target.slots.indexOf(null) : 0 : requestedSlot;
+    if (automatic && slot < 0 && target?.kind === 'personal') return wlRejected('container-full');
+    if (!automatic && (!Number.isInteger(slot) || slot < 0 || slot >= (target?.slots.length || 12))) return wlRejected('invalid-slot');
+    if (automatic && slot < 0) slot = target.slots.length;
+    if (!target) target = createPile(position);
+    if (source.id === target.id && origin.slot === slot) return { ok: true, changed: false, from: locate(itemId), to: locate(itemId), swappedItemId: null };
+    while (target.slots.length <= slot) target.slots.push(null);
+    const swappedItemId = target.slots[slot];
+    const from = { containerId: source.kind === 'personal' ? source.id : 'ground', storeId: source.id, slot: origin.slot };
+    target.slots[slot] = itemId; source.slots[origin.slot] = swappedItemId;
+    locations.set(itemId, { containerId: target.id, slot });
+    if (swappedItemId !== null) locations.set(swappedItemId, { containerId: source.id, slot: origin.slot });
+    for (const container of [source, target]) {
+      if (container.kind === 'building') container.visited = true;
+      wlGrow(container, maximumWorldSlots());
+      if (container.kind === 'pile' && wlCount(container) === 0) containers.delete(container.id);
+    }
+    revision++; refreshContextRevision();
+    return { ok: true, changed: true, from, to: { containerId: target.kind === 'personal' ? target.id : 'ground', storeId: target.id, slot }, swappedItemId };
+  }
+  function exportState() {
+    return { version: 1, worldId, nextPileId, items: [...items.values()].map(item => ({ ...item })), containers: [...containers.values()].map(container => wlClone(container)) };
+  }
+  function importState(snapshot) {
+    try {
+      if (!snapshot || snapshot.version !== 1 || snapshot.worldId !== worldId || !Array.isArray(snapshot.items) || !Array.isArray(snapshot.containers)
+        || snapshot.items.length !== items.size || !Number.isSafeInteger(snapshot.nextPileId) || snapshot.nextPileId < 1) return wlRejected('invalid-snapshot');
+      const nextItems = new Map();
+      for (const item of snapshot.items) {
+        const expected = items.get(item?.id);
+        if (!expected || nextItems.has(item.id) || ['id', 'name', 'shape', 'color'].some(key => item[key] !== expected[key])) return wlRejected('invalid-items');
+        nextItems.set(item.id, { ...expected });
+      }
+      const nextContainers = new Map(), nextLocations = new Map(); let maximumPile = 0;
+      for (const candidate of snapshot.containers) {
+        if (!candidate || typeof candidate.id !== 'string' || nextContainers.has(candidate.id) || !Array.isArray(candidate.slots)
+          || candidate.slots.length > maximumWorldSlots()) return wlRejected('invalid-containers');
+        let record;
+        if (candidate.kind === 'pile') {
+          const number = /^pile-(\d+)$/.exec(candidate.id);
+          const sequence = Number(number?.[1]);
+          if (!number || !Number.isSafeInteger(sequence) || sequence < 1 || candidate.id !== `pile-${sequence}` || !validPosition(candidate) || buildingAt(candidate) || !candidate.slots.some(Boolean)) return wlRejected('invalid-pile');
+          maximumPile = Math.max(maximumPile, sequence);
+          record = { id: candidate.id, kind: 'pile', name: 'Предметы на земле', x: candidate.x, y: candidate.y, slots: [...candidate.slots] };
+        } else {
+          const original = containers.get(candidate.id);
+          if (!original || original.kind === 'pile' || original.kind !== candidate.kind) return wlRejected('invalid-container');
+          if (original.kind === 'personal' && candidate.slots.length !== original.slots.length || original.kind === 'building' && (candidate.buildingId !== original.buildingId || typeof candidate.visited !== 'boolean' || candidate.slots.length < 12)) return wlRejected('invalid-container');
+          record = { ...wlClone(original), slots: [...candidate.slots] };
+          if (original.kind === 'building') record.visited = candidate.visited;
+        }
+        for (let slot = 0; slot < record.slots.length; slot++) {
+          const id = record.slots[slot];
+          if (id !== null && (!nextItems.has(id) || nextLocations.has(id))) return wlRejected('invalid-placement');
+          if (id !== null) nextLocations.set(id, { containerId: record.id, slot });
+        }
+        wlGrow(record, maximumWorldSlots()); nextContainers.set(record.id, record);
+      }
+      for (const container of containers.values()) if (container.kind !== 'pile' && !nextContainers.has(container.id)) return wlRejected('missing-container');
+      if (nextLocations.size !== nextItems.size || snapshot.nextPileId <= maximumPile) return wlRejected('invalid-placement');
+      items = nextItems; containers = nextContainers; locations = nextLocations; nextPileId = snapshot.nextPileId; revision++; refreshContextRevision();
+      return { ok: true, changed: true };
+    } catch { return wlRejected('invalid-snapshot'); }
+  }
+  function reset() { position = validPosition(start) ? { x: start.x, y: start.y } : { x: 0, y: 0 }; moving = false; buildInitialState(); revision++; return getState(); }
+  buildInitialState();
+  return { getState, snapshot: getState, move, reset, locate, getItem, setPosition, getContext, openContext, visit: openContext,
+    getBuildingState, getBuildingStates, getGroundPiles, getRevision: () => revision, exportState, importState };
+}
+
+return {createWorldLoot};
+})();
+const {createGroundPileRenderer} = (() => {
+// Screen-sized markers, anchored to the actual position of each outdoor cache.
+function createGroundPileRenderer() {
+  let piles = [];
+  const enabled = view => view.layers?.details !== false;
+  function setPiles(next) { piles = structuredClone(next); }
+  function pick(x, y, view) {
+    if (!enabled(view)) return null;
+    const radius = 17 / view.zoom;
+    return piles.filter(pile => Math.hypot(pile.x - x, pile.y - y) <= radius)
+      .sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y))[0] || null;
+  }
+  function draw(ctx, view) {
+    if (!enabled(view)) return;
+    for (const pile of piles) {
+      const x = (pile.x - view.cameraX) * view.zoom + view.width / 2;
+      const y = (pile.y - view.cameraY) * view.zoom + view.height / 2;
+      if (x < -30 || y < -30 || x > view.width + 30 || y > view.height + 30) continue;
+      const hovered = pile.id === view.hoveredId;
+      ctx.save(); ctx.translate(pile.x, pile.y); ctx.scale(1 / view.zoom, 1 / view.zoom);
+      ctx.beginPath(); ctx.arc(0, 0, hovered ? 17 : 15, 0, Math.PI * 2);
+      ctx.fillStyle = '#26372fee'; ctx.fill(); ctx.strokeStyle = hovered ? '#f4e9bd' : '#c8ba8c'; ctx.lineWidth = hovered ? 2 : 1.5; ctx.stroke();
+      ctx.beginPath(); ctx.arc(0, 0, 12, 0, Math.PI * 2); ctx.strokeStyle = '#b9ba8b33'; ctx.lineWidth = 1; ctx.stroke();
+      pile.preview.forEach((item, index) => {
+        const count = pile.preview.length, px = count === 1 ? 0 : index === 0 ? -5 : 5;
+        const py = count === 3 ? index === 2 ? 5 : -4 : 0;
+        ctx.fillStyle = item.color; ctx.strokeStyle = '#17291e'; ctx.lineWidth = 1;
+        ctx.beginPath();
+        if (item.shape === 'cube') ctx.rect(px - 3.5, py - 3.5, 7, 7);
+        else ctx.arc(px, py, 4, 0, Math.PI * 2);
+        ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#ffffff66'; ctx.fillRect(px - 2, py - 2, 2, 1.5);
+      });
+      ctx.restore();
+    }
+  }
+  return { setPiles, pick, draw };
+}
+
+return {createGroundPileRenderer};
+})();
 const {createInventoryUI} = (() => {
 const iuClamp = (value, low, high) => Math.max(low, Math.min(high, value));
 const iuNames = {
@@ -4920,14 +5234,16 @@ const iuIcons = {
 const iuIcon = name => `<svg viewBox="0 0 24 24" aria-hidden="true">${iuIcons[name] || ''}</svg>`;
 
 /** Independent demo windows. Map/game state is deliberately not owned here. */
-function createInventoryUI({ root, model, onVisibilityChange = () => {} } = {}) {
+function createInventoryUI({ root, model, onVisibilityChange = () => {}, onContextOpen = () => {}, onTransfer = () => {} } = {}) {
   if (!root || !model?.getState || !model?.move) throw new Error('Inventory windows need a root and an item model');
   root.classList.add('item-workspace');
   root.setAttribute('aria-label', 'Предметы и персонаж');
   const specs = INVENTORY_CONTAINERS;
-  const windows = new Map(), positions = new Map(), slots = new Map();
+  const windows = new Map(), positions = new Map(), slots = new Map(), grids = new Map(), subtitles = new Map();
   const visible = new Set();
-  let zOrder = [], selectedItemId = null, draggedItemId = null, windowDrag = null, suppressClickUntil = 0, destroyed = false;
+  let zOrder = [], selectedItemId = null, selectedContextId = null, draggedItemId = null, dragContextId = null, renderedContextId = null, windowDrag = null, suppressClickUntil = 0, destroyed = false;
+  let takeAllButton = null, groundSummary = null;
+  const contextId = () => model.getContext?.()?.id ?? null;
 
   const dock = document.createElement('nav'); dock.className = 'item-module-dock'; dock.hidden = true; dock.setAttribute('aria-label', 'Окна персонажа');
   const dockName = document.createElement('span'); dockName.className = 'item-dock-title'; dockName.textContent = 'ПУТНИК'; dock.append(dockName);
@@ -4951,7 +5267,7 @@ function createInventoryUI({ root, model, onVisibilityChange = () => {} } = {}) 
     header.innerHTML = `<span class="item-window-icon">${iuIcon(info.icon)}</span><div class="item-window-heading"><span class="item-window-kicker">${info.kicker}</span><h2 id="item-window-title-${spec.id}">${info.title}</h2></div>`;
     const close = document.createElement('button'); close.type = 'button'; close.dataset.windowClose = spec.id; close.className = 'item-window-close'; close.textContent = '×'; close.title = 'Закрыть окно'; close.setAttribute('aria-label', `Закрыть: ${info.title}`); close.addEventListener('click', () => closeWindow(spec.id)); header.append(close);
     const body = document.createElement('div'); body.className = 'item-window-body';
-    const intro = document.createElement('p'); intro.className = 'item-window-subtitle'; intro.textContent = info.subtitle; body.append(intro);
+    const intro = document.createElement('p'); intro.className = 'item-window-subtitle'; intro.textContent = info.subtitle; body.append(intro); subtitles.set(spec.id, intro);
     if (spec.id === 'equipment') {
       const silhouette = document.createElement('div'); silhouette.className = 'equipment-silhouette'; silhouette.setAttribute('aria-hidden', 'true');
       silhouette.innerHTML = '<svg viewBox="0 0 160 235"><path class="silhouette-ring" d="M80 4v227M10 65h140M16 164h128"/><circle cx="80" cy="34" r="19"/><path d="m61 59-17 8-17 66 16 5 14-42 3 60-7 65 18 3 9-63 9 63 18-3-7-65 3-60 14 42 16-5-17-66-17-8H61Z"/><path class="silhouette-detail" d="M61 66h38l-5 72H66L61 66Zm5 72h28M80 72v60M56 160l24-7 24 7"/></svg><span>СЕВЕР</span>';
@@ -4964,17 +5280,14 @@ function createInventoryUI({ root, model, onVisibilityChange = () => {} } = {}) 
       const label = document.createElement('span'); label.className = 'item-grid-caption'; label.textContent = 'ОБРАЗЦЫ ДЛЯ ИЗУЧЕНИЯ'; body.append(label);
     }
     const grid = document.createElement('div'); grid.className = `item-slot-grid item-slot-grid-${spec.id}`; grid.setAttribute('aria-label', `${info.title}: предметы`);
-    for (let index = 0; index < spec.slotLabels.length; index++) {
-      const cell = document.createElement('button'); cell.type = 'button'; cell.className = 'module-slot'; cell.dataset.containerId = spec.id; cell.dataset.slotIndex = String(index);
-      cell.addEventListener('click', () => slotClick(spec.id, index));
-      cell.addEventListener('dragstart', event => beginItemDrag(event, spec.id, index));
-      cell.addEventListener('dragend', clearDrag);
-      cell.addEventListener('dragover', event => { if (!draggedItemId) return; event.preventDefault(); event.dataTransfer.dropEffect = 'move'; cell.classList.add('is-drag-over'); });
-      cell.addEventListener('dragleave', () => cell.classList.remove('is-drag-over'));
-      cell.addEventListener('drop', event => { event.preventDefault(); event.stopPropagation(); const itemId = draggedItemId || event.dataTransfer.getData('application/x-day-next-item'); clearDrag(); if (itemId) transfer(itemId, spec.id, index); suppressClickUntil = performance.now() + 150; });
-      grid.append(cell); slots.set(`${spec.id}:${index}`, cell);
-    }
+    grids.set(spec.id, grid);
     body.append(grid);
+    if (spec.id === 'ground') {
+      const actions = document.createElement('div'); actions.className = 'world-loot-actions';
+      groundSummary = document.createElement('span'); groundSummary.className = 'world-loot-summary'; groundSummary.setAttribute('aria-live', 'polite');
+      takeAllButton = document.createElement('button'); takeAllButton.type = 'button'; takeAllButton.className = 'world-loot-take-all'; takeAllButton.dataset.lootTakeAll = ''; takeAllButton.textContent = 'Забрать всё'; takeAllButton.addEventListener('click', takeAll);
+      actions.append(groundSummary, takeAllButton); body.append(actions);
+    }
     if (spec.id === 'crafting') {
       const future = document.createElement('div'); future.className = 'item-craft-future'; future.innerHTML = '<span aria-hidden="true">↳</span><span>Результат появится здесь</span><span class="item-future-output" aria-hidden="true">◇</span>'; body.append(future);
     }
@@ -5016,6 +5329,7 @@ function createInventoryUI({ root, model, onVisibilityChange = () => {} } = {}) 
   }
   function openWindow(id, focus = true) {
     if (!windows.has(id)) return false;
+    if (id === 'ground') { onContextOpen(model.getContext?.() || null); render(); }
     if (!positions.has(id)) { const defaults = defaultPositions(); for (const key of Object.keys(defaults)) if (!positions.has(key)) positions.set(key, defaults[key]); }
     visible.add(id); applyPosition(id); bringFront(id); syncVisibility();
     if (focus) windows.get(id).querySelector('.item-window-close').focus({ preventScroll: true });
@@ -5030,7 +5344,7 @@ function createInventoryUI({ root, model, onVisibilityChange = () => {} } = {}) 
   function toggleWorkspace() {
     if (visible.size) { closeAll(); return false; }
     for (const spec of specs) openWindow(spec.id, false);
-    notice.textContent = 'Переноси сферы и кубы между окнами. Заголовки окон можно перетаскивать.';
+    notice.textContent = 'Переноси предметы между окнами. Всё оставленное на земле хранится в этом месте.';
     bringFront('inventory');
     windows.get('inventory')?.querySelector('.item-window-close').focus({ preventScroll: true });
     return true;
@@ -5044,46 +5358,114 @@ function createInventoryUI({ root, model, onVisibilityChange = () => {} } = {}) 
     const name = document.createElement('span'); name.className = 'item-token-name'; name.textContent = item.name;
     token.append(shape, name); return token;
   }
-  function render() {
-    const state = model.getState(), items = new Map(state.items.map(item => [item.id, item]));
-    if (selectedItemId && !items.has(selectedItemId)) selectedItemId = null;
-    for (const container of state.containers) for (let index = 0; index < container.slots.length; index++) {
-      const cell = slots.get(`${container.id}:${index}`); if (!cell) continue;
-      const item = items.get(container.slots[index]); cell.replaceChildren();
-      cell.classList.toggle('has-item', !!item); cell.classList.toggle('is-selected', !!item && item.id === selectedItemId); cell.classList.toggle('can-receive', !!selectedItemId && item?.id !== selectedItemId);
-      cell.draggable = !!item;
-      if (item) { cell.dataset.itemId = item.id; cell.append(itemElement(item)); }
-      else { delete cell.dataset.itemId; const empty = document.createElement('span'); empty.className = 'item-empty-slot'; empty.textContent = container.id === 'equipment' ? '＋' : '·'; empty.setAttribute('aria-hidden', 'true'); cell.append(empty); }
-      const label = document.createElement('span'); label.className = 'item-slot-label'; label.textContent = container.slotLabels[index]; cell.append(label);
-      cell.setAttribute('aria-label', `${iuNames[container.id]?.title || container.name}: ${container.slotLabels[index]}, ${item ? item.name : 'пусто'}`);
-      cell.setAttribute('aria-pressed', String(!!item && item.id === selectedItemId));
-      cell.title = item ? `${item.name} · перетащить или выбрать` : `${container.slotLabels[index]} · положить выбранный предмет`;
+  function ensureGrid(container) {
+    const grid = grids.get(container.id); if (!grid) return;
+    if (grid.children.length === container.slots.length) return;
+    for (const key of [...slots.keys()]) if (key.startsWith(`${container.id}:`)) slots.delete(key);
+    grid.replaceChildren();
+    for (let index = 0; index < container.slots.length; index++) {
+      const cell = document.createElement('button'); cell.type = 'button'; cell.className = 'module-slot'; cell.dataset.containerId = container.id; cell.dataset.slotIndex = String(index);
+      cell.addEventListener('click', () => slotClick(container.id, index));
+      cell.addEventListener('dragstart', event => beginItemDrag(event, container.id, index));
+      cell.addEventListener('dragend', clearDrag);
+      cell.addEventListener('dragover', event => { if (!draggedItemId) return; event.preventDefault(); event.dataTransfer.dropEffect = 'move'; cell.classList.add('is-drag-over'); });
+      cell.addEventListener('dragleave', () => cell.classList.remove('is-drag-over'));
+      cell.addEventListener('drop', event => {
+        event.preventDefault(); event.stopPropagation();
+        const itemId = draggedItemId || event.dataTransfer.getData('application/x-day-next-item'), token = draggedItemId ? dragContextId : contextId();
+        clearDrag(); if (itemId) transfer(itemId, container.id, index, token);
+        suppressClickUntil = performance.now() + 150;
+      });
+      grid.append(cell); slots.set(`${container.id}:${index}`, cell);
     }
+  }
+  function render() {
+    const state = model.getState(), items = new Map(state.items.map(item => [item.id, item])), context = model.getContext?.() || null;
+    if (selectedItemId && !items.has(selectedItemId)) { selectedItemId = null; selectedContextId = null; }
+    if (context && renderedContextId !== null && renderedContextId !== context.id) {
+      selectedItemId = null; selectedContextId = null;
+      // Native drag data outlives a context refresh. Keep its captured token
+      // until drop/dragend so a rebuilt ground grid cannot authorize a remote move.
+    }
+    renderedContextId = context?.id ?? null;
+    for (const container of state.containers) {
+      ensureGrid(container);
+      const info = iuNames[container.id];
+      for (let index = 0; index < container.slots.length; index++) {
+        const cell = slots.get(`${container.id}:${index}`); if (!cell) continue;
+        const item = items.get(container.slots[index]); cell.replaceChildren();
+        cell.classList.toggle('has-item', !!item); cell.classList.toggle('is-selected', !!item && item.id === selectedItemId); cell.classList.toggle('can-receive', !!selectedItemId && item?.id !== selectedItemId);
+        cell.draggable = !!item;
+        if (item) { cell.dataset.itemId = item.id; cell.append(itemElement(item)); }
+        else { delete cell.dataset.itemId; const empty = document.createElement('span'); empty.className = 'item-empty-slot'; empty.textContent = container.id === 'equipment' ? '＋' : '·'; empty.setAttribute('aria-hidden', 'true'); cell.append(empty); }
+        const slotName = container.slotLabels[index] || `Ячейка ${index + 1}`;
+        const label = document.createElement('span'); label.className = 'item-slot-label'; label.textContent = slotName; cell.append(label);
+        cell.setAttribute('aria-label', `${container.name || info?.title}: ${slotName}, ${item ? item.name : 'пусто'}`);
+        cell.setAttribute('aria-pressed', String(!!item && item.id === selectedItemId));
+        cell.title = item ? `${item.name} · перетащить или выбрать` : `${slotName} · положить выбранный предмет`;
+      }
+    }
+    const ground = state.containers.find(container => container.id === 'ground'), count = ground?.slots.filter(Boolean).length || 0;
+    const title = windows.get('ground').querySelector('h2');
+    const isBuilding = context?.kind === 'building';
+    title.textContent = isBuilding ? context.name || ground?.name || 'Здание' : 'На земле';
+    windows.get('ground').dataset.contextKind = context?.kind || 'ground';
+    windows.get('ground').dataset.contextId = context?.id || '';
+    if (isBuilding) subtitles.get('ground').textContent = 'Вещи внутри здания. Оставленное хранится здесь.';
+    else if (context?.kind === 'pile') subtitles.get('ground').textContent = 'Кучка отмечена кругом на карте. Здесь можно оставить вещи.';
+    else subtitles.get('ground').textContent = 'Брось предмет сюда — на карте появится кружок.';
+    groundSummary.textContent = count ? `Предметов: ${count}` : isBuilding ? 'Здание пусто' : 'Здесь ничего нет';
+    takeAllButton.disabled = !count || context?.accessible === false;
+    takeAllButton.title = context?.accessible === false ? 'Сначала остановись рядом с предметами' : 'Перенести предметы в свободные ячейки инвентаря';
+  }
+  function failureNotice(reason) {
+    return reason === 'container-full' ? 'Инвентарь полон. Остальные вещи остаются здесь.'
+      : ['stale-context', 'context-changed', 'out-of-reach', 'moving'].includes(reason) ? 'Место изменилось. Остановись рядом и выбери предмет снова.'
+      : 'Не удалось перенести предмет. Выбери свободное место.';
   }
   function slotClick(containerId, index) {
     if (performance.now() < suppressClickUntil) return;
     const state = model.getState(), container = state.containers.find(value => value.id === containerId), itemId = container?.slots[index];
-    if (selectedItemId && selectedItemId !== itemId) { transfer(selectedItemId, containerId, index); return; }
+    if (selectedItemId && selectedItemId !== itemId) { transfer(selectedItemId, containerId, index, selectedContextId); return; }
     selectedItemId = itemId && selectedItemId !== itemId ? itemId : null;
+    selectedContextId = selectedItemId ? contextId() : null;
     notice.textContent = selectedItemId ? 'Выбери, куда положить предмет. Занятый слот обменяет предметы местами.' : 'Переноси предметы между окнами. Заголовки окон можно перетаскивать.';
     render(); slots.get(`${containerId}:${index}`)?.focus({ preventScroll: true });
   }
-  function transfer(itemId, containerId, index) {
-    const before = model.getState().items.find(item => item.id === itemId), result = model.move(itemId, containerId, index);
-    if (result.ok) { selectedItemId = null; notice.textContent = result.swappedItemId ? 'Предметы поменялись местами.' : `${before?.name || 'Предмет'}: ${iuNames[containerId]?.title || containerId}.`; }
-    else notice.textContent = 'Не удалось перенести предмет. Выбери свободное место.';
+  function transfer(itemId, containerId, index, token = contextId()) {
+    const before = model.getItem?.(itemId) || model.getState().items.find(item => item.id === itemId);
+    const result = model.move(itemId, containerId, index, { contextId: token });
+    if (result.ok) {
+      selectedItemId = null; selectedContextId = null;
+      const destination = containerId === 'ground' ? model.getContext?.()?.name || 'На земле' : iuNames[containerId]?.title || containerId;
+      notice.textContent = result.swappedItemId ? 'Предметы поменялись местами.' : `${before?.name || 'Предмет'}: ${destination}.`;
+      if (result.changed) onTransfer(result);
+    } else notice.textContent = failureNotice(result.reason);
     render(); slots.get(`${containerId}:${index}`)?.focus({ preventScroll: true }); return result;
+  }
+  function takeAll() {
+    const context = model.getContext?.() || null, state = model.getState(), ids = state.containers.find(container => container.id === 'ground')?.slots.filter(Boolean) || [];
+    const moved = []; let failure = null;
+    for (const itemId of ids) {
+      const result = model.move(itemId, 'inventory', null, { contextId: context?.id ?? null });
+      if (!result.ok) { failure = result.reason; break; }
+      if (result.changed) moved.push(itemId);
+    }
+    selectedItemId = null; selectedContextId = null;
+    if (moved.length) onTransfer({ ok: true, changed: true, movedItemIds: moved, from: { containerId: 'ground' }, to: { containerId: 'inventory' } });
+    notice.textContent = failure ? failureNotice(failure) : moved.length ? `Забрано предметов: ${moved.length}.` : 'Здесь больше ничего нет.';
+    render();
   }
   function beginItemDrag(event, containerId, index) {
     const state = model.getState(), itemId = state.containers.find(value => value.id === containerId)?.slots[index];
     if (!itemId || !event.dataTransfer) { event.preventDefault(); return; }
-    draggedItemId = itemId; selectedItemId = null; root.classList.add('is-item-dragging');
+    draggedItemId = itemId; dragContextId = contextId(); selectedItemId = null; selectedContextId = null; root.classList.add('is-item-dragging');
     for (const cell of slots.values()) cell.classList.toggle('can-receive', cell.dataset.itemId !== itemId);
     event.dataTransfer.setData('application/x-day-next-item', itemId); event.dataTransfer.setData('text/plain', itemId); event.dataTransfer.effectAllowed = 'move';
     notice.textContent = 'Отпусти предмет в нужном слоте. Занятый слот обменяет предметы местами.';
   }
   function clearDrag() {
-    draggedItemId = null; root.classList.remove('is-item-dragging');
+    draggedItemId = null; dragContextId = null; root.classList.remove('is-item-dragging');
     for (const cell of slots.values()) { cell.classList.remove('is-drag-over'); cell.classList.remove('can-receive'); }
   }
   function beginWindowDrag(event, id) {
@@ -5124,8 +5506,8 @@ function createInventoryUI({ root, model, onVisibilityChange = () => {} } = {}) 
   window.addEventListener('pointermove', moveWindow); window.addEventListener('pointerup', stopWindowDrag); window.addEventListener('pointercancel', stopWindowDrag); window.addEventListener('resize', resize); window.addEventListener('keydown', keydown, true);
   render();
   return {
-    toggleWorkspace, toggleWindow, closeAll, closeTop, hasOpenWindows: () => visible.size > 0,
-    reset() { model.reset(); selectedItemId = null; clearDrag(); render(); notice.textContent = 'Набор пробных предметов восстановлен.'; },
+    toggleWorkspace, toggleWindow, openWindow, closeAll, closeTop, refresh: render, isWindowOpen: id => visible.has(id), hasOpenWindows: () => visible.size > 0,
+    reset() { model.reset(); selectedItemId = null; selectedContextId = null; renderedContextId = null; clearDrag(); render(); notice.textContent = 'Новая экспедиция. Предметы восстановлены.'; },
     getState: () => ({ openWindows: [...visible], positions: Object.fromEntries([...positions].map(([id, value]) => [id, { ...value }])), selectedItemId, draggedItemId, model: model.getState() }),
     destroy() { if (destroyed) return; destroyed = true; window.removeEventListener('pointermove', moveWindow); window.removeEventListener('pointerup', stopWindowDrag); window.removeEventListener('pointercancel', stopWindowDrag); window.removeEventListener('resize', resize); window.removeEventListener('keydown', keydown, true); root.removeEventListener('pointerdown', stopPointer); root.removeEventListener('focusin', focusIn); root.replaceChildren(); },
   };
@@ -5158,7 +5540,7 @@ const countryLabel = usaMap.country === 'US' ? 'США' : usaMap.country;
 const regionLabel = String(usaMap.region || '').split(',').map(part => part.trim()).filter(part => part && part !== countryLabel && part !== usaMap.country).join(', ');
 const placeLabels = { Beatty: 'Битти', Rhyolite: 'Райолит', Bullfrog: 'Буллфрог', 'Gold Center': 'Голд-Сентер' };
 const regionPlaces = overviewMarkers.filter(marker => marker.tags?.place);
-let hoveredObject = null;
+let hoveredObject = null, hoveredPile = null;
 const maximumZoom = () => 24;
 const metersPerUnit = () => world.metersPerUnit || 5;
 const terrainNames = { plain: 'Пустошь', forest: 'Хвойный лес', water: 'Вода', swamp: 'Заболоченная низина', hill: 'Каменистые холмы', road: 'Старая дорога', bridge: 'Мост' };
@@ -5172,9 +5554,18 @@ let stamina = 100, water = 100, minutes = 7 * 60 + 42, totalDistance = 0;
 let pointer = null, hover = null, hoveredPoi = null, trail = [];
 let discovered = new Set(world.pois.filter(p => p.discovered).map(p => p.id));
 let last = performance.now(), uiTick = 0, hintTimer, arrivalMarker = null, keys = new Set();
-const inventoryModel = createInventoryModel();
+const inventoryModel = createWorldLoot(world, { buildingAssignments: detailRenderer.getFeatures().filter(feature => feature.gameplayAssignment) });
+const groundPileRenderer = createGroundPileRenderer();
+const lootSaveKey = `day-next:world-loot:v1:${world.id}`;
+let lootRevision = -1, lootContextRevision = -1, lootSaveStatus = 'new';
+restoreLoot();
 let itemWindows = null;
-itemWindows = createInventoryUI({ root: $('game-windows'), model: inventoryModel, onVisibilityChange: () => {
+itemWindows = createInventoryUI({ root: $('game-windows'), model: inventoryModel, onContextOpen: context => {
+  if (route && !paused) togglePause();
+  inventoryModel.setPosition(player, { moving: false });
+  inventoryModel.openContext(context?.id);
+  syncWorldLoot(false);
+}, onTransfer: () => syncWorldLoot(false), onVisibilityChange: () => {
   keys.clear();
   const open = itemWindows?.hasOpenWindows() || false;
   $('items-button').setAttribute('aria-expanded', String(open));
@@ -5203,6 +5594,51 @@ function line(context, points) {
 
 let objectRevision = 0, objectCacheState = null;
 const renderStats = { frames: 0, staticRebuilds: 0, lastStaticMs: 0, lastFrameMs: 0, totalFrameMs: 0, lastRouteSearchMs: 0 };
+
+function restoreLoot() {
+  try {
+    const raw = localStorage.getItem(lootSaveKey);
+    if (raw) {
+      const saved = JSON.parse(raw), point = saved.player;
+      if (saved.schema !== 1 || saved.mapId !== world.id || !point || !Number.isFinite(point.x) || !Number.isFinite(point.y)
+        || point.x < 0 || point.y < 0 || point.x >= world.width || point.y >= world.height || !terrainAt(world, point.x, point.y)?.walkable
+        || !['minutes', 'stamina', 'water', 'totalDistance'].every(key => Number.isFinite(saved[key]) && saved[key] >= 0)
+        || !inventoryModel.importState(saved.loot).ok) throw new Error('Invalid checkpoint');
+      player = { x: point.x, y: point.y }; minutes = saved.minutes;
+      stamina = Math.min(100, saved.stamina); water = Math.min(100, saved.water); totalDistance = saved.totalDistance;
+      lootSaveStatus = 'restored';
+    }
+  } catch { lootSaveStatus = 'unavailable-or-invalid'; }
+  inventoryModel.setPosition(player, { moving: false });
+}
+function saveLoot() {
+  try {
+    localStorage.setItem(lootSaveKey, JSON.stringify({ schema: 1, mapId: world.id, loot: inventoryModel.exportState(), player, minutes, stamina, water, totalDistance }));
+    lootSaveStatus = 'saved';
+  } catch { lootSaveStatus = 'session-only'; }
+}
+function syncWorldLoot(refresh = true) {
+  const revision = inventoryModel.getRevision(), context = inventoryModel.getContext();
+  const changed = revision !== lootRevision, contextChanged = context.revision !== lootContextRevision;
+  if (changed) {
+    lootRevision = revision; groundPileRenderer.setPiles(inventoryModel.getGroundPiles()); objectRevision++; saveLoot();
+  }
+  lootContextRevision = context.revision;
+  if (refresh && (changed || contextChanged) && itemWindows?.isWindowOpen('ground')) itemWindows.refresh();
+}
+function syncLootPosition() {
+  inventoryModel.setPosition(player, { moving: !!route && !paused }); syncWorldLoot();
+}
+function openLocalLoot(target) {
+  inventoryModel.setPosition(player, { moving: false });
+  const context = inventoryModel.getContext();
+  if (target && context.id !== target.id) return false;
+  itemWindows.openWindow('inventory'); itemWindows.openWindow('ground');
+  return true;
+}
+addEventListener('pagehide', saveLoot);
+document.addEventListener('visibilitychange', () => { if (document.hidden) saveLoot(); });
+syncWorldLoot(false);
 
 function resize() {
   vw = innerWidth; vh = innerHeight; dpr = Math.min(devicePixelRatio || 1, 2);
@@ -5241,35 +5677,43 @@ function pickPoi(position, radius = 35) {
 }
 
 function setDestination(position) {
-  const poi = landmarkRenderer.pick(position.x, position.y, 10 / camera.zoom, { zoom: camera.zoom, layers }) || pickPoi(position, 34);
-  const target = poi ? { x: poi.x, y: poi.y } : position;
+  const pile = groundPileRenderer.pick(position.x, position.y, { zoom: camera.zoom, layers });
+  const feature = pile ? null : detailRenderer.pick(position.x, position.y, 0);
+  const building = feature?.gameplayAssignment ? feature : null;
+  const lootTarget = pile ? { kind: 'pile', id: pile.id } : building ? { kind: 'building', id: `building:${building.sourceId || building.id}` } : null;
+  if (lootTarget && inventoryModel.getContext().id === lootTarget.id) {
+    if (route && !paused) togglePause();
+    openLocalLoot(lootTarget); return;
+  }
+  const poi = lootTarget ? null : landmarkRenderer.pick(position.x, position.y, 10 / camera.zoom, { zoom: camera.zoom, layers }) || pickPoi(position, 34);
+  const target = pile ? { x: pile.x, y: pile.y } : poi ? { x: poi.x, y: poi.y } : position;
   if (target.x < 0 || target.y < 0 || target.x >= world.width || target.y >= world.height) { toast('Здесь заканчивается лист карты.'); return; }
   if (!terrainAt(world, target.x, target.y)?.walkable) { toast('Вода непроходима. Ищи мост или обойди берег.'); return; }
   const searchStarted = performance.now();
   const result = findPath(world, player, target);
   renderStats.lastRouteSearchMs = performance.now() - searchStarted;
   if (!result || !result.points.length) { toast('Путь закрыт. Попробуй другой берег или дорогу.'); return; }
-  if (result.distance < 5) return;
-  const name = poi ? poiTitle(poi) : terrainNames[terrainAt(world, target.x, target.y)?.type] || 'Точка на карте';
-  route = { ...result, points: result.points.map(p => ({ ...p })), index: 0, destination: target, name, remaining: result.distance, remainingDurationMinutes: result.durationMinutes };
+  if (result.distance < 5 && !lootTarget) return;
+  const name = pile ? 'Предметы на земле' : building ? building.gameplayAssignment.roleName : poi ? poiTitle(poi) : terrainNames[terrainAt(world, target.x, target.y)?.type] || 'Точка на карте';
+  route = { ...result, points: result.points.map(p => ({ ...p })), index: 0, destination: target, name, lootTarget, remaining: result.distance, remainingDurationMinutes: result.durationMinutes };
   paused = false; arrivalMarker = target;
   log(`Маршрут: ${name.toLowerCase()}`, true);
   $('travel-panel').hidden = false; $('destination-label').textContent = name;
   $('pause-button').textContent = 'Ⅱ Пауза'; $('pause-button').setAttribute('aria-label', 'Приостановить движение');
-  updateUI();
+  syncLootPosition(); updateUI();
 }
 
 function cancelRoute() {
   if (!route) return;
   route = null; paused = false; arrivalMarker = null; $('travel-panel').hidden = true;
-  log('Маршрут отменён.'); updateUI();
+  syncLootPosition(); saveLoot(); log('Маршрут отменён.'); updateUI();
 }
 function togglePause() {
   if (!route) return;
   paused = !paused;
   $('pause-button').textContent = paused ? '▶ Продолжить' : 'Ⅱ Пауза';
   $('pause-button').setAttribute('aria-label', paused ? 'Продолжить движение' : 'Приостановить движение');
-  updateUI();
+  syncLootPosition(); saveLoot(); updateUI();
 }
 function reset() {
   player = { ...world.start }; camera.x = player.x; camera.y = player.y;
@@ -5277,6 +5721,7 @@ function reset() {
   stamina = water = 100; minutes = 7 * 60 + 42; totalDistance = 0; trail = []; arrivalMarker = null;
   discovered = new Set(world.pois.filter(p => p.discovered).map(p => p.id));
   itemWindows.reset();
+  syncLootPosition(); saveLoot();
   hideObjectCard();
   $('travel-panel').hidden = true; $('speed-button').textContent = '1×'; $('activity-log').replaceChildren();
   log('Новый день. Впереди — неизвестность.', true); toast('Вернулись к началу экспедиции.'); updateUI();
@@ -5406,6 +5851,7 @@ function inspectObject(point, screenX, screenY, touch = false, pickedFeature) {
   const zoneNames = { residential: 'ЖИЛАЯ ЗОНА', industrial: 'ПРОМЫШЛЕННАЯ ЗОНА', commercial: 'КОММЕРЧЕСКАЯ ЗОНА', retail: 'ТОРГОВАЯ ЗОНА', farmland: 'ПОЛЯ', sand: 'ПЕСКИ', rock: 'СКАЛЫ', scrub: 'КУСТАРНИК', wetland: 'БОЛОТО' };
   const layerNames = { biomes: 'БИОМ', roads: 'ДОРОГА', power: 'ЭЛЕКТРОСЕТЬ', buildings: 'ЗДАНИЕ' };
   const assignment = feature.gameplayAssignment;
+  const lootState = assignment ? inventoryModel.getBuildingState(feature.sourceId || feature.id) : null;
   const card = $('object-card');
   card.classList.toggle('is-building', !!assignment);
   card.style.setProperty('--object-type-color', assignment?.color || assignment?.category?.color || '#bccca4');
@@ -5416,6 +5862,7 @@ function inspectObject(point, screenX, screenY, touch = false, pickedFeature) {
   const buildingDescription = assignment ? [assignment.condition === 'ruined' ? 'Руины' : assignment.condition === 'abandoned' ? 'Заброшено' : '', assignment.roleOrigin === 'gameplay' ? 'Игровое назначение' : assignment.roleOrigin === 'context' ? 'Назначение по окружению' : 'Назначение по меткам карты'].filter(Boolean).join(' · ') : feature.description;
   const extra = [buildingDescription].filter(Boolean).flatMap(text => String(text).split(' · '));
   $('object-meta').textContent = [...new Set(extra)].filter(text => text !== (assignment?.roleName || feature.name)).join(' · ') || (feature.derived ? 'Игровая зона' : world.geographic ? 'Нанесён на карту OpenStreetMap' : 'Объект игровой карты');
+  if (lootState?.visited) $('object-meta').textContent += `\nОткрыто · ${lootState.empty ? 'Пусто' : 'Есть предметы'}`;
   const zones = detailRenderer.zonesAt(point.x, point.y);
   if (zones.length) $('object-meta').textContent += `\nБиом: ${[...new Set(zones.map(zone => zone.biomeName || zone.name))].join(' + ')}`;
   const elevation = layers.elevation && elevationRenderer.available ? elevationRenderer.sampleAt(point.x, point.y) : null;
@@ -5469,15 +5916,18 @@ canvas.addEventListener('pointerdown', e => {
 });
 canvas.addEventListener('pointermove', e => {
   hover = screenToWorld(e.clientX, e.clientY);
-  const pickedFeature = !pointer && !pinch ? detailRenderer.pick(hover.x, hover.y, 5 / camera.zoom) : null;
-  hoveredPoi = landmarkRenderer.pick(hover.x, hover.y, 10 / camera.zoom, { zoom: camera.zoom, layers }) || (pickedFeature?.gameplayAssignment ? null : pickPoi(hover));
+  hoveredPile = !pointer && !pinch ? groundPileRenderer.pick(hover.x, hover.y, { zoom: camera.zoom, layers }) : null;
+  const pickedFeature = !pointer && !pinch && !hoveredPile ? detailRenderer.pick(hover.x, hover.y, 5 / camera.zoom) : null;
+  hoveredPoi = hoveredPile ? null : landmarkRenderer.pick(hover.x, hover.y, 10 / camera.zoom, { zoom: camera.zoom, layers }) || (pickedFeature?.gameplayAssignment ? null : pickPoi(hover));
   if (!pointer && !pinch) {
-    if (hoveredPoi) {
+    if (hoveredPile) {
+      hideObjectCard(); showMapTooltip(`Предметы на земле · ${hoveredPile.itemCount}`, e.clientX, e.clientY);
+    } else if (hoveredPoi) {
       hideObjectCard();
       showMapTooltip(landmarkSourceIds.has(hoveredPoi.sourceId) ? `${poiTitle(hoveredPoi)}` : `${kindNames[hoveredPoi.kind] || 'Место'} · ${poiTitle(hoveredPoi)}`, e.clientX, e.clientY);
     } else inspectObject(hover, e.clientX, e.clientY, false, pickedFeature);
   }
-  canvas.style.cursor = pointer?.moved ? 'grabbing' : hoveredPoi || hoveredObject && !quietHoverLayers.has(hoveredObject.layer) ? 'pointer' : 'crosshair';
+  canvas.style.cursor = pointer?.moved ? 'grabbing' : hoveredPile || hoveredPoi || hoveredObject && !quietHoverLayers.has(hoveredObject.layer) ? 'pointer' : 'crosshair';
   if (touches.has(e.pointerId)) touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
   if (pinch && touches.size === 2) {
     const [a, b] = [...touches.values()];
@@ -5505,7 +5955,7 @@ function pointerUp(e) {
   pointer = null; canvas.classList.remove('is-grabbing');
 }
 canvas.addEventListener('pointerup', pointerUp); canvas.addEventListener('pointercancel', pointerUp);
-canvas.addEventListener('pointerleave', e => { hover = null; hoveredPoi = null; if (e.pointerType !== 'touch') hideObjectCard(); });
+canvas.addEventListener('pointerleave', e => { hover = null; hoveredPoi = null; hoveredPile = null; if (e.pointerType !== 'touch') hideObjectCard(); });
 addEventListener('keydown', e => {
   if (e.defaultPrevented || e.target instanceof Element && e.target.closest('#game-windows')) return;
   if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement) return;
@@ -5536,15 +5986,18 @@ function update(dt) {
       stamina = Math.max(5, stamina - travel.walkedDistance * .018); water = Math.max(10, water - travel.walkedDistance * .005);
       if (!trail.length || dist(player, trail[trail.length - 1]) > 9) { trail.push({ ...player }); if (trail.length > 350) trail.shift(); }
       if (travel.arrived) {
+        const lootTarget = route.lootTarget;
         log(`На месте: ${route.name.toLowerCase()}`, true);
         route = null; paused = false; arrivalMarker = null; $('travel-panel').hidden = true;
-        toast('Ты на месте. Выбери, куда идти дальше.');
+        syncLootPosition(); saveLoot();
+        if (!lootTarget || !openLocalLoot(lootTarget)) toast('Ты на месте. Выбери, куда идти дальше.');
       }
     }
     for (const poi of world.pois) if (!discovered.has(poi.id) && dist(player, poi) < 65) {
       discovered.add(poi.id); log(`Обнаружено: ${poiTitle(poi)}`, true); toast(`${poiTitle(poi)}. Новое место отмечено в журнале.`);
     }
   } else stamina = Math.min(100, stamina + dt * .8);
+  syncLootPosition();
   if (following && !pointer) {
     const blend = 1 - Math.exp(-dt * 4);
     camera.x += (player.x - camera.x) * blend; camera.y += (player.y - camera.y) * blend;
@@ -5615,7 +6068,7 @@ function drawStaticObjects(time) {
     objectCacheCtx.clearRect(0, 0, pixelWidth, pixelHeight);
     objectCacheCtx.setTransform(scale, 0, 0, scale, 0, 0);
     objectCacheCtx.save(); objectCacheCtx.translate(width / 2, height / 2); objectCacheCtx.scale(camera.zoom, camera.zoom); objectCacheCtx.translate(-camera.x, -camera.y);
-    detailRenderer.draw(objectCacheCtx, { zoom: camera.zoom, cameraX: camera.x, cameraY: camera.y, width, height, time, hoveredId: null, suppressedSourceIds: landmarkSourceIds,
+    detailRenderer.draw(objectCacheCtx, { zoom: camera.zoom, cameraX: camera.x, cameraY: camera.y, width, height, time, hoveredId: null, suppressedSourceIds: landmarkSourceIds, buildingLootState: id => inventoryModel.getBuildingState(id),
       groundOverlay: layers.elevation && elevationRenderer.available && !layers.biomes ? (context, view) => elevationRenderer.draw(context, view) : null,
       landscapeOverlay: layers.landscape && landscape.available ? (context, view) => landscape.draw(context, view) : null,
       reliefOverlay: layers.elevation && elevationRenderer.available && layers.biomes ? (context, view) => elevationRenderer.drawMask(context, view) : null });
@@ -5654,6 +6107,7 @@ function draw(time) {
   for (const poi of pois) if (poiEnabled(poi) && (camera.zoom < 4 || hoveredPoi?.id === poi.id || poi.kind === 'town')) drawPoi(poi, time);
   ctx.save(); ctx.translate(vw / 2, vh / 2); ctx.scale(camera.zoom, camera.zoom); ctx.translate(-camera.x, -camera.y);
   landmarkRenderer.draw(ctx, { zoom: camera.zoom, cameraX: camera.x, cameraY: camera.y, width: vw, height: vh, layers, hoveredId: hoveredPoi?.id, labelBoxes: mapLabelBoxes });
+  groundPileRenderer.draw(ctx, { zoom: camera.zoom, cameraX: camera.x, cameraY: camera.y, width: vw, height: vh, layers, hoveredId: hoveredPile?.id });
   ctx.restore();
   if (arrivalMarker && route) {
     const p = worldToScreen(arrivalMarker);
@@ -5759,6 +6213,11 @@ function updateUI() {
 window.__DAY_NEXT__ = {
   getState: () => ({ gameMinutesPerSecond: GAME_MINUTES_PER_SECOND, player: { ...player }, camera: { ...camera }, moving: !!route && !paused, paused, speed, stamina, water, minutes, totalDistance, destination: route ? { ...route.destination } : null, remaining: route?.remaining || 0, discovered: [...discovered] }),
   getInventoryState: () => inventoryModel.getState(),
+  getWorldLootState: () => inventoryModel.exportState(),
+  getGroundPiles: () => inventoryModel.getGroundPiles(),
+  getLootContext: () => inventoryModel.getContext(),
+  getBuildingLootState: id => inventoryModel.getBuildingState(id),
+  getLootSaveInfo: () => ({ key: lootSaveKey, status: lootSaveStatus }),
   getItemWindowsState: () => itemWindows.getState(),
   getLandmarkMarkers: () => landmarkRenderer.getMarkers(),
   getLandmarkStats: () => landmarkRenderer.getStats(),

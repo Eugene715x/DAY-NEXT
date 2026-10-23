@@ -3,7 +3,8 @@ import { createRealWorld, prepareTravelWorld } from './real-world.js';
 import { MOVEMENT_FACTORS, advanceAlongRoute, movementAt } from './movement-model.js';
 import { LANDSCAPE_TYPES, createLandscape } from './landscape.js';
 import { createLandmarkMarkers } from './landmark-markers.js';
-import { createInventoryModel } from './inventory-model.js';
+import { createWorldLoot } from './world-loot.js';
+import { createGroundPileRenderer } from './ground-pile-renderer.js';
 import { createInventoryUI } from './inventory-ui.js';
 import usaMap from './maps/usa.js';
 import beattyElevation from './maps/beatty-elevation.js';
@@ -36,7 +37,7 @@ const countryLabel = usaMap.country === 'US' ? 'США' : usaMap.country;
 const regionLabel = String(usaMap.region || '').split(',').map(part => part.trim()).filter(part => part && part !== countryLabel && part !== usaMap.country).join(', ');
 const placeLabels = { Beatty: 'Битти', Rhyolite: 'Райолит', Bullfrog: 'Буллфрог', 'Gold Center': 'Голд-Сентер' };
 const regionPlaces = overviewMarkers.filter(marker => marker.tags?.place);
-let hoveredObject = null;
+let hoveredObject = null, hoveredPile = null;
 const maximumZoom = () => 24;
 const metersPerUnit = () => world.metersPerUnit || 5;
 const terrainNames = { plain: 'Пустошь', forest: 'Хвойный лес', water: 'Вода', swamp: 'Заболоченная низина', hill: 'Каменистые холмы', road: 'Старая дорога', bridge: 'Мост' };
@@ -50,9 +51,18 @@ let stamina = 100, water = 100, minutes = 7 * 60 + 42, totalDistance = 0;
 let pointer = null, hover = null, hoveredPoi = null, trail = [];
 let discovered = new Set(world.pois.filter(p => p.discovered).map(p => p.id));
 let last = performance.now(), uiTick = 0, hintTimer, arrivalMarker = null, keys = new Set();
-const inventoryModel = createInventoryModel();
+const inventoryModel = createWorldLoot(world, { buildingAssignments: detailRenderer.getFeatures().filter(feature => feature.gameplayAssignment) });
+const groundPileRenderer = createGroundPileRenderer();
+const lootSaveKey = `day-next:world-loot:v1:${world.id}`;
+let lootRevision = -1, lootContextRevision = -1, lootSaveStatus = 'new';
+restoreLoot();
 let itemWindows = null;
-itemWindows = createInventoryUI({ root: $('game-windows'), model: inventoryModel, onVisibilityChange: () => {
+itemWindows = createInventoryUI({ root: $('game-windows'), model: inventoryModel, onContextOpen: context => {
+  if (route && !paused) togglePause();
+  inventoryModel.setPosition(player, { moving: false });
+  inventoryModel.openContext(context?.id);
+  syncWorldLoot(false);
+}, onTransfer: () => syncWorldLoot(false), onVisibilityChange: () => {
   keys.clear();
   const open = itemWindows?.hasOpenWindows() || false;
   $('items-button').setAttribute('aria-expanded', String(open));
@@ -81,6 +91,51 @@ function line(context, points) {
 
 let objectRevision = 0, objectCacheState = null;
 const renderStats = { frames: 0, staticRebuilds: 0, lastStaticMs: 0, lastFrameMs: 0, totalFrameMs: 0, lastRouteSearchMs: 0 };
+
+function restoreLoot() {
+  try {
+    const raw = localStorage.getItem(lootSaveKey);
+    if (raw) {
+      const saved = JSON.parse(raw), point = saved.player;
+      if (saved.schema !== 1 || saved.mapId !== world.id || !point || !Number.isFinite(point.x) || !Number.isFinite(point.y)
+        || point.x < 0 || point.y < 0 || point.x >= world.width || point.y >= world.height || !terrainAt(world, point.x, point.y)?.walkable
+        || !['minutes', 'stamina', 'water', 'totalDistance'].every(key => Number.isFinite(saved[key]) && saved[key] >= 0)
+        || !inventoryModel.importState(saved.loot).ok) throw new Error('Invalid checkpoint');
+      player = { x: point.x, y: point.y }; minutes = saved.minutes;
+      stamina = Math.min(100, saved.stamina); water = Math.min(100, saved.water); totalDistance = saved.totalDistance;
+      lootSaveStatus = 'restored';
+    }
+  } catch { lootSaveStatus = 'unavailable-or-invalid'; }
+  inventoryModel.setPosition(player, { moving: false });
+}
+function saveLoot() {
+  try {
+    localStorage.setItem(lootSaveKey, JSON.stringify({ schema: 1, mapId: world.id, loot: inventoryModel.exportState(), player, minutes, stamina, water, totalDistance }));
+    lootSaveStatus = 'saved';
+  } catch { lootSaveStatus = 'session-only'; }
+}
+function syncWorldLoot(refresh = true) {
+  const revision = inventoryModel.getRevision(), context = inventoryModel.getContext();
+  const changed = revision !== lootRevision, contextChanged = context.revision !== lootContextRevision;
+  if (changed) {
+    lootRevision = revision; groundPileRenderer.setPiles(inventoryModel.getGroundPiles()); objectRevision++; saveLoot();
+  }
+  lootContextRevision = context.revision;
+  if (refresh && (changed || contextChanged) && itemWindows?.isWindowOpen('ground')) itemWindows.refresh();
+}
+function syncLootPosition() {
+  inventoryModel.setPosition(player, { moving: !!route && !paused }); syncWorldLoot();
+}
+function openLocalLoot(target) {
+  inventoryModel.setPosition(player, { moving: false });
+  const context = inventoryModel.getContext();
+  if (target && context.id !== target.id) return false;
+  itemWindows.openWindow('inventory'); itemWindows.openWindow('ground');
+  return true;
+}
+addEventListener('pagehide', saveLoot);
+document.addEventListener('visibilitychange', () => { if (document.hidden) saveLoot(); });
+syncWorldLoot(false);
 
 function resize() {
   vw = innerWidth; vh = innerHeight; dpr = Math.min(devicePixelRatio || 1, 2);
@@ -119,35 +174,43 @@ function pickPoi(position, radius = 35) {
 }
 
 function setDestination(position) {
-  const poi = landmarkRenderer.pick(position.x, position.y, 10 / camera.zoom, { zoom: camera.zoom, layers }) || pickPoi(position, 34);
-  const target = poi ? { x: poi.x, y: poi.y } : position;
+  const pile = groundPileRenderer.pick(position.x, position.y, { zoom: camera.zoom, layers });
+  const feature = pile ? null : detailRenderer.pick(position.x, position.y, 0);
+  const building = feature?.gameplayAssignment ? feature : null;
+  const lootTarget = pile ? { kind: 'pile', id: pile.id } : building ? { kind: 'building', id: `building:${building.sourceId || building.id}` } : null;
+  if (lootTarget && inventoryModel.getContext().id === lootTarget.id) {
+    if (route && !paused) togglePause();
+    openLocalLoot(lootTarget); return;
+  }
+  const poi = lootTarget ? null : landmarkRenderer.pick(position.x, position.y, 10 / camera.zoom, { zoom: camera.zoom, layers }) || pickPoi(position, 34);
+  const target = pile ? { x: pile.x, y: pile.y } : poi ? { x: poi.x, y: poi.y } : position;
   if (target.x < 0 || target.y < 0 || target.x >= world.width || target.y >= world.height) { toast('Здесь заканчивается лист карты.'); return; }
   if (!terrainAt(world, target.x, target.y)?.walkable) { toast('Вода непроходима. Ищи мост или обойди берег.'); return; }
   const searchStarted = performance.now();
   const result = findPath(world, player, target);
   renderStats.lastRouteSearchMs = performance.now() - searchStarted;
   if (!result || !result.points.length) { toast('Путь закрыт. Попробуй другой берег или дорогу.'); return; }
-  if (result.distance < 5) return;
-  const name = poi ? poiTitle(poi) : terrainNames[terrainAt(world, target.x, target.y)?.type] || 'Точка на карте';
-  route = { ...result, points: result.points.map(p => ({ ...p })), index: 0, destination: target, name, remaining: result.distance, remainingDurationMinutes: result.durationMinutes };
+  if (result.distance < 5 && !lootTarget) return;
+  const name = pile ? 'Предметы на земле' : building ? building.gameplayAssignment.roleName : poi ? poiTitle(poi) : terrainNames[terrainAt(world, target.x, target.y)?.type] || 'Точка на карте';
+  route = { ...result, points: result.points.map(p => ({ ...p })), index: 0, destination: target, name, lootTarget, remaining: result.distance, remainingDurationMinutes: result.durationMinutes };
   paused = false; arrivalMarker = target;
   log(`Маршрут: ${name.toLowerCase()}`, true);
   $('travel-panel').hidden = false; $('destination-label').textContent = name;
   $('pause-button').textContent = 'Ⅱ Пауза'; $('pause-button').setAttribute('aria-label', 'Приостановить движение');
-  updateUI();
+  syncLootPosition(); updateUI();
 }
 
 function cancelRoute() {
   if (!route) return;
   route = null; paused = false; arrivalMarker = null; $('travel-panel').hidden = true;
-  log('Маршрут отменён.'); updateUI();
+  syncLootPosition(); saveLoot(); log('Маршрут отменён.'); updateUI();
 }
 function togglePause() {
   if (!route) return;
   paused = !paused;
   $('pause-button').textContent = paused ? '▶ Продолжить' : 'Ⅱ Пауза';
   $('pause-button').setAttribute('aria-label', paused ? 'Продолжить движение' : 'Приостановить движение');
-  updateUI();
+  syncLootPosition(); saveLoot(); updateUI();
 }
 function reset() {
   player = { ...world.start }; camera.x = player.x; camera.y = player.y;
@@ -155,6 +218,7 @@ function reset() {
   stamina = water = 100; minutes = 7 * 60 + 42; totalDistance = 0; trail = []; arrivalMarker = null;
   discovered = new Set(world.pois.filter(p => p.discovered).map(p => p.id));
   itemWindows.reset();
+  syncLootPosition(); saveLoot();
   hideObjectCard();
   $('travel-panel').hidden = true; $('speed-button').textContent = '1×'; $('activity-log').replaceChildren();
   log('Новый день. Впереди — неизвестность.', true); toast('Вернулись к началу экспедиции.'); updateUI();
@@ -284,6 +348,7 @@ function inspectObject(point, screenX, screenY, touch = false, pickedFeature) {
   const zoneNames = { residential: 'ЖИЛАЯ ЗОНА', industrial: 'ПРОМЫШЛЕННАЯ ЗОНА', commercial: 'КОММЕРЧЕСКАЯ ЗОНА', retail: 'ТОРГОВАЯ ЗОНА', farmland: 'ПОЛЯ', sand: 'ПЕСКИ', rock: 'СКАЛЫ', scrub: 'КУСТАРНИК', wetland: 'БОЛОТО' };
   const layerNames = { biomes: 'БИОМ', roads: 'ДОРОГА', power: 'ЭЛЕКТРОСЕТЬ', buildings: 'ЗДАНИЕ' };
   const assignment = feature.gameplayAssignment;
+  const lootState = assignment ? inventoryModel.getBuildingState(feature.sourceId || feature.id) : null;
   const card = $('object-card');
   card.classList.toggle('is-building', !!assignment);
   card.style.setProperty('--object-type-color', assignment?.color || assignment?.category?.color || '#bccca4');
@@ -294,6 +359,7 @@ function inspectObject(point, screenX, screenY, touch = false, pickedFeature) {
   const buildingDescription = assignment ? [assignment.condition === 'ruined' ? 'Руины' : assignment.condition === 'abandoned' ? 'Заброшено' : '', assignment.roleOrigin === 'gameplay' ? 'Игровое назначение' : assignment.roleOrigin === 'context' ? 'Назначение по окружению' : 'Назначение по меткам карты'].filter(Boolean).join(' · ') : feature.description;
   const extra = [buildingDescription].filter(Boolean).flatMap(text => String(text).split(' · '));
   $('object-meta').textContent = [...new Set(extra)].filter(text => text !== (assignment?.roleName || feature.name)).join(' · ') || (feature.derived ? 'Игровая зона' : world.geographic ? 'Нанесён на карту OpenStreetMap' : 'Объект игровой карты');
+  if (lootState?.visited) $('object-meta').textContent += `\nОткрыто · ${lootState.empty ? 'Пусто' : 'Есть предметы'}`;
   const zones = detailRenderer.zonesAt(point.x, point.y);
   if (zones.length) $('object-meta').textContent += `\nБиом: ${[...new Set(zones.map(zone => zone.biomeName || zone.name))].join(' + ')}`;
   const elevation = layers.elevation && elevationRenderer.available ? elevationRenderer.sampleAt(point.x, point.y) : null;
@@ -347,15 +413,18 @@ canvas.addEventListener('pointerdown', e => {
 });
 canvas.addEventListener('pointermove', e => {
   hover = screenToWorld(e.clientX, e.clientY);
-  const pickedFeature = !pointer && !pinch ? detailRenderer.pick(hover.x, hover.y, 5 / camera.zoom) : null;
-  hoveredPoi = landmarkRenderer.pick(hover.x, hover.y, 10 / camera.zoom, { zoom: camera.zoom, layers }) || (pickedFeature?.gameplayAssignment ? null : pickPoi(hover));
+  hoveredPile = !pointer && !pinch ? groundPileRenderer.pick(hover.x, hover.y, { zoom: camera.zoom, layers }) : null;
+  const pickedFeature = !pointer && !pinch && !hoveredPile ? detailRenderer.pick(hover.x, hover.y, 5 / camera.zoom) : null;
+  hoveredPoi = hoveredPile ? null : landmarkRenderer.pick(hover.x, hover.y, 10 / camera.zoom, { zoom: camera.zoom, layers }) || (pickedFeature?.gameplayAssignment ? null : pickPoi(hover));
   if (!pointer && !pinch) {
-    if (hoveredPoi) {
+    if (hoveredPile) {
+      hideObjectCard(); showMapTooltip(`Предметы на земле · ${hoveredPile.itemCount}`, e.clientX, e.clientY);
+    } else if (hoveredPoi) {
       hideObjectCard();
       showMapTooltip(landmarkSourceIds.has(hoveredPoi.sourceId) ? `${poiTitle(hoveredPoi)}` : `${kindNames[hoveredPoi.kind] || 'Место'} · ${poiTitle(hoveredPoi)}`, e.clientX, e.clientY);
     } else inspectObject(hover, e.clientX, e.clientY, false, pickedFeature);
   }
-  canvas.style.cursor = pointer?.moved ? 'grabbing' : hoveredPoi || hoveredObject && !quietHoverLayers.has(hoveredObject.layer) ? 'pointer' : 'crosshair';
+  canvas.style.cursor = pointer?.moved ? 'grabbing' : hoveredPile || hoveredPoi || hoveredObject && !quietHoverLayers.has(hoveredObject.layer) ? 'pointer' : 'crosshair';
   if (touches.has(e.pointerId)) touches.set(e.pointerId, { x: e.clientX, y: e.clientY });
   if (pinch && touches.size === 2) {
     const [a, b] = [...touches.values()];
@@ -383,7 +452,7 @@ function pointerUp(e) {
   pointer = null; canvas.classList.remove('is-grabbing');
 }
 canvas.addEventListener('pointerup', pointerUp); canvas.addEventListener('pointercancel', pointerUp);
-canvas.addEventListener('pointerleave', e => { hover = null; hoveredPoi = null; if (e.pointerType !== 'touch') hideObjectCard(); });
+canvas.addEventListener('pointerleave', e => { hover = null; hoveredPoi = null; hoveredPile = null; if (e.pointerType !== 'touch') hideObjectCard(); });
 addEventListener('keydown', e => {
   if (e.defaultPrevented || e.target instanceof Element && e.target.closest('#game-windows')) return;
   if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement) return;
@@ -414,15 +483,18 @@ function update(dt) {
       stamina = Math.max(5, stamina - travel.walkedDistance * .018); water = Math.max(10, water - travel.walkedDistance * .005);
       if (!trail.length || dist(player, trail[trail.length - 1]) > 9) { trail.push({ ...player }); if (trail.length > 350) trail.shift(); }
       if (travel.arrived) {
+        const lootTarget = route.lootTarget;
         log(`На месте: ${route.name.toLowerCase()}`, true);
         route = null; paused = false; arrivalMarker = null; $('travel-panel').hidden = true;
-        toast('Ты на месте. Выбери, куда идти дальше.');
+        syncLootPosition(); saveLoot();
+        if (!lootTarget || !openLocalLoot(lootTarget)) toast('Ты на месте. Выбери, куда идти дальше.');
       }
     }
     for (const poi of world.pois) if (!discovered.has(poi.id) && dist(player, poi) < 65) {
       discovered.add(poi.id); log(`Обнаружено: ${poiTitle(poi)}`, true); toast(`${poiTitle(poi)}. Новое место отмечено в журнале.`);
     }
   } else stamina = Math.min(100, stamina + dt * .8);
+  syncLootPosition();
   if (following && !pointer) {
     const blend = 1 - Math.exp(-dt * 4);
     camera.x += (player.x - camera.x) * blend; camera.y += (player.y - camera.y) * blend;
@@ -493,7 +565,7 @@ function drawStaticObjects(time) {
     objectCacheCtx.clearRect(0, 0, pixelWidth, pixelHeight);
     objectCacheCtx.setTransform(scale, 0, 0, scale, 0, 0);
     objectCacheCtx.save(); objectCacheCtx.translate(width / 2, height / 2); objectCacheCtx.scale(camera.zoom, camera.zoom); objectCacheCtx.translate(-camera.x, -camera.y);
-    detailRenderer.draw(objectCacheCtx, { zoom: camera.zoom, cameraX: camera.x, cameraY: camera.y, width, height, time, hoveredId: null, suppressedSourceIds: landmarkSourceIds,
+    detailRenderer.draw(objectCacheCtx, { zoom: camera.zoom, cameraX: camera.x, cameraY: camera.y, width, height, time, hoveredId: null, suppressedSourceIds: landmarkSourceIds, buildingLootState: id => inventoryModel.getBuildingState(id),
       groundOverlay: layers.elevation && elevationRenderer.available && !layers.biomes ? (context, view) => elevationRenderer.draw(context, view) : null,
       landscapeOverlay: layers.landscape && landscape.available ? (context, view) => landscape.draw(context, view) : null,
       reliefOverlay: layers.elevation && elevationRenderer.available && layers.biomes ? (context, view) => elevationRenderer.drawMask(context, view) : null });
@@ -532,6 +604,7 @@ function draw(time) {
   for (const poi of pois) if (poiEnabled(poi) && (camera.zoom < 4 || hoveredPoi?.id === poi.id || poi.kind === 'town')) drawPoi(poi, time);
   ctx.save(); ctx.translate(vw / 2, vh / 2); ctx.scale(camera.zoom, camera.zoom); ctx.translate(-camera.x, -camera.y);
   landmarkRenderer.draw(ctx, { zoom: camera.zoom, cameraX: camera.x, cameraY: camera.y, width: vw, height: vh, layers, hoveredId: hoveredPoi?.id, labelBoxes: mapLabelBoxes });
+  groundPileRenderer.draw(ctx, { zoom: camera.zoom, cameraX: camera.x, cameraY: camera.y, width: vw, height: vh, layers, hoveredId: hoveredPile?.id });
   ctx.restore();
   if (arrivalMarker && route) {
     const p = worldToScreen(arrivalMarker);
@@ -637,6 +710,11 @@ function updateUI() {
 window.__DAY_NEXT__ = {
   getState: () => ({ gameMinutesPerSecond: GAME_MINUTES_PER_SECOND, player: { ...player }, camera: { ...camera }, moving: !!route && !paused, paused, speed, stamina, water, minutes, totalDistance, destination: route ? { ...route.destination } : null, remaining: route?.remaining || 0, discovered: [...discovered] }),
   getInventoryState: () => inventoryModel.getState(),
+  getWorldLootState: () => inventoryModel.exportState(),
+  getGroundPiles: () => inventoryModel.getGroundPiles(),
+  getLootContext: () => inventoryModel.getContext(),
+  getBuildingLootState: id => inventoryModel.getBuildingState(id),
+  getLootSaveInfo: () => ({ key: lootSaveKey, status: lootSaveStatus }),
   getItemWindowsState: () => itemWindows.getState(),
   getLandmarkMarkers: () => landmarkRenderer.getMarkers(),
   getLandmarkStats: () => landmarkRenderer.getStats(),

@@ -110,6 +110,32 @@ function recordingContext() {
   };
 }
 
+function buildingContext() {
+  const context = recordingContext(), stack = [], styles = ['fillStyle', 'strokeStyle', 'lineWidth', 'globalAlpha', 'lineCap', 'lineJoin', 'dash'];
+  let commands = [];
+  Object.assign(context, {
+    gradients: [], texts: [],
+    save() { stack.push(Object.fromEntries(styles.map(key => [key, this[key]]))); },
+    restore() { Object.assign(this, stack.pop()); },
+    translate() {}, scale() {}, rotate() {},
+    beginPath() { commands = []; },
+    moveTo(x, y) { commands.push(['moveTo', x, y]); },
+    lineTo(x, y) { commands.push(['lineTo', x, y]); },
+    closePath() { commands.push(['closePath']); },
+    rect(...values) { commands.push(['rect', ...values]); },
+    fill(path, rule) { this.fills.push({ path, rule, color: this.fillStyle, alpha: this.globalAlpha }); },
+    stroke(path) { this.strokes.push({ path, commands: structuredClone(commands), color: this.strokeStyle, width: this.lineWidth, alpha: this.globalAlpha, cap: this.lineCap }); },
+    strokeRect(...values) { this.strokes.push({ rect: values, color: this.strokeStyle, width: this.lineWidth }); },
+    createLinearGradient() {
+      const gradient = { stops: [], addColorStop(offset, color) { this.stops.push([offset, color]); } };
+      this.gradients.push(gradient); return gradient;
+    },
+    strokeText(text) { this.texts.push({ text, color: this.strokeStyle, stroke: true }); },
+    fillText(text) { this.texts.push({ text, color: this.fillStyle }); },
+  });
+  return context;
+}
+
 const fullView = { zoom: 1, cameraX: 200, cameraY: 150, width: 400, height: 300 };
 
 test('road junctions paint all casings before any core and class hiding removes hit targets', () => {
@@ -249,6 +275,88 @@ test('building fills use functional category colors at overview as well as detai
   const hidden = recordingContext(); renderer.draw(hidden, fullView);
   assert.equal(hidden.fills.length, 0);
   assert.equal(renderer.pick(40, 40), null);
+});
+
+test('visited building containers become gray while untouched roles and source facts retain their colors', () => {
+  const input = world({ width: 400, height: 300, buildings: [
+    { id: 'way-100-part-0', sourceId: 'way-100', points: ring(30, 30, 80, 80), tags: { building: 'house' } },
+    { id: 'way-200', points: ring(120, 30, 170, 80), tags: { building: 'retail', shop: 'supermarket' } },
+  ], roads: [{ id: 'road', type: 'residential', points: [{ x: 20, y: 180 }, { x: 380, y: 180 }], width: 3 }] });
+  const before = structuredClone(input), renderer = createDetailRenderer(input);
+  renderer.setLayers({ biomes: false });
+  const features = renderer.getFeatures(), buildings = features.filter(feature => feature.layer === 'buildings');
+  const original = buildingContext(); renderer.draw(original, fullView);
+  assert.deepEqual(original.fills.map(fill => fill.color), buildings.map(building => building.color));
+  const queried = [], visited = buildingContext();
+  renderer.draw(visited, { ...fullView, buildingLootState(sourceId) {
+    queried.push(sourceId); return { visited: sourceId === 'way-100', itemCount: 3, empty: false };
+  } });
+  assert.deepEqual(queried.sort(), ['way-100', 'way-200'], 'Container state uses the stable original source ID');
+  assert.deepEqual(visited.fills.map(fill => fill.color), ['#969696', buildings[1].color]);
+  assert.equal(visited.strokes.find(stroke => stroke.path === visited.fills[0].path).color, '#5d5d5d');
+  assert.deepEqual(visited.strokes.filter(stroke => stroke.color === '#858b8c' || stroke.color === '#62686a'),
+    original.strokes.filter(stroke => stroke.color === '#858b8c' || stroke.color === '#62686a'), 'Loot cannot recolor roads');
+  assert.deepEqual(renderer.getFeatures(), features, 'Rendering cannot alter roles, profiles, original colors or footprints');
+  assert.deepEqual(input, before, 'Visited state is separate from imported map facts');
+  const withoutState = buildingContext(); renderer.draw(withoutState, fullView);
+  assert.deepEqual(withoutState.fills.map(fill => fill.color), original.fills.map(fill => fill.color), 'A renderer without game state keeps the original colored map');
+});
+
+test('empty visited buildings gain a footprint-clipped pencil cross which disappears when refilled', () => {
+  const outer = ring(30, 30, 170, 170), courtyard = ring(70, 70, 130, 130);
+  const renderer = createDetailRenderer(world({ width: 400, height: 300, buildings: [
+    { id: 'way-100', points: outer, rings: [outer, courtyard], tags: { building: 'house' } },
+  ] }));
+  renderer.setLayers({ biomes: false });
+  const source = renderer.getFeatures().find(feature => feature.layer === 'buildings');
+  let state = { visited: false, itemCount: 3, empty: false };
+  const capture = zoom => {
+    const context = buildingContext();
+    renderer.draw(context, { ...fullView, zoom, width: 400 * zoom, height: 300 * zoom, buildingLootState: () => state });
+    return context;
+  };
+  const marks = context => context.strokes.filter(stroke => stroke.color === '#454545');
+  assert.equal(marks(capture(1)).length, 0, 'Unvisited seeded loot cannot mark a house as searched');
+  state = { visited: true, itemCount: 3, empty: false };
+  assert.equal(marks(capture(1)).length, 0, 'A searched house with remaining loot is gray without a cross');
+  state = { visited: true, itemCount: 0, empty: true };
+  const empty = capture(1), footprint = empty.fills[0].path;
+  assert.equal(empty.fills[0].color, '#969696');
+  assert.equal(marks(empty).length, 2);
+  assert.equal(empty.strokes.filter(stroke => stroke.color === 'rgba(61,61,61,.32)').length, 2, 'Faint graphite echoes soften the two pencil strokes');
+  assert(empty.clips.some(clip => clip.path === footprint && clip.rule === 'nonzero'), 'The mark stays inside the measured roof and excludes its courtyard');
+  assert.equal(footprint.commands.filter(command => command[0] === 'closePath').length, 2);
+  const pencilCommands = marks(empty).map(stroke => stroke.commands);
+  for (const zoom of [.5, 6, 16]) {
+    const context = capture(zoom);
+    assert.deepEqual(marks(context).map(stroke => stroke.commands), pencilCommands, 'Pencil geometry is stable through redraws and zooming');
+    assert(marks(context).every(stroke => stroke.width * zoom <= 1.120001 && stroke.cap === 'round'), 'The annotation remains light at close zoom');
+  }
+  state = { visited: true, itemCount: 2, empty: false };
+  const refilled = capture(1);
+  assert.equal(refilled.fills[0].color, '#969696', 'Returning loot does not make a searched house unvisited');
+  assert.equal(marks(refilled).length, 0, 'Returning one or more items clears the empty-house annotation');
+  assert.deepEqual(renderer.getFeatures().find(feature => feature.layer === 'buildings'), source);
+});
+
+test('searched roof shading, role icons, labels and hover fills stay neutral at detail zoom', () => {
+  const renderer = createDetailRenderer(world({ width: 400, height: 300, buildings: [
+    { id: 'clinic', points: ring(120, 70, 180, 130), tags: { building: 'hospital', amenity: 'clinic' } },
+  ] }));
+  renderer.setLayers({ biomes: false });
+  const selected = renderer.pick(150, 100, 0), view = { ...fullView, zoom: 6, width: 2400, height: 1800 };
+  const original = buildingContext(); renderer.draw(original, view);
+  const searched = buildingContext();
+  renderer.draw(searched, { ...view, buildingLootState: () => ({ visited: true, itemCount: 1, empty: false }) });
+  assert.deepEqual(searched.gradients[0].stops, [[0, '#a5a5a5'], [.58, '#969696'], [1, '#5d5d5d']]);
+  assert.deepEqual(searched.strokes.find(stroke => stroke.color === '#343434').commands,
+    original.strokes.find(stroke => stroke.color === '#25352c').commands, 'A searched building retains its functional icon');
+  assert.deepEqual(searched.texts.map(label => label.text), original.texts.map(label => label.text));
+  assert(searched.texts.every(label => ['#343434', 'rgba(207,207,207,.94)'].includes(label.color)), 'Labels lose their original tinted ink with the roof');
+  const hover = buildingContext(); renderer.drawHighlight(hover, view, selected);
+  assert.equal(hover.fills[0].color, 'rgba(236,236,236,.12)', 'Hovering cannot restore a searched roof tint');
+  assert.equal(renderer.pick(150, 100, 0).roleId, selected.roleId);
+  assert.equal(renderer.pick(150, 100, 0).color, selected.color);
 });
 
 test('all seasonal river classes fill their physical bank width with map-locked rectangular punctuation', () => {
